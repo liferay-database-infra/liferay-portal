@@ -307,7 +307,7 @@ public abstract class BaseDB implements DB {
 
 	@Override
 	public void removePrimaryKey(Connection connection, String tableName)
-		throws Exception {
+		throws IOException, SQLException {
 
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
 
@@ -731,7 +731,7 @@ public abstract class BaseDB implements DB {
 				connection, tableName, columnName);
 
 			if (primaryKeyIndexMetadata != null) {
-				//removePrimKey
+				removePrimaryKey(connection, tableName);
 
 				indexMetadatas.add(primaryKeyIndexMetadata);
 			}

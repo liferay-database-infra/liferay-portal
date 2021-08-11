@@ -159,7 +159,7 @@ public interface DB {
 		throws Exception;
 
 	public void removePrimaryKey(Connection connection, String tableName)
-		throws Exception;
+		throws IOException, SQLException;
 
 	public default void runSQL(
 			Connection connection, DBTypeToSQLMap dbTypeToSQLMap)
