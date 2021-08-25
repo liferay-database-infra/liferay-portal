@@ -15,6 +15,7 @@
 package com.liferay.portal.upgrade.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
@@ -75,6 +76,26 @@ public class UpgradeProcessTest {
 	@After
 	public void tearDown() throws Exception {
 		_db.runSQL("drop table " + TABLE_NAME);
+	}
+
+	@Test
+	public void testAddTempIndex() throws Exception {
+		UpgradeProcess upgradeProcess = new UpgradeProcess() {
+
+			@Override
+			protected void doUpgrade() throws Exception {
+				try (SafeCloseable safeCloseable = addTempIndex(
+						TABLE_NAME, false, "typeVarchar")) {
+
+					Assert.assertTrue(hasIndex(TABLE_NAME, "IX_TEMP"));
+				}
+
+				Assert.assertFalse(hasIndex(TABLE_NAME, "IX_TEMP"));
+			}
+
+		};
+
+		upgradeProcess.upgrade();
 	}
 
 	@Test
