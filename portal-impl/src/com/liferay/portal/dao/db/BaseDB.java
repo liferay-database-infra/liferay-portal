@@ -271,6 +271,21 @@ public abstract class BaseDB implements DB {
 	}
 
 	@Override
+	public List<IndexMetadata> dropIndexes(
+			Connection connection, String tableName, String columnName)
+		throws IOException, SQLException {
+
+		List<IndexMetadata> indexMetadatas = getIndexes(
+			connection, tableName, columnName);
+
+		for (IndexMetadata indexMetadata : indexMetadatas) {
+			runSQL(connection, indexMetadata.getDropSQL());
+		}
+
+		return indexMetadatas;
+	}
+
+	@Override
 	public DBType getDBType() {
 		return _dbType;
 	}
@@ -889,20 +904,6 @@ public abstract class BaseDB implements DB {
 		String[] words = StringUtil.split(line, CharPool.SPACE);
 
 		return new String[] {words[1], words[2]};
-	}
-
-	protected List<IndexMetadata> dropIndexes(
-			Connection connection, String tableName, String columnName)
-		throws IOException, SQLException {
-
-		List<IndexMetadata> indexMetadatas = getIndexes(
-			connection, tableName, columnName);
-
-		for (IndexMetadata indexMetadata : indexMetadatas) {
-			runSQL(connection, indexMetadata.getDropSQL());
-		}
-
-		return indexMetadatas;
 	}
 
 	protected Set<String> dropIndexes(
