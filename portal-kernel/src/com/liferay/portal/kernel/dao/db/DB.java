@@ -57,6 +57,11 @@ public interface DB {
 			Connection connection, List<IndexMetadata> indexMetadatas)
 		throws IOException, SQLException;
 
+	/**
+	 *   @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *          #addIndexes(Connection, List)}
+	 */
+	@Deprecated
 	public void addIndexes(
 			Connection connection, String indexesSQL,
 			Set<String> validIndexNames)
