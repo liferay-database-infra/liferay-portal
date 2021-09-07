@@ -21,6 +21,16 @@
 	<td>//div[contains(@class,'content-header')]//span[contains(@class,'title')][normalize-space(text())='${title}']</td>
 	<td></td>
 </tr>
+<tr>
+	<td>HEADER_USER_MANAGEMENT</td>
+	<td>//h3[contains(@class,'title-text')]/span[contains(@title,'') and contains (text(),'User Management')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>USER_MANAGEMENT_DESCRIPTION</td>
+	<td>//div[contains(@class,'header-text')]//div[contains(text(),'Invite new users to Analytics Cloud and/or configure existing users.')]</td>
+	<td></td>
+</tr>
 <!-- SETTINGS NAVIGATION -->
 <tr>
 	<td>SETTINGS_NAVIGATION</td>
@@ -256,6 +266,11 @@
 	<td></td>
 </tr>
 <!-- USERS LIST -->
+<tr>
+	<td>USER_UNSELECTABLE</td>
+	<td>//tr[contains(@class,'clickable disabled')]//td[contains(text(),'${userEmail}')]</td>
+	<td></td>
+</tr>
 <tr>
 	<td>USER_LIST</td>
 	<td>//h4[contains(@class,'table')]</td>

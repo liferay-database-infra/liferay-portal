@@ -208,6 +208,10 @@ definition {
 			value1 = "${individualUsageValue}");
 	}
 
+	macro assertInviteUsersButton {
+		AssertElementPresent(locator1 = "ACSettings#INVITE_USERS_BUTTON");
+	}
+
 	macro assertKeywordNotPresent {
 		for (var word : list "${keyword}") {
 			var key_KeywordName = "${word}";
@@ -304,6 +308,14 @@ definition {
 		AssertTextEquals(
 			locator1 = "ACSettings#USER_LIST_EMAIL",
 			value1 = "${userEmail}");
+	}
+
+	macro assertUserManagementDescription {
+		AssertElementPresent(locator1 = "ACSettings#USER_MANAGEMENT_DESCRIPTION");
+	}
+
+	macro assertUserManagementHeader {
+		AssertElementPresent(locator1 = "ACSettings#HEADER_USER_MANAGEMENT");
 	}
 
 	macro assertUserNotPresent {
@@ -691,6 +703,22 @@ definition {
 
 	macro verifyCannotAddUser {
 		AssertElementNotPresent(locator1 = "ACSettings#INVITE_USERS_BUTTON");
+	}
+
+	macro viewDeleteNotAvailable {
+		AssertElementNotPresent(locator1 = "ACSettings#DELETE_USER");
+	}
+
+	macro viewEditnotAvailable {
+		AssertElementNotPresent(
+			key_text = "Edit",
+			locator1 = "Button#ANY");
+	}
+
+	macro viewUserNotSelectable {
+		AssertElementPresent(
+			locator1 = "ACSettings#USER_UNSELECTABLE",
+			userEmail = "${email}");
 	}
 
 }

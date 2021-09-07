@@ -12,13 +12,14 @@
  * details.
  */
 
+import {ClayTooltipProvider} from '@clayui/tooltip';
 import classnames from 'classnames';
 import React from 'react';
 import {Handle} from 'react-flow-renderer';
 
-import '../../../../css/main.scss';
-
-export default function BorderStateNode({data: {initial = true, label}}) {
+export default function BorderStateNode({
+	data: {initial = true, label, notifyVisibilityChange},
+}) {
 	return (
 		<>
 			{initial ? (
@@ -27,14 +28,22 @@ export default function BorderStateNode({data: {initial = true, label}}) {
 				<Handle position="left" style={{top: '50%'}} type="target" />
 			)}
 
-			<div
-				className={classnames(
-					'border-state-node node text-white',
-					initial ? 'start-state' : 'end-state'
-				)}
-			>
-				<span>{Liferay.Language.get(label)}</span>
-			</div>
+			<ClayTooltipProvider>
+				<div
+					className={classnames(
+						'border-state-node node text-white',
+						initial ? 'start-state' : 'end-state'
+					)}
+					data-tooltip-align="top"
+					onMouseEnter={notifyVisibilityChange(true)}
+					onMouseLeave={notifyVisibilityChange(false)}
+					title={label}
+				>
+					<span className="truncate-container">
+						{Liferay.Language.get(label)}
+					</span>
+				</div>
+			</ClayTooltipProvider>
 		</>
 	);
 }
