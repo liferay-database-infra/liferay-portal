@@ -168,7 +168,7 @@ public class ReleaseManagerOSGiCommands {
 
 		StringBundler sb = new StringBundler(5 + (3 * upgradeInfos.size()));
 
-		sb.append("Registered upgrade processes for ");
+		sb.append("testRegistered upgrade processes for ");
 		sb.append(bundleSymbolicName);
 		sb.append(StringPool.SPACE);
 		sb.append(
