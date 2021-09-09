@@ -247,6 +247,9 @@
 		<ignore-error description="LPS-141256 - temporarily ignore until fixed">
 			<contains>The following session is not valid</contains>
 			<matches></matches>
+		<ignore-error description="LPS-134196">
+			<contains></contains>
+			<matches>Attempting to upgrade table .* by adding a temporary column [\s\S]*</matches>
 		</ignore-error>
 		<ignore-error description="LPS-141846 - temporarily ignore until fixed">
 			<contains>/o/frontend-editor-ckeditor-web/ckeditor/skins/moono-lexicon/skin.js</contains>
