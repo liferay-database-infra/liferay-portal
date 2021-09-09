@@ -256,6 +256,10 @@
 			<contains>StyleBookEntryVersion</contains>
 			<matches></matches>
 		</ignore-error>
+		<ignore-error description="LPS-134196">
+			<contains></contains>
+			<matches>Attempting to upgrade table .* by adding a temporary column [\s\S]*</matches>
+		</ignore-error>
 		<ignore-error description="LPS-136151 - temporarily ignore until fixed">
 			<contains></contains>
 			<matches>bundle com.liferay.portal.properties.swapper.*The activate method has thrown an exception</matches>
