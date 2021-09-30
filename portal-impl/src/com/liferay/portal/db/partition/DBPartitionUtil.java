@@ -528,7 +528,7 @@ public class DBPartitionUtil {
 
 				int returnValue = super.executeUpdate(sql);
 
-				if (!StringUtil.startsWith(lowerCaseSQL, "alter table")) {
+				if (!StringUtil.startsWith(lowerCaseSQL, "altertest table")) {
 					return returnValue;
 				}
 
