@@ -156,6 +156,7 @@ public abstract class BaseDB implements DB {
 		Set<Index> indexes = new HashSet<>();
 
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
+		DB db = DBManagerUtil.getDB();
 
 		DBInspector dbInspector = new DBInspector(connection);
 
@@ -169,9 +170,18 @@ public abstract class BaseDB implements DB {
 				String tableName = dbInspector.normalizeName(
 					tableResultSet.getString("TABLE_NAME"));
 
-				try (ResultSet indexResultSet = databaseMetaData.getIndexInfo(
-						catalog, schema, tableName, false, false)) {
+				ResultSet indexResultSet = null;
 
+				if (db.getDBType() == DBType.ORACLE) {
+					indexResultSet = databaseMetaData.getIndexInfo(
+						catalog, schema, tableName, false, true);
+				}
+				else {
+					indexResultSet = databaseMetaData.getIndexInfo(
+						catalog, schema, tableName, false, false);
+				}
+
+				try {
 					while (indexResultSet.next()) {
 						String indexName = indexResultSet.getString(
 							"INDEX_NAME");
@@ -193,6 +203,11 @@ public abstract class BaseDB implements DB {
 							"NON_UNIQUE");
 
 						indexes.add(new Index(indexName, tableName, unique));
+					}
+				}
+				finally {
+					if (indexResultSet != null) {
+						indexResultSet.close();
 					}
 				}
 			}
