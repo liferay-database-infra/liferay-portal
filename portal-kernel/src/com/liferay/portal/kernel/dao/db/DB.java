@@ -131,11 +131,16 @@ public interface DB {
 	public String getPopulateSQL(String databaseName, String sqlContent);
 
 	public String[] getPrimaryKeyColumnNames(
-		Connection connection, String tableName)
+			Connection connection, String tableName)
 		throws SQLException;
 
+	/**
+	 *   @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *          #getPrimaryKeyColumnNames(Connection, String)}
+	 */
+	@Deprecated
 	public ResultSet getPrimaryKeysResultSet(
-		Connection connection, String tableName)
+			Connection connection, String tableName)
 		throws SQLException;
 
 	public String getRecreateSQL(String databaseName);
