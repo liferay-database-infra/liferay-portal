@@ -283,7 +283,7 @@ public abstract class BaseDB implements DB {
 		throws IOException, SQLException {
 
 		List<IndexMetadata> indexMetadatas = getIndexes(
-			connection, tableName, columnName);
+			connection, tableName, columnName, false);
 
 		for (IndexMetadata indexMetadata : indexMetadatas) {
 			runSQL(connection, indexMetadata.getDropSQL());
@@ -299,7 +299,7 @@ public abstract class BaseDB implements DB {
 
 	@Override
 	public List<Index> getIndexes(Connection connection) throws SQLException {
-		List<IndexMetadata> indexes = getIndexes(connection, null, null);
+		List<IndexMetadata> indexes = getIndexes(connection, null, null, false);
 
 		Stream<IndexMetadata> stream = indexes.stream();
 
@@ -1004,7 +1004,8 @@ public abstract class BaseDB implements DB {
 	}
 
 	protected List<IndexMetadata> getIndexes(
-			Connection connection, String tableName, String columnName)
+			Connection connection, String tableName, String columnName,
+			boolean onlyUnique)
 		throws SQLException {
 
 		List<IndexMetadata> indexMetadatas = new ArrayList<>();
@@ -1038,7 +1039,8 @@ public abstract class BaseDB implements DB {
 					tableResultSet.getString("TABLE_NAME"), databaseMetaData);
 
 				try (ResultSet indexResultSet = databaseMetaData.getIndexInfo(
-						catalog, schema, normalizedTableName, false, false)) {
+						catalog, schema, normalizedTableName, onlyUnique,
+						false)) {
 
 					boolean unique = false;
 
@@ -1106,7 +1108,7 @@ public abstract class BaseDB implements DB {
 		return new ArrayList<>(indexMetadatas);
 	}
 
-	protected abstract int[] getSQLTypes();
+	protected protected abstract int[] getSQLTypes();
 
 	protected int[] getSQLVarcharSizes() {
 		return new int[] {-1, -1};
