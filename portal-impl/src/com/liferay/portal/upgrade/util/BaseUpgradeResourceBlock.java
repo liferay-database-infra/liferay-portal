@@ -47,14 +47,22 @@ public abstract class BaseUpgradeResourceBlock extends UpgradeProcess {
 
 		_removeResourceBlocks(className);
 
-		alter(getTableClass(), new AlterTableDropColumn("resourceBlockId"));
+		alterTableDropColumn(getTableName(), "resourceBlockId");
 	}
 
 	protected abstract String getClassName();
 
 	protected abstract String getPrimaryKeyName();
 
-	protected abstract Class<?> getTableClass();
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link #getTableName()}
+	 */
+	@Deprecated
+	protected Class<?> getTableClass() {
+		return null;
+	}
+
+	protected abstract String getTableName();
 
 	protected abstract boolean hasUserId();
 
