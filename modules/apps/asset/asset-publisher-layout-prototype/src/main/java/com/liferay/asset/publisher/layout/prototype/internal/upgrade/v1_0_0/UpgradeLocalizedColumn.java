@@ -30,12 +30,12 @@ public class UpgradeLocalizedColumn extends BaseLocalizedColumnUpgradeProcess {
 
 		upgradeLocalizedColumn(
 			LanguageResources.PORTAL_RESOURCE_BUNDLE_LOADER,
-			LayoutPrototypeTable.class, "name", _NAME,
+			"LayoutPrototype", "name", _NAME,
 			"layout-prototype-web-content-title", "Name", companyIds);
 
 		upgradeLocalizedColumn(
 			LanguageResources.PORTAL_RESOURCE_BUNDLE_LOADER,
-			LayoutPrototypeTable.class, "description", _DESCRIPTION,
+			"LayoutPrototype", "description", _DESCRIPTION,
 			"layout-prototype-web-content-description", "Description",
 			companyIds);
 	}
