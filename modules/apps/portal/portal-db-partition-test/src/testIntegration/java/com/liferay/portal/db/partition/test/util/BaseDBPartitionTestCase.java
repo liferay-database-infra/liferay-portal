@@ -180,8 +180,8 @@ public abstract class BaseDBPartitionTestCase {
 
 		DBPartitionUtil.setDefaultCompanyId(portal.getDefaultCompanyId());
 
-		DataSource dbPartitionDataSource = _wrapDataSource(DBPartitionUtil.wrapDataSource(
-			_currentDataSource));
+		DataSource dbPartitionDataSource = _wrapDataSource(
+			DBPartitionUtil.wrapDataSource(_currentDataSource));
 
 		_lazyConnectionDataSourceProxy =
 			(LazyConnectionDataSourceProxy)PortalBeanLocatorUtil.locate(
@@ -295,44 +295,6 @@ public abstract class BaseDBPartitionTestCase {
 		}
 	}
 
-	private static DataSource _wrapDataSource(DataSource dataSource) {
-
-		return new DataSourceWrapper(dataSource) {
-
-			@Override
-			public Connection getConnection() throws SQLException {
-				Connection connection = _wrapConnection(super.getConnection());
-
-				return connection;
-			}
-
-			@Override
-			public Connection getConnection(String userName, String password)
-				throws SQLException {
-				Connection connection = _wrapConnection(super.getConnection());
-
-				return connection;
-			}
-
-			private Connection _wrapConnection(Connection connection) {
-
-				return new ConnectionWrapper(connection) {
-
-					@Override
-					public void close() throws SQLException {
-						String defaultSchemaName =
-							ReflectionTestUtil.getFieldValue(
-								DBPartitionUtil.class, "_defaultSchemaName");
-
-						this.setCatalog(defaultSchemaName);
-
-						super.close();
-					}
-				};
-			}
-		};
-	}
-
 	protected static final long COMPANY_ID = 123456789L;
 
 	protected static final String TEST_CONTROL_TABLE_NAME = "TestControlTable";
@@ -351,6 +313,41 @@ public abstract class BaseDBPartitionTestCase {
 	@Inject
 	protected static Portal portal;
 
+	private static DataSource _wrapDataSource(DataSource dataSource) {
+		return new DataSourceWrapper(dataSource) {
+
+			@Override
+			public Connection getConnection() throws SQLException {
+				return _wrapConnection(super.getConnection());
+			}
+
+			@Override
+			public Connection getConnection(String userName, String password)
+				throws SQLException {
+
+				return _wrapConnection(super.getConnection());
+			}
+
+			private Connection _wrapConnection(Connection connection) {
+				return new ConnectionWrapper(connection) {
+
+					@Override
+					public void close() throws SQLException {
+						String defaultSchemaName =
+							ReflectionTestUtil.getFieldValue(
+								DBPartitionUtil.class, "_defaultSchemaName");
+
+						setCatalog(defaultSchemaName);
+
+						super.close();
+					}
+
+				};
+			}
+
+		};
+	}
+
 	private static final String _DB_PARTITION_SCHEMA_NAME_PREFIX =
 		"lpartitiontest_";
 
@@ -361,4 +358,5 @@ public abstract class BaseDBPartitionTestCase {
 
 	@Inject
 	private static Props _props;
+
 }
