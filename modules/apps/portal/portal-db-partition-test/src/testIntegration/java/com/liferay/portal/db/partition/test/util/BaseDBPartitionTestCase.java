@@ -18,6 +18,8 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.dao.init.DBInitUtil;
+import com.liferay.portal.dao.jdbc.util.ConnectionWrapper;
+import com.liferay.portal.dao.jdbc.util.DataSourceWrapper;
 import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.dao.db.DB;
@@ -41,6 +43,7 @@ import com.liferay.portal.util.PortalInstances;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import javax.sql.DataSource;
@@ -120,7 +123,7 @@ public abstract class BaseDBPartitionTestCase {
 		}
 	}
 
-	protected static void disableDBPartition() {
+	protected static void disableDBPartition() throws SQLException {
 		DataAccess.cleanUp(connection);
 
 		if (_dbPartitionEnabled) {
@@ -157,10 +160,6 @@ public abstract class BaseDBPartitionTestCase {
 	}
 
 	protected static void enableDBPartition() throws Exception {
-		connection = DataAccess.getConnection();
-
-		dbInspector = new DBInspector(connection);
-
 		CompanyThreadLocal.setCompanyId(PortalInstances.getDefaultCompanyId());
 
 		_dbPartitionEnabled = GetterUtil.getBoolean(
@@ -181,8 +180,8 @@ public abstract class BaseDBPartitionTestCase {
 
 		DBPartitionUtil.setDefaultCompanyId(portal.getDefaultCompanyId());
 
-		DataSource dbPartitionDataSource = DBPartitionUtil.wrapDataSource(
-			_currentDataSource);
+		DataSource dbPartitionDataSource = _wrapDataSource(DBPartitionUtil.wrapDataSource(
+			_currentDataSource));
 
 		_lazyConnectionDataSourceProxy =
 			(LazyConnectionDataSourceProxy)PortalBeanLocatorUtil.locate(
@@ -196,6 +195,10 @@ public abstract class BaseDBPartitionTestCase {
 		ReflectionTestUtil.setFieldValue(
 			InfrastructureUtil.class, "_dataSource",
 			_lazyConnectionDataSourceProxy);
+
+		connection = DataAccess.getConnection();
+
+		dbInspector = new DBInspector(connection);
 	}
 
 	protected static String getCreateIndexSQL(String tableName) {
@@ -292,6 +295,44 @@ public abstract class BaseDBPartitionTestCase {
 		}
 	}
 
+	private static DataSource _wrapDataSource(DataSource dataSource) {
+
+		return new DataSourceWrapper(dataSource) {
+
+			@Override
+			public Connection getConnection() throws SQLException {
+				Connection connection = _wrapConnection(super.getConnection());
+
+				return connection;
+			}
+
+			@Override
+			public Connection getConnection(String userName, String password)
+				throws SQLException {
+				Connection connection = _wrapConnection(super.getConnection());
+
+				return connection;
+			}
+
+			private Connection _wrapConnection(Connection connection) {
+
+				return new ConnectionWrapper(connection) {
+
+					@Override
+					public void close() throws SQLException {
+						String defaultSchemaName =
+							ReflectionTestUtil.getFieldValue(
+								DBPartitionUtil.class, "_defaultSchemaName");
+
+						this.setCatalog(defaultSchemaName);
+
+						super.close();
+					}
+				};
+			}
+		};
+	}
+
 	protected static final long COMPANY_ID = 123456789L;
 
 	protected static final String TEST_CONTROL_TABLE_NAME = "TestControlTable";
@@ -320,5 +361,4 @@ public abstract class BaseDBPartitionTestCase {
 
 	@Inject
 	private static Props _props;
-
 }
