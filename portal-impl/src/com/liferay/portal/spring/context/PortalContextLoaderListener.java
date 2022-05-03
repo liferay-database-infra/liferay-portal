@@ -332,13 +332,12 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 
 				StartupHelperUtil.setUpgrading(false);
 			}
-			else {
-				ModuleFrameworkUtil.registerContext(applicationContext);
-			}
 		}
 		catch (Exception exception) {
 			throw new RuntimeException(exception);
 		}
+
+		ModuleFrameworkUtil.registerContext(applicationContext);
 
 		CustomJspBagRegistryUtil.getCustomJspBags();
 	}

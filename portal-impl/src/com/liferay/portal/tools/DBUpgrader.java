@@ -38,7 +38,6 @@ import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.version.Version;
-import com.liferay.portal.module.framework.ModuleFrameworkUtil;
 import com.liferay.portal.transaction.TransactionsUtil;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
 import com.liferay.portal.util.InitUtil;
@@ -167,7 +166,7 @@ public class DBUpgrader {
 			PortalCacheManagerNames.MULTI_VM);
 
 		if (applicationContext == null) {
-			_upgradeModules(applicationContext);
+			_upgradeModules();
 			DependencyManagerSyncUtil.sync();
 		}
 
@@ -335,15 +334,10 @@ public class DBUpgrader {
 		}
 	}
 
-	private static void _upgradeModules(ApplicationContext applicationContext) {
+	private static void _upgradeModules() {
 		_registerModuleServiceLifecycle("database.initialized");
 
-		if (applicationContext == null) {
-			InitUtil.registerContext();
-		}
-		else {
-			ModuleFrameworkUtil.registerContext(applicationContext);
-		}
+		InitUtil.registerContext();
 
 		_registerModuleServiceLifecycle("portal.initialized");
 	}
