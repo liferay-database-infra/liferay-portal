@@ -163,7 +163,14 @@ public class DBUpgrader {
 
 		DLFileEntryTypeLocalServiceUtil.getBasicDocumentDLFileEntryType();
 
+		PortalCacheHelperUtil.clearPortalCaches(
+			PortalCacheManagerNames.MULTI_VM);
+
 		_upgradeModules(applicationContext);
+
+		if (applicationContext == null) {
+			DependencyManagerSyncUtil.sync();
+		}
 
 		StoreFactory storeFactory = StoreFactory.getInstance();
 
@@ -173,10 +180,6 @@ public class DBUpgrader {
 					"Store \"" + PropsValues.DL_STORE_IMPL +
 						"\" is not available");
 			}
-		}
-
-		if (applicationContext == null) {
-			DependencyManagerSyncUtil.sync();
 		}
 	}
 
@@ -344,9 +347,6 @@ public class DBUpgrader {
 		}
 
 		_registerModuleServiceLifecycle("portal.initialized");
-
-		PortalCacheHelperUtil.clearPortalCaches(
-			PortalCacheManagerNames.MULTI_VM);
 	}
 
 	private static void _upgradePortal() throws Exception {
