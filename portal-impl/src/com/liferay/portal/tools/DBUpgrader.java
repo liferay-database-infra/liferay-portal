@@ -61,8 +61,6 @@ import org.apache.logging.log4j.core.Appender;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-import org.springframework.context.ApplicationContext;
-
 /**
  * @author Michael C. Han
  * @author Brian Wing Shun Chan
@@ -129,6 +127,16 @@ public class DBUpgrader {
 				upgrade();
 			}
 
+			_registerModuleServiceLifecycle("database.initialized");
+
+			InitUtil.registerContext();
+
+			_registerModuleServiceLifecycle("portal.initialized");
+
+			DependencyManagerSyncUtil.sync();
+
+			_checkStoreFactory();
+
 			_registerModuleServiceLifecycle("portlets.initialized");
 
 			System.out.println(
@@ -150,12 +158,6 @@ public class DBUpgrader {
 	}
 
 	public static void upgrade() throws Exception {
-		upgrade(null);
-	}
-
-	public static void upgrade(ApplicationContext applicationContext)
-		throws Exception {
-
 		StartupHelperUtil.setUpgrading(true);
 
 		_upgradePortal();
@@ -164,21 +166,6 @@ public class DBUpgrader {
 
 		PortalCacheHelperUtil.clearPortalCaches(
 			PortalCacheManagerNames.MULTI_VM);
-
-		if (applicationContext == null) {
-			_upgradeModules();
-			DependencyManagerSyncUtil.sync();
-		}
-
-		StoreFactory storeFactory = StoreFactory.getInstance();
-
-		if (storeFactory.getStore(PropsValues.DL_STORE_IMPL) == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(
-					"Store \"" + PropsValues.DL_STORE_IMPL +
-						"\" is not available");
-			}
-		}
 	}
 
 	public static void verify() throws VerifyException {
@@ -208,6 +195,18 @@ public class DBUpgrader {
 		}
 
 		StartupHelperUtil.initResourceActions();
+	}
+
+	private static void _checkStoreFactory() {
+		StoreFactory storeFactory = StoreFactory.getInstance();
+
+		if (storeFactory.getStore(PropsValues.DL_STORE_IMPL) == null) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Store \"" + PropsValues.DL_STORE_IMPL +
+						"\" is not available");
+			}
+		}
 	}
 
 	private static int _getBuildNumberForMissedUpgradeProcesses(int buildNumber)
@@ -332,14 +331,6 @@ public class DBUpgrader {
 
 			preparedStatement.executeUpdate();
 		}
-	}
-
-	private static void _upgradeModules() {
-		_registerModuleServiceLifecycle("database.initialized");
-
-		InitUtil.registerContext();
-
-		_registerModuleServiceLifecycle("portal.initialized");
 	}
 
 	private static void _upgradePortal() throws Exception {

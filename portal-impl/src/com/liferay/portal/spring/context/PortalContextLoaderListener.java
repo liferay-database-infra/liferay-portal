@@ -328,7 +328,7 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 
 		try {
 			if (PropsValues.UPGRADE_DATABASE_AUTO_RUN) {
-				DBUpgrader.upgrade(applicationContext);
+				DBUpgrader.upgrade();
 
 				StartupHelperUtil.setUpgrading(false);
 			}
