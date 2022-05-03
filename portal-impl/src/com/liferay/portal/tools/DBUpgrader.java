@@ -166,9 +166,8 @@ public class DBUpgrader {
 		PortalCacheHelperUtil.clearPortalCaches(
 			PortalCacheManagerNames.MULTI_VM);
 
-		_upgradeModules(applicationContext);
-
 		if (applicationContext == null) {
+			_upgradeModules(applicationContext);
 			DependencyManagerSyncUtil.sync();
 		}
 
