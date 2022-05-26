@@ -211,6 +211,15 @@ public abstract class BaseDBProcess implements DBProcess {
 		}
 
 		if (hasColumnType(tableName, oldColumnName, newColumnType)) {
+			DBInspector dbInspector = new DBInspector(connection);
+
+			if (StringUtil.equalsIgnoreCase(
+					dbInspector.normalizeName(oldColumnName),
+					dbInspector.normalizeName(newColumnName))) {
+
+				return;
+			}
+
 			DB db = DBManagerUtil.getDB();
 
 			db.alterColumnName(
