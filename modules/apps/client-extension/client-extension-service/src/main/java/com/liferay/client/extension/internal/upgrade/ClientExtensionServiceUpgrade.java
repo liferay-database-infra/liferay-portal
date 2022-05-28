@@ -19,6 +19,7 @@ import com.liferay.client.extension.internal.upgrade.v3_1_0.util.ClientExtension
 import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
+import com.liferay.portal.upgrade.step.util.UpgradeStepFactory;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -80,6 +81,11 @@ public class ClientExtensionServiceUpgrade implements UpgradeStepRegistrator {
 			"3.1.0", "3.2.0",
 			new CTModelUpgradeProcess(
 				"ClientExtensionEntry", "ClientExtensionEntryRel"));
+
+		registry.register(
+			"3.2.0", "3.2.1",
+			UpgradeStepFactory.alterColumnTypes(
+				"ClientExtensionEntry", "STRING null", "iFrameURL"));
 	}
 
 	@Reference(
