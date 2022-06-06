@@ -43,6 +43,7 @@ import com.liferay.journal.internal.upgrade.v0_0_7.JournalArticleTreePathUpgrade
 import com.liferay.journal.internal.upgrade.v0_0_8.ArticleAssetsUpgradeProcess;
 import com.liferay.journal.internal.upgrade.v0_0_8.ArticleExpirationDateUpgradeProcess;
 import com.liferay.journal.internal.upgrade.v0_0_8.ArticleSystemEventsUpgradeProcess;
+import com.liferay.journal.internal.upgrade.v0_0_9.ArticleAssetsBasicWebContentClassTypeIdUpgradeProcess;
 import com.liferay.journal.internal.upgrade.v1_0_0.JournalArticleImageUpgradeProcess;
 import com.liferay.journal.internal.upgrade.v1_0_1.JournalContentSearchUpgradeProcess;
 import com.liferay.journal.internal.upgrade.v1_1_0.DocumentLibraryTypeContentUpgradeProcess;
@@ -169,11 +170,17 @@ public class JournalServiceUpgrade implements UpgradeStepRegistrator {
 			new JournalArticleTreePathUpgradeProcess());
 
 		registry.register(
-			"0.0.8", "1.0.0",
+			"0.0.8", "0.0.9",
 			new ArticleAssetsUpgradeProcess(
 				_assetEntryLocalService, _companyLocalService),
 			new ArticleExpirationDateUpgradeProcess(),
 			new ArticleSystemEventsUpgradeProcess(_systemEventLocalService));
+
+		registry.register(
+			"0.0.9", "1.0.0",
+			new ArticleAssetsBasicWebContentClassTypeIdUpgradeProcess(
+				_assetEntryLocalService, _companyLocalService,
+				_groupLocalService, _ddmStructureLocalService));
 
 		registry.register(
 			"1.0.0", "1.0.1", new JournalContentSearchUpgradeProcess());
@@ -230,12 +237,18 @@ public class JournalServiceUpgrade implements UpgradeStepRegistrator {
 				JournalArticleUpgradeProcess());
 
 		registry.register(
-			"1.1.8", "2.0.0",
+			"1.1.8", "1.1.9",
 			new BaseSQLServerDatetimeUpgradeProcess(
 				new Class<?>[] {
 					JournalArticleTable.class, JournalFeedTable.class,
 					JournalFolderTable.class
 				}));
+
+		registry.register(
+			"1.1.9", "2.0.0",
+			new ArticleAssetsBasicWebContentClassTypeIdUpgradeProcess(
+				_assetEntryLocalService, _companyLocalService,
+				_groupLocalService, _ddmStructureLocalService));
 
 		registry.register(
 			"2.0.0", "3.0.0",
@@ -295,17 +308,29 @@ public class JournalServiceUpgrade implements UpgradeStepRegistrator {
 			new JournalArticleDataFileEntryIdUpgradeProcess());
 
 		registry.register(
-			"3.5.1", "4.0.0",
+			"3.5.1", "3.5.2",
 			new JournalArticleDDMFieldsUpgradeProcess(
 				_classNameLocalService, _ddmFieldLocalService,
 				_ddmStructureLocalService, _fieldsToDDMFormValuesConverter,
 				_journalConverter, _portal));
 
 		registry.register(
+			"3.5.2", "4.0.0",
+			new ArticleAssetsBasicWebContentClassTypeIdUpgradeProcess(
+				_assetEntryLocalService, _companyLocalService,
+				_groupLocalService, _ddmStructureLocalService));
+
+		registry.register(
 			"4.0.0", "4.1.0",
 			new JournalArticleExternalReferenceCodeUpgradeProcess());
 
 		registry.register("4.1.0", "4.2.0", new JournalFeedUpgradeProcess());
+
+		registry.register(
+			"4.2.0", "4.2.1",
+			new ArticleAssetsBasicWebContentClassTypeIdUpgradeProcess(
+				_assetEntryLocalService, _companyLocalService,
+				_groupLocalService, _ddmStructureLocalService));
 	}
 
 	@Reference(unbind = "-")
