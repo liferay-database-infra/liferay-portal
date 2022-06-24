@@ -29,7 +29,6 @@ import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,6 +58,13 @@ import java.util.Set;
 public abstract class UpgradeProcess
 	extends BaseDBProcess implements UpgradeStep {
 
+	public UpgradeProcess() {
+	}
+
+	public UpgradeProcess(String callerInfo) {
+		_callerInfo = callerInfo;
+	}
+
 	public void clearIndexesCache() {
 		_portalIndexesSQL.clear();
 	}
@@ -87,12 +93,11 @@ public abstract class UpgradeProcess
 			process(
 				companyId -> {
 					if (_log.isInfoEnabled()) {
-						String info =
-							"Upgrading " + ClassUtil.getClassName(this);
+						String clazzName = ClassUtil.getClassName(this);
 
-						if (Validator.isNotNull(companyId)) {
-							info += "#" + companyId;
-						}
+						String info = StringBundler.concat(
+							"Upgrading ", clazzName,
+							(_callerInfo == null) ? "" : " - " + _callerInfo);
 
 						_log.info(info);
 					}
@@ -111,8 +116,9 @@ public abstract class UpgradeProcess
 			if (_log.isInfoEnabled()) {
 				_log.info(
 					StringBundler.concat(
-						message, ClassUtil.getClassName(this), " in ",
-						System.currentTimeMillis() - start, " ms"));
+						message, ClassUtil.getClassName(this),
+						(_callerInfo == null) ? "" : " - " + _callerInfo,
+						" in ", System.currentTimeMillis() - start, " ms"));
 			}
 		}
 	}
@@ -378,5 +384,7 @@ public abstract class UpgradeProcess
 	private static final Map
 		<String, List<ObjectValuePair<String, IndexMetadata>>>
 			_portalIndexesSQL = new HashMap<>();
+
+	private String _callerInfo;
 
 }
