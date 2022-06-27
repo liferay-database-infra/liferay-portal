@@ -15,8 +15,9 @@
 package com.liferay.nested.portlets.web.internal.upgrade;
 
 import com.liferay.nested.portlets.web.internal.upgrade.v1_0_0.UpgradePortletId;
-import com.liferay.nested.portlets.web.internal.upgrade.v1_0_1.PortletPreferencesValueUpgradeProcess;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
+import com.liferay.portal.kernel.upgrade.UpgradeProcessFactory;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
 import org.osgi.service.component.annotations.Component;
@@ -35,7 +36,12 @@ public class NestedPortletWebUpgrade implements UpgradeStepRegistrator {
 		registry.register("0.0.1", "1.0.0", new UpgradePortletId());
 
 		registry.register(
-			"1.0.0", "1.0.1", new PortletPreferencesValueUpgradeProcess());
+			"1.0.0", "1.0.1",
+			UpgradeProcessFactory.runSQL(
+				StringBundler.concat(
+					"update PortletPreferenceValue set smallValue = ",
+					"'1_2_1_columns_i' where name = 'layoutTemplateId' and ",
+					"smallValue = '1_2_1_columns' ")));
 	}
 
 }

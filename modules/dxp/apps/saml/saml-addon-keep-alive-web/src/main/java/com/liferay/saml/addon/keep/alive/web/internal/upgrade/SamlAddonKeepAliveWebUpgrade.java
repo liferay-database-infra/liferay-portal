@@ -14,8 +14,8 @@
 
 package com.liferay.saml.addon.keep.alive.web.internal.upgrade;
 
+import com.liferay.portal.kernel.upgrade.UpgradeProcessFactory;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
-import com.liferay.saml.addon.keep.alive.web.internal.upgrade.v1_0_0.PortletIdUpgradeProcess;
 
 import org.osgi.service.component.annotations.Component;
 
@@ -27,7 +27,20 @@ public class SamlAddonKeepAliveWebUpgrade implements UpgradeStepRegistrator {
 
 	@Override
 	public void register(Registry registry) {
-		registry.register("0.0.0", "1.0.0", new PortletIdUpgradeProcess());
+		registry.register(
+			"0.0.0", "1.0.0",
+			UpgradeProcessFactory.runSQL(
+				"delete from Portlet where portletId like " +
+					"'%1_WAR_samlportlet%'"),
+			UpgradeProcessFactory.runSQL(
+				"delete from PortletPreferences where portletId like " +
+					"'%1_WAR_samlportlet%'"),
+			UpgradeProcessFactory.runSQL(
+				"delete from ResourceAction where name like " +
+					"'%1_WAR_samlportlet%'"),
+			UpgradeProcessFactory.runSQL(
+				"delete from ResourcePermission where name like " +
+					"'%1_WAR_samlportlet%'"));
 	}
 
 }

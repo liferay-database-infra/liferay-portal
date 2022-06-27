@@ -14,22 +14,17 @@
 
 package com.liferay.object.internal.upgrade;
 
-import com.liferay.object.internal.upgrade.v1_1_0.ObjectDefinitionUpgradeProcess;
 import com.liferay.object.internal.upgrade.v1_2_0.util.ObjectViewColumnTable;
 import com.liferay.object.internal.upgrade.v1_2_0.util.ObjectViewTable;
-import com.liferay.object.internal.upgrade.v2_0_0.ObjectFieldUpgradeProcess;
 import com.liferay.object.internal.upgrade.v2_1_0.ObjectFieldBusinessTypeUpgradeProcess;
 import com.liferay.object.internal.upgrade.v2_2_0.util.ObjectValidationRuleTable;
 import com.liferay.object.internal.upgrade.v2_3_0.util.ObjectFieldSettingTable;
 import com.liferay.object.internal.upgrade.v2_4_0.util.ObjectViewSortColumnTable;
-import com.liferay.object.internal.upgrade.v2_5_0.util.ObjectViewColumnUpgradeProcess;
-import com.liferay.object.internal.upgrade.v3_0_0.ObjectFieldSettingUpgradeProcess;
-import com.liferay.object.internal.upgrade.v3_2_0.ObjectValidationRuleUpgradeProcess;
 import com.liferay.object.internal.upgrade.v3_3_0.util.ObjectViewFilterColumnTable;
-import com.liferay.object.internal.upgrade.v3_4_0.ObjectActionUpgradeProcess;
 import com.liferay.object.internal.upgrade.v3_9_0.ObjectLayoutBoxUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.BaseExternalReferenceCodeUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
+import com.liferay.portal.kernel.upgrade.UpgradeProcessFactory;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
 import org.osgi.service.component.annotations.Component;
@@ -43,13 +38,20 @@ public class ObjectServiceUpgrade implements UpgradeStepRegistrator {
 	@Override
 	public void register(Registry registry) {
 		registry.register(
-			"1.0.0", "1.1.0", new ObjectDefinitionUpgradeProcess());
+			"1.0.0", "1.1.0",
+			UpgradeProcessFactory.addColumns(
+				"ObjectDefinition", "portlet BOOLEAN"));
 
 		registry.register(
 			"1.1.0", "1.2.0", ObjectViewTable.create(),
 			ObjectViewColumnTable.create());
 
-		registry.register("1.2.0", "2.0.0", new ObjectFieldUpgradeProcess());
+		registry.register(
+			"1.2.0", "2.0.0",
+			UpgradeProcessFactory.addColumns(
+				"ObjectField", "businessType VARCHAR(75) null"),
+			UpgradeProcessFactory.alterColumnName(
+				"ObjectField", "type_", "dbType VARCHAR(75) null"));
 
 		registry.register(
 			"2.0.0", "2.1.0", new ObjectFieldBusinessTypeUpgradeProcess());
@@ -61,10 +63,14 @@ public class ObjectServiceUpgrade implements UpgradeStepRegistrator {
 		registry.register("2.3.0", "2.4.0", ObjectViewSortColumnTable.create());
 
 		registry.register(
-			"2.4.0", "2.5.0", new ObjectViewColumnUpgradeProcess());
+			"2.4.0", "2.5.0",
+			UpgradeProcessFactory.addColumns(
+				"ObjectViewColumn", "label STRING null"));
 
 		registry.register(
-			"2.5.0", "3.0.0", new ObjectFieldSettingUpgradeProcess());
+			"2.5.0", "3.0.0",
+			UpgradeProcessFactory.dropColumns(
+				"ObjectFieldSetting", "required"));
 
 		registry.register(
 			"3.0.0", "3.1.0",
@@ -72,12 +78,17 @@ public class ObjectServiceUpgrade implements UpgradeStepRegistrator {
 				ObjectFieldBusinessTypeUpgradeProcess());
 
 		registry.register(
-			"3.1.0", "3.2.0", new ObjectValidationRuleUpgradeProcess());
+			"3.1.0", "3.2.0",
+			UpgradeProcessFactory.addColumns(
+				"ObjectValidationRule", "name STRING null"));
 
 		registry.register(
 			"3.2.0", "3.3.0", ObjectViewFilterColumnTable.create());
 
-		registry.register("3.3.0", "3.4.0", new ObjectActionUpgradeProcess());
+		registry.register(
+			"3.3.0", "3.4.0",
+			UpgradeProcessFactory.addColumns(
+				"ObjectAction", "description STRING null"));
 
 		registry.register(
 			"3.4.0", "3.5.0",
@@ -91,8 +102,8 @@ public class ObjectServiceUpgrade implements UpgradeStepRegistrator {
 
 		registry.register(
 			"3.6.0", "3.7.0",
-			new com.liferay.object.internal.upgrade.v3_7_0.
-				ObjectActionUpgradeProcess());
+			UpgradeProcessFactory.addColumns(
+				"ObjectAction", "conditionExpression TEXT null"));
 
 		registry.register("3.7.0", "3.8.0", new DummyUpgradeStep());
 
@@ -103,13 +114,13 @@ public class ObjectServiceUpgrade implements UpgradeStepRegistrator {
 
 		registry.register(
 			"3.9.0", "3.10.0",
-			new com.liferay.object.internal.upgrade.v3_10_0.
-				ObjectDefinitionUpgradeProcess());
+			UpgradeProcessFactory.addColumns(
+				"ObjectDefinition", "accountERObjectFieldId LONG",
+				"accountEntryRestricted BOOLEAN"));
 
 		registry.register(
 			"3.10.0", "3.11.0",
-			new com.liferay.object.internal.upgrade.v3_11_0.
-				ObjectActionUpgradeProcess());
+			UpgradeProcessFactory.addColumns("ObjectAction", "status INTEGER"));
 
 		registry.register(
 			"3.11.0", "3.12.0",
@@ -132,8 +143,8 @@ public class ObjectServiceUpgrade implements UpgradeStepRegistrator {
 
 		registry.register(
 			"3.13.0", "3.14.0",
-			new com.liferay.object.internal.upgrade.v3_14_0.
-				ObjectFieldUpgradeProcess());
+			UpgradeProcessFactory.addColumns(
+				"ObjectField", "defaultValue VARCHAR(75)"));
 	}
 
 }
