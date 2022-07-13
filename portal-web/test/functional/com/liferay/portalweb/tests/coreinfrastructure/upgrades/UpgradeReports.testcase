@@ -11,10 +11,6 @@ definition {
 	property test.run.environment = "EE";
 	property testray.main.component.name = "Upgrades Core";
 
-
-
-	//var tempFileExists = FileUtil.exists("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-
 	setUp {
 		User.loginPG(
 			nodePort = "8080",
@@ -26,15 +22,17 @@ definition {
 
 	tearDown {
 		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var liferayHome = PropsUtil.get("liferay.home.dir.name");
+		var tempFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 
-		//if ("${testPortalInstance}" == "true") {
-		//	PortalInstances.tearDownCP();
-		//}
-		//else {
-		//	if ("${tempFileExists}" == "true") {
-		//	//FileUtil.delete("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-		//}
-		//}
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			if ("${tempFileExists}" == "true") {
+			FileUtil.delete("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+		}
+		}
 
 	}
 
@@ -45,7 +43,7 @@ definition {
             property test.name.skip.portal.instance = "UpgradeReports#UpgradeFileDoesNotExist";
             property data.archive.type = "data-archive-portal-settings";
 		    property database.types = "mariadb,mysql,postgresql";
-		    property portal.version = "7.0.4";
+		    property portal.version = "7.4.1";
         }
 
         task("Look for the upgrade report"){
@@ -68,7 +66,7 @@ definition {
             property upgrade.reports.enabled = "true";
             property data.archive.type = "data-archive-portal-settings";
 		    property database.types = "mariadb,mysql,postgresql";
-		    property portal.version = "7.0.4";
+		    property portal.version = "7.4.1";
         }
 
         task("Look for the upgrade report"){
@@ -85,6 +83,7 @@ definition {
 
 	@description = "LPS-154683: Upgrade Report shows warnings"
 	@priority = "4"
+	@ignore = "true"
 	test UpgradeReportShowWarnings {
 		task("Set the properties needed to run the upgrade"){
             property test.name.skip.portal.instance = "UpgradeReports#UpgradeReportShowWarnings";
@@ -115,7 +114,7 @@ definition {
             property upgrade.reports.enabled = "true";
             property data.archive.type = "data-archive-portal-settings";
 		    property database.types = "mariadb,mysql,postgresql";
-		    property portal.version = "7.0.4";
+		    property portal.version = "7.4.1";
         }
 
         task("Look for the upgrade report"){
@@ -139,7 +138,7 @@ definition {
             property upgrade.reports.enabled = "true";
             property data.archive.type = "data-archive-portal-settings";
 		    property database.types = "mariadb,mysql,postgresql";
-		    property portal.version = "7.0.4";
+		    property portal.version = "6.0.12";
         }
 
         task("Look for the upgrade report"){
@@ -165,20 +164,34 @@ definition {
             property upgrade.reports.enabled = "true";
             property data.archive.type = "data-archive-portal-settings";
 		    property database.types = "mariadb,mysql,postgresql";
-		    property portal.version = "7.0.4";
+		    property portal.version = "7.4.1";
         }
 
-        task("Somehow read the version and number of tables in database"){
-
+        task("Read the version in database"){
+			var databaseVersion = Upgrade.getDatabaseVersion();
         }
 
-		//var tempDir = PropsUtil.get("liferay.home.dir.name");
-		//var logString = "No errors thrown during upgrade";
-		//var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-		//echo("${fileContent}");
-		//task ("Read the content. No errors expected") {
-		//	if (!(contains("${fileContent}", "${logString}"))) {
-				fail("Report with Errors");
+		task("Read the  number of tables in database"){
+			var numberOfRows = Upgrade.getNumberOfRowsFromTable(tableName = "ResourcePermission");
+        }
+
+		task("Look for the upgrade report"){
+		    var tempDir = PropsUtil.get("liferay.home.dir.name");
+		    var logString1 = "${databaseVersion}";
+			var logString2 = "${numberOfRows}";
+		    var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+		    echo("${fileContent}");
+        }
+
+		task ("Read the version is correct in the report") {
+			if ((contains("${fileContent}", "${logString1}"))) {
+				fail("Database version is not present");
+			}
+		}
+
+		//task ("Read the number of rows is correct in the report") {
+		//	if ((contains("${fileContent}", "${logString2}"))) {
+		//		fail("Number of rows for ResourcePermission is not the same");
 		//	}
 		//}
 	}
