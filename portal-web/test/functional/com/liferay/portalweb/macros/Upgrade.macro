@@ -1754,7 +1754,7 @@ definition {
 	}
 
 	macro getNumberOfRowsFromTable {
-		Variables.assertDefined(parameterList = "${tableName}"");
+		Variables.assertDefined(parameterList = "${tableName}");
 
 		var mysqlStatement = "SELECT COUNT(*) FROM '${tableName};'";
 
@@ -1764,7 +1764,7 @@ definition {
 
 		return "${numberOfRows}";
 	}
-
+	
 	macro ignore404URLs {
 		var portalURL = PropsUtil.get("portal.url");
 
