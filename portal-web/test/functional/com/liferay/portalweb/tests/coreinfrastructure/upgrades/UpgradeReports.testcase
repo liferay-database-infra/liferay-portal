@@ -64,7 +64,7 @@ definition {
 	test UpgradeFileExistUpgradeTool {
 		task("Set the properties needed to run the upgrade"){
             property test.name.skip.portal.instance = "UpgradeReports#UpgradeFileExist";
-			property upgrade.reports.enabled = "true";
+			property upgrade.report.enabled = "true";
 			property data.archive.type = "data-archive-portal";
 			property database.types = "mariadb,mysql,postgresql";
 			property portal.upgrades = "true";
@@ -90,7 +90,7 @@ definition {
 	test UpgradeReportShowWarningsUpgradeTool {
 		task("Set the properties needed to run the upgrade"){
             property test.name.skip.portal.instance = "UpgradeReports#UpgradeReportShowWarnings";
-			property upgrade.reports.enabled = "true";
+			property upgrade.report.enabled = "true";
 			property data.archive.type = "data-archive-portal";
 			property database.types = "mariadb,mysql,postgresql";
 			property portal.upgrades = "true";
@@ -118,7 +118,7 @@ definition {
 	test UpgradeReportWithoutErrorsUpgradeTool {
 		task("Set the properties needed to run the upgrade"){
             property test.name.skip.portal.instance = "UpgradeReports#UpgradeReportWithoutErrors";
-			property upgrade.reports.enabled = "true";
+			property upgrade.report.enabled = "true";
 			property data.archive.type = "data-archive-portal";
 			property database.types = "mariadb,mysql,postgresql";
 			property portal.upgrades = "true";
@@ -146,7 +146,7 @@ definition {
 	test UpgradeReportWithErrorsUpgradeTool {
 		task("Set the properties needed to run the upgrade"){
             property test.name.skip.portal.instance = "UpgradeReports#UpgradeReportWithErrors";
-            property upgrade.reports.enabled = "true";
+            property upgrade.report.enabled = "true";
 			property portal.upgrades = "true";
             property data.archive.type = "data-archive-portal";
 		    property database.types = "mariadb,mysql,postgresql";
@@ -176,7 +176,7 @@ definition {
 	test UpgradeReportCheckVersionAndNumberOfTablesUpgradeTool {
 		task("Set the properties needed to run the upgrade"){
             property test.name.skip.portal.instance = "UpgradeReports#UpgradeReportCheckVersionAndNumberOfTables";
-			property upgrade.reports.enabled = "true";
+			property upgrade.report.enabled = "true";
 			property data.archive.type = "data-archive-portal";
 			property database.types = "mariadb,mysql,postgresql";
 			property portal.upgrades = "true";
