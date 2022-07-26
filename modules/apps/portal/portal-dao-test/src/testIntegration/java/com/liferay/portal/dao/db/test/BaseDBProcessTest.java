@@ -27,15 +27,6 @@ import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import java.util.Arrays;
-import java.util.List;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -45,6 +36,13 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Luis Ortiz
@@ -377,7 +375,7 @@ public class BaseDBProcessTest extends BaseDBProcess {
 		catch (SQLException sqlException) {
 		}
 
-		Assert.assertFalse(hasColumnType(_TABLE_NAME, "typeDouble", "INTEGER"));
+		Assert.assertFalse(hasColumnType(_TABLE_NAME, "typeDouble", "VARCHAR"));
 	}
 
 	@Test
