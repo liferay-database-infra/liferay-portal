@@ -92,6 +92,10 @@ public class DBPartitionUtil {
 				while (resultSet.next()) {
 					String tableName = resultSet.getString("TABLE_NAME");
 
+					if (_isObjectsTable(tableName)) {
+						continue;
+					}
+
 					if (_isControlTable(dbInspector, tableName)) {
 						statement.executeUpdate(
 							_getCreateViewSQL(companyId, tableName));
@@ -518,10 +522,19 @@ public class DBPartitionUtil {
 			DBInspector dbInspector, String tableName)
 		throws Exception {
 
-		if (_controlTableNames.contains(tableName) ||
-			tableName.startsWith("QUARTZ_") ||
-			!dbInspector.hasColumn(tableName, "companyId")) {
+		if (!_isObjectsTable(tableName) &&
+			(_controlTableNames.contains(tableName) ||
+			 tableName.startsWith("QUARTZ_") ||
+			 !dbInspector.hasColumn(tableName, "companyId"))) {
 
+			return true;
+		}
+
+		return false;
+	}
+
+	private static boolean _isObjectsTable(String tableName) {
+		if (tableName.endsWith("_x") || tableName.contains("_x_")) {
 			return true;
 		}
 
