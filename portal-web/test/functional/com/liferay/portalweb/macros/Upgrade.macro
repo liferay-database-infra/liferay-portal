@@ -1753,6 +1753,28 @@ definition {
 		}
 	}
 
+	macro getDatabaseVersion {
+        var mysqlStatement = "SELECT buildNumber FROM Release_ WHERE servletContextName='portal';";
+
+        var databaseVersion = SQL.executeMySQLStatement(mysqlStatement = "${mysqlStatement}");
+
+        echo("## * Database Version is: ${databaseVersion}");
+
+        return "${databaseVersion}";
+    }
+
+    macro getNumberOfRowsFromTable {
+        Variables.assertDefined(parameterList = "${tableName}");
+
+        var mysqlStatement = "SELECT COUNT(*) FROM '${tableName};'";
+
+        var numberOfRows = SQL.executeMySQLStatement(mysqlStatement = "${mysqlStatement}");
+
+        echo("## * Number of rows is: ${numberOfRows}");
+
+        return "${numberOfRows}";
+    }
+
 	macro ignore404URLs {
 		var portalURL = PropsUtil.get("portal.url");
 
