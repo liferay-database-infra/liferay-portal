@@ -12,9 +12,9 @@
  * details.
  */
 
-package com.liferay.commerce.product.internal.upgrade.registry;
+package com.liferay.commerce.price.list.internal.upgrade.registry;
 
-import com.liferay.commerce.product.internal.verify.CommerceProductServiceVerifyProcess;
+import com.liferay.commerce.price.list.internal.verify.CommercePriceListServiceVerifyProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
@@ -27,25 +27,25 @@ import org.osgi.service.component.annotations.Reference;
 @Component(
 	enabled = true, immediate = true, service = UpgradeStepRegistrator.class
 )
-public class CommerceProductServiceInitialUpgradeStepRegistrator
+public class CommercePriceListServiceDataInitializationUpgradeStepRegistrator
 	implements UpgradeStepRegistrator {
 
 	@Override
 	public void register(Registry registry) {
-		registry.registerInitialUpgradeSteps(
+		registry.registerDataInitializationUpgradeSteps(
 			new UpgradeProcess() {
 
 				@Override
 				protected void doUpgrade() throws Exception {
-					_commerceProductServiceVerifyProcess.
-						verifyCPMeasurementUnits();
+					_commercePriceListServiceVerifyProcess.
+						verifyBasePriceLists();
 				}
 
 			});
 	}
 
 	@Reference
-	private CommerceProductServiceVerifyProcess
-		_commerceProductServiceVerifyProcess;
+	private CommercePriceListServiceVerifyProcess
+		_commercePriceListServiceVerifyProcess;
 
 }

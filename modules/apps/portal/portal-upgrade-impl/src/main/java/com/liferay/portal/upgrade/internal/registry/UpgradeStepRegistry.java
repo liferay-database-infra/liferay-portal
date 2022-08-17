@@ -32,8 +32,8 @@ public class UpgradeStepRegistry implements UpgradeStepRegistrator.Registry {
 		_buildNumber = buildNumber;
 	}
 
-	public List<UpgradeStep> getInitialUpgradeSteps() {
-		return _initialUpgradeSteps;
+	public List<UpgradeStep> getDataInitializationUpgradeSteps() {
+		return _dataInitializationUpgradeSteps;
 	}
 
 	public List<UpgradeInfo> getUpgradeInfos() {
@@ -51,8 +51,10 @@ public class UpgradeStepRegistry implements UpgradeStepRegistrator.Registry {
 	}
 
 	@Override
-	public void registerInitialUpgradeSteps(UpgradeStep... upgradeSteps) {
-		Collections.addAll(_initialUpgradeSteps, upgradeSteps);
+	public void registerDataInitializationUpgradeSteps(
+		UpgradeStep... upgradeSteps) {
+
+		Collections.addAll(_dataInitializationUpgradeSteps, upgradeSteps);
 	}
 
 	private void _createUpgradeInfos(
@@ -107,7 +109,8 @@ public class UpgradeStepRegistry implements UpgradeStepRegistrator.Registry {
 	}
 
 	private final int _buildNumber;
-	private final List<UpgradeStep> _initialUpgradeSteps = new ArrayList<>();
+	private final List<UpgradeStep> _dataInitializationUpgradeSteps =
+		new ArrayList<>();
 	private final List<UpgradeInfo> _upgradeInfos = new ArrayList<>();
 
 }

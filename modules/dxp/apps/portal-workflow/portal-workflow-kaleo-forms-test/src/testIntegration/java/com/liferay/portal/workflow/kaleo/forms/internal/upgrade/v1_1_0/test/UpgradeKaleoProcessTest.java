@@ -117,7 +117,7 @@ public class UpgradeKaleoProcessTest {
 				}
 
 				@Override
-				public void registerInitialUpgradeSteps(
+				public void registerDataInitializationUpgradeSteps(
 					UpgradeStep... upgradeSteps) {
 				}
 

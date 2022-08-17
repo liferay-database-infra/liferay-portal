@@ -112,7 +112,7 @@ public class UpgradeStepRegistratorTracker {
 
 			};
 
-			for (UpgradeStep upgradeStep : _initialUpgradeSteps) {
+			for (UpgradeStep upgradeStep : _dataInitializationUpgradeSteps) {
 				try {
 					upgradeStep.upgrade(dbProcessContext);
 				}
@@ -135,12 +135,12 @@ public class UpgradeStepRegistratorTracker {
 		}
 
 		private InitialReleaseServiceTrackerCustomizer(
-			List<UpgradeStep> initialUpgradeSteps) {
+			List<UpgradeStep> dataInitializationUpgradeSteps) {
 
-			_initialUpgradeSteps = initialUpgradeSteps;
+			_dataInitializationUpgradeSteps = dataInitializationUpgradeSteps;
 		}
 
-		private final List<UpgradeStep> _initialUpgradeSteps;
+		private final List<UpgradeStep> _dataInitializationUpgradeSteps;
 
 	}
 
@@ -186,19 +186,19 @@ public class UpgradeStepRegistratorTracker {
 
 			upgradeStepRegistrator.register(upgradeStepRegistry);
 
-			List<UpgradeStep> initialUpgradeSteps =
-				upgradeStepRegistry.getInitialUpgradeSteps();
+			List<UpgradeStep> dataInitializationUpgradeSteps =
+				upgradeStepRegistry.getDataInitializationUpgradeSteps();
 
 			ServiceTracker<Release, Void> releaseServiceTracker;
 
-			if (initialUpgradeSteps.isEmpty()) {
+			if (dataInitializationUpgradeSteps.isEmpty()) {
 				releaseServiceTracker = null;
 			}
 			else {
 				releaseServiceTracker = new ServiceTracker<>(
 					_bundleContext, _createFilter(bundleSymbolicName),
 					new InitialReleaseServiceTrackerCustomizer(
-						initialUpgradeSteps));
+						dataInitializationUpgradeSteps));
 
 				releaseServiceTracker.open();
 			}

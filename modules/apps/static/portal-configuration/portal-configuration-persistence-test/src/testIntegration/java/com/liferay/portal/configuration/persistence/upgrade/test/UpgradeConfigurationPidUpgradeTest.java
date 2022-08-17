@@ -91,7 +91,7 @@ public class UpgradeConfigurationPidUpgradeTest {
 				}
 
 				@Override
-				public void registerInitialUpgradeSteps(
+				public void registerDataInitializationUpgradeSteps(
 					UpgradeStep... upgradeSteps) {
 				}
 

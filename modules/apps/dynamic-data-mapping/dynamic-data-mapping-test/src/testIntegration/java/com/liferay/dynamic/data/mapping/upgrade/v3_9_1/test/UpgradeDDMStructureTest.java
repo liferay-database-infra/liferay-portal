@@ -294,7 +294,7 @@ public class UpgradeDDMStructureTest {
 				}
 
 				@Override
-				public void registerInitialUpgradeSteps(
+				public void registerDataInitializationUpgradeSteps(
 					UpgradeStep... upgradeSteps) {
 				}
 
