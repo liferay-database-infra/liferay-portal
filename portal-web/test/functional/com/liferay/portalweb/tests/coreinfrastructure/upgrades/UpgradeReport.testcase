@@ -182,6 +182,7 @@ definition {
 
     @description = "LPS-154683: Upgrade Report shows errors"
 	@priority = "4"
+    @ignore = "true"
 	test UpgradeReportWithErrorsUpgradeTool {
 		property data.archive.type = "data-archive-portal";
 		property database.types = "mysql";
