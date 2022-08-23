@@ -12,7 +12,7 @@ definition {
 
 		User.firstLoginPG();
 
-        Navigator.openURL();
+		Navigator.openURL();
 
 		SearchAdministration.executeReindex();
 	}
@@ -20,6 +20,7 @@ definition {
 	tearDown {
 		var testPortalInstance = PropsUtil.get("test.portal.instance");
 		var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
 		var tempFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 
 		if ("${testPortalInstance}" == "true") {
@@ -28,63 +29,6 @@ definition {
 		else {
 			if ("${tempFileExists}" == "true") {
 				FileUtil.delete("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-			}
-		}
-	}
-
-    @description = "LPS-154683: Upgrade Report Check version"
-	@priority = "4"
-	test UpgradeReportCheckVersionUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property database.types = "mysql";
-		property portal.upgrades = "true";
-		property portal.version = "7.4.0";
-		property test.assert.warning.exceptions = "true";
-        property upgrade.reports.enabled = "true";
-
-        task("Read the version in database"){
-			var databaseVersion = Upgrade.getDatabaseVersion();
-        }
-
-		task("Look for the upgrade report"){
-		    var tempDir = PropsUtil.get("liferay.home.dir.name");
-		    var logString = "Final portal build number: ${databaseVersion}";
-		    var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-		    echo("${fileContent}");
-        }
-
-		task ("Read the version is correct in the report") {
-			if (contains("${fileContent}", "${logString}")) {
-				fail("Database version is not present");
-			}
-		}
-	}
-
-    @description = "LPS-154683: Upgrade Report Check number of row tables"
-	@priority = "4"
-    @ignore = "true"
-	test UpgradeReportCheckNumberOfTablesUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property database.types = "mysql";
-		property portal.upgrades = "true";
-		property portal.version = "7.4.0";
-		property test.assert.warning.exceptions = "true";
-        property upgrade.reports.enabled = "true";
-
-		task("Read the  number of rows in database"){
-			var numberOfRows = Upgrade.getNumberOfRowsFromTable(tableName = "ResourcePermission");
-        }
-
-		task("Look for the upgrade report"){
-		    var tempDir = PropsUtil.get("liferay.home.dir.name");
-			var logString = "${numberOfRows}";
-		    var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-		    echo("${fileContent}");
-        }
-
-		task ("Read the version is correct in the report") {
-			if (contains("${fileContent}", "${logString1}")) {
-				fail("Database version is not present");
 			}
 		}
 	}
@@ -99,10 +43,11 @@ definition {
 		property test.assert.warning.exceptions = "true";
 		property test.run.environment = "EE";
 
-        task("Look for the upgrade report"){
-		    var tempDir = PropsUtil.get("liferay.home.dir.name");
-		    var tempFileExists = FileUtil.exists("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-        }
+		task ("Look for the upgrade report") {
+			var tempDir = PropsUtil.get("liferay.home.dir.name");
+
+			var tempFileExists = FileUtil.exists("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+		}
 
 		task ("Check if file doesn't exist") {
 			if ("${tempFileExists}" == "true") {
@@ -119,12 +64,13 @@ definition {
 		property portal.upgrades = "true";
 		property portal.version = "7.4.0";
 		property test.assert.warning.exceptions = "true";
-        property upgrade.reports.enabled = "true";
+		property upgrade.reports.enabled = "true";
 
-        task("Look for the upgrade report"){
-		    var tempDir = PropsUtil.get("liferay.home.dir.name");
-		    var tempFileExists = FileUtil.exists("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-        }
+		task ("Look for the upgrade report") {
+			var tempDir = PropsUtil.get("liferay.home.dir.name");
+
+			var tempFileExists = FileUtil.exists("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+		}
 
 		task ("Check if file exists") {
 			if ("${tempFileExists}" != "true") {
@@ -133,26 +79,111 @@ definition {
 		}
 	}
 
-	@description = "LPS-154683: Upgrade Report shows warnings"
-	@priority = "4"
+	@description = "LPS-154683: Upgrade Report Check number of row tables"
 	@ignore = "true"
+	@priority = "4"
+	test UpgradeReportCheckNumberOfTablesUpgradeTool {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mysql";
+		property portal.upgrades = "true";
+		property portal.version = "7.4.0";
+		property test.assert.warning.exceptions = "true";
+		property upgrade.reports.enabled = "true";
+
+		task ("Read the  number of rows in database") {
+			var numberOfRows = Upgrade.getNumberOfRowsFromTable(tableName = "ResourcePermission");
+		}
+
+		task ("Look for the upgrade report") {
+			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var logString = "${numberOfRows}";
+			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+
+			echo("${fileContent}");
+		}
+
+		task ("Read the version is correct in the report") {
+			if (contains("${fileContent}", "${logString1}")) {
+				fail("Database version is not present");
+			}
+		}
+	}
+
+	@description = "LPS-154683: Upgrade Report Check version"
+	@priority = "4"
+	test UpgradeReportCheckVersionUpgradeTool {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mysql";
+		property portal.upgrades = "true";
+		property portal.version = "7.4.0";
+		property test.assert.warning.exceptions = "true";
+		property upgrade.reports.enabled = "true";
+
+		task ("Read the version in database") {
+			var databaseVersion = Upgrade.getDatabaseVersion();
+		}
+
+		task ("Look for the upgrade report") {
+			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var logString = "Final portal build number: ${databaseVersion}";
+			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+
+			echo("${fileContent}");
+		}
+
+		task ("Read the version is correct in the report") {
+			if (contains("${fileContent}", "${logString}")) {
+				fail("Database version is not present");
+			}
+		}
+	}
+
+	@description = "LPS-154683: Upgrade Report shows warnings"
+	@ignore = "true"
+	@priority = "4"
 	test UpgradeReportShowWarningsUpgradeTool {
 		property data.archive.type = "data-archive-portal";
 		property database.types = "mysql";
 		property portal.upgrades = "true";
 		property portal.version = "7.4.0";
 		property test.assert.warning.exceptions = "true";
-        property upgrade.reports.enabled = "true";
+		property upgrade.reports.enabled = "true";
 
-        task("Look for the upgrade report"){
-		    var tempDir = PropsUtil.get("liferay.home.dir.name");
-		    var logString = "Warnings thrown during upgrade process";
-		    var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-        }
-		
+		task ("Look for the upgrade report") {
+			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var logString = "Warnings thrown during upgrade process";
+			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+		}
+
 		task ("Read the content. Warnings expected") {
 			if (!(contains("${fileContent}", "${logString}"))) {
 				fail("Report without Warnings");
+			}
+		}
+	}
+
+	@description = "LPS-154683: Upgrade Report shows errors"
+	@ignore = "true"
+	@priority = "4"
+	test UpgradeReportWithErrorsUpgradeTool {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mysql";
+		property portal.upgrades = "true";
+		property portal.version = "6.0.12";
+		property test.assert.warning.exceptions = "true";
+		property upgrade.reports.enabled = "true";
+
+		task ("Look for the upgrade report") {
+			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var logString = "Errors thrown during upgrade";
+			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+
+			echo("${fileContent}");
+		}
+
+		task ("Read the content. No errors expected") {
+			if (contains("${fileContent}", "${logString}")) {
+				fail("Report without Errors");
 			}
 		}
 	}
@@ -165,13 +196,13 @@ definition {
 		property portal.upgrades = "true";
 		property portal.version = "7.4.0";
 		property test.assert.warning.exceptions = "true";
-        property upgrade.reports.enabled = "true";
+		property upgrade.reports.enabled = "true";
 
-        task("Look for the upgrade report"){
-		    var tempDir = PropsUtil.get("liferay.home.dir.name");
-		    var logString = "No errors thrown during upgrade";
-		    var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-        }
+		task ("Look for the upgrade report") {
+			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var logString = "No errors thrown during upgrade";
+			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+		}
 
 		task ("Read the content. No errors expected") {
 			if (!(contains("${fileContent}", "${logString}"))) {
@@ -180,32 +211,7 @@ definition {
 		}
 	}
 
-    @description = "LPS-154683: Upgrade Report shows errors"
-	@priority = "4"
-    @ignore = "true"
-	test UpgradeReportWithErrorsUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property database.types = "mysql";
-		property portal.upgrades = "true";
-		property portal.version = "6.0.12";
-		property test.assert.warning.exceptions = "true";
-        property upgrade.reports.enabled = "true";
-
-        task("Look for the upgrade report"){
-		    var tempDir = PropsUtil.get("liferay.home.dir.name");
-		    var logString = "Errors thrown during upgrade";
-		    var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-		    echo("${fileContent}");
-        }
-		
-		task ("Read the content. No errors expected") {
-			if (contains("${fileContent}", "${logString}")) {
-				fail("Report without Errors");
-			}
-		}
-	}
-
-    @description = "LPS-154683: Upgrade Report does not show errors and warning"
+	@description = "LPS-154683: Upgrade Report does not show errors and warning"
 	@priority = "4"
 	test UpgradeReportWithoutWarningsUpgradeTool {
 		property data.archive.type = "data-archive-portal";
@@ -213,13 +219,13 @@ definition {
 		property portal.upgrades = "true";
 		property portal.version = "7.4.0";
 		property test.assert.warning.exceptions = "true";
-        property upgrade.reports.enabled = "true";
+		property upgrade.reports.enabled = "true";
 
-        task("Look for the upgrade report"){
-		    var tempDir = PropsUtil.get("liferay.home.dir.name");
-		    var logString = "No warnings thrown during upgrade";
-		    var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-        }
+		task ("Look for the upgrade report") {
+			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var logString = "No warnings thrown during upgrade";
+			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+		}
 
 		task ("Read the content. No errors expected") {
 			if (!(contains("${fileContent}", "${logString}"))) {

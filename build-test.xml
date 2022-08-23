@@ -48,7 +48,7 @@
 upgrade.report.enabled=true</echo>
 				</then>
 			</if>
-			
+
 			<if>
 				<and>
 					<contains string="${app.server.portal.dir}" substring="liferay-portal.war" />
