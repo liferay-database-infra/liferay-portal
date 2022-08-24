@@ -13,8 +13,6 @@ definition {
 		User.firstLoginPG();
 
 		Navigator.openURL();
-
-		SearchAdministration.executeReindex();
 	}
 
 	tearDown {
