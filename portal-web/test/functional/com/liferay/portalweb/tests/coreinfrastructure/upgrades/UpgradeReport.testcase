@@ -19,17 +19,17 @@ definition {
 
 	tearDown {
 		var testPortalInstance = PropsUtil.get("test.portal.instance");
-		var liferayHome = PropsUtil.get("liferay.home.dir.name");
-
-		var tempFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 
 		if ("${testPortalInstance}" == "true") {
 			PortalInstances.tearDownCP();
 		}
-		else {
-			if ("${tempFileExists}" == "true") {
-				FileUtil.delete("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-			}
+
+		var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+		var reportFile = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+
+		if ("${reportFile}" == "true") {
+			FileUtil.delete("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 		}
 	}
 
