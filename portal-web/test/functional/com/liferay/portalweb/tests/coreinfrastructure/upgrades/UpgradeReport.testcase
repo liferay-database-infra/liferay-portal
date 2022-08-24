@@ -2,10 +2,12 @@
 definition {
 
 	property app.server.types = "tomcat";
+	property data.archive.type = "data-archive-portal";
 	property database.types = "mysql";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Upgrades Core";
+	property upgrade.reports.enabled = "true";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -34,12 +36,9 @@ definition {
 	@description = "LPS-154683: Upgrade Report is not created when property is not set to true"
 	@priority = "4"
 	test UpgradeFileDoesNotExistUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property portal.upgrades = "true";
 		property portal.version = "7.4.13";
 		property skip.upgrade-legacy-database = "true";
-		property test.assert.warning.exceptions = "true";
-		property test.run.environment = "EE";
+		property upgrade.reports.enabled = "false";
 
 		task ("Look for the upgrade report") {
 			var tempDir = PropsUtil.get("liferay.home.dir.name");
@@ -57,12 +56,7 @@ definition {
 	@description = "LPS-154683: Upgrade Report is created when property is set to true"
 	@priority = "4"
 	test UpgradeFileExistUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property database.types = "mysql";
-		property portal.upgrades = "true";
 		property portal.version = "7.4.0";
-		property test.assert.warning.exceptions = "true";
-		property upgrade.reports.enabled = "true";
 
 		task ("Look for the upgrade report") {
 			var tempDir = PropsUtil.get("liferay.home.dir.name");
@@ -81,12 +75,7 @@ definition {
 	@ignore = "true"
 	@priority = "4"
 	test UpgradeReportCheckNumberOfTablesUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property database.types = "mysql";
-		property portal.upgrades = "true";
 		property portal.version = "7.4.0";
-		property test.assert.warning.exceptions = "true";
-		property upgrade.reports.enabled = "true";
 
 		task ("Read the  number of rows in database") {
 			var numberOfRows = Upgrade.getNumberOfRowsFromTable(tableName = "ResourcePermission");
@@ -110,12 +99,7 @@ definition {
 	@description = "LPS-154683: Upgrade Report Check version"
 	@priority = "4"
 	test UpgradeReportCheckVersionUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property database.types = "mysql";
-		property portal.upgrades = "true";
 		property portal.version = "7.4.0";
-		property test.assert.warning.exceptions = "true";
-		property upgrade.reports.enabled = "true";
 
 		task ("Read the version in database") {
 			var databaseVersion = Upgrade.getDatabaseVersion();
@@ -140,12 +124,7 @@ definition {
 	@ignore = "true"
 	@priority = "4"
 	test UpgradeReportShowWarningsUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property database.types = "mysql";
-		property portal.upgrades = "true";
 		property portal.version = "7.4.0";
-		property test.assert.warning.exceptions = "true";
-		property upgrade.reports.enabled = "true";
 
 		task ("Look for the upgrade report") {
 			var tempDir = PropsUtil.get("liferay.home.dir.name");
@@ -164,12 +143,7 @@ definition {
 	@ignore = "true"
 	@priority = "4"
 	test UpgradeReportWithErrorsUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property database.types = "mysql";
-		property portal.upgrades = "true";
 		property portal.version = "6.0.12";
-		property test.assert.warning.exceptions = "true";
-		property upgrade.reports.enabled = "true";
 
 		task ("Look for the upgrade report") {
 			var tempDir = PropsUtil.get("liferay.home.dir.name");
@@ -189,12 +163,7 @@ definition {
 	@description = "LPS-154683: Upgrade Report does not show errors and warning"
 	@priority = "4"
 	test UpgradeReportWithoutErrorsUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property database.types = "mysql";
-		property portal.upgrades = "true";
 		property portal.version = "7.4.0";
-		property test.assert.warning.exceptions = "true";
-		property upgrade.reports.enabled = "true";
 
 		task ("Look for the upgrade report") {
 			var tempDir = PropsUtil.get("liferay.home.dir.name");
@@ -212,12 +181,7 @@ definition {
 	@description = "LPS-154683: Upgrade Report does not show errors and warning"
 	@priority = "4"
 	test UpgradeReportWithoutWarningsUpgradeTool {
-		property data.archive.type = "data-archive-portal";
-		property database.types = "mysql";
-		property portal.upgrades = "true";
 		property portal.version = "7.4.0";
-		property test.assert.warning.exceptions = "true";
-		property upgrade.reports.enabled = "true";
 
 		task ("Look for the upgrade report") {
 			var tempDir = PropsUtil.get("liferay.home.dir.name");
