@@ -6,6 +6,7 @@ definition {
 	property database.types = "mysql";
 	property portal.release = "true";
 	property portal.upstream = "true";
+	property portal.version = "7.4.13";
 	property testray.main.component.name = "Upgrades Core";
 	property upgrade.reports.enabled = "true";
 
@@ -34,8 +35,6 @@ definition {
 	@description = "LPS-154683: Upgrade Report is not created when property is not set to true"
 	@priority = "4"
 	test UpgradeFileDoesNotExistUpgradeTool {
-		property portal.version = "7.4.13";
-		property skip.upgrade-legacy-database = "true";
 		property upgrade.reports.enabled = "false";
 
 		task ("Look for the upgrade report") {
@@ -54,8 +53,6 @@ definition {
 	@description = "LPS-154683: Upgrade Report is created when property is set to true"
 	@priority = "4"
 	test UpgradeFileExistUpgradeTool {
-		property portal.version = "7.4.0";
-
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
@@ -73,8 +70,6 @@ definition {
 	@ignore = "true"
 	@priority = "4"
 	test UpgradeReportCheckNumberOfTablesUpgradeTool {
-		property portal.version = "7.4.0";
-
 		task ("Read the  number of rows in database") {
 			var numberOfRows = Upgrade.getNumberOfRowsFromTable(tableName = "ResourcePermission");
 		}
@@ -97,8 +92,6 @@ definition {
 	@description = "LPS-154683: Upgrade Report Check version"
 	@priority = "4"
 	test UpgradeReportCheckVersionUpgradeTool {
-		property portal.version = "7.4.0";
-
 		task ("Read the version in database") {
 			var databaseVersion = Upgrade.getDatabaseVersion();
 		}
@@ -122,8 +115,6 @@ definition {
 	@ignore = "true"
 	@priority = "4"
 	test UpgradeReportShowWarningsUpgradeTool {
-		property portal.version = "7.4.0";
-
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 			var logString = "Warnings thrown during upgrade process";
@@ -161,8 +152,6 @@ definition {
 	@description = "LPS-154683: Upgrade Report does not show errors and warning"
 	@priority = "4"
 	test UpgradeReportWithoutErrorsUpgradeTool {
-		property portal.version = "7.4.0";
-
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 			var logString = "No errors thrown during upgrade";
@@ -179,8 +168,6 @@ definition {
 	@description = "LPS-154683: Upgrade Report does not show errors and warning"
 	@priority = "4"
 	test UpgradeReportWithoutWarningsUpgradeTool {
-		property portal.version = "7.4.0";
-
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 			var logString = "No warnings thrown during upgrade";
