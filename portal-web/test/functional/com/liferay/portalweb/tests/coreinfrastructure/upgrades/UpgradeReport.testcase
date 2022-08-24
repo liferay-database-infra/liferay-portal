@@ -45,7 +45,7 @@ definition {
 
 		task ("Check file doesn't exist") {
 			if ("${reportFileExists}" == "true") {
-				fail("upgrade_report.info found in ${liferayHome}/tools/portal-tools-db-upgrade-client/reports/");
+				fail("Upgrade report found in ${liferayHome}/tools/portal-tools-db-upgrade-client/reports/");
 			}
 		}
 	}
@@ -61,7 +61,7 @@ definition {
 
 		task ("Check if file exists") {
 			if ("${reportFileExists}" != "true") {
-				fail("File Does Not Exist");
+				fail("Upgrade report not found in ${liferayHome}/tools/portal-tools-db-upgrade-client/reports/");
 			}
 		}
 	}
@@ -84,7 +84,7 @@ definition {
 
 		task ("Read the version is correct in the report") {
 			if (contains("${fileContent}", "${logString1}")) {
-				fail("Database version is not present");
+				fail("Database version is not present in upgrade report.");
 			}
 		}
 	}
@@ -106,7 +106,7 @@ definition {
 
 		task ("Read the version is correct in the report") {
 			if (contains("${fileContent}", "${logString}")) {
-				fail("Database version is not present");
+				fail("Database version is not present in upgrade report.");
 			}
 		}
 	}
@@ -123,7 +123,7 @@ definition {
 
 		task ("Read the content. Warnings expected") {
 			if (!(contains("${fileContent}", "${logString}"))) {
-				fail("Report without Warnings");
+				fail("Upgrade report does not contain expected warnings.");
 			}
 		}
 	}
@@ -144,7 +144,7 @@ definition {
 
 		task ("Read the content. No errors expected") {
 			if (contains("${fileContent}", "${logString}")) {
-				fail("Report without Errors");
+				fail("Upgrade report does not contain expected errors.");
 			}
 		}
 	}
@@ -160,7 +160,7 @@ definition {
 
 		task ("Read the content. No errors expected") {
 			if (!(contains("${fileContent}", "${logString}"))) {
-				fail("Report with Errors");
+				fail("Upgrade report contains errors.");
 			}
 		}
 	}
@@ -176,7 +176,7 @@ definition {
 
 		task ("Read the content. No errors expected") {
 			if (!(contains("${fileContent}", "${logString}"))) {
-				fail("Report with Warnings");
+				fail("Upgrade report contains warnings.");
 			}
 		}
 	}
