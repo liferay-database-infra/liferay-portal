@@ -13,8 +13,6 @@ definition {
 		TestCase.setUpPortalInstance();
 
 		User.firstLoginPG();
-
-		Navigator.openURL();
 	}
 
 	tearDown {
