@@ -69,6 +69,7 @@ definition {
 	@description = "LPS-154683: Upgrade Report Check number of row tables"
 	@ignore = "true"
 	@priority = "4"
+	@refactorneeded
 	test UpgradeReportCheckNumberOfTablesUpgradeTool {
 		task ("Read the  number of rows in database") {
 			var numberOfRows = Upgrade.getNumberOfRowsFromTable(tableName = "ResourcePermission");
@@ -113,6 +114,7 @@ definition {
 
 	@description = "LPS-154683: Upgrade Report shows warnings"
 	@ignore = "true"
+	@refactorneeded
 	@priority = "4"
 	test UpgradeReportShowWarningsUpgradeTool {
 		task ("Look for the upgrade report") {
@@ -131,6 +133,7 @@ definition {
 	@description = "LPS-154683: Upgrade Report shows errors"
 	@ignore = "true"
 	@priority = "4"
+	@refactorneeded
 	test UpgradeReportWithErrorsUpgradeTool {
 		property portal.version = "6.0.12";
 
