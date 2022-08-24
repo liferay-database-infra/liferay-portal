@@ -39,14 +39,14 @@ definition {
 		property upgrade.reports.enabled = "false";
 
 		task ("Look for the upgrade report") {
-			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var tempFileExists = FileUtil.exists("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+			var reportFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 		}
 
-		task ("Check if file doesn't exist") {
-			if ("${tempFileExists}" == "true") {
-				fail("File exists");
+		task ("Check file doesn't exist") {
+			if ("${reportFileExists}" == "true") {
+				fail("upgrade_report.info found in ${liferayHome}/tools/portal-tools-db-upgrade-client/reports/");
 			}
 		}
 	}
@@ -57,13 +57,13 @@ definition {
 		property portal.version = "7.4.0";
 
 		task ("Look for the upgrade report") {
-			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var tempFileExists = FileUtil.exists("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+			var reportFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 		}
 
 		task ("Check if file exists") {
-			if ("${tempFileExists}" != "true") {
+			if ("${reportFileExists}" != "true") {
 				fail("File Does Not Exist");
 			}
 		}
@@ -80,9 +80,9 @@ definition {
 		}
 
 		task ("Look for the upgrade report") {
-			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 			var logString = "${numberOfRows}";
-			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 
 			echo("${fileContent}");
 		}
@@ -104,9 +104,9 @@ definition {
 		}
 
 		task ("Look for the upgrade report") {
-			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 			var logString = "Final portal build number: ${databaseVersion}";
-			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 
 			echo("${fileContent}");
 		}
@@ -125,9 +125,9 @@ definition {
 		property portal.version = "7.4.0";
 
 		task ("Look for the upgrade report") {
-			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 			var logString = "Warnings thrown during upgrade process";
-			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 		}
 
 		task ("Read the content. Warnings expected") {
@@ -144,9 +144,9 @@ definition {
 		property portal.version = "6.0.12";
 
 		task ("Look for the upgrade report") {
-			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 			var logString = "Errors thrown during upgrade";
-			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 
 			echo("${fileContent}");
 		}
@@ -164,9 +164,9 @@ definition {
 		property portal.version = "7.4.0";
 
 		task ("Look for the upgrade report") {
-			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 			var logString = "No errors thrown during upgrade";
-			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 		}
 
 		task ("Read the content. No errors expected") {
@@ -182,9 +182,9 @@ definition {
 		property portal.version = "7.4.0";
 
 		task ("Look for the upgrade report") {
-			var tempDir = PropsUtil.get("liferay.home.dir.name");
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 			var logString = "No warnings thrown during upgrade";
-			var fileContent = FileUtil.read("${tempDir}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 		}
 
 		task ("Read the content. No errors expected") {
