@@ -170,16 +170,18 @@ definition {
 
 	@description = "LPS-154683: Upgrade Report does not show errors and warning"
 	@priority = "4"
-	test UpgradeReportWithoutWarningsUpgradeTool {
+	test UpgradeReportWarningsUpgradeTool {
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
-			var logString = "No warnings thrown during upgrade";
+			var logString = "Warnings thrown during upgrade process";
 			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+
+			echo("${fileContent}");
 		}
 
 		task ("Read the content. No errors expected") {
-			if (!(contains("${fileContent}", "${logString}"))) {
-				fail("Upgrade report contains warnings.");
+			if (contains("${fileContent}", "${logString}")) {
+				fail("Upgrade report contains expected warnings.");
 			}
 		}
 	}
