@@ -71,20 +71,18 @@ definition {
 	@priority = "4"
 	@refactorneeded
 	test UpgradeReportCheckNumberOfTablesUpgradeTool {
-		task ("Read the  number of rows in database") {
-			var numberOfRows = Upgrade.getNumberOfRowsFromTable(tableName = "ResourcePermission");
-		}
-
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
-			var logString = "${numberOfRows}";
+
 			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 
 			echo("${fileContent}");
 		}
 
 		task ("Read the version is correct in the report") {
-			if (contains("${fileContent}", "${logString1}")) {
+			var numberOfRows = Upgrade.getNumberOfRowsFromTable(tableName = "ResourcePermission");
+
+			if (contains("${fileContent}", "${numberOfRows}")) {
 				fail("Database version is not present in upgrade report.");
 			}
 		}
@@ -93,20 +91,18 @@ definition {
 	@description = "LPS-154683: Upgrade Report Check version"
 	@priority = "4"
 	test UpgradeReportCheckVersionUpgradeTool {
-		task ("Read the version in database") {
-			var databaseVersion = Upgrade.getDatabaseVersion();
-		}
-
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
-			var logString = "Final portal build number: ${databaseVersion}";
+
 			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 
 			echo("${fileContent}");
 		}
 
 		task ("Read the version is correct in the report") {
-			if (contains("${fileContent}", "${logString}")) {
+			var databaseVersion = Upgrade.getDatabaseVersion();
+
+			if (contains("${fileContent}", "Final portal build number: ${databaseVersion}")) {
 				fail("Database version is not present in upgrade report.");
 			}
 		}
@@ -119,12 +115,12 @@ definition {
 	test UpgradeReportShowWarningsUpgradeTool {
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
-			var logString = "Warnings thrown during upgrade process";
+
 			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 		}
 
 		task ("Read the content. Warnings expected") {
-			if (!(contains("${fileContent}", "${logString}"))) {
+			if (!(contains("${fileContent}", "Warnings thrown during upgrade process"))) {
 				fail("Upgrade report does not contain expected warnings.");
 			}
 		}
@@ -139,14 +135,14 @@ definition {
 
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
-			var logString = "Errors thrown during upgrade";
+
 			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 
 			echo("${fileContent}");
 		}
 
 		task ("Read the content. No errors expected") {
-			if (contains("${fileContent}", "${logString}")) {
+			if (contains("${fileContent}", "Errors thrown during upgrade")) {
 				fail("Upgrade report does not contain expected errors.");
 			}
 		}
@@ -157,12 +153,12 @@ definition {
 	test UpgradeReportWithoutErrorsUpgradeTool {
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
-			var logString = "No errors thrown during upgrade";
+
 			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 		}
 
 		task ("Read the content. No errors expected") {
-			if (!(contains("${fileContent}", "${logString}"))) {
+			if (!(contains("${fileContent}", "No errors thrown during upgrade"))) {
 				fail("Upgrade report contains errors.");
 			}
 		}
@@ -173,14 +169,14 @@ definition {
 	test UpgradeReportWarningsUpgradeTool {
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
-			var logString = "Warnings thrown during upgrade process";
+
 			var fileContent = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
 
 			echo("${fileContent}");
 		}
 
 		task ("Read the content. No errors expected") {
-			if (contains("${fileContent}", "${logString}")) {
+			if (contains("${fileContent}", "Warnings thrown during upgrade process")) {
 				fail("Upgrade report contains expected warnings.");
 			}
 		}
