@@ -17,12 +17,16 @@ package com.liferay.portal.cache.ehcache.internal;
 import com.liferay.portal.cache.AggregatedPortalCacheListener;
 import com.liferay.portal.kernel.cache.PortalCacheListener;
 import com.liferay.portal.kernel.cache.PortalCacheListenerScope;
+import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ProxyFactory;
 import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Arrays;
@@ -47,6 +51,9 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 /**
  * @author Tina Tian
@@ -102,6 +109,7 @@ public class ShardedEhcachePortalCacheTest {
 	@After
 	public void tearDown() {
 		_cacheManager.shutdown();
+		_portalUtilMockedStatic.close();
 	}
 
 	@Test
@@ -177,6 +185,11 @@ public class ShardedEhcachePortalCacheTest {
 	}
 
 	@Test
+	public void testGetDefaultCompanyEhcacheName() {
+		_assertEhcacheName(_TEST_COMPANY_ID_1);
+	}
+
+	@Test
 	public void testGetKeys() {
 		_companyIdThreadLocal.set(_TEST_COMPANY_ID_1);
 
@@ -189,6 +202,16 @@ public class ShardedEhcachePortalCacheTest {
 		Assert.assertEquals(
 			Collections.singletonList(_TEST_KEY_2),
 			_shardedEhcachePortalCache.getKeys());
+	}
+
+	@Test
+	public void testGetNondefaultCompanyEhcacheName() {
+		_assertEhcacheName(_TEST_COMPANY_ID_2);
+	}
+
+	@Test
+	public void testGetSystemCompanyEhcacheName() {
+		_assertEhcacheName(CompanyConstants.SYSTEM);
 	}
 
 	@Test
@@ -544,6 +567,25 @@ public class ShardedEhcachePortalCacheTest {
 			maxEntriesLocalHeap, cacheConfiguration.getMaxEntriesLocalHeap());
 	}
 
+	private void _assertEhcacheName(long companyId) {
+		_portalUtilMockedStatic.when(
+			PortalUtil::getDefaultCompanyId
+		).thenReturn(
+			_TEST_COMPANY_ID_1
+		);
+
+		_companyIdThreadLocal.set(companyId);
+
+		Ehcache ehcache = _shardedEhcachePortalCache.getEhcache();
+
+		Assert.assertEquals(
+			_getShardedCacheName(
+				_TEST_CACHE_NAME,
+				(companyId == _TEST_COMPANY_ID_1) ? CompanyConstants.SYSTEM :
+					companyId),
+			ehcache.getName());
+	}
+
 	private void _assertPortalCacheListener(
 		String cacheName,
 		PortalCacheListener<?, ?>... registeredPortalCacheListeners) {
@@ -630,6 +672,11 @@ public class ShardedEhcachePortalCacheTest {
 	private static ThreadLocal<Long> _companyIdThreadLocal;
 	private static EhcachePortalCacheManager _ehcachePortalCacheManager;
 
+	@Inject
+	private Portal _portal;
+
+	private final MockedStatic<PortalUtil> _portalUtilMockedStatic =
+		Mockito.mockStatic(PortalUtil.class);
 	private ShardedEhcachePortalCache _shardedEhcachePortalCache;
 
 }
