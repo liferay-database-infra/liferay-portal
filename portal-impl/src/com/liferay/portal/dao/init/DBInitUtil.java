@@ -78,7 +78,7 @@ public class DBInitUtil {
 			_init(DBManagerUtil.getDB(), connection);
 
 			PortalInstances.addDefaultCompanyId(
-				PortalInstances.getDefaultCompanyIdBySQL());
+				PortalInstances.getDefaultCompanyIdBySQL(connection));
 		}
 	}
 
