@@ -40,7 +40,6 @@ import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.spring.hibernate.DialectDetector;
 import com.liferay.portal.util.PortalInstances;
-import com.liferay.portal.util.PropsValues;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -68,7 +67,9 @@ public class DBPartitionUtil {
 	public static boolean addDBPartition(long companyId)
 		throws PortalException {
 
-		if (!_DATABASE_PARTITION_ENABLED || (companyId == _defaultCompanyId)) {
+		if (!_DATABASE_PARTITION_ENABLED ||
+			(companyId == PortalInstances.getDefaultCompanyId())) {
+
 			return false;
 		}
 
@@ -148,7 +149,9 @@ public class DBPartitionUtil {
 	public static boolean removeDBPartition(long companyId)
 		throws PortalException {
 
-		if (!_DATABASE_PARTITION_ENABLED || (companyId == _defaultCompanyId)) {
+		if (!_DATABASE_PARTITION_ENABLED ||
+			(companyId == PortalInstances.getDefaultCompanyId())) {
+
 			return false;
 		}
 
@@ -157,29 +160,6 @@ public class DBPartitionUtil {
 		}
 
 		return _dropDBPartition(companyId);
-	}
-
-	public static void setDefaultCompanyId(Connection connection)
-		throws SQLException {
-
-		if (_DATABASE_PARTITION_ENABLED) {
-			try (PreparedStatement preparedStatement =
-					connection.prepareStatement(
-						"select companyId from Company where webId = '" +
-							PropsValues.COMPANY_DEFAULT_WEB_ID + "'");
-				ResultSet resultSet = preparedStatement.executeQuery()) {
-
-				if (resultSet.next()) {
-					_defaultCompanyId = resultSet.getLong(1);
-				}
-			}
-		}
-	}
-
-	public static void setDefaultCompanyId(long companyId) {
-		if (_DATABASE_PARTITION_ENABLED) {
-			_defaultCompanyId = companyId;
-		}
 	}
 
 	public static DataSource wrapDataSource(DataSource dataSource)
@@ -284,7 +264,7 @@ public class DBPartitionUtil {
 
 		try {
 			for (long companyId : PortalInstances.getCompanyIdsBySQL()) {
-				if (companyId == _defaultCompanyId) {
+				if (companyId == PortalInstances.getDefaultCompanyId()) {
 					try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
 							companyId)) {
 
@@ -474,7 +454,7 @@ public class DBPartitionUtil {
 
 	private static String _getSchemaName(long companyId) {
 		if ((companyId == CompanyConstants.SYSTEM) ||
-			(companyId == _defaultCompanyId)) {
+			(companyId == PortalInstances.getDefaultCompanyId())) {
 
 			return _defaultSchemaName;
 		}
@@ -535,7 +515,8 @@ public class DBPartitionUtil {
 			DBInspector dbInspector = new DBInspector(connection);
 
 			if (_isControlTable(dbInspector, tableName) &&
-				!(CompanyThreadLocal.getCompanyId() == _defaultCompanyId)) {
+				!(CompanyThreadLocal.getCompanyId() ==
+					PortalInstances.getDefaultCompanyId())) {
 
 				return true;
 			}
@@ -703,7 +684,9 @@ public class DBPartitionUtil {
 					long[] companyIds = PortalInstances.getCompanyIdsBySQL();
 
 					for (long companyId : companyIds) {
-						if (companyId == _defaultCompanyId) {
+						if (companyId ==
+								PortalInstances.getDefaultCompanyId()) {
+
 							continue;
 						}
 
@@ -741,7 +724,6 @@ public class DBPartitionUtil {
 
 	private static final Set<String> _controlTableNames = new HashSet<>(
 		Arrays.asList("Company", "VirtualHost"));
-	private static volatile long _defaultCompanyId;
 	private static String _defaultSchemaName;
 
 }

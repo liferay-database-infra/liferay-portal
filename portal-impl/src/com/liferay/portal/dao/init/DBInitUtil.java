@@ -79,8 +79,6 @@ public class DBInitUtil {
 
 			PortalInstances.addDefaultCompanyId(
 				PortalInstances.getDefaultCompanyIdBySQL());
-
-			DBPartitionUtil.setDefaultCompanyId(connection);
 		}
 	}
 
