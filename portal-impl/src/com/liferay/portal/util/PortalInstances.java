@@ -73,6 +73,10 @@ public class PortalInstances {
 		_companyIds.addIfAbsent(companyId);
 	}
 
+	public static void addDefaultCompanyId(long companyId) {
+		_companyIds.add(0, companyId);
+	}
+
 	public static long getCompanyId(HttpServletRequest httpServletRequest) {
 		try {
 			return getCompanyId(httpServletRequest, false);

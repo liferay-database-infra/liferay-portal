@@ -217,7 +217,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		company.setModifiedDate(new Date());
 
 		if (webId.equals(PropsValues.COMPANY_DEFAULT_WEB_ID)) {
-			DBPartitionUtil.setDefaultCompanyId(company.getCompanyId());
+			PortalInstances.addDefaultCompanyId(companyId);
 		}
 
 		boolean newDBPartitionAdded = DBPartitionUtil.addDBPartition(
