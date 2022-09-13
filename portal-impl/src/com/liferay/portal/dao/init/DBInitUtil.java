@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.spring.hibernate.DialectDetector;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
+import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsUtil;
 
 import java.sql.Connection;
@@ -75,6 +76,9 @@ public class DBInitUtil {
 
 		try (Connection connection = _dataSource.getConnection()) {
 			_init(DBManagerUtil.getDB(), connection);
+
+			PortalInstances.addDefaultCompanyId(
+				PortalInstances.getDefaultCompanyIdBySQL());
 
 			DBPartitionUtil.setDefaultCompanyId(connection);
 		}
