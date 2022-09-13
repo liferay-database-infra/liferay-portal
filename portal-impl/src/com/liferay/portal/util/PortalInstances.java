@@ -200,22 +200,23 @@ public class PortalInstances {
 	public static long[] getCompanyIdsBySQL() throws SQLException {
 		List<Long> companyIds = new ArrayList<>();
 
-		long defaultCompanyId = getDefaultCompanyIdBySQL();
+		try (Connection connection = DataAccess.getConnection()) {
+			long defaultCompanyId = getDefaultCompanyIdBySQL(connection);
 
-		if (defaultCompanyId != 0) {
-			companyIds.add(defaultCompanyId);
-		}
+			if (defaultCompanyId != 0) {
+				companyIds.add(defaultCompanyId);
+			}
 
-		try (Connection connection = DataAccess.getConnection();
-			PreparedStatement preparedStatement = connection.prepareStatement(
-				_GET_COMPANY_IDS);
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			try (PreparedStatement preparedStatement =
+					connection.prepareStatement(_GET_COMPANY_IDS);
+				ResultSet resultSet = preparedStatement.executeQuery()) {
 
-			while (resultSet.next()) {
-				long companyId = resultSet.getLong("companyId");
+				while (resultSet.next()) {
+					long companyId = resultSet.getLong("companyId");
 
-				if (companyId != defaultCompanyId) {
-					companyIds.add(companyId);
+					if (companyId != defaultCompanyId) {
+						companyIds.add(companyId);
+					}
 				}
 			}
 		}
@@ -227,9 +228,10 @@ public class PortalInstances {
 		return _companyIds.get(0);
 	}
 
-	public static long getDefaultCompanyIdBySQL() throws SQLException {
-		try (Connection connection = DataAccess.getConnection();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+	public static long getDefaultCompanyIdBySQL(Connection connection)
+		throws SQLException {
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId from Company where webId = '" +
 					PropsValues.COMPANY_DEFAULT_WEB_ID + "'");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
