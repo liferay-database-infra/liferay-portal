@@ -68,7 +68,7 @@ public class DBPartitionUtil {
 		throws PortalException {
 
 		if (!_DATABASE_PARTITION_ENABLED ||
-			(companyId == PortalInstances.getDefaultCompanyId())) {
+			(companyId == _getDefaultCompanyId())) {
 
 			return false;
 		}
@@ -150,7 +150,7 @@ public class DBPartitionUtil {
 		throws PortalException {
 
 		if (!_DATABASE_PARTITION_ENABLED ||
-			(companyId == PortalInstances.getDefaultCompanyId())) {
+			(companyId == _getDefaultCompanyId())) {
 
 			return false;
 		}
@@ -264,7 +264,7 @@ public class DBPartitionUtil {
 
 		try {
 			for (long companyId : PortalInstances.getCompanyIdsBySQL()) {
-				if (companyId == PortalInstances.getDefaultCompanyId()) {
+				if (companyId == _getDefaultCompanyId()) {
 					try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
 							companyId)) {
 
@@ -440,6 +440,15 @@ public class DBPartitionUtil {
 			_defaultSchemaName, StringPool.PERIOD, viewName);
 	}
 
+	private static long _getDefaultCompanyId() {
+		try {
+			return PortalInstances.getDefaultCompanyId();
+		}
+		catch (Exception exception) {
+			return CompanyConstants.SYSTEM;
+		}
+	}
+
 	private static String _getDropTableSQL(long companyId, String tableName) {
 		return StringBundler.concat(
 			"drop table if exists ", _getSchemaName(companyId),
@@ -454,7 +463,7 @@ public class DBPartitionUtil {
 
 	private static String _getSchemaName(long companyId) {
 		if ((companyId == CompanyConstants.SYSTEM) ||
-			(companyId == PortalInstances.getDefaultCompanyId())) {
+			(companyId == _getDefaultCompanyId())) {
 
 			return _defaultSchemaName;
 		}
@@ -516,7 +525,7 @@ public class DBPartitionUtil {
 
 			if (_isControlTable(dbInspector, tableName) &&
 				!(CompanyThreadLocal.getCompanyId() ==
-					PortalInstances.getDefaultCompanyId())) {
+					_getDefaultCompanyId())) {
 
 				return true;
 			}
@@ -684,9 +693,7 @@ public class DBPartitionUtil {
 					long[] companyIds = PortalInstances.getCompanyIdsBySQL();
 
 					for (long companyId : companyIds) {
-						if (companyId ==
-								PortalInstances.getDefaultCompanyId()) {
-
+						if (companyId == _getDefaultCompanyId()) {
 							continue;
 						}
 
