@@ -184,8 +184,6 @@ public abstract class BaseDBPartitionTestCase {
 			DBPartitionUtil.class, "_DATABASE_PARTITION_THREAD_POOL_ENABLED",
 			true);
 
-		DBPartitionUtil.setDefaultCompanyId(portal.getDefaultCompanyId());
-
 		DataSource dbPartitionDataSource = _wrapDataSource(
 			DBPartitionUtil.wrapDataSource(_currentDataSource));
 
