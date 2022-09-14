@@ -22,6 +22,7 @@ import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapListene
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.dependency.manager.DependencyManagerSyncUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Release;
@@ -36,6 +37,7 @@ import com.liferay.portal.output.stream.container.constants.OutputStreamContaine
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
 import com.liferay.portal.upgrade.internal.executor.UpgradeExecutor;
 import com.liferay.portal.upgrade.internal.graph.ReleaseGraphManager;
+import com.liferay.portal.upgrade.internal.index.updater.IndexUpdaterUtil;
 import com.liferay.portal.upgrade.internal.registry.UpgradeInfo;
 import com.liferay.portal.upgrade.internal.registry.UpgradeStepRegistratorThreadLocal;
 import com.liferay.portal.util.PropsValues;
@@ -48,6 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Activate;
@@ -144,6 +147,8 @@ public class ReleaseManagerImpl implements ReleaseManager {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
+		_bundleContext = bundleContext;
+
 		_serviceTrackerMap = ServiceTrackerMapFactory.openMultiValueMap(
 			bundleContext, UpgradeStep.class, null,
 			new PropertyServiceReferenceMapper<String, UpgradeStep>(
@@ -193,6 +198,24 @@ public class ReleaseManagerImpl implements ReleaseManager {
 			}
 
 			_activated = true;
+		}
+
+		if (PropsValues.DATABASE_INDEXES_UPDATE_ON_STARTUP) {
+			DependencyManagerSyncUtil.registerSyncCallable(
+				() -> {
+					for (Bundle bundle : _bundleContext.getBundles()) {
+						if (IndexUpdaterUtil.isLiferayServiceBundle(bundle)) {
+							try {
+								IndexUpdaterUtil.updateIndexes(bundle);
+							}
+							catch (Exception exception) {
+								_log.error(exception);
+							}
+						}
+					}
+
+					return null;
+				});
 		}
 	}
 
@@ -259,6 +282,7 @@ public class ReleaseManagerImpl implements ReleaseManager {
 		ReleaseManagerImpl.class);
 
 	private boolean _activated;
+	private BundleContext _bundleContext;
 
 	@Reference
 	private ReleaseLocalService _releaseLocalService;
