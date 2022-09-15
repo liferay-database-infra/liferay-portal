@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.dependency.manager.DependencyManagerSync;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.module.util.ServiceLatch;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
@@ -75,6 +76,8 @@ public class DBInitUtil {
 		}
 
 		try (Connection connection = _dataSource.getConnection()) {
+			PortalInstances.addDefaultCompanyId(CompanyConstants.SYSTEM);
+
 			_init(DBManagerUtil.getDB(), connection);
 
 			PortalInstances.addDefaultCompanyId(
