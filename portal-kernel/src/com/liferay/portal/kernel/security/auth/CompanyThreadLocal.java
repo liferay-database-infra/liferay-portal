@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.TimeZoneThreadLocal;
 
 import java.sql.Connection;
@@ -43,6 +44,16 @@ public class CompanyThreadLocal {
 
 		if (_log.isDebugEnabled()) {
 			_log.debug("getCompanyId " + companyId);
+		}
+
+		return companyId;
+	}
+
+	public static Long getCompanyIdDefaultAsSystem() {
+		Long companyId = getCompanyId();
+
+		if (companyId == PortalUtil.getDefaultCompanyId()) {
+			return CompanyConstants.SYSTEM;
 		}
 
 		return companyId;

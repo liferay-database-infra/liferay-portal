@@ -15,9 +15,7 @@
 package com.liferay.portal.cache.ehcache.internal;
 
 import com.liferay.portal.cache.ehcache.internal.event.PortalCacheCacheEventListener;
-import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
-import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
@@ -49,7 +47,7 @@ public class ShardedEhcachePortalCache<K extends Serializable, V>
 	@Override
 	public Ehcache getEhcache() {
 		return _ehcaches.computeIfAbsent(
-			_ehcacheKey(),
+			CompanyThreadLocal.getCompanyIdDefaultAsSystem(),
 			key -> {
 				String shardedPortalCacheName =
 					getPortalCacheName() + _SHARDED_SEPARATOR + key;
@@ -120,20 +118,6 @@ public class ShardedEhcachePortalCache<K extends Serializable, V>
 	@Override
 	protected void resetEhcache() {
 		_ehcaches.clear();
-	}
-
-	private Long _ehcacheKey() {
-		Long companyId = CompanyThreadLocal.getCompanyId();
-
-		if (companyId == CompanyConstants.SYSTEM) {
-			return companyId;
-		}
-
-		if (companyId == PortalUtil.getDefaultCompanyId()) {
-			return CompanyConstants.SYSTEM;
-		}
-
-		return companyId;
 	}
 
 	private static final String _SHARDED_SEPARATOR = "_SHARDED_SEPARATOR_";
