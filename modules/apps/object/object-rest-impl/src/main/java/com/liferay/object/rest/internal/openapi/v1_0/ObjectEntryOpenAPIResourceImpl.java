@@ -15,6 +15,7 @@
 package com.liferay.object.rest.internal.openapi.v1_0;
 
 import com.liferay.object.constants.ObjectFieldConstants;
+import com.liferay.object.exception.NoSuchObjectDefinitionException;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.model.ObjectRelationship;
@@ -26,6 +27,7 @@ import com.liferay.object.rest.openapi.v1_0.ObjectEntryOpenAPIResource;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.object.service.ObjectRelationshipLocalService;
+import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -136,8 +138,27 @@ public class ObjectEntryOpenAPIResourceImpl
 			long objectDefinitionId, String type, UriInfo uriInfo)
 		throws Exception {
 
-		_objectDefinition = _objectDefinitionLocalService.getObjectDefinition(
+		_objectDefinition = _objectDefinitionLocalService.fetchObjectDefinition(
 			objectDefinitionId);
+
+		if (_objectDefinition == null) {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					ObjectDefinition objectDefinition =
+						_objectDefinitionLocalService.fetchObjectDefinition(
+							objectDefinitionId);
+
+					if (objectDefinition != null) {
+						_objectDefinition = objectDefinition;
+					}
+				});
+		}
+
+		if (_objectDefinition == null) {
+			throw new NoSuchObjectDefinitionException(
+				"Unable to find object definition with ID " +
+					objectDefinitionId);
+		}
 
 		Map<ObjectRelationship, ObjectDefinition> relatedObjectDefinitionsMap =
 			_getRelatedObjectDefinitionsMap();
