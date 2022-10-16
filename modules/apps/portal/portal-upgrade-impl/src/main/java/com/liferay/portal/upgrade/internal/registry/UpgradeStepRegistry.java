@@ -14,6 +14,7 @@
 
 package com.liferay.portal.upgrade.internal.registry;
 
+import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
@@ -46,8 +47,8 @@ public class UpgradeStepRegistry implements UpgradeStepRegistrator.Registry {
 			if (_upgradeInfos.isEmpty()) {
 				return Arrays.asList(
 					new UpgradeInfo(
-						"0.0.0", "1.0.0", _buildNumber,
-						new DummyUpgradeStep()));
+						"0.0.0", ReleaseConstants.INITIAL_SCHEMA_VERSION,
+						_buildNumber, new DummyUpgradeStep()));
 			}
 
 			return ListUtil.concat(
