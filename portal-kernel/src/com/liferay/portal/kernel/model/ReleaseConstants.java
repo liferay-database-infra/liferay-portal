@@ -25,6 +25,8 @@ public class ReleaseConstants {
 
 	public static final String DEFAULT_SERVLET_CONTEXT_NAME = "portal";
 
+	public static final String INITIAL_SCHEMA_VERSION = "1.0.0";
+
 	public static final int STATE_GOOD = 0;
 
 	public static final int STATE_UPGRADE_FAILURE = 1;
