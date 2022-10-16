@@ -241,6 +241,7 @@ public class VerifyProcessTrackerOSGiCommands {
 					_counterLocalService.increment());
 
 				release.setServletContextName(verifyProcessName);
+				release.setSchemaVersion("1.0.0");
 				release.setVerified(false);
 			}
 
