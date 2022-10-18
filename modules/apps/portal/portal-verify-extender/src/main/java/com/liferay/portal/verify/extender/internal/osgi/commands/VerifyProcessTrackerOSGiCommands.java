@@ -176,11 +176,15 @@ public class VerifyProcessTrackerOSGiCommands {
 				public VerifyProcess addingService(
 					ServiceReference<VerifyProcess> serviceReference) {
 
+					boolean initialDeploymentProperty = GetterUtil.getBoolean(
+						serviceReference.getProperty("initial.deployment"));
+
 					VerifyProcess verifyProcess = _bundleContext.getService(
 						serviceReference);
 
-					if (upgrading ||
-						_isInitialDeployment(serviceReference, verifyProcess)) {
+					if ((initialDeploymentProperty &&
+						 _isInitialDeployment(verifyProcess)) ||
+						(!initialDeploymentProperty && upgrading)) {
 
 						_executeVerifyProcesses(
 							Collections.singletonList(verifyProcess),
@@ -294,16 +298,7 @@ public class VerifyProcessTrackerOSGiCommands {
 		return verifyProcesses;
 	}
 
-	private boolean _isInitialDeployment(
-		ServiceReference<VerifyProcess> serviceReference,
-		VerifyProcess verifyProcess) {
-
-		if (!GetterUtil.getBoolean(
-				serviceReference.getProperty("initial.deployment"))) {
-
-			return false;
-		}
-
+	private boolean _isInitialDeployment(VerifyProcess verifyProcess) {
 		Bundle bundle = FrameworkUtil.getBundle(verifyProcess.getClass());
 
 		if (_releaseLocalService.fetchRelease(bundle.getSymbolicName()) ==
