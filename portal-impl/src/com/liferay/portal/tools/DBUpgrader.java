@@ -49,6 +49,8 @@ import com.liferay.portal.verify.VerifyProperties;
 import com.liferay.portlet.documentlibrary.store.StoreFactory;
 import com.liferay.util.dao.orm.CustomSQLUtil;
 
+import java.io.File;
+
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -123,6 +125,8 @@ public class DBUpgrader {
 			PortalClassPathUtil.initializeClassPaths(null);
 
 			InitUtil.initWithSpring(true, false);
+
+			_checkPropertiesFiles();
 
 			StartupHelperUtil.printPatchLevel();
 
@@ -274,6 +278,35 @@ public class DBUpgrader {
 		}
 
 		StartupHelperUtil.initResourceActions();
+	}
+
+	private static void _checkPropertiesFiles() {
+		String userHome = System.getProperty("user.home");
+
+		File userHomePropsFile = new File(userHome + "/portal-ext.properties");
+
+		if (userHomePropsFile.exists()) {
+			_log.error(
+				StringBundler.concat(
+					"portal-ext.properties file detected in user home ",
+					"directory. Please remove prior to running the upgrade ",
+					"process to prevent conflicts."));
+		}
+
+		File liferayHomePropsFile = new File(
+			PropsValues.LIFERAY_HOME + "/portal-ext.properties");
+
+		if (liferayHomePropsFile.exists()) {
+			_log.error(
+				StringBundler.concat(
+					"portal-ext.properties file detected in Liferay home ",
+					"directory. Please remove prior to running the upgrade ",
+					"process to prevent conflicts."));
+		}
+
+		if (userHomePropsFile.exists() || liferayHomePropsFile.exists()) {
+			System.exit(1);
+		}
 	}
 
 	private static int _getBuildNumberForMissedUpgradeProcesses(int buildNumber)
