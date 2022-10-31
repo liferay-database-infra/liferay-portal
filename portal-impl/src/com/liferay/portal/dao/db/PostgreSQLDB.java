@@ -237,7 +237,7 @@ public class PostgreSQLDB extends BaseDB {
 				else if (line.contains(getTemplateBlob())) {
 					Matcher matcher = _oidTypePattern.matcher(line);
 
-					if (matcher.matches()) {
+					if (matcher.find()) {
 						String[] tokens = StringUtil.split(line, ' ');
 
 						createRulesSQLSB.append(StringPool.NEW_LINE);
