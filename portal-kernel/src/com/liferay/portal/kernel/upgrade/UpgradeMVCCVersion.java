@@ -16,7 +16,6 @@ package com.liferay.portal.kernel.upgrade;
 
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.util.LoggingTimer;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.UnsecureSAXReaderUtil;
@@ -39,12 +38,6 @@ public class UpgradeMVCCVersion extends UpgradeProcess {
 	public void upgradeMVCCVersion(
 			DatabaseMetaData databaseMetaData, String tableName)
 		throws Exception {
-
-		for (String excludeTableName : getExcludedTableNames()) {
-			if (StringUtil.equalsIgnoreCase(excludeTableName, tableName)) {
-				return;
-			}
-		}
 
 		DBInspector dbInspector = new DBInspector(connection);
 
@@ -95,10 +88,6 @@ public class UpgradeMVCCVersion extends UpgradeProcess {
 		Element rootElement = document.getRootElement();
 
 		return rootElement.elements("class");
-	}
-
-	protected String[] getExcludedTableNames() {
-		return new String[0];
 	}
 
 	protected String[] getModuleTableNames() {
