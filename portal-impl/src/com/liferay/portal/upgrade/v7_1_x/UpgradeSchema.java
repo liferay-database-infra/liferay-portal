@@ -14,6 +14,7 @@
 
 package com.liferay.portal.upgrade.v7_1_x;
 
+import com.liferay.portal.kernel.upgrade.UpgradeMVCCVersion;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
 /**
@@ -25,7 +26,15 @@ public class UpgradeSchema extends UpgradeProcess {
 	protected void doUpgrade() throws Exception {
 		upgrade(new UpgradeExternalReferenceCode());
 
-		upgrade(new UpgradeMVCCVersion());
+		upgrade(
+			new UpgradeMVCCVersion() {
+
+				@Override
+				protected String[] getModuleTableNames() {
+					return new String[] {"Subscription"};
+				}
+
+			});
 	}
 
 }

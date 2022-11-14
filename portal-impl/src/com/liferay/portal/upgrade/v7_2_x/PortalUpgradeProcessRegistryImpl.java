@@ -15,6 +15,7 @@
 package com.liferay.portal.upgrade.v7_2_x;
 
 import com.liferay.portal.kernel.upgrade.DummyUpgradeProcess;
+import com.liferay.portal.kernel.upgrade.UpgradeMVCCVersion;
 import com.liferay.portal.kernel.upgrade.util.UpgradeModulesFactory;
 import com.liferay.portal.kernel.upgrade.util.UpgradeVersionTreeMap;
 import com.liferay.portal.kernel.version.Version;

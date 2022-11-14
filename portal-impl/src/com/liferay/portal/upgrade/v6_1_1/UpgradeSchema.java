@@ -14,6 +14,7 @@
 
 package com.liferay.portal.upgrade.v6_1_1;
 
+import com.liferay.portal.kernel.upgrade.UpgradeMVCCVersion;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
 /**
