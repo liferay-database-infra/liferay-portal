@@ -162,8 +162,10 @@ public class LayoutPageTemplateServiceUpgradeStepRegistrator
 				ResourcePermissionUpgradeProcess(
 					_resourcePermissionLocalService));
 
+		registry.register("3.4.3", "3.4.4", new DummyUpgradeStep());
+
 		registry.register(
-			"3.4.3", "3.5.0",
+			"3.4.4", "3.5.0",
 			new com.liferay.layout.page.template.internal.upgrade.v3_5_0.
 				LayoutPageTemplateStructureRelUpgradeProcess());
 
