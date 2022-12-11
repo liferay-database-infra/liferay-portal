@@ -185,8 +185,15 @@ public class VerifyProcessTrackerOSGiCommands {
 					Release release = _releaseLocalService.fetchRelease(
 						verifyProcessName);
 
-					if (((release != null) && !release.isVerified()) ||
-						_isInitialDeployment(serviceReference, verifyProcess) ||
+					boolean initialDeployment = _isInitialDeployment(
+						verifyProcess);
+
+					if ((!initialDeployment && (release != null) &&
+						 !release.isVerified()) ||
+						(GetterUtil.getBoolean(
+							serviceReference.getProperty(
+								"initial.deployment")) &&
+						 initialDeployment) ||
 						(upgrading &&
 						 GetterUtil.getBoolean(
 							 serviceReference.getProperty(
@@ -296,16 +303,7 @@ public class VerifyProcessTrackerOSGiCommands {
 		return verifyProcesses;
 	}
 
-	private boolean _isInitialDeployment(
-		ServiceReference<VerifyProcess> serviceReference,
-		VerifyProcess verifyProcess) {
-
-		if (!GetterUtil.getBoolean(
-				serviceReference.getProperty("initial.deployment"))) {
-
-			return false;
-		}
-
+	private boolean _isInitialDeployment(VerifyProcess verifyProcess) {
 		Bundle bundle = FrameworkUtil.getBundle(verifyProcess.getClass());
 
 		if (_releaseLocalService.fetchRelease(bundle.getSymbolicName()) ==
