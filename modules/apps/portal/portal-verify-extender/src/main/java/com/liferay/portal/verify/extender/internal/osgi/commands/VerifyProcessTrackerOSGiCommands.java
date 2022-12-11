@@ -118,7 +118,7 @@ public class VerifyProcessTrackerOSGiCommands {
 		TeeLoggingUtil.runWithTeeLogging(
 			() -> _executeVerifyProcesses(
 				_getVerifyProcesses(_serviceTrackerMap, verifyProcessName),
-				verifyProcessName, true));
+				verifyProcessName));
 	}
 
 	@Descriptor("Execute all verify processes")
@@ -129,7 +129,7 @@ public class VerifyProcessTrackerOSGiCommands {
 					_executeVerifyProcesses(
 						_getVerifyProcesses(
 							_serviceTrackerMap, verifyProcessName),
-						verifyProcessName, true);
+						verifyProcessName);
 				}
 			});
 	}
@@ -179,15 +179,18 @@ public class VerifyProcessTrackerOSGiCommands {
 					VerifyProcess verifyProcess = _bundleContext.getService(
 						serviceReference);
 
-					if (upgrading ||
+					String verifyProcessName = String.valueOf(
+						serviceReference.getProperty("verify.process.name"));
+
+					Release release = _releaseLocalService.fetchRelease(
+						verifyProcessName);
+
+					if (((release != null) && !release.isVerified()) ||
 						_isInitialDeployment(serviceReference, verifyProcess)) {
 
 						_executeVerifyProcesses(
 							Collections.singletonList(verifyProcess),
-							String.valueOf(
-								serviceReference.getProperty(
-									"verify.process.name")),
-							false);
+							verifyProcessName);
 					}
 
 					return verifyProcess;
@@ -216,8 +219,7 @@ public class VerifyProcessTrackerOSGiCommands {
 	}
 
 	private void _executeVerifyProcesses(
-		List<VerifyProcess> verifyProcesses, String verifyProcessName,
-		boolean force) {
+		List<VerifyProcess> verifyProcesses, String verifyProcessName) {
 
 		NotificationThreadLocal.setEnabled(false);
 		StagingAdvicesThreadLocal.setEnabled(false);
@@ -226,10 +228,6 @@ public class VerifyProcessTrackerOSGiCommands {
 		try {
 			Release release = _releaseLocalService.fetchRelease(
 				verifyProcessName);
-
-			if ((release != null) && !force && release.isVerified()) {
-				return;
-			}
 
 			if (release == null) {
 
