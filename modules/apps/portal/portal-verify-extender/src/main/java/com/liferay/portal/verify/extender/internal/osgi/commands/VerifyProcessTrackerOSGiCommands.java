@@ -166,8 +166,6 @@ public class VerifyProcessTrackerOSGiCommands {
 
 		_bundleContext = bundleContext;
 
-		boolean upgrading = StartupHelperUtil.isUpgrading();
-
 		_serviceTrackerMap = ServiceTrackerMapFactory.openMultiValueMap(
 			_bundleContext, VerifyProcess.class, "verify.process.name",
 			new EagerServiceTrackerCustomizer<VerifyProcess, VerifyProcess>() {
@@ -194,7 +192,7 @@ public class VerifyProcessTrackerOSGiCommands {
 							serviceReference.getProperty(
 								"initial.deployment")) &&
 						 initialDeployment) ||
-						(upgrading &&
+						(StartupHelperUtil.isUpgrading() &&
 						 GetterUtil.getBoolean(
 							 serviceReference.getProperty(
 								 "run.on.portal.upgrade")))) {
