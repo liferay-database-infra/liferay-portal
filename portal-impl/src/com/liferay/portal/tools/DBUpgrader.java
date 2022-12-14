@@ -151,7 +151,7 @@ public class DBUpgrader {
 			StoreFactory.getStore();
 		}
 		catch (Exception exception) {
-			_log.error(exception);
+			_log.error(exception, exception);
 
 			result = "Failed";
 		}
