@@ -41,9 +41,9 @@ public class Database {
 			"com.mysql.cj.jdbc.Driver", "jdbc:mysql://", "localhost", 0,
 			"lportal",
 			"?characterEncoding=UTF-8&dontTrackOpenResources=true" +
-				"&holdResultsOpenOverStatementClose=true&serverTimezone=GMT" +
-					"&useFastDateParsing=false&useUnicode=true" +
-						"&rewriteBatchedStatements=true");
+				"&holdResultsOpenOverStatementClose=true" +
+					"&rewriteBatchedStatements=true&serverTimezone=GMT" +
+						"&useFastDateParsing=false&useUnicode=true");
 	}
 
 	public static Database getOracleDataSource() {

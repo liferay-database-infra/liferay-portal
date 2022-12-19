@@ -15887,7 +15887,7 @@ url=${short.hostname}:8080</echo>
 			<then>
 				<antcall inheritAll="false" target="prepare-portal-ext-properties">
 					<param name="database.mysql.schema" value="lportal" />
-					<param name="database.mysql.url" value="jdbc:mysql://${database.host}:3307/${database.mysql.schema}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true&amp;rewriteBatchedStatements=true" />
+					<param name="database.mysql.url" value="jdbc:mysql://${database.host}:3307/${database.mysql.schema}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;rewriteBatchedStatements=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
 					<param name="database.type" value="mysql" />
 				</antcall>
 			</then>
