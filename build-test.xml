@@ -15887,7 +15887,7 @@ url=${short.hostname}:8080</echo>
 			<then>
 				<antcall inheritAll="false" target="prepare-portal-ext-properties">
 					<param name="database.mysql.schema" value="lportal" />
-					<param name="database.mysql.url" value="jdbc:mysql://${database.host}:3307/${database.mysql.schema}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
+					<param name="database.mysql.url" value="jdbc:mysql://${database.host}:3307/${database.mysql.schema}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true&amp;rewriteBatchedStatements=true" />
 					<param name="database.type" value="mysql" />
 				</antcall>
 			</then>
@@ -16014,7 +16014,7 @@ url=${short.hostname}:8080</echo>
 			<then>
 				<antcall inheritAll="false" target="prepare-portal-ext-properties">
 					<param name="database.postgresql.schema" value="lportal" />
-					<param name="database.postgresql.url" value="jdbc:postgresql://localhost:5433/${database.postgresql.schema}" />
+					<param name="database.postgresql.url" value="jdbc:postgresql://localhost:5433/${database.postgresql.schema}?reWriteBatchedInserts=true" />
 					<param name="database.type" value="postgresql" />
 				</antcall>
 			</then>
@@ -16083,7 +16083,7 @@ url=${short.hostname}:8080</echo>
 					<param name="database.sqlserver.host" value="${database.host}_sqlserver" />
 					<param name="database.sqlserver.password" value="Liferay123" />
 					<param name="database.sqlserver.schema" value="lportal" />
-					<param name="database.sqlserver.url" value="jdbc:sqlserver://${database.host}:1434;databaseName=${database.sqlserver.schema}" />
+					<param name="database.sqlserver.url" value="jdbc:sqlserver://${database.host}:1434;databaseName=${database.sqlserver.schema}?useBulkCopyForBatchInsert=true" />
 					<param name="database.sqlserver.username" value="sa" />
 					<param name="database.type" value="sqlserver" />
 				</antcall>

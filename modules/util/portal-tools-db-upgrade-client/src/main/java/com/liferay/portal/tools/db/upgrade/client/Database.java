@@ -42,7 +42,8 @@ public class Database {
 			"lportal",
 			"?characterEncoding=UTF-8&dontTrackOpenResources=true" +
 				"&holdResultsOpenOverStatementClose=true&serverTimezone=GMT" +
-					"&useFastDateParsing=false&useUnicode=true");
+					"&useFastDateParsing=false&useUnicode=true" +
+						"&rewriteBatchedStatements=true");
 	}
 
 	public static Database getOracleDataSource() {
@@ -54,13 +55,13 @@ public class Database {
 	public static Database getPostgreSQLDatabase() {
 		return new Database(
 			"org.postgresql.Driver", "jdbc:postgresql://", "localhost", 5432,
-			"lportal", "");
+			"lportal", "?reWriteBatchedInserts=true");
 	}
 
 	public static Database getSQLServerDatabase() {
 		return new Database(
 			"com.microsoft.sqlserver.jdbc.SQLServerDriver", "jdbc:sqlserver://",
-			"localhost", 0, "lportal", "");
+			"localhost", 0, "lportal", "?useBulkCopyForBatchInsert=true");
 	}
 
 	public static Database getSybaseDatabase() {
