@@ -61,7 +61,7 @@ public class Database {
 	public static Database getSQLServerDatabase() {
 		return new Database(
 			"com.microsoft.sqlserver.jdbc.SQLServerDriver", "jdbc:sqlserver://",
-			"localhost", 0, "lportal", "?useBulkCopyForBatchInsert=true");
+			"localhost", 0, "lportal", ";useBulkCopyForBatchInsert=true");
 	}
 
 	public static Database getSybaseDatabase() {
