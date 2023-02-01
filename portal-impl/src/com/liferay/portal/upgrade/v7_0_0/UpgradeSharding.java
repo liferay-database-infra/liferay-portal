@@ -38,8 +38,6 @@ import com.liferay.portal.upgrade.v7_0_0.util.ServiceComponentTable;
 import com.liferay.portal.upgrade.v7_0_0.util.VirtualHostTable;
 import com.liferay.portal.util.PropsUtil;
 
-import java.io.IOException;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -93,7 +91,7 @@ public class UpgradeSharding extends UpgradeProcess {
 				}
 			}
 
-			dropTable(targetConnection, tableName);
+			dropTable(tableName);
 		}
 		catch (SQLException sqlException) {
 			if (_log.isInfoEnabled()) {
@@ -197,16 +195,6 @@ public class UpgradeSharding extends UpgradeProcess {
 		}
 
 		copyControlTables(shardNames);
-	}
-
-	protected void dropTable(Connection connection, String tableName)
-		throws IOException, SQLException {
-
-		runSQL(connection, "drop table " + tableName);
-
-		if (_log.isDebugEnabled()) {
-			_log.debug("Deleted table " + tableName);
-		}
 	}
 
 	protected List<Long> getCompanyIds(String shardName) throws Exception {
