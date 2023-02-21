@@ -154,7 +154,7 @@ public class UpgradeProcessFactoryTest {
 	}
 
 	@Test
-	public void testUtilOnPostUgpradeSteps() throws Exception {
+	public void testUtilOnPostUpgradeSteps() throws Exception {
 		UpgradeProcess upgradeProcess = new UpgradeProcess() {
 
 			@Override
@@ -186,7 +186,7 @@ public class UpgradeProcessFactoryTest {
 	}
 
 	@Test
-	public void testUtilOnPreAndPostUgpradeSteps() throws Exception {
+	public void testUtilOnPreAndPostUpgradeSteps() throws Exception {
 		UpgradeProcess upgradeProcess = new UpgradeProcess() {
 
 			@Override
@@ -227,7 +227,7 @@ public class UpgradeProcessFactoryTest {
 	}
 
 	@Test
-	public void testUtilOnPreUgpradeSteps() throws Exception {
+	public void testUtilOnPreUpgradeSteps() throws Exception {
 		UpgradeProcess upgradeProcess = new UpgradeProcess() {
 
 			@Override
