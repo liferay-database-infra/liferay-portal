@@ -410,7 +410,7 @@ public class BaseDBProcessTest extends BaseDBProcess {
 	}
 
 	@Test
-	public void testDropNonExistentTable() throws Exception {
+	public void testDropNonexistentTable() throws Exception {
 		dropTable(_TABLE_NAME);
 	}
 
