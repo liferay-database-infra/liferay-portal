@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
 import com.liferay.portal.kernel.upgrade.util.UpgradeProcessUtil;
+import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.version.Version;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
 import com.liferay.portal.upgrade.internal.executor.UpgradeExecutor;
@@ -33,6 +34,7 @@ import com.liferay.portal.upgrade.internal.release.ReleaseManagerImpl;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -153,8 +155,12 @@ public class ReleaseManagerOSGiCommands {
 		StringBundler sb = new StringBundler(2 * bundleSymbolicNames.size());
 
 		for (String bundleSymbolicName : bundleSymbolicNames) {
-			sb.append(list(bundleSymbolicName));
-			sb.append(StringPool.NEW_LINE);
+			try (LoggingTimer loggingTimer = new LoggingTimer(
+					bundleSymbolicName)) {
+
+				sb.append(list(bundleSymbolicName));
+				sb.append(StringPool.NEW_LINE);
+			}
 		}
 
 		sb.setIndex(sb.index() - 1);
@@ -228,13 +234,17 @@ public class ReleaseManagerOSGiCommands {
 	private String _check(boolean showUpgradeSteps) {
 		StringBundler sb = new StringBundler(3);
 
-		sb.append(_checkPortal(showUpgradeSteps));
+		try (LoggingTimer loggingTimer = new LoggingTimer("_checkPortal method")) {
+			sb.append(_checkPortal(showUpgradeSteps));
+		}
 
 		if (sb.length() > 0) {
 			sb.append(StringPool.NEW_LINE);
 		}
 
-		sb.append(_checkModules(showUpgradeSteps));
+		try (LoggingTimer loggingTimer = new LoggingTimer("_checkModules method")) {
+			sb.append(_checkModules(showUpgradeSteps));
+		}
 
 		return sb.toString();
 	}
@@ -246,56 +256,64 @@ public class ReleaseManagerOSGiCommands {
 			_releaseManagerImpl.getBundleSymbolicNames();
 
 		for (String bundleSymbolicName : bundleSymbolicNames) {
-			String schemaVersionString =
-				_releaseManagerImpl.getSchemaVersionString(bundleSymbolicName);
+			try (LoggingTimer loggingTimer = new LoggingTimer(bundleSymbolicName)) {
+				String schemaVersionString =
+					_releaseManagerImpl.getSchemaVersionString(
+						bundleSymbolicName);
 
-			ReleaseGraphManager releaseGraphManager = new ReleaseGraphManager(
-				_releaseManagerImpl.getUpgradeInfos(bundleSymbolicName));
+				ReleaseGraphManager releaseGraphManager =
+					new ReleaseGraphManager(
+						_releaseManagerImpl.getUpgradeInfos(
+							bundleSymbolicName));
 
-			List<List<UpgradeInfo>> upgradeInfosList =
-				releaseGraphManager.getUpgradeInfosList(schemaVersionString);
+				List<List<UpgradeInfo>> upgradeInfosList =
+					releaseGraphManager.getUpgradeInfosList(
+						schemaVersionString);
 
-			int size = upgradeInfosList.size();
+				int size = upgradeInfosList.size();
 
-			if (size > 1) {
-				sb.append("There are ");
-				sb.append(size);
-				sb.append(" possible end nodes for ");
-				sb.append(schemaVersionString);
+				if (size > 1) {
+					sb.append("There are ");
+					sb.append(size);
+					sb.append(" possible end nodes for ");
+					sb.append(schemaVersionString);
+					sb.append(StringPool.NEW_LINE);
+				}
+
+				if (size == 0) {
+					_log.info(
+						"There are not possible end nodes for this module:");
+					continue;
+				}
+
+				List<UpgradeInfo> upgradeInfos = upgradeInfosList.get(0);
+
+				UpgradeInfo lastUpgradeInfo = upgradeInfos.get(
+					upgradeInfos.size() - 1);
+
+				sb.append(
+					_getModulePendingUpgradeMessage(
+						bundleSymbolicName, schemaVersionString,
+						lastUpgradeInfo.getToSchemaVersionString()));
+
+				if (showUpgradeSteps) {
+					sb.append(StringPool.COLON);
+
+					for (UpgradeInfo upgradeInfo : upgradeInfos) {
+						UpgradeStep upgradeStep = upgradeInfo.getUpgradeStep();
+
+						sb.append(StringPool.NEW_LINE);
+						sb.append(StringPool.TAB);
+						sb.append(
+							_getPendingUpgradeProcessMessage(
+								upgradeStep.getClass(),
+								upgradeInfo.getFromSchemaVersionString(),
+								upgradeInfo.getToSchemaVersionString()));
+					}
+				}
+
 				sb.append(StringPool.NEW_LINE);
 			}
-
-			if (size == 0) {
-				continue;
-			}
-
-			List<UpgradeInfo> upgradeInfos = upgradeInfosList.get(0);
-
-			UpgradeInfo lastUpgradeInfo = upgradeInfos.get(
-				upgradeInfos.size() - 1);
-
-			sb.append(
-				_getModulePendingUpgradeMessage(
-					bundleSymbolicName, schemaVersionString,
-					lastUpgradeInfo.getToSchemaVersionString()));
-
-			if (showUpgradeSteps) {
-				sb.append(StringPool.COLON);
-
-				for (UpgradeInfo upgradeInfo : upgradeInfos) {
-					UpgradeStep upgradeStep = upgradeInfo.getUpgradeStep();
-
-					sb.append(StringPool.NEW_LINE);
-					sb.append(StringPool.TAB);
-					sb.append(
-						_getPendingUpgradeProcessMessage(
-							upgradeStep.getClass(),
-							upgradeInfo.getFromSchemaVersionString(),
-							upgradeInfo.getToSchemaVersionString()));
-				}
-			}
-
-			sb.append(StringPool.NEW_LINE);
 		}
 
 		return sb.toString();
@@ -328,22 +346,24 @@ public class ReleaseManagerOSGiCommands {
 
 					for (SortedMap.Entry<Version, UpgradeProcess> entry :
 							pendingUpgradeProcesses.entrySet()) {
+						try (LoggingTimer loggingTimer = new LoggingTimer(
+							entry.getValue().getClass().toString())) {
+							sb.append(StringPool.NEW_LINE);
+							sb.append(StringPool.TAB);
 
-						sb.append(StringPool.NEW_LINE);
-						sb.append(StringPool.TAB);
+							UpgradeProcess upgradeProcess = entry.getValue();
+							Version version = entry.getKey();
 
-						UpgradeProcess upgradeProcess = entry.getValue();
-						Version version = entry.getKey();
+							sb.append(
+								_getPendingUpgradeProcessMessage(
+									upgradeProcess.getClass(),
+									currentSchemaVersion.toString(),
+									version.toString()));
 
-						sb.append(
-							_getPendingUpgradeProcessMessage(
-								upgradeProcess.getClass(),
-								currentSchemaVersion.toString(),
-								version.toString()));
+							sb.append(StringPool.NEW_LINE);
 
-						sb.append(StringPool.NEW_LINE);
-
-						currentSchemaVersion = version;
+							currentSchemaVersion = version;
+						}
 					}
 				}
 

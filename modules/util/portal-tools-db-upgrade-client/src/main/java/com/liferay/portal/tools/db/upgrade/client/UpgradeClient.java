@@ -35,11 +35,16 @@ import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -233,8 +238,28 @@ public class UpgradeClient {
 			ioException.printStackTrace();
 		}
 
+		long millis = System.currentTimeMillis();
+
+		Date date = new Date(millis);
+
+		DateFormat dateFormat = new SimpleDateFormat(
+			"dd MMM yyyy HH:mm:ss:SSS Z");
+
+		System.out.println(
+			"[START TIME] _initGogoShellClient(): " + dateFormat.format(date));
+
 		try (GogoShellClient gogoShellClient = _initGogoShellClient()) {
+
+			millis = System.currentTimeMillis();
+
+			date = new Date(millis);
+
+			System.out.println(
+				"[END TIME] _initGogoShellClient(): " +
+					dateFormat.format(date));
+
 			if (!_isModuleUpgradesFinished(gogoShellClient) || _shell) {
+
 				System.out.println("Connecting to Gogo shell...");
 
 				_printHelp();
@@ -399,7 +424,24 @@ public class UpgradeClient {
 	private boolean _isModuleUpgradesFinished(GogoShellClient gogoShellClient)
 		throws IOException {
 
+		long millis = System.currentTimeMillis();
+
+		Date date = new Date(millis);
+
+		DateFormat dateFormat = new SimpleDateFormat(
+			"dd MMM yyyy HH:mm:ss:SSS Z");
+
+		System.out.println(
+			"[START TIME] upgrade:check: " + dateFormat.format(date));
+
 		String upgradeCheck = gogoShellClient.send("upgrade:check");
+
+		millis = System.currentTimeMillis();
+
+		date = new Date(millis);
+
+		System.out.println(
+			"[END TIME] upgrade:check: " + dateFormat.format(date));
 
 		if (upgradeCheck.contains("CommandNotFoundException")) {
 			System.out.print("Portal upgrade failed. Fix the issue and retry.");
