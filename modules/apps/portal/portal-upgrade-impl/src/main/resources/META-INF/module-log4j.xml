@@ -2,7 +2,7 @@
 
 <Configuration strict="true">
 	<Loggers>
-		<Logger level="INFO" name="com.liferay.portal.upgrade.internal.report.UpgradeReport" />
 		<Logger level="INFO" name="com.liferay.portal.upgrade.internal.release.osgi.commands.ReleaseManagerOSGiCommands" />
+		<Logger level="INFO" name="com.liferay.portal.upgrade.internal.report.UpgradeReport" />
 	</Loggers>
 </Configuration>

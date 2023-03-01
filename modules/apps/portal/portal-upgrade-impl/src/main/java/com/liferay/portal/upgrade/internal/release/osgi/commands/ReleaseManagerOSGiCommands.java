@@ -34,7 +34,6 @@ import com.liferay.portal.upgrade.internal.release.ReleaseManagerImpl;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -232,9 +231,11 @@ public class ReleaseManagerOSGiCommands {
 	}
 
 	private String _check(boolean showUpgradeSteps) {
-		StringBundler sb = new StringBundler(3);
+		StringBundler sb = new StringBundler(1);
 
-		try (LoggingTimer loggingTimer = new LoggingTimer("_checkPortal method")) {
+		try (LoggingTimer loggingTimer = new LoggingTimer(
+				"_checkPortal method")) {
+
 			sb.append(_checkPortal(showUpgradeSteps));
 		}
 
@@ -242,7 +243,9 @@ public class ReleaseManagerOSGiCommands {
 			sb.append(StringPool.NEW_LINE);
 		}
 
-		try (LoggingTimer loggingTimer = new LoggingTimer("_checkModules method")) {
+		try (LoggingTimer loggingTimer = new LoggingTimer(
+				"_checkModules method")) {
+
 			sb.append(_checkModules(showUpgradeSteps));
 		}
 
@@ -256,7 +259,9 @@ public class ReleaseManagerOSGiCommands {
 			_releaseManagerImpl.getBundleSymbolicNames();
 
 		for (String bundleSymbolicName : bundleSymbolicNames) {
-			try (LoggingTimer loggingTimer = new LoggingTimer(bundleSymbolicName)) {
+			try (LoggingTimer loggingTimer = new LoggingTimer(
+					bundleSymbolicName)) {
+
 				String schemaVersionString =
 					_releaseManagerImpl.getSchemaVersionString(
 						bundleSymbolicName);
@@ -281,8 +286,6 @@ public class ReleaseManagerOSGiCommands {
 				}
 
 				if (size == 0) {
-					_log.info(
-						"There are not possible end nodes for this module:");
 					continue;
 				}
 
@@ -346,17 +349,23 @@ public class ReleaseManagerOSGiCommands {
 
 					for (SortedMap.Entry<Version, UpgradeProcess> entry :
 							pendingUpgradeProcesses.entrySet()) {
+
+						UpgradeProcess upgradeProcess = entry.getValue();
+
+						Class<? extends UpgradeProcess> upgradeProcessClass =
+							upgradeProcess.getClass();
+
 						try (LoggingTimer loggingTimer = new LoggingTimer(
-							entry.getValue().getClass().toString())) {
+								upgradeProcessClass.toString())) {
+
 							sb.append(StringPool.NEW_LINE);
 							sb.append(StringPool.TAB);
 
-							UpgradeProcess upgradeProcess = entry.getValue();
 							Version version = entry.getKey();
 
 							sb.append(
 								_getPendingUpgradeProcessMessage(
-									upgradeProcess.getClass(),
+									upgradeProcessClass,
 									currentSchemaVersion.toString(),
 									version.toString()));
 

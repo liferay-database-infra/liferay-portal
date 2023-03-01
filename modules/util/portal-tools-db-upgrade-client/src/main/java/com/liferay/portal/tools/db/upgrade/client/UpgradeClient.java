@@ -44,7 +44,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -249,7 +248,6 @@ public class UpgradeClient {
 			"[START TIME] _initGogoShellClient(): " + dateFormat.format(date));
 
 		try (GogoShellClient gogoShellClient = _initGogoShellClient()) {
-
 			millis = System.currentTimeMillis();
 
 			date = new Date(millis);
@@ -259,7 +257,6 @@ public class UpgradeClient {
 					dateFormat.format(date));
 
 			if (!_isModuleUpgradesFinished(gogoShellClient) || _shell) {
-
 				System.out.println("Connecting to Gogo shell...");
 
 				_printHelp();
