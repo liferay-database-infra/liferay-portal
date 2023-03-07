@@ -63,7 +63,7 @@ import org.junit.Test;
 /**
  * @author Sam Ziemer
  */
-public abstract class BaseUpgradeReportLogAppenderTestCase {
+public abstract class BaseUpgradeLogAppenderTestCase {
 
 	@ClassRule
 	@Rule
@@ -240,8 +240,7 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 	public void testLogEvents() throws Exception {
 		_appender.start();
 
-		Log log = LogFactoryUtil.getLog(
-			BaseUpgradeReportLogAppenderTestCase.class);
+		Log log = LogFactoryUtil.getLog(BaseUpgradeLogAppenderTestCase.class);
 
 		log.warn("Warning");
 		log.warn("Warning");
@@ -529,7 +528,7 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 		"(\\w+_?)\\s+(\\d+|-)\\s+(\\d+|-)\n");
 	private static Logger _upgradeReportLogger;
 
-	@Inject(filter = "appender.name=UpgradeReportLogAppender")
+	@Inject(filter = "appender.name=UpgradeLogAppender")
 	private Appender _appender;
 
 	@Inject
