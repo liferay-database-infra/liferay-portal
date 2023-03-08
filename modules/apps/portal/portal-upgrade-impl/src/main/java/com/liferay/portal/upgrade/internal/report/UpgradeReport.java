@@ -278,6 +278,8 @@ public class UpgradeReport {
 		).put(
 			"type", DBUpgradeStatus.getUpgradeType()
 		).put(
+			"result", DBUpgradeStatus.getUpgradeStatus()
+		).put(
 			"database.version",
 			() -> {
 				DB db = DBManagerUtil.getDB();
