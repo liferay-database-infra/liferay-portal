@@ -735,7 +735,7 @@ definition {
 
 	@priority = 5
 	test ViewLocaleInNewVirtualInstance {
-		property portal.acceptance = "true";
+		property portal.acceptance = "LPS-171283";
 		property test.assert.warning.exceptions = "true";
 		property test.name.skip.portal.instance = "Locale#ViewLocaleInNewVirtualInstance";
 
