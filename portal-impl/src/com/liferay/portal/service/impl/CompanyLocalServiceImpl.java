@@ -197,6 +197,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		throws PortalException {
 
 		// Company
+		_log.info("Beginning of addCompany() method");
+		_log.info("companyId: " + companyId + ", webId: " + webId);
 
 		virtualHostname = StringUtil.toLowerCase(
 			StringUtil.trim(virtualHostname));
@@ -270,9 +272,17 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				_addDemoSettings(company);
 			}
 
+			_log.info("Beginning of _addDefaultUser() method");
+
 			_addDefaultUser(company);
 
+			_log.info("End of _addDefaultUser() method");
+
+			_log.info("Beginning of _checkCompany() method");
+
 			company = _checkCompany(company, mx);
+
+			_log.info("End of _checkCompany() method");
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
@@ -280,6 +290,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 					return null;
 				});
+
+			_log.info("End of addCompany() method");
 
 			return company;
 		}
@@ -1939,7 +1951,9 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				}
 			}
 			else {
+				_log.info("Beginning of _addDefaultUser() method inside check");
 				defaultUser = _addDefaultUser(company);
+				_log.info("End of _addDefaultUser() method inside check");
 			}
 
 			// System roles

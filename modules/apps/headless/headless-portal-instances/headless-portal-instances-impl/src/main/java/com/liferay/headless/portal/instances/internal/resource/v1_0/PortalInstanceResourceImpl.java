@@ -21,6 +21,8 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.instances.service.PortalInstancesLocalService;
 import com.liferay.portal.kernel.exception.UserEmailAddressException;
 import com.liferay.portal.kernel.exception.UserScreenNameException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
@@ -32,6 +34,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
 import com.liferay.portal.security.auth.ScreenNameGeneratorFactory;
+import com.liferay.portal.service.impl.CompanyLocalServiceImpl;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.pagination.Page;
 
@@ -111,6 +114,8 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 	public PortalInstance postPortalInstance(PortalInstance portalInstance)
 		throws Exception {
 
+		_log.info("Beginning of postPortalInstance()");
+
 		Long companyId = portalInstance.getCompanyId();
 
 		if (companyId == null) {
@@ -156,6 +161,8 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 		}
 
 		_portalInstancesLocalService.synchronizePortalInstances();
+
+		_log.info("End of postPortalInstance()");
 
 		return _toPortalInstance(company);
 	}
@@ -221,5 +228,8 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 	@Reference
 	private UserLocalService _userLocalService;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		PortalInstanceResourceImpl.class);
 
 }
