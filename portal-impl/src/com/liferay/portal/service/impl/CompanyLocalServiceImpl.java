@@ -1819,6 +1819,9 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		defaultUser.setPassword("password");
 		defaultUser.setScreenName(String.valueOf(defaultUser.getUserId()));
 		defaultUser.setEmailAddress("default@" + company.getMx());
+
+		_log.info("COMPANY_DEFAULT_LOCALE: " + PropsValues.COMPANY_DEFAULT_LOCALE);
+
 		defaultUser.setLanguageId(
 			LocaleUtil.toLanguageId(
 				LocaleUtil.fromLanguageId(PropsValues.COMPANY_DEFAULT_LOCALE)));

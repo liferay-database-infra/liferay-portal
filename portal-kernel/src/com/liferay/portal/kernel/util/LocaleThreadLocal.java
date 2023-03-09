@@ -15,6 +15,8 @@
 package com.liferay.portal.kernel.util;
 
 import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
@@ -35,10 +37,12 @@ public class LocaleThreadLocal {
 				CompanyThreadLocal.getCompanyId());
 
 			if (defaultUser != null) {
+				_log.info("set _defaultLocale in getDefaultLocale(): " + defaultUser.getLocale());
 				_defaultLocale.set(defaultUser.getLocale());
 			}
 		}
 
+		_log.info("get _defaultLocale in getDefaultLocale(): " + _defaultLocale.get());
 		return _defaultLocale.get();
 	}
 
@@ -51,6 +55,7 @@ public class LocaleThreadLocal {
 	}
 
 	public static void setDefaultLocale(Locale locale) {
+		_log.info("set _defaultLocale in setDefaultLocale(Locale locale): " + locale);
 		_defaultLocale.set(locale);
 	}
 
@@ -65,6 +70,10 @@ public class LocaleThreadLocal {
 	private static final ThreadLocal<Locale> _defaultLocale =
 		new CentralizedThreadLocal<>(
 			LocaleThreadLocal.class + "._defaultLocale");
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		LocaleThreadLocal.class);
+
 	private static final ThreadLocal<Locale> _siteDefaultLocale =
 		new CentralizedThreadLocal<>(
 			LocaleThreadLocal.class + "._siteDefaultLocale");
