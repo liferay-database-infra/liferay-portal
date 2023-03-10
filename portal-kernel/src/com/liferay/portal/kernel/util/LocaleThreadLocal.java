@@ -42,7 +42,8 @@ public class LocaleThreadLocal {
 			}
 		}
 
-		_log.info("get _defaultLocale in getDefaultLocale(): " + _defaultLocale.get());
+		if(_defaultLocale.get() == null) _log.info("get _defaultLocale in getDefaultLocale(): " + _defaultLocale.get());
+
 		return _defaultLocale.get();
 	}
 

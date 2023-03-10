@@ -40,6 +40,8 @@ import com.liferay.portal.vulcan.pagination.Page;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -116,6 +118,10 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		_log.info("Beginning of postPortalInstance()");
 
+		_logger.log(
+			Level.INFO,
+			"[logger] Beginning of postPortalInstance()");
+
 		Long companyId = portalInstance.getCompanyId();
 
 		if (companyId == null) {
@@ -163,6 +169,10 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 		_portalInstancesLocalService.synchronizePortalInstances();
 
 		_log.info("End of postPortalInstance()");
+
+		_logger.log(
+			Level.INFO,
+			"[logger] End of postPortalInstance()");
 
 		return _toPortalInstance(company);
 	}
@@ -231,5 +241,8 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		PortalInstanceResourceImpl.class);
+
+	private static final Logger _logger = Logger.getLogger(
+		PortalInstanceResourceImpl.class.getName());
 
 }

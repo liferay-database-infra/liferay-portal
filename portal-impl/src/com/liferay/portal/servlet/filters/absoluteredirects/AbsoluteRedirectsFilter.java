@@ -58,6 +58,8 @@ public class AbsoluteRedirectsFilter
 			httpServletRequest.setCharacterEncoding(StringPool.UTF8);
 		}
 
+		_log.info("Request URI in AbsoluteRedirectsFilter: " + httpServletRequest.getRequestURI());
+
 		//response.setContentType(ContentTypes.TEXT_HTML_UTF8);
 
 		// Company ID needs to always be called here so that it is properly set
