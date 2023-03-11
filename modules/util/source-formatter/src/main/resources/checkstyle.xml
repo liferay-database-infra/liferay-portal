@@ -273,7 +273,8 @@
 			<property name="category" value="Bug Prevention" />
 			<property name="description" value="Checks that `CompanyLocalService.forEachCompany` or `CompanyLocalService.forEachCompanyId` is used when iterating over companies" />
 			<property name="enabled" value="false" />
-			<message key="company.local.service.use" value="Use ''CompanyLocalService.{0}'' when iterating over ''{1}''" />
+			<message key="company.local.service.use.1" value="Use ''CompanyLocalService.{0}'' when iterating over ''{1}''" />
+			<message key="company.local.service.use.2" value="Do not use SQL to iterate over companies. Use ''CompanyLocalService.forEachCompany'' instead" />
 		</module>
 		<module name="com.liferay.source.formatter.checkstyle.check.ComponentAnnotationCheck">
 			<property name="category" value="Bug Prevention" />
