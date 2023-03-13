@@ -37,6 +37,11 @@ public class TimeZoneThreadLocal {
 			if (defaultUser != null) {
 				_defaultTimeZone.set(defaultUser.getTimeZone());
 			}
+			else if (CompanyThreadLocal.getCompanyId() != PortalUtil.getDefaultCompanyId()) {
+				User companyUser = UserLocalServiceUtil.fetchDefaultUser(
+					PortalUtil.getDefaultCompanyId());
+				_defaultTimeZone.set(companyUser.getTimeZone());
+			}
 		}
 
 		return _defaultTimeZone.get();

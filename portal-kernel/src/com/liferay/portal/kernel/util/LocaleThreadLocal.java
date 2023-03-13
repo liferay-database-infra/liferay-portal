@@ -37,6 +37,11 @@ public class LocaleThreadLocal {
 			if (defaultUser != null) {
 				_defaultLocale.set(defaultUser.getLocale());
 			}
+			else if (CompanyThreadLocal.getCompanyId() != PortalUtil.getDefaultCompanyId()) {
+				User companyUser = UserLocalServiceUtil.fetchDefaultUser(
+					PortalUtil.getDefaultCompanyId());
+				_defaultLocale.set(companyUser.getLocale());
+			}
 		}
 
 		return _defaultLocale.get();
