@@ -22,9 +22,8 @@ We should do:
 ```java
 _companyLocalService.forEachCompanyId(
 	companyId ->
-		_commerceAccountGroupLocalService.
-			checkGuestCommerceAccountGroup(companyId));
-	}
+	    _commerceAccountGroupLocalService.
+	        checkGuestCommerceAccountGroup(companyId));
 ```
 #### Example 2
 
@@ -43,4 +42,28 @@ public void cleanUp(String... companyIds) {
 	_companyLocalService.forEachCompanyId(
 		companyId -> _cleanUp(companyId), companyIds);
 }
+```
+
+This rule also applies to SQL queries.
+
+#### Example 1
+
+Instead of:
+```java
+try (PreparedStatement preparedStatement = connection.prepareStatement(
+	    "select companyId, userId, userName from Company")) {
+
+	    preparedStatement.executeQuery();
+}
+```
+
+We should do:
+```java
+_companyLocalService.forEachCompany(
+	company -> {
+		long companyId = company.getCompanyId();
+		String userName = company.getUserName();
+
+        ...
+	});
 ```
