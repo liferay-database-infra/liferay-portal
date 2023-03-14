@@ -15,6 +15,7 @@
 package com.liferay.source.formatter.checkstyle.check;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
@@ -129,13 +130,12 @@ public class CompanyIterationCheck extends BaseCheck {
 			return null;
 		}
 
-		StringBundler sb = new StringBundler(
-			(2 * stringLiteralDetailASTs.size()) - 1);
+		StringBundler sb = new StringBundler(stringLiteralDetailASTs.size());
 
 		for (DetailAST stringLiteralDetailAST : stringLiteralDetailASTs) {
 			String stringLiteral = stringLiteralDetailAST.getText();
 
-			sb.append(stringLiteral.substring(1, stringLiteral.length() - 1));
+			sb.append(StringUtil.unquote(stringLiteral));
 		}
 
 		return sb.toString();
