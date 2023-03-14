@@ -20,7 +20,10 @@ import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.TimeZoneThreadLocal;
 
 import java.util.Locale;
@@ -71,6 +74,17 @@ public class CompanyThreadLocal {
 		long companyId) {
 
 		if (companyId > 0) {
+			if (getCompanyId() != PortalUtil.getDefaultCompanyId()) {
+
+				User companyUser = UserLocalServiceUtil.fetchDefaultUser(
+					PortalUtil.getDefaultCompanyId());
+
+				LocaleThreadLocal.setDefaultLocale(companyUser.getLocale());
+
+				TimeZoneThreadLocal.setDefaultTimeZone(
+					companyUser.getTimeZone());
+			}
+
 			return _companyId.setWithSafeCloseable(companyId);
 		}
 
