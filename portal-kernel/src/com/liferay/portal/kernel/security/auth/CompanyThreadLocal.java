@@ -75,7 +75,6 @@ public class CompanyThreadLocal {
 
 		if (companyId > 0) {
 			if (getCompanyId() != PortalUtil.getDefaultCompanyId()) {
-
 				User companyUser = UserLocalServiceUtil.fetchDefaultUser(
 					PortalUtil.getDefaultCompanyId());
 
