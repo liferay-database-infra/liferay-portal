@@ -221,7 +221,9 @@ public class UpgradeReport {
 						DBUpgradeStatus.getInitialSchemaVersion(
 							ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
 
-					if (initialSchemaVersion != null) {
+					if ((initialSchemaVersion != null) &&
+						!initialSchemaVersion.equals("0.0.0")) {
+
 						return initialSchemaVersion;
 					}
 
