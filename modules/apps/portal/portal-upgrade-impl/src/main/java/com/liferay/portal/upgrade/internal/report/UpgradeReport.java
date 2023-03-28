@@ -258,13 +258,23 @@ public class UpgradeReport {
 				"because the property \"rootDir\" was not set\n";
 		}
 
-		double bytes = 0;
+		_DLSize = 0;
+
+		Thread DLSizeThread = new DLSizeThread();
+
+		DLSizeThread.start();
 
 		try {
-			bytes = FileUtils.sizeOfDirectory(new File(_rootDir));
+			DLSizeThread.join(10000);
 		}
 		catch (Exception exception) {
 			return exception.getMessage();
+		}
+
+		if (DLSizeThread.isAlive()) {
+			return
+				"Unable to determine the document library storage size" +
+				" because it is too large. You can check it manually";
 		}
 
 		String[] dictionary = {"bytes", "KB", "MB", "GB", "TB", "PB"};
@@ -272,16 +282,14 @@ public class UpgradeReport {
 		int index = 0;
 
 		for (index = 0; index < dictionary.length; index++) {
-			if (bytes < 1024) {
+			if (_DLSize < 1024) {
 				break;
 			}
 
-			bytes = bytes / 1024;
+			_DLSize = _DLSize / 1024;
 		}
 
-		String size = StringBundler.concat(
-			String.format("%." + 2 + "f", bytes), StringPool.SPACE,
-			dictionary[index]);
+		String size = String.format("%." + 2 + "f", _DLSize) + " " + dictionary[index];
 
 		return "The document library storage size is " + size;
 	}
@@ -614,6 +622,14 @@ public class UpgradeReport {
 				Map.Entry.comparingByValue(Integer::compare)));
 	}
 
+	public class DLSizeThread extends Thread {
+		
+		@Override
+		public void run() {
+			_DLSize = FileUtils.sizeOfDirectory(new File(_rootDir));
+		}
+	}
+
 	private static final String _CONFIGURATION_PID_ADVANCED_FILE_SYSTEM_STORE =
 		"com.liferay.portal.store.file.system.configuration." +
 			"AdvancedFileSystemStoreConfiguration";
@@ -640,6 +656,8 @@ public class UpgradeReport {
 	private final int _initialBuildNumber;
 	private final String _initialSchemaVersion;
 	private final Map<String, Integer> _initialTableCounts;
+
+	private double _DLSize;
 	private PersistenceManager _persistenceManager;
 	private String _rootDir;
 	private final Map<String, Map<String, Integer>> _warningMessages =
