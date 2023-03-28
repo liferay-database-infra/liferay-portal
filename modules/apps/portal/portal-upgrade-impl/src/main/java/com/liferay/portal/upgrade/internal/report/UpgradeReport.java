@@ -71,6 +71,7 @@ public class UpgradeReport {
 		_initialBuildNumber = _getBuildNumber();
 		_initialSchemaVersion = _getSchemaVersion();
 		_initialTableCounts = _getTableCounts();
+		_DLSizeThread = new DLSizeThread();
 	}
 
 	public void addErrorMessage(String loggerName, String message) {
@@ -265,18 +266,16 @@ public class UpgradeReport {
 
 		_DLSize = 0;
 
-		Thread DLSizeThread = new DLSizeThread();
-
-		DLSizeThread.start();
-
 		try {
-			DLSizeThread.join(10000);
+			_DLSizeThread.start();
+
+			_DLSizeThread.join(10000);
 		}
 		catch (Exception exception) {
 			return exception.getMessage();
 		}
 
-		if (DLSizeThread.isAlive()) {
+		if (_DLSizeThread.isAlive()) {
 			return
 				"Unable to determine the document library storage size" +
 				" because it is too large. You can check it manually";
@@ -627,7 +626,7 @@ public class UpgradeReport {
 				Map.Entry.comparingByValue(Integer::compare)));
 	}
 
-	public class DLSizeThread extends Thread {
+	private class DLSizeThread extends Thread {
 		
 		@Override
 		public void run() {
@@ -661,7 +660,7 @@ public class UpgradeReport {
 	private final int _initialBuildNumber;
 	private final String _initialSchemaVersion;
 	private final Map<String, Integer> _initialTableCounts;
-
+	private Thread _DLSizeThread;
 	private double _DLSize;
 	private PersistenceManager _persistenceManager;
 	private String _rootDir;
