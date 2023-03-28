@@ -756,6 +756,11 @@ public class PropsValues {
 	public static final String[] DL_REPOSITORY_IMPL = PropsUtil.getArray(
 		PropsKeys.DL_REPOSITORY_IMPL);
 
+	public static final long DL_STORAGE_INFO_TIMEOUT =
+		GetterUtil.getLong(
+			PropsUtil.get(
+				PropsKeys.DL_STORAGE_INFO_TIMEOUT));
+
 	public static boolean DL_STORE_ANTIVIRUS_ENABLED = GetterUtil.getBoolean(
 		PropsUtil.get(PropsKeys.DL_STORE_ANTIVIRUS_ENABLED));
 
