@@ -113,6 +113,10 @@ public class UpgradeReport {
 		PersistenceManager persistenceManager,
 		ReleaseManagerOSGiCommands releaseManagerOSGiCommands) {
 
+		if (_log.isInfoEnabled()) {
+			_log.info("Starting Upgrade Report generation");
+		}
+
 		filterMessages();
 
 		_persistenceManager = persistenceManager;
@@ -137,6 +141,7 @@ public class UpgradeReport {
 					StringPool.NEW_LINE + StringPool.NEW_LINE));
 
 			if (_log.isInfoEnabled()) {
+				_log.info("Completed Upgrade Report generation");
 				_log.info(
 					"Upgrade report generated in " +
 						reportFile.getAbsolutePath());
