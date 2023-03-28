@@ -120,6 +120,10 @@ public class UpgradeReport {
 		try {
 			File reportFile = _getReportFile();
 
+			if (_log.isInfoEnabled()) {
+				_log.info("Starting Upgrade Report generation");
+			}
+
 			FileUtil.write(
 				reportFile,
 				StringUtil.merge(
@@ -137,6 +141,7 @@ public class UpgradeReport {
 					StringPool.NEW_LINE + StringPool.NEW_LINE));
 
 			if (_log.isInfoEnabled()) {
+				_log.info("Upgrade Report generation completed");
 				_log.info(
 					"Upgrade report generated in " +
 						reportFile.getAbsolutePath());
