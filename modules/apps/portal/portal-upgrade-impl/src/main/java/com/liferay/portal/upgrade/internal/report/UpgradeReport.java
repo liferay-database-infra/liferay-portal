@@ -269,7 +269,7 @@ public class UpgradeReport {
 		try {
 			_DLSizeThread.start();
 
-			_DLSizeThread.join(10000);
+			_DLSizeThread.join(PropsValues.DL_STORAGE_INFO_TIMEOUT);
 		}
 		catch (Exception exception) {
 			return exception.getMessage();

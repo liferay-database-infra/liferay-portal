@@ -918,6 +918,9 @@ public interface PropsKeys {
 	public static final String DL_SHOW_HIDDEN_MOUNT_FOLDERS =
 		"dl.show.hidden.mount.folders";
 
+	public static final String DL_STORAGE_INFO_TIMEOUT =
+		"dl.storage.info.timeout";
+
 	public static final String DL_STORE_ANTIVIRUS_ENABLED =
 		"dl.store.antivirus.enabled";
 
