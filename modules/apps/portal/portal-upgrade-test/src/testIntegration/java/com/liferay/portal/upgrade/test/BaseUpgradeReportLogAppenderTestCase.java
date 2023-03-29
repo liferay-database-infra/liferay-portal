@@ -16,6 +16,7 @@ package com.liferay.portal.upgrade.test;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.bean.BeanPropertiesImpl;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -40,6 +41,7 @@ import com.liferay.portal.util.PropsValues;
 import java.io.File;
 
 import java.util.Arrays;
+import java.util.IllegalFormatException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,6 +71,10 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 
 		ReflectionTestUtil.setFieldValue(
 			DBUpgrader.class, "_upgradeClient", _originalUpgradeClient);
+
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT",
+			_originalDLStorageTimeout);
 	}
 
 	@After
@@ -171,6 +177,99 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 		}
 	}
 
+	@Test
+	public void testGetDLStorageInfoAfterTimeout() throws Exception {
+		_appender.start();
+
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT", 1);
+
+		Object upgradeReport = ReflectionTestUtil.getFieldValue(
+			_appender, "_upgradeReport");
+
+		ReflectionTestUtil.setFieldValue(
+			upgradeReport, "_documentLibrarySizeThread",
+			new Thread() {
+
+				@Override
+				public void run() {
+					try {
+						long timeout = ReflectionTestUtil.getFieldValue(
+							PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT");
+
+						sleep(timeout + 5);
+					}
+					catch (InterruptedException interruptedException) {
+						throw new RuntimeException(interruptedException);
+					}
+				}
+
+			});
+
+		_appender.stop();
+
+		_assertReport(
+			"Unable to determine the document library storage size because " +
+				"it is too large. You can check it manually");
+	}
+
+	@Test(expected = IllegalFormatException.class)
+	public void testGetDLStorageInfoInGbBeforeTimeout() throws Exception {
+		_appender.start();
+
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT", 10);
+
+		Object upgradeReport = ReflectionTestUtil.getFieldValue(
+			_appender, "_upgradeReport");
+
+		ReflectionTestUtil.setFieldValue(
+			upgradeReport, "_documentLibrarySizeThread",
+			new Thread() {
+
+				@Override
+				public void run() {
+					ReflectionTestUtil.setFieldValue(
+						upgradeReport, "_documentLibrarySize", 1073742000);
+				}
+
+			});
+
+		_appender.stop();
+
+		_assertReport(
+			"The document library storage size is " +
+				String.format("%." + 1 + "f", "1") + " GB");
+	}
+
+	@Test(expected = IllegalFormatException.class)
+	public void testGetDLStorageInfoInMbBeforeTimeout() throws Exception {
+		_appender.start();
+
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT", 10);
+
+		Object upgradeReport = ReflectionTestUtil.getFieldValue(
+			_appender, "_upgradeReport");
+
+		ReflectionTestUtil.setFieldValue(
+			upgradeReport, "_documentLibrarySizeThread",
+			new Thread() {
+
+				@Override
+				public void run() {
+					ReflectionTestUtil.setFieldValue(
+						upgradeReport, "_documentLibrarySize", 1048576);
+				}
+
+			});
+
+		_appender.stop();
+
+		_assertReport(
+			"The document library storage size is " +
+				String.format("%." + 2 + "f", "1") + " MB");
+	}
 
 	@Test
 	public void testInfoEventsInOrder() throws Exception {
@@ -280,7 +379,7 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 				StringPool.NEW_LINE, PropsKeys.DL_STORE_IMPL, StringPool.EQUAL,
 				PropsValues.DL_STORE_IMPL));
 	}
-
+	
 	@Test
 	public void testSchemaVersion() throws Exception {
 		Release release = _releaseLocalService.getRelease(1);
@@ -334,6 +433,9 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 
 		ReflectionTestUtil.setFieldValue(
 			DBUpgrader.class, "_upgradeClient", upgradeClient);
+
+		_originalDLStorageTimeout = ReflectionTestUtil.getFieldValue(
+			PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT");
 	}
 
 	protected abstract String getFilePath();
@@ -360,6 +462,7 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 	}
 
 	private static DB _db;
+	private static long _originalDLStorageTimeout;
 	private static boolean _originalUpgradeClient;
 	private static final Pattern _pattern = Pattern.compile(
 		"(\\w+_?)\\s+(\\d+|-)\\s+(\\d+|-)\n");
