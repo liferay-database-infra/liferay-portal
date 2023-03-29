@@ -16,7 +16,6 @@ package com.liferay.portal.upgrade.test;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.bean.BeanPropertiesImpl;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -72,7 +71,8 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 			DBUpgrader.class, "_upgradeClient", _originalUpgradeClient);
 
 		ReflectionTestUtil.setFieldValue(
-			PropsValues.class, "DL_STORAGE_INFO_TIMEOUT", _originalDLStorageTimeout);
+			PropsValues.class, "DL_STORAGE_INFO_TIMEOUT",
+			_originalDLStorageTimeout);
 	}
 
 	@After
@@ -173,6 +173,95 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 			previousInitialCount = initialCount;
 			previousTableName = tableName;
 		}
+	}
+
+	@Test
+	public void testGetDLStorageInfoAfterTimeout() throws Exception {
+		_appender.start();
+
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class, "DL_STORAGE_INFO_TIMEOUT", 1);
+
+		Object upgradeReport = ReflectionTestUtil.getFieldValue(
+			_appender, "_upgradeReport");
+		
+		ReflectionTestUtil.setFieldValue(
+			upgradeReport, "_DLSizeThread",
+			new Thread() {
+
+				@Override
+				public void run() {
+					try {
+						long timeout = ReflectionTestUtil.getFieldValue(
+							PropsValues.class, "DL_STORAGE_INFO_TIMEOUT");
+
+						sleep(timeout + 5);
+					}
+					catch (InterruptedException interruptedException) {
+						throw new RuntimeException(interruptedException);
+					}
+				}
+
+			});
+
+		_appender.stop();
+
+		_assertReport(
+			"Unable to determine the document library storage size because " +
+				"it is too large. You can check it manually");
+	}
+
+	@Test
+	public void testGetDLStorageInfoBeforeTimeout() throws Exception {
+		_appender.start();
+
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class, "DL_STORAGE_INFO_TIMEOUT", 5);
+
+		Object upgradeReport = ReflectionTestUtil.getFieldValue(
+			_appender, "_upgradeReport");
+
+		ReflectionTestUtil.setFieldValue(
+			upgradeReport, "_DLSizeThread",
+			new Thread() {
+
+				@Override
+				public void run() {
+					try {
+						long timeout = ReflectionTestUtil.getFieldValue(
+							PropsValues.class, "DL_STORAGE_INFO_TIMEOUT");
+
+						sleep(timeout / 5);
+					}
+					catch (InterruptedException interruptedException) {
+						throw new RuntimeException(interruptedException);
+					}
+				}
+
+			});
+
+		_appender.stop();
+
+		double documentLibrarySize = ReflectionTestUtil.getFieldValue(
+			upgradeReport, "_DLSize");
+
+		String[] dictionary = {"bytes", "KB", "MB", "GB", "TB", "PB"};
+
+		int index = 0;
+
+		for (index = 0; index < dictionary.length; index++) {
+			if (documentLibrarySize < 1024) {
+				break;
+			}
+
+			documentLibrarySize = documentLibrarySize / 1024;
+		}
+
+		String size =
+			String.format("%." + 2 + "f", documentLibrarySize) + " " +
+				dictionary[index];
+
+		_assertReport("The document library storage size is " + size);
 	}
 
 	@Test
@@ -285,93 +374,6 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 	}
 
 	@Test
-	public void testGetDLStorageInfoAfterTimeout() throws Exception {
-
-		_appender.start();
-
-		ReflectionTestUtil.setFieldValue(
-			PropsValues.class, "DL_STORAGE_INFO_TIMEOUT", 1);
-
-		Object upgradeReport = ReflectionTestUtil.getFieldValue(
-			_appender,"_upgradeReport");
-
-		//getset
-		ReflectionTestUtil.setFieldValue(upgradeReport, "_DLSizeThread",
-			new Thread() {
-			@Override
-			public void run() {
-				try {
-					sleep((long) ReflectionTestUtil.getFieldValue(
-						PropsValues.class, "DL_STORAGE_INFO_TIMEOUT")
-						  + 5);
-				}
-				catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		});
-
-		_appender.stop();
-
-		_assertReport("Unable to determine the document library " +
-					  "storage size because it is too large. You can check " +
-					  "it manually");
-	}
-
-
-
-	@Test
-	public void testGetDLStorageInfoBeforeTimeout() throws Exception {
-
-		_appender.start();
-
-		ReflectionTestUtil.setFieldValue(
-			PropsValues.class, "DL_STORAGE_INFO_TIMEOUT", 5);
-
-		Object upgradeReport = ReflectionTestUtil.getFieldValue(_appender,"_upgradeReport");
-
-		ReflectionTestUtil.setFieldValue(upgradeReport, "_DLSizeThread", new Thread() {
-			@Override
-			public void run() {
-				try {
-					sleep((long) ReflectionTestUtil.getFieldValue(
-						PropsValues.class, "DL_STORAGE_INFO_TIMEOUT")
-						  / 5);
-				}
-				catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		});
-
-		_appender.stop();
-
-		double documentLibrarySize = ReflectionTestUtil.getFieldValue(upgradeReport,
-			"_DLSize");
-
-		String[] dictionary = {"bytes", "KB", "MB", "GB", "TB", "PB"};
-
-		int index = 0;
-
-		for (index = 0; index < dictionary.length; index++) {
-			if (documentLibrarySize < 1024) {
-				break;
-			}
-
-			documentLibrarySize = documentLibrarySize / 1024;
-		}
-
-		String size = String.format("%." + 2 + "f", documentLibrarySize) + " " + dictionary[index];
-
-
-		_assertReport(
-			StringBundler.concat(
-				"The document library storage size is ",
-				size));
-
-	}
-
-	@Test
 	public void testSchemaVersion() throws Exception {
 		Release release = _releaseLocalService.getRelease(1);
 
@@ -427,7 +429,6 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 
 		_originalDLStorageTimeout = ReflectionTestUtil.getFieldValue(
 			PropsValues.class, "DL_STORAGE_INFO_TIMEOUT");
-
 	}
 
 	protected abstract String getFilePath();
@@ -454,8 +455,8 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 	}
 
 	private static DB _db;
-	private static boolean _originalUpgradeClient;
 	private static long _originalDLStorageTimeout;
+	private static boolean _originalUpgradeClient;
 	private static final Pattern _pattern = Pattern.compile(
 		"(\\w+_?)\\s+(\\d+|-)\\s+(\\d+|-)\n");
 
