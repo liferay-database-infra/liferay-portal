@@ -171,6 +171,7 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 		}
 	}
 
+
 	@Test
 	public void testInfoEventsInOrder() throws Exception {
 		_appender.start();
