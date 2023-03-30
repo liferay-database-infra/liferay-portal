@@ -756,10 +756,6 @@ public class PropsValues {
 	public static final String[] DL_REPOSITORY_IMPL = PropsUtil.getArray(
 		PropsKeys.DL_REPOSITORY_IMPL);
 
-
-	public static final long UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT = GetterUtil.getLong(
-		PropsUtil.get(PropsKeys.UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT));
-
 	public static boolean DL_STORE_ANTIVIRUS_ENABLED = GetterUtil.getBoolean(
 		PropsUtil.get(PropsKeys.DL_STORE_ANTIVIRUS_ENABLED));
 
@@ -2392,6 +2388,10 @@ public class PropsValues {
 	public static final boolean UPGRADE_LOG_CONTEXT_ENABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.UPGRADE_LOG_CONTEXT_ENABLED));
+
+	public static final long UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT =
+		GetterUtil.getLong(
+			PropsUtil.get(PropsKeys.UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT));
 
 	public static final boolean UPGRADE_REPORT_ENABLED = GetterUtil.getBoolean(
 		PropsUtil.get(PropsKeys.UPGRADE_REPORT_ENABLED));

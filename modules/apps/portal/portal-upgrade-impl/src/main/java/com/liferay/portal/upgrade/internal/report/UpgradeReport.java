@@ -276,8 +276,8 @@ public class UpgradeReport {
 		}
 
 		if (_documentLibrarySizeThread.isAlive()) {
-			return "Unable to determine the document library storage size" +
-				" because it is too large. You can check it manually";
+			return "Unable to determine the document library storage size " +
+				"because it is too large. You can check it manually";
 		}
 
 		String[] dictionary = {"bytes", "KB", "MB", "GB", "TB", "PB"};
@@ -293,7 +293,8 @@ public class UpgradeReport {
 		}
 
 		String size =
-			String.format("%." + 2 + "f", _documentLibrarySize) + " " + dictionary[index];
+			String.format("%." + 2 + "f", _documentLibrarySize) + " " +
+				dictionary[index];
 
 		return "The document library storage size is " + size;
 	}
@@ -663,7 +664,8 @@ public class UpgradeReport {
 
 		@Override
 		public void run() {
-			_documentLibrarySize = FileUtils.sizeOfDirectory(new File(_rootDir));
+			_documentLibrarySize = FileUtils.sizeOfDirectory(
+				new File(_rootDir));
 		}
 
 	}

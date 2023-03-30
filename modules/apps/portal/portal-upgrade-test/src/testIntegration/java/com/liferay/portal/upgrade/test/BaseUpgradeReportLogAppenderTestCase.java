@@ -16,7 +16,6 @@ package com.liferay.portal.upgrade.test;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.bean.BeanPropertiesImpl;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -195,7 +194,8 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 				public void run() {
 					try {
 						long timeout = ReflectionTestUtil.getFieldValue(
-							PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT");
+							PropsValues.class,
+							"UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT");
 
 						sleep(timeout + 5);
 					}
@@ -379,7 +379,7 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 				StringPool.NEW_LINE, PropsKeys.DL_STORE_IMPL, StringPool.EQUAL,
 				PropsValues.DL_STORE_IMPL));
 	}
-	
+
 	@Test
 	public void testSchemaVersion() throws Exception {
 		Release release = _releaseLocalService.getRelease(1);
