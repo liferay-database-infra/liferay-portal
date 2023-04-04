@@ -45,7 +45,6 @@ import java.io.File;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.IllegalFormatException;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,10 +84,6 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 		ReflectionTestUtil.setFieldValue(
 			PropsValues.class, "UPGRADE_LOG_CONTEXT_ENABLED",
 			_originalUpgradeLogContextEnabled);
-
-		ReflectionTestUtil.setFieldValue(
-			PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT",
-			_originalDLStorageTimeout);
 	}
 
 	@Before
@@ -208,93 +203,97 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 	public void testGetDLStorageInfoAfterTimeout() throws Exception {
 		_appender.start();
 
-		ReflectionTestUtil.setFieldValue(
-			PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT", 1);
+		try (SafeCloseable safeCloseable =
+				_setUpgradeReportDLStorageInfoTimeout(1)) {
 
-		Object upgradeReport = ReflectionTestUtil.getFieldValue(
-			_appender, "_upgradeReport");
+			Object upgradeReport = ReflectionTestUtil.getFieldValue(
+				_appender, "_upgradeReport");
 
-		ReflectionTestUtil.setFieldValue(
-			upgradeReport, "_documentLibrarySizeThread",
-			new Thread() {
+			ReflectionTestUtil.setFieldValue(
+				upgradeReport, "_documentLibrarySizeThread",
+				new Thread() {
 
-				@Override
-				public void run() {
-					try {
-						long timeout = ReflectionTestUtil.getFieldValue(
-							PropsValues.class,
-							"UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT");
+					@Override
+					public void run() {
+						try {
+							long timeout = ReflectionTestUtil.getFieldValue(
+								PropsValues.class,
+								"UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT");
 
-						sleep(timeout + 5);
+							sleep(timeout + 5);
+						}
+						catch (InterruptedException interruptedException) {
+							throw new RuntimeException(interruptedException);
+						}
 					}
-					catch (InterruptedException interruptedException) {
-						throw new RuntimeException(interruptedException);
-					}
-				}
 
-			});
+				});
 
-		_appender.stop();
+			_appender.stop();
 
-		_assertReport(
-			"Unable to determine the document library storage size because " +
-				"it is too large. You can check it manually");
+			_assertReport(
+				"Unable to determine the document library storage size " +
+					"because it is too large. You can check it manually");
+		}
 	}
 
 	@Test
 	public void testGetDLStorageInfoInGbBeforeTimeout() throws Exception {
 		_appender.start();
 
-		ReflectionTestUtil.setFieldValue(
-			PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT", 10);
+		try (SafeCloseable safeCloseable =
+				_setUpgradeReportDLStorageInfoTimeout(10)) {
 
-		Object upgradeReport = ReflectionTestUtil.getFieldValue(
-			_appender, "_upgradeReport");
+			Object upgradeReport = ReflectionTestUtil.getFieldValue(
+				_appender, "_upgradeReport");
 
-		ReflectionTestUtil.setFieldValue(
-			upgradeReport, "_documentLibrarySizeThread",
-			new Thread() {
+			ReflectionTestUtil.setFieldValue(
+				upgradeReport, "_documentLibrarySizeThread",
+				new Thread() {
 
-				@Override
-				public void run() {
-					ReflectionTestUtil.setFieldValue(
-						upgradeReport, "_documentLibrarySize", 1073742000);
-				}
+					@Override
+					public void run() {
+						ReflectionTestUtil.setFieldValue(
+							upgradeReport, "_documentLibrarySize", 1073742000);
+					}
 
-			});
+				});
 
-		_appender.stop();
+			_appender.stop();
 
-		_assertReport(
-			LanguageUtil.formatStorageSize(1073742000, LocaleUtil.US));
+			_assertReport(
+				LanguageUtil.formatStorageSize(1073742000, LocaleUtil.US));
+		}
+
 	}
 
 	@Test
 	public void testGetDLStorageInfoInMbBeforeTimeout() throws Exception {
 		_appender.start();
 
-		ReflectionTestUtil.setFieldValue(
-			PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT", 10);
+		try (SafeCloseable safeCloseable =
+				_setUpgradeReportDLStorageInfoTimeout(10)) {
 
-		Object upgradeReport = ReflectionTestUtil.getFieldValue(
-			_appender, "_upgradeReport");
+			Object upgradeReport = ReflectionTestUtil.getFieldValue(
+				_appender, "_upgradeReport");
 
-		ReflectionTestUtil.setFieldValue(
-			upgradeReport, "_documentLibrarySizeThread",
-			new Thread() {
+			ReflectionTestUtil.setFieldValue(
+				upgradeReport, "_documentLibrarySizeThread",
+				new Thread() {
 
-				@Override
-				public void run() {
-					ReflectionTestUtil.setFieldValue(
-						upgradeReport, "_documentLibrarySize", 1048576);
-				}
+					@Override
+					public void run() {
+						ReflectionTestUtil.setFieldValue(
+							upgradeReport, "_documentLibrarySize", 1048576);
+					}
 
-			});
+				});
 
-		_appender.stop();
+			_appender.stop();
 
-		_assertReport(
+			_assertReport(
 				LanguageUtil.formatStorageSize(1048576, LocaleUtil.US));
+		}
 	}
 
 	@Test
@@ -514,9 +513,6 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 
 		ReflectionTestUtil.setFieldValue(
 			PropsValues.class, "UPGRADE_LOG_CONTEXT_ENABLED", true);
-
-		_originalDLStorageTimeout = ReflectionTestUtil.getFieldValue(
-			PropsValues.class, "UPGRADE_REPORT_DL_STORAGE_INFO_TIMEOUT");
 	}
 
 	protected abstract String getFilePath();
@@ -625,7 +621,6 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 	private static Appender _logContextAppender;
 	private static final Pattern _logContextTablesInitialFinalRowsPattern =
 		Pattern.compile("(\\w+_?):(\\d+|-):(\\d+|-)");
-	private static long _originalDLStorageTimeout;
 	private static boolean _originalUpgradeClient;
 	private static boolean _originalUpgradeLogContextEnabled;
 	private static final Pattern _pattern = Pattern.compile(
