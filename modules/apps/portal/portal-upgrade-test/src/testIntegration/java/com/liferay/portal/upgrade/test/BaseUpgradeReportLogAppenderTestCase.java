@@ -264,7 +264,6 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 			_assertReport(
 				LanguageUtil.formatStorageSize(1073742000, LocaleUtil.US));
 		}
-
 	}
 
 	@Test
