@@ -263,7 +263,7 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 
 			_assertReport(
 				LanguageUtil.formatStorageSize(1073742000, LocaleUtil.US));
-
+		}
 	}
 
 	@Test
@@ -290,16 +290,9 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 
 			_appender.stop();
 
-<<<<<<< HEAD
-		_assertReport(
-				LanguageUtil.formatStorageSize(1048576, LocaleUtil.US));
-
-=======
 			_assertReport(
-				"The document library storage size is " +
-					LanguageUtil.formatStorageSize(1048576, LocaleUtil.US));
+				LanguageUtil.formatStorageSize(1048576, LocaleUtil.US));
 		}
->>>>>>> e351a547abc9 (LPS-176185 Let's set the original value after the method completion)
 	}
 
 	@Test
