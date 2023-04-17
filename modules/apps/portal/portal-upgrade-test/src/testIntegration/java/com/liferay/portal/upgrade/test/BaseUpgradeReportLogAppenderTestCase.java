@@ -231,7 +231,7 @@ public abstract class BaseUpgradeReportLogAppenderTestCase {
 			_assertLogContextContains(
 				"upgrade.report.document.library.storage.size",
 				"Unable to determine");
-			_assertReport("Unable to determine");
+			_assertReport("Document library storage size: Unable to determine");
 		}
 	}
 
