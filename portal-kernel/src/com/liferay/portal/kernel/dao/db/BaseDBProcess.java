@@ -244,6 +244,11 @@ public abstract class BaseDBProcess implements DBProcess {
 			String tableName, String columnName, String newColumnType)
 		throws Exception {
 
+		if (newColumnType.matches(".*[dD][eE][fF][aA][uU][lL][tT].*")) {
+			throw new SQLException(
+				"Alter the column type to not null default is not allowed");
+		}
+
 		if (!hasColumn(tableName, columnName)) {
 			throw new SQLException(
 				StringBundler.concat(
