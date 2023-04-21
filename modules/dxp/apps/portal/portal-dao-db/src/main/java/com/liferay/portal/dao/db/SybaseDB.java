@@ -67,6 +67,12 @@ public class SybaseDB extends BaseDB {
 	}
 
 	@Override
+	public String getCopyTableSQL(String tableName, String newTableName) {
+		return StringBundler.concat(
+			"select * into ", newTableName, " from ", tableName);
+	}
+
+	@Override
 	public String getNewUuidFunctionName() {
 		return "newid(1)";
 	}
