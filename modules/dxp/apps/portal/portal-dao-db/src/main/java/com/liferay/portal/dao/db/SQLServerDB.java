@@ -107,6 +107,12 @@ public class SQLServerDB extends BaseDB {
 	}
 
 	@Override
+	public String getCopyTableSQL(String tableName, String newTableName) {
+		return StringBundler.concat(
+			"select * into ", newTableName, " from ", tableName);
+	}
+
+	@Override
 	public List<Index> getIndexes(Connection connection) throws SQLException {
 		List<Index> indexes = new ArrayList<>();
 
