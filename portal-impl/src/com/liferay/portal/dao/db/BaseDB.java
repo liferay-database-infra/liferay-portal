@@ -198,6 +198,31 @@ public abstract class BaseDB implements DB {
 		throws IOException, SQLException;
 
 	@Override
+	public void copyTable(
+			Connection connection, String tableName, String newTableName)
+		throws Exception {
+
+		runSQL(connection, getCopyTableSQL(tableName, newTableName));
+
+		addPrimaryKey(
+			connection, newTableName,
+			getPrimaryKeyColumnNames(connection, tableName));
+
+		List<IndexMetadata> indexMetadatas = new ArrayList<>();
+
+		for (IndexMetadata indexMetadata :
+				getIndexes(connection, tableName, null, false)) {
+
+			indexMetadatas.add(
+				IndexMetadataFactoryUtil.createIndexMetadata(
+					indexMetadata.isUnique(), newTableName,
+					indexMetadata.getColumnNames()));
+		}
+
+		addIndexes(connection, indexMetadatas);
+	}
+
+	@Override
 	public List<IndexMetadata> dropIndexes(
 			Connection connection, String tableName, String columnName)
 		throws IOException, SQLException {
@@ -210,6 +235,13 @@ public abstract class BaseDB implements DB {
 		}
 
 		return indexMetadatas;
+	}
+
+	@Override
+	public String getCopyTableSQL(String tableName, String newTableName) {
+		return StringBundler.concat(
+			"create table ", newTableName, " as (select * from ", tableName,
+			")");
 	}
 
 	@Override
