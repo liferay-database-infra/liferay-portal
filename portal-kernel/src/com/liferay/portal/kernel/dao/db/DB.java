@@ -65,9 +65,15 @@ public interface DB {
 
 	public String buildSQL(String template) throws IOException, SQLException;
 
+	public void copyTable(
+			Connection connection, String tableName, String newTableName)
+		throws Exception;
+
 	public List<IndexMetadata> dropIndexes(
 			Connection connection, String tableName, String columnName)
 		throws IOException, SQLException;
+
+	public String getCopyTableSQL(String tableName, String newTableName);
 
 	public DBType getDBType();
 
