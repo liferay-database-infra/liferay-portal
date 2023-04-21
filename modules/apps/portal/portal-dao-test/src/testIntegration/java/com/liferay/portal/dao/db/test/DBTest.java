@@ -271,6 +271,54 @@ public class DBTest {
 	}
 
 	@Test
+	public void testCopyExistentTable() throws Exception {
+		String[] indexColumnNames = {"typeVarchar", "typeBoolean"};
+
+		_addIndex(indexColumnNames);
+
+		_db.runSQL(
+			"insert into " + _TABLE_NAME_1 +
+				" (id, notNilColumn, typeString) values (1, '1', 'testValue')");
+
+		_db.copyTable(_connection, _TABLE_NAME_1, _TABLE_NAME_2);
+
+		Assert.assertTrue(_dbInspector.hasTable(_TABLE_NAME_2));
+		Assert.assertTrue(_dbInspector.hasRows(_TABLE_NAME_2));
+
+		Assert.assertArrayEquals(
+			new String[] {"id"},
+			_db.getPrimaryKeyColumnNames(_connection, _TABLE_NAME_2));
+
+		List<IndexMetadata> indexMetadatas = _getIndexes(
+			_TABLE_NAME_2, indexColumnNames);
+
+		Assert.assertEquals(
+			indexMetadatas.toString(), 1, indexMetadatas.size());
+	}
+
+	@Test
+	public void testCopyNonexistentTable() {
+		try {
+			_db.copyTable(_connection, "DoesNotExist", _TABLE_NAME_2);
+
+			Assert.fail();
+		}
+		catch (Exception exception) {
+		}
+	}
+
+	@Test
+	public void testCopyTableBadNewName() {
+		try {
+			_db.copyTable(_connection, _TABLE_NAME_1, _TABLE_NAME_1);
+
+			Assert.fail();
+		}
+		catch (Exception exception) {
+		}
+	}
+
+	@Test
 	public void testGetPrimaryKeyColumnNames() throws Exception {
 		_db.runSQL(_SQL_CREATE_TABLE_2);
 
@@ -298,13 +346,20 @@ public class DBTest {
 			_connection, indexMetadatas);
 	}
 
-	private void _validateIndex(String[] columnNames) throws Exception {
-		List<IndexMetadata> indexMetadatas = ReflectionTestUtil.invoke(
+	private List<IndexMetadata> _getIndexes(
+		String tableName, String[] columnNames) {
+
+		return ReflectionTestUtil.invoke(
 			_db, "getIndexes",
 			new Class<?>[] {
 				Connection.class, String.class, String.class, boolean.class
 			},
-			_connection, _TABLE_NAME_1, columnNames[0], false);
+			_connection, tableName, columnNames[0], false);
+	}
+
+	private void _validateIndex(String[] columnNames) throws Exception {
+		List<IndexMetadata> indexMetadatas = _getIndexes(
+			_TABLE_NAME_1, columnNames);
 
 		Assert.assertEquals(
 			indexMetadatas.toString(), 1, indexMetadatas.size());
