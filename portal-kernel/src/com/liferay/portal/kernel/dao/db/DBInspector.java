@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeException;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import javax.print.DocFlavor;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -130,6 +131,19 @@ public class DBInspector {
 				 (actualColumnNullable != DatabaseMetaData.columnNoNulls))) {
 
 				return false;
+			}
+
+			if (!expectedColumnNullable &&
+			   (actualColumnNullable == DatabaseMetaData.columnNoNulls)) {
+
+				String expectedColumnDefaultValue = _getColumnDefaultValue(columnType);
+
+				String actualColumnDefaultValue =
+					resultSet.getString("COLUMN_DEF");
+
+				if (!expectedColumnDefaultValue.equals(actualColumnDefaultValue)) {
+					return false;
+				}
 			}
 
 			return true;
@@ -260,6 +274,32 @@ public class DBInspector {
 		}
 
 		return biFunction.apply(DBManagerUtil.getDB(), matcher.group(1));
+	}
+
+	private String _getColumnDefaultValue(String columnType) {
+		Matcher matcher = _columnTypePattern.matcher(columnType);
+
+		if (!matcher.lookingAt()) {
+			return null;
+		}
+
+		columnType = columnType.trim();
+
+		columnType = StringUtil.toLowerCase(columnType);
+
+		if (columnType.contains("default")) {
+			columnType = StringUtil.removeChars(columnType,'\'', '\"');
+
+			int indexStartDefaultValue = columnType.indexOf("default");
+
+			int indexEndDefaultValue = columnType.indexOf("not null");
+
+			String defaultValue = columnType.substring(indexStartDefaultValue + 8, indexEndDefaultValue - 1);
+
+			return defaultValue;
+		}
+
+		return null;
 	}
 
 	private int _getColumnSize(String columnType) throws UpgradeException {
