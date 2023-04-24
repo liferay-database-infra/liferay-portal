@@ -37,6 +37,8 @@ import java.sql.Types;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Alexander Chow
@@ -104,6 +106,23 @@ public class SQLServerDB extends BaseDB {
 			new String[] {"\\", "''", "\"", "\n", "\r"});
 
 		return template;
+	}
+
+	@Override
+	public String getDefaultValue(String columnDef) {
+		Matcher matcher = getColumnStoredDefaultClausePattern().matcher(
+			columnDef);
+
+		if (matcher.find()) {
+			if(matcher.group(1) == null){
+				columnDef = matcher.group(2);
+			}
+			else {
+				columnDef = matcher.group(1);
+			}
+		}
+
+		return columnDef;
 	}
 
 	@Override
@@ -220,6 +239,10 @@ public class SQLServerDB extends BaseDB {
 			" where 1 = 0");
 	}
 
+	protected Pattern getColumnStoredDefaultClausePattern() {
+		return columnStoredDefaultClausePattern;
+	}
+
 	@Override
 	protected int[] getSQLTypes() {
 		return _SQL_TYPES;
@@ -334,6 +357,9 @@ public class SQLServerDB extends BaseDB {
 		" datetime2(6)", " float", " int", " bigint", " nvarchar(4000)",
 		" nvarchar(max)", " nvarchar", "  identity(1,1)", "go"
 	};
+
+	protected static final Pattern columnStoredDefaultClausePattern = Pattern.compile(
+		"^\\('(.*)'\\)|\\(\\((\\d*)\\)\\)", Pattern.CASE_INSENSITIVE);
 
 	private static final int _SQL_SERVER_2000 = 8;
 

@@ -132,6 +132,24 @@ public class DBInspector {
 				return false;
 			}
 
+			if (!expectedColumnNullable &&
+				(actualColumnNullable == DatabaseMetaData.columnNoNulls)) {
+
+				String expectedColumnDefaultValue = _getColumnDefaultValue(
+					columnType);
+
+				String actualColumnDefaultValue = resultSet.getString(
+					"COLUMN_DEF");
+
+				if (actualColumnDefaultValue != null) {
+					actualColumnDefaultValue = _getStoredColumnDefaultValue(
+						actualColumnDefaultValue, DB::getDefaultValue);
+				}
+				
+				return StringUtil.equals(
+					expectedColumnDefaultValue, actualColumnDefaultValue);
+			}
+
 			return true;
 		}
 	}
@@ -262,6 +280,16 @@ public class DBInspector {
 		return biFunction.apply(DBManagerUtil.getDB(), matcher.group(1));
 	}
 
+	private String _getColumnDefaultValue(String columnType) {
+		Matcher matcher = _columnDefaultClausePattern.matcher(columnType);
+
+		if (matcher.find()) {
+			return matcher.group(1);
+		}
+
+		return null;
+	}
+
 	private int _getColumnSize(String columnType) throws UpgradeException {
 		Matcher matcher = _columnSizePattern.matcher(columnType);
 
@@ -294,6 +322,12 @@ public class DBInspector {
 		return DB.SQL_SIZE_NONE;
 	}
 
+	private String _getStoredColumnDefaultValue(
+		String columnDef, BiFunction<DB, String, String> biFunction) {
+
+		return biFunction.apply(DBManagerUtil.getDB(), columnDef);
+	}
+
 	private boolean _hasTable(String tableName) throws Exception {
 		DatabaseMetaData metadata = _connection.getMetaData();
 
@@ -321,7 +355,8 @@ public class DBInspector {
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(DBInspector.class);
-
+	private static final Pattern _columnDefaultClausePattern = Pattern.compile(
+		".*DEFAULT '?(.*[^'])'? NOT NULL", Pattern.CASE_INSENSITIVE);
 	private static final Pattern _columnSizePattern = Pattern.compile(
 		"^\\w+(?:\\((\\d+)\\))?.*", Pattern.CASE_INSENSITIVE);
 	private static final Pattern _columnTypePattern = Pattern.compile(
