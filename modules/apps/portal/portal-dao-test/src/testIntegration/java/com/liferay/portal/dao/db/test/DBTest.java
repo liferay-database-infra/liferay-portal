@@ -237,6 +237,30 @@ public class DBTest {
 	}
 
 	@Test
+	public void testAlterTableAddColumnDefaultNotNull() throws Exception {
+		_db.alterTableAddColumn(
+			_connection, _TABLE_NAME_1, "testColumn",
+			"LONG default 2 not null");
+
+		_db.runSQL(
+			"insert into " + _TABLE_NAME_1 +
+			" (id, notNilColumn) values (1, '1')");
+
+		try (PreparedStatement preparedStatement = _connection.prepareStatement(
+			"select testColumn from " + _TABLE_NAME_1);
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			resultSet.next();
+
+			Assert.assertEquals(2, resultSet.getLong(1));
+		}
+
+		Assert.assertTrue(
+			_dbInspector.hasColumnType(
+				_TABLE_NAME_1, "testColumn", "LONG default 2 not null"));
+	}
+
+	@Test
 	public void testAlterTableDropIndexedColumn() throws Exception {
 		_addIndex(new String[] {"typeVarchar", "typeBoolean"});
 
