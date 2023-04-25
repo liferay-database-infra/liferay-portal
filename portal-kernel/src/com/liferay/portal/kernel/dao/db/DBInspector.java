@@ -22,7 +22,6 @@ import com.liferay.portal.kernel.upgrade.UpgradeException;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
-import javax.print.DocFlavor;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -134,14 +133,17 @@ public class DBInspector {
 			}
 
 			if (!expectedColumnNullable &&
-			   (actualColumnNullable == DatabaseMetaData.columnNoNulls)) {
+				(actualColumnNullable == DatabaseMetaData.columnNoNulls)) {
 
-				String expectedColumnDefaultValue = _getColumnDefaultValue(columnType);
+				String expectedColumnDefaultValue = _getColumnDefaultValue(
+					columnType);
 
-				String actualColumnDefaultValue =
-					resultSet.getString("COLUMN_DEF");
+				String actualColumnDefaultValue = resultSet.getString(
+					"COLUMN_DEF");
 
-				if (!expectedColumnDefaultValue.equals(actualColumnDefaultValue)) {
+				if (!expectedColumnDefaultValue.equals(
+						actualColumnDefaultValue)) {
+
 					return false;
 				}
 			}
@@ -288,15 +290,14 @@ public class DBInspector {
 		columnType = StringUtil.toLowerCase(columnType);
 
 		if (columnType.contains("default")) {
-			columnType = StringUtil.removeChars(columnType,'\'', '\"');
+			columnType = StringUtil.removeChars(columnType, '\'', '\"');
 
 			int indexStartDefaultValue = columnType.indexOf("default");
 
 			int indexEndDefaultValue = columnType.indexOf("not null");
 
-			String defaultValue = columnType.substring(indexStartDefaultValue + 8, indexEndDefaultValue - 1);
-
-			return defaultValue;
+			return columnType.substring(
+				indexStartDefaultValue + 8, indexEndDefaultValue - 1);
 		}
 
 		return null;

@@ -244,11 +244,11 @@ public class DBTest {
 
 		_db.runSQL(
 			"insert into " + _TABLE_NAME_1 +
-			" (id, notNilColumn) values (1, '1')");
+				" (id, notNilColumn) values (1, '1')");
 
 		try (PreparedStatement preparedStatement = _connection.prepareStatement(
-			"select testColumn from " + _TABLE_NAME_1);
-			 ResultSet resultSet = preparedStatement.executeQuery()) {
+				"select testColumn from " + _TABLE_NAME_1);
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			resultSet.next();
 
@@ -261,42 +261,20 @@ public class DBTest {
 	}
 
 	@Test
-	public void testAlterTableAddColumnVarcharDefaultNotNull() throws Exception {
-		_db.alterTableAddColumn(
-			_connection, _TABLE_NAME_1, "testColumn",
-			"VARCHAR(40) default \"test column\" not null");
+	public void testAlterTableAddColumnVarchar2DefaultNotNull()
+		throws Exception {
 
-		_db.runSQL(
-			"insert into " + _TABLE_NAME_1 +
-			" (id, notNilColumn) values (1, '1')");
-
-		try (PreparedStatement preparedStatement = _connection.prepareStatement(
-			"select testColumn from " + _TABLE_NAME_1);
-			 ResultSet resultSet = preparedStatement.executeQuery()) {
-
-			resultSet.next();
-
-			Assert.assertEquals("test column", resultSet.getString(1));
-		}
-
-		Assert.assertTrue(
-			_dbInspector.hasColumnType(
-				_TABLE_NAME_1, "testColumn", "VARCHAR(40) default \"test column\" not null"));
-	}
-
-	@Test
-	public void testAlterTableAddColumnVarchar2DefaultNotNull() throws Exception {
 		_db.alterTableAddColumn(
 			_connection, _TABLE_NAME_1, "testColumn",
 			"VARCHAR(40) default 'test column' not null");
 
 		_db.runSQL(
 			"insert into " + _TABLE_NAME_1 +
-			" (id, notNilColumn) values (1, '1')");
+				" (id, notNilColumn) values (1, '1')");
 
 		try (PreparedStatement preparedStatement = _connection.prepareStatement(
-			"select testColumn from " + _TABLE_NAME_1);
-			 ResultSet resultSet = preparedStatement.executeQuery()) {
+				"select testColumn from " + _TABLE_NAME_1);
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			resultSet.next();
 
@@ -305,7 +283,35 @@ public class DBTest {
 
 		Assert.assertTrue(
 			_dbInspector.hasColumnType(
-				_TABLE_NAME_1, "testColumn", "VARCHAR(40) default 'test column' not null"));
+				_TABLE_NAME_1, "testColumn",
+				"VARCHAR(40) default 'test column' not null"));
+	}
+
+	@Test
+	public void testAlterTableAddColumnVarcharDefaultNotNull()
+		throws Exception {
+
+		_db.alterTableAddColumn(
+			_connection, _TABLE_NAME_1, "testColumn",
+			"VARCHAR(40) default \"test column\" not null");
+
+		_db.runSQL(
+			"insert into " + _TABLE_NAME_1 +
+				" (id, notNilColumn) values (1, '1')");
+
+		try (PreparedStatement preparedStatement = _connection.prepareStatement(
+				"select testColumn from " + _TABLE_NAME_1);
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			resultSet.next();
+
+			Assert.assertEquals("test column", resultSet.getString(1));
+		}
+
+		Assert.assertTrue(
+			_dbInspector.hasColumnType(
+				_TABLE_NAME_1, "testColumn",
+				"VARCHAR(40) default \"test column\" not null"));
 	}
 
 	@Test
