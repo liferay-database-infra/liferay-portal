@@ -141,8 +141,27 @@ public class DBInspector {
 				String actualColumnDefaultValue = resultSet.getString(
 					"COLUMN_DEF");
 
-				if (!expectedColumnDefaultValue.equals(
+				/*if (!(expectedColumnDefaultValue == null &&
+					actualColumnDefaultValue == null)) {
+
+					if (!expectedColumnDefaultValue.equals(
 						actualColumnDefaultValue)) {
+
+						return false;
+					}
+				}*/
+
+				if ((expectedColumnDefaultValue == null) &&
+					(actualColumnDefaultValue == null)) {
+
+					return true;
+				}
+				else if (((expectedColumnDefaultValue == null) &&
+						  (actualColumnDefaultValue != null)) ||
+						 ((expectedColumnDefaultValue != null) &&
+						  (actualColumnDefaultValue == null)) ||
+						 !expectedColumnDefaultValue.equals(
+							 actualColumnDefaultValue)) {
 
 					return false;
 				}
