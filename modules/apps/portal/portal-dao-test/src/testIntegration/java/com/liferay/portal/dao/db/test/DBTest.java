@@ -286,7 +286,7 @@ public class DBTest {
 		Assert.assertTrue(_dbInspector.hasRows(_TABLE_NAME_2));
 
 		Assert.assertArrayEquals(
-			new String[] {"id"},
+			new String[] {_dbInspector.normalizeName("id")},
 			_db.getPrimaryKeyColumnNames(_connection, _TABLE_NAME_2));
 
 		List<IndexMetadata> indexMetadatas = _getIndexes(
