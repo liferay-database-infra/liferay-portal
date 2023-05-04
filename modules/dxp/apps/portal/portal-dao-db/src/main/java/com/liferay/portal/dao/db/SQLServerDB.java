@@ -114,7 +114,7 @@ public class SQLServerDB extends BaseDB {
 			columnDef);
 
 		if (matcher.find()) {
-			if(matcher.group(1) == null){
+			if (matcher.group(1) == null) {
 				columnDef = matcher.group(2);
 			}
 			else {
@@ -231,16 +231,16 @@ public class SQLServerDB extends BaseDB {
 		}
 	}
 
+	protected Pattern getColumnStoredDefaultClausePattern() {
+		return columnStoredDefaultClausePattern;
+	}
+
 	protected String getCopyTableStructureSQL(
 		String tableName, String newTableName) {
 
 		return StringBundler.concat(
 			"select * into ", newTableName, " from ", tableName,
 			" where 1 = 0");
-	}
-
-	protected Pattern getColumnStoredDefaultClausePattern() {
-		return columnStoredDefaultClausePattern;
 	}
 
 	@Override
@@ -316,6 +316,10 @@ public class SQLServerDB extends BaseDB {
 		}
 	}
 
+	protected static final Pattern columnStoredDefaultClausePattern =
+		Pattern.compile(
+			"^\\('(.*)'\\)|\\(\\((\\d*)\\)\\)", Pattern.CASE_INSENSITIVE);
+
 	private void _dropDefaultConstraint(
 			Connection connection, String tableName, String columnName)
 		throws Exception {
@@ -357,9 +361,6 @@ public class SQLServerDB extends BaseDB {
 		" datetime2(6)", " float", " int", " bigint", " nvarchar(4000)",
 		" nvarchar(max)", " nvarchar", "  identity(1,1)", "go"
 	};
-
-	protected static final Pattern columnStoredDefaultClausePattern = Pattern.compile(
-		"^\\('(.*)'\\)|\\(\\((\\d*)\\)\\)", Pattern.CASE_INSENSITIVE);
 
 	private static final int _SQL_SERVER_2000 = 8;
 

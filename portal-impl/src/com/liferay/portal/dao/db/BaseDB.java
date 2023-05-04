@@ -864,6 +864,10 @@ public abstract class BaseDB implements DB {
 		return validIndexNames;
 	}
 
+	protected Pattern getColumnStoredDefaultClausePattern() {
+		return columnStoredDefaultClausePattern;
+	}
+
 	protected String getCopyTableStructureSQL(
 		String tableName, String newTableName) {
 
@@ -981,10 +985,6 @@ public abstract class BaseDB implements DB {
 
 	protected int[] getSQLVarcharSizes() {
 		return new int[] {-1, -1};
-	}
-
-	protected Pattern getColumnStoredDefaultClausePattern() {
-		return columnStoredDefaultClausePattern;
 	}
 
 	protected abstract String[] getTemplate();
