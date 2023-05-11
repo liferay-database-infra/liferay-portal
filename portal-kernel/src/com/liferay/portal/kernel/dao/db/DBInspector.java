@@ -141,6 +141,8 @@ public class DBInspector {
 				String actualColumnDefaultValue = resultSet.getString(
 					"COLUMN_DEF");
 
+				_log.error("actualColumnDefaultValue: " + actualColumnDefaultValue);
+
 				if (actualColumnDefaultValue != null) {
 					Matcher matcher = _columnDbDefaultTypePattern.matcher(
 						actualColumnDefaultValue);
@@ -353,9 +355,8 @@ public class DBInspector {
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(DBInspector.class);
-
 	private static final Pattern _columnDbDefaultTypePattern = Pattern.compile(
-		"('?)(.*)\\1::.*", Pattern.CASE_INSENSITIVE);
+		"('?)(.*)\\1.*", Pattern.CASE_INSENSITIVE);
 	private static final Pattern _columnDefaultTypePattern = Pattern.compile(
 		".*DEFAULT '?(.*[^'])'? NOT NULL", Pattern.CASE_INSENSITIVE);
 	private static final Pattern _columnSizePattern = Pattern.compile(
