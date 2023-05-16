@@ -16,6 +16,7 @@ import ClayForm, {ClayCheckbox} from '@clayui/form';
 import {useForm} from 'react-hook-form';
 import {useOutletContext, useParams} from 'react-router-dom';
 import {KeyedMutator} from 'swr';
+import SearchBuilder from '~/core/SearchBuilder';
 import {withPagePermission} from '~/hoc/withPagePermission';
 
 import Form from '../../../components/Form';
@@ -68,9 +69,12 @@ const CaseForm = () => {
 		testrayProject: TestrayProject;
 	} = useOutletContext();
 
+	const {projectId} = useParams();
+
 	useHeader({
+		headerActions: {actions: []},
 		tabs: [],
-		timeout: 100,
+		timeout: 150,
 	});
 
 	const {data: testrayComponentsData} = useFetch<
@@ -78,6 +82,7 @@ const CaseForm = () => {
 	>('/components', {
 		params: {
 			fields: 'id,name',
+			filter: SearchBuilder.eq('projectId', projectId as string),
 			pageSize: 1000,
 		},
 	});
@@ -99,7 +104,6 @@ const CaseForm = () => {
 		form: {onClose, onError, onSave, onSubmit, onSuccess},
 	} = useFormActions();
 
-	const {projectId} = useParams();
 	const {
 		formState: {errors, isSubmitting},
 		handleSubmit,

@@ -57,7 +57,7 @@ const RequirementsForm = () => {
 	const {
 		form: {onClose, onError, onSave, onSubmit},
 	} = useFormActions();
-	useHeader({tabs: [], timeout: 100});
+	useHeader({headerActions: {actions: []}, tabs: [], timeout: 150});
 	const {projectId, requirementId} = useParams();
 	const {
 		mutateTestrayRequirement,
@@ -73,14 +73,16 @@ const RequirementsForm = () => {
 		defaultValues: requirementId ? (testrayRequirement as any) : {},
 		resolver: yupResolver(yupSchema.requirement),
 	});
+
 	const {data: testrayComponentsData} = useFetch<
 		APIResponse<TestrayComponent>
-	>(
-		`/components?fields=id,name&filter=${SearchBuilder.eq(
-			'projectId',
-			projectId as string
-		)}&pageSize=1000`
-	);
+	>('/components', {
+		params: {
+			fields: 'id,name',
+			filter: SearchBuilder.eq('projectId', projectId as string),
+			pageSize: 1000,
+		},
+	});
 
 	const testrayComponents = useMemo(
 		() => testrayComponentsData?.items ?? [],

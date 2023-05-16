@@ -12,15 +12,21 @@
  * details.
  */
 
-package com.liferay.site.navigation.menu.web.internal.constants;
+package com.liferay.object.rest.manager.v1_0;
 
 /**
- * @author Eudaldo Alonso
+ * @author Feliphe Marinho
  */
-public class SiteNavigationMenuPortletKeys {
+public class DefaultObjectEntryManagerProvider {
 
-	public static final String SITE_NAVIGATION_MENU =
-		"com_liferay_site_navigation_menu_web_portlet_" +
-			"SiteNavigationMenuPortlet";
+	public static DefaultObjectEntryManager provide(
+		ObjectEntryManager objectEntryManager) {
+
+		if (!(objectEntryManager instanceof DefaultObjectEntryManager)) {
+			throw new UnsupportedOperationException();
+		}
+
+		return (DefaultObjectEntryManager)objectEntryManager;
+	}
 
 }
