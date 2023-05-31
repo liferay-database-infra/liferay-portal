@@ -10,6 +10,25 @@ definition {
 			locator1 = "Search#ADD_PORTLET_LINK");
 	}
 
+	macro addSortOption {
+		Click(
+			key_text = "Add Option",
+			locator1 = "Button#ANY");
+
+		Type.type(
+			locator1 = "Search#SORT_WIDGET_CONFIGURATION_EMPTY_INDEXED_FIELD",
+			value1 = ${indexedField});
+
+		Type.type(
+			locator1 = "Search#SORT_WIDGET_CONFIGURATION_EMPTY_DISPLAY_LABEL",
+			value1 = ${displayLabel});
+
+		Select(
+			key_displayLabel = ${displayLabel},
+			locator1 = "Search#SORT_WIDGET_CONFIGURATION_ORDER_DROPDOWN",
+			value1 = ${order});
+	}
+
 	macro addWidgets {
 		if (IsNotVisible(locator1 = "ControlMenuAddPanel#CLOSE_ADD_PANEL")) {
 			Click.clickAt(locator1 = "ControlMenu#ADD");
@@ -113,6 +132,7 @@ definition {
 
 	macro configureCustomFilter {
 		Portlet.gotoPortletOptions(
+			portletIndex = ${portletIndex},
 			portletName = "Custom Filter",
 			portletOption = "Configuration");
 
@@ -158,6 +178,20 @@ definition {
 				key_fieldLabel = "Occur",
 				locator1 = "Select#GENERIC_SELECT_FIELD",
 				value1 = ${occur});
+		}
+
+		if (isSet(queryName)) {
+			Type(
+				key_fieldLabel = "Query Name",
+				locator1 = "TextInput#GENERIC_TEXT_INPUT",
+				value1 = ${queryName});
+		}
+
+		if (isSet(parentQueryName)) {
+			Type(
+				inputFieldId = "parentQueryName",
+				locator1 = "TextInput#INPUT_ID",
+				value1 = ${parentQueryName});
 		}
 
 		PortletEntry.save();

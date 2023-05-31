@@ -12,13 +12,13 @@
  * details.
  */
 
-/// <reference types="react" />
-
-import {FDSViewSectionInterface} from '../FDSView';
+import {IFDSViewSectionInterface} from '../FDSView';
+import '../../css/FDSEntries.scss';
 declare const Fields: ({
+	fdsClientExtensionCellRenderers,
 	fdsView,
 	fdsViewsURL,
 	namespace,
 	saveFDSFieldsURL,
-}: FDSViewSectionInterface) => JSX.Element;
+}: IFDSViewSectionInterface) => JSX.Element;
 export default Fields;

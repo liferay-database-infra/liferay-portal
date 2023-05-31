@@ -655,7 +655,8 @@ public class CommerceOrderEditDisplayContext {
 		}
 
 		List<CommerceOrderStatus> commerceOrderStatuses =
-			_commerceOrderStatusRegistry.getCommerceOrderStatuses();
+			_commerceOrderStatusRegistry.getCommerceOrderStatuses(
+				_commerceOrder);
 
 		for (CommerceOrderStatus commerceOrderStatus : commerceOrderStatuses) {
 			if (((commerceOrderStatus.getKey() ==
@@ -682,7 +683,9 @@ public class CommerceOrderEditDisplayContext {
 
 			if (commerceOrderStatus.equals(currentCommerceOrderStatus) &&
 				(commerceOrderStatus.getKey() !=
-					CommerceOrderConstants.ORDER_STATUS_COMPLETED)) {
+					CommerceOrderConstants.ORDER_STATUS_COMPLETED) &&
+				(commerceOrderStatus.getKey() !=
+					CommerceOrderConstants.ORDER_STATUS_QUOTE_PROCESSED)) {
 
 				step.setState("active");
 			}

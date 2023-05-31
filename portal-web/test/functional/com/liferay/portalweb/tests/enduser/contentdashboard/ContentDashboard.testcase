@@ -11,12 +11,6 @@ definition {
 		User.firstLoginPG();
 
 		HeadlessSite.addSite(siteName = "Test Site Name");
-
-		Navigator.openURL();
-
-		JSONDocument.deleteFile(
-			dmDocumentTitle = "tree.png",
-			groupName = "Guest");
 	}
 
 	tearDown {
@@ -327,7 +321,7 @@ definition {
 		}
 
 		task ("Then the blog author's avatar and name are shown") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#INFO_PANEL_AUTHOR",
 				value1 = "Test Test");
 
@@ -553,13 +547,13 @@ definition {
 		task ("Check both blogs are listed") {
 			ContentDashboard.filterBySite(siteName = "Test Site Name");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title 1");
 
 			ContentDashboard.filterBySite(siteName = "Test Site Name 2");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title 2");
 		}
@@ -688,7 +682,7 @@ definition {
 				item = "Info",
 				tableEntry = "Blogs Entry Title");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#INFO_PANEL_TITLE",
 				value1 = "Blogs Entry Title");
 		}
@@ -713,7 +707,7 @@ definition {
 				item = "Info",
 				tableEntry = "Blogs Entry Title");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#INFO_PANEL_ASSET_TYPE",
 				value1 = "Blogs Entry");
 		}
@@ -776,9 +770,9 @@ definition {
 
 			ContentDashboard.filterByCategory(categoryNameList = "Test");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "Test");
+				value1 = "WC WebContent Title");
 		}
 	}
 
@@ -817,20 +811,20 @@ definition {
 		task ("Validade if the categories are shown in order of creation") {
 			ContentDashboard.goToContentDashboard();
 
-			AssertTextPresent(
+			AssertTextEquals(
 				categoryIndex = 1,
 				locator1 = "ContentDashboard#X_AXIS_CATEGORIES_NAME",
-				value1 = "C_Subaudience_1");
+				value1 = "C_Subaudien…");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				categoryIndex = 2,
 				locator1 = "ContentDashboard#X_AXIS_CATEGORIES_NAME",
-				value1 = "B_Subaudience_2");
+				value1 = "B_Subaudien…");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				categoryIndex = 3,
 				locator1 = "ContentDashboard#X_AXIS_CATEGORIES_NAME",
-				value1 = "A_Subaudience_3");
+				value1 = "A_Subaudien…");
 		}
 	}
 
@@ -848,20 +842,17 @@ definition {
 		}
 
 		task ("Check if the words Topic, Audience and Stage are shown") {
-			AssertTextPresent(
+			AssertElementPresent(
 				key_fieldLabel = "Topic",
-				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM",
-				value1 = "Topic");
+				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM");
 
-			AssertTextPresent(
+			AssertElementPresent(
 				key_fieldLabel = "Audience",
-				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM",
-				value1 = "Audience");
+				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM");
 
-			AssertTextPresent(
+			AssertElementPresent(
 				key_fieldLabel = "Stage",
-				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM",
-				value1 = "Stage");
+				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM");
 		}
 	}
 
@@ -995,13 +986,9 @@ definition {
 		}
 
 		task ("Checking if the results bar appears") {
-			AssertTextPresent(
-				locator1 = "Treeview#FILTER_BY_RESULTS_BAR_MESSAGE",
-				value1 = "3 ");
-
-			AssertTextPresent(
-				locator1 = "Treeview#FILTER_BY_RESULTS_BAR_MESSAGE",
-				value1 = "Items Selected");
+			AssertTextEquals(
+				locator1 = "Search#SEARCH_INFO",
+				value1 = "3 Items Selected");
 		}
 	}
 
@@ -1038,13 +1025,9 @@ definition {
 		task ("Returns to 'Select Categories' and checking if the results bar is present") {
 			ContentDashboard.openFilterModal(filterOption = "Categories");
 
-			AssertTextPresent(
-				locator1 = "Treeview#FILTER_BY_RESULTS_BAR_MESSAGE",
-				value1 = "1 ");
-
-			AssertTextPresent(
-				locator1 = "Treeview#FILTER_BY_RESULTS_BAR_MESSAGE",
-				value1 = "Item Selected");
+			AssertTextEquals(
+				locator1 = "Search#SEARCH_INFO",
+				value1 = "1 Item Selected");
 		}
 	}
 
@@ -1085,13 +1068,9 @@ definition {
 		}
 
 		task ("Checking if the results bar appears") {
-			AssertTextPresent(
-				locator1 = "Treeview#FILTER_BY_RESULTS_BAR_MESSAGE",
-				value1 = "1 ");
-
-			AssertTextPresent(
-				locator1 = "Treeview#FILTER_BY_RESULTS_BAR_MESSAGE",
-				value1 = "Item Selected");
+			AssertTextEquals(
+				locator1 = "Search#SEARCH_INFO",
+				value1 = "1 Item Selected");
 		}
 	}
 
@@ -1132,13 +1111,9 @@ definition {
 		}
 
 		task ("Checking if the results bar appears") {
-			AssertTextPresent(
-				locator1 = "Treeview#FILTER_BY_RESULTS_BAR_MESSAGE",
-				value1 = "1 ");
-
-			AssertTextPresent(
-				locator1 = "Treeview#FILTER_BY_RESULTS_BAR_MESSAGE",
-				value1 = "Item Selected");
+			AssertTextEquals(
+				locator1 = "Search#SEARCH_INFO",
+				value1 = "1 Item Selected");
 		}
 
 		task ("Assert 'Clear All' button appears at results bar") {
@@ -1177,11 +1152,10 @@ definition {
 		task ("Check in Content Dashboard if WC is assiciated with Display Page Template") {
 			ContentDashboard.goToContentDashboard();
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "Webcontent Title");
-
-			AssertVisible(locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED_DISPLAY_PAGE");
+			AssertVisible(
+				key_tableEntry = "Webcontent Title",
+				key_text = "page",
+				locator1 = "LexiconTable#TABLE_ENTRY_ICON");
 		}
 	}
 
@@ -1200,11 +1174,12 @@ definition {
 		task ("Check in Content Dashboard if WC is assiciated with Display Page Template") {
 			ContentDashboard.goToContentDashboard();
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "Webcontent Title");
+			LexiconTable.viewTableEntryTitle(tableEntry = "Webcontent Title");
 
-			AssertElementNotPresent(locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED_DISPLAY_PAGE");
+			AssertElementNotPresent(
+				key_tableEntry = "Webcontent Title",
+				key_text = "page",
+				locator1 = "LexiconTable#TABLE_ENTRY_ICON");
 		}
 	}
 
@@ -1245,11 +1220,12 @@ definition {
 		task ("Check in Content Dashboard if WC is assiciated with Display Page Template") {
 			ContentDashboard.goToContentDashboard();
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "Webcontent Title");
+			LexiconTable.viewTableEntryTitle(tableEntry = "Webcontent Title");
 
-			AssertElementNotPresent(locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED_DISPLAY_PAGE");
+			AssertElementNotPresent(
+				key_tableEntry = "Webcontent Title",
+				key_text = "page",
+				locator1 = "LexiconTable#TABLE_ENTRY_ICON");
 		}
 	}
 
@@ -1275,13 +1251,13 @@ definition {
 		}
 
 		task ("Then the field labels should be added to distinguish between the two URLs ") {
-			AssertTextPresent(
-				locator1 = "ContentDashboard#URL_LABEL",
-				value1 = "WebDAV URL");
+			AssertElementPresent(
+				key_fieldLabel = "WebDAV URL",
+				locator1 = "ContentDashboard#URL_LABEL");
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#URL_LABEL",
-				value1 = "Latest Version URL");
+			AssertElementPresent(
+				key_fieldLabel = "Latest Version URL",
+				locator1 = "ContentDashboard#URL_LABEL");
 		}
 	}
 
@@ -1316,10 +1292,10 @@ definition {
 		task ("Nagigate to Content Dashboard and check if there's a label with '...' indicating 'more categories' ") {
 			ContentDashboard.goToContentDashboard();
 
-			AssertTextPresent(
-				assetName = "WC",
-				locator1 = "ContentDashboard#ASSET_CATEGORY_LABEL",
-				value1 = "+ 2");
+			LexiconTable.viewTableEntryInfo(
+				columnName = "audience",
+				tableEntry = "WC",
+				tableEntryInfo = "Subaudience_1 + 2");
 		}
 	}
 
@@ -1788,7 +1764,7 @@ definition {
 		}
 
 		task ("Checking if the results bar not appears") {
-			AssertElementNotPresent(locator1 = "Treeview#FILTER_BY_RESULTS_BAR_MESSAGE");
+			AssertElementNotPresent(locator1 = "Search#SEARCH_INFO");
 		}
 	}
 
@@ -1870,13 +1846,13 @@ definition {
 
 			LexiconTable.clickTableEntryColumnLink(
 				columnName = "title",
-				tableEntry = "");
+				tableEntry = "WC Title");
 
-			WaitForPageLoad();
+			ControlMenu.viewHeaderTitle(headerTitle = "WC Title");
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "WC Title");
+			AssertTextEquals(
+				locator1 = "Home#SITE_NAME",
+				value1 = "Test Site Name");
 		}
 	}
 
@@ -1973,13 +1949,13 @@ definition {
 
 			LexiconTable.clickTableEntryColumnLink(
 				columnName = "title",
-				tableEntry = "");
+				tableEntry = "WC Title");
 
-			WaitForPageLoad();
+			ControlMenu.viewHeaderTitle(headerTitle = "WC Title");
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#DISPLAY_PAGE_TITLE",
-				value1 = "WC Title");
+			AssertTextEquals(
+				locator1 = "Home#SITE_NAME",
+				value1 = "Test Site Name");
 		}
 	}
 
@@ -2089,11 +2065,13 @@ definition {
 		task ("Click on the title") {
 			LexiconTable.clickTableEntryColumnLink(
 				columnName = "title",
-				tableEntry = "");
+				tableEntry = "Blogs Entry Title");
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "Blogs Entry Title");
+			ControlMenu.viewHeaderTitle(headerTitle = "Blogs Entry Title");
+
+			AssertTextEquals(
+				locator1 = "Home#SITE_NAME",
+				value1 = "Test Site Name");
 		}
 	}
 
@@ -2132,11 +2110,13 @@ definition {
 		task ("Click on the title") {
 			LexiconTable.clickTableEntryColumnLink(
 				columnName = "title",
-				tableEntry = "");
+				tableEntry = "Blogs Entry Title");
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#DISPLAY_PAGE_TITLE",
-				value1 = "Blogs Entry Title");
+			ControlMenu.viewHeaderTitle(headerTitle = "Blogs Entry Title");
+
+			AssertTextEquals(
+				locator1 = "Home#SITE_NAME",
+				value1 = "Test Site Name");
 		}
 	}
 
@@ -2327,11 +2307,13 @@ definition {
 		task ("Click on the title") {
 			LexiconTable.clickTableEntryColumnLink(
 				columnName = "title",
-				tableEntry = "");
+				tableEntry = "DM Document Title");
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "DM Document Title");
+			ControlMenu.viewHeaderTitle(headerTitle = "DM Document Title");
+
+			AssertTextEquals(
+				locator1 = "Home#SITE_NAME",
+				value1 = "Test Site Name");
 		}
 	}
 
@@ -2372,11 +2354,13 @@ definition {
 		task ("Click on the title") {
 			LexiconTable.clickTableEntryColumnLink(
 				columnName = "title",
-				tableEntry = "");
+				tableEntry = "DM Document Title");
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#DISPLAY_PAGE_TITLE",
-				value1 = "DM Document Title");
+			ControlMenu.viewHeaderTitle(headerTitle = "DM Document Title");
+
+			AssertTextEquals(
+				locator1 = "Home#SITE_NAME",
+				value1 = "Test Site Name");
 		}
 	}
 
@@ -2581,6 +2565,41 @@ definition {
 		}
 	}
 
+	@description = "This is a test for LPS-138908. Type filter in Content Dashboard does work when deselecting previously selected types"
+	@priority = 4
+	test DeselectTypeFilter {
+		task ("Given a user has a Content Dashboard filtered by a type") {
+			JSONWebcontent.addWebContent(
+				content = "Webcontent Content",
+				groupName = "Test Site Name",
+				title = "WC Content");
+
+			ContentDashboard.goToContentDashboard();
+
+			ContentDashboard.filterByType(typeName = "Web Content Article");
+
+			LexiconTable.viewTableEntryTitle(tableEntry = "WC Content");
+
+			LexiconTable.viewTableEntryNotPresent(tableEntry = "tree.png");
+		}
+
+		task ("When the user deselects the type filter") {
+			ContentDashboard.openFilterModal(filterOption = "Type");
+
+			Uncheck.uncheckNotVisible(
+				key_nodeName = "Web Content Article",
+				locator1 = "Treeview#NODE_CHECKBOX_2");
+
+			ContentDashboard.applySelectedFilter();
+		}
+
+		task ("Then the user sees all assets") {
+			LexiconTable.viewTableEntryTitle(tableEntry = "WC Content");
+
+			LexiconTable.viewTableEntryTitle(tableEntry = "tree.png");
+		}
+	}
+
 	@description = "LPS-119966 Given a document created in an Asset Library When the user goes to the content dashboard Then the user can see the document listed"
 	@priority = 5
 	test DocumentFromAssetLibraryIsListed {
@@ -2608,9 +2627,7 @@ definition {
 		}
 
 		task ("Assert that both documents appear in the table") {
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "DM Document Asset Library 1");
+			LexiconTable.viewTableEntryTitle(tableEntry = "DM Document Asset Library 1");
 		}
 
 		task ("Delete the Asset Library") {
@@ -3267,7 +3284,7 @@ definition {
 				item = "Info",
 				tableEntry = "DM Document Title");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#INFO_PANEL_ASSET_TYPE",
 				value1 = "Document - DM Document Type Name");
 		}
@@ -3296,7 +3313,7 @@ definition {
 
 			AssertVisible(locator1 = "ContentDashboard#INFO_PANEL");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#INFO_PANEL_TITLE",
 				value1 = "DM Document Title");
 		}
@@ -3378,9 +3395,7 @@ definition {
 		}
 
 		task ("Assert the document has been edited") {
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "Blogs Entry Title");
+			LexiconTable.viewTableEntryTitle(tableEntry = "Blogs Entry Title Edited");
 		}
 	}
 
@@ -3410,7 +3425,7 @@ definition {
 		}
 
 		task ("Assert the document has been edited") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "DM Document Title Edited");
 		}
@@ -3437,9 +3452,7 @@ definition {
 		}
 
 		task ("Assert in title was porperty edited") {
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "WC Title Edited");
+			LexiconTable.viewTableEntryTitle(tableEntry = "WC Title Edited");
 		}
 	}
 
@@ -3463,7 +3476,7 @@ definition {
 		task ("View experired assset in Content Dashboard") {
 			ContentDashboard.goToContentDashboard();
 
-			AssertTextPresent(
+			AssertTextEquals(
 				assetName = "WC Title",
 				locator1 = "ContentDashboard#ASSET_STATUS_LABEL",
 				value1 = "EXPIRED");
@@ -3497,7 +3510,7 @@ definition {
 		}
 
 		task ("Check the Expire label is present for the web content") {
-			AssertTextPresent(
+			AssertTextEquals(
 				assetName = "WC Title",
 				locator1 = "ContentDashboard#ASSET_STATUS_LABEL",
 				value1 = "EXPIRED");
@@ -3543,7 +3556,7 @@ definition {
 		task ("Filter by author Me and assert asset displayed") {
 			ContentDashboard.filterByAuthorAll(filterOption = "All");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -3570,7 +3583,7 @@ definition {
 		task ("Filter by author Me and assert asset displayed") {
 			ContentDashboard.filterByAuthorMe(filterOption = "Me");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -3597,7 +3610,7 @@ definition {
 		task ("Filter by author Me and assert asset displayed") {
 			ContentDashboard.filterByAuthor();
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -3636,7 +3649,7 @@ definition {
 		task ("Filter by category") {
 			ContentDashboard.filterByCategory(categoryNameList = "Category Name");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -3661,7 +3674,7 @@ definition {
 
 			ContentDashboard.filterBySite(siteName = "Test Site Name");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -3690,7 +3703,7 @@ definition {
 		}
 
 		task ("Then the list is filtered displaying only contents included in both filters, including Blogs") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -3717,7 +3730,7 @@ definition {
 		}
 
 		task ("Then the list is filtered displaying only contents labeled as Approved, including Blogs") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -3745,7 +3758,7 @@ definition {
 		}
 
 		task ("Then the list is filtered displaying only contents labeled as Draft, including Blogs") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -3774,7 +3787,7 @@ definition {
 		}
 
 		task ("Then the list is filtered displaying only contents labeled as Scheduled, including Blogs") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -3800,7 +3813,7 @@ definition {
 
 			ContentDashboard.filterByTag(tagName = "tagname");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -3823,7 +3836,7 @@ definition {
 		task ("Filter author using table") {
 			ContentDashboard.filterByAuthor();
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC Title");
 		}
@@ -3833,7 +3846,7 @@ definition {
 
 			ContentDashboard.filterByAuthor(viewOption = "List");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC Title");
 		}
@@ -3843,7 +3856,7 @@ definition {
 
 			ContentDashboard.filterByAuthor(viewOption = "Cards");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC Title");
 		}
@@ -3970,7 +3983,7 @@ definition {
 		task ("Filter by category") {
 			ContentDashboard.filterByCategory(categoryNameList = "Category Name");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC WebContent Title");
 		}
@@ -4319,7 +4332,7 @@ definition {
 
 			ContentDashboard.filterByTag(tagName = "tagnumber2");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC Title 1");
 		}
@@ -4342,7 +4355,7 @@ definition {
 
 			ContentDashboard.filterBySite(siteName = "Global");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC Title Global");
 		}
@@ -4400,7 +4413,7 @@ definition {
 
 			ContentDashboard.filterByStatus(filterOption = "Approved");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC Title Approved");
 		}
@@ -4424,7 +4437,7 @@ definition {
 
 			ContentDashboard.filterByStatus(filterOption = "Draft");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC Title Draft");
 		}
@@ -4465,7 +4478,7 @@ definition {
 			task ("Wait for document to expire") {
 				Navigator.openURL();
 
-				Notifications.waitForNotificationFlexibly(flexibleRefreshingTime = 3000);
+				Notifications.waitForNotificationFlexibly(flexibleRefreshingTime = 20000);
 
 				Notifications.viewBadgeCount(notificationCount = 1);
 			}
@@ -4478,9 +4491,9 @@ definition {
 		}
 
 		task ("Then the asset is exhibited") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "");
+				value1 = "Document_1.txt");
 		}
 	}
 
@@ -4512,9 +4525,9 @@ definition {
 		}
 
 		task ("Then the asset is exhibited") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "");
+				value1 = "Web Content Title");
 		}
 	}
 
@@ -4547,7 +4560,7 @@ definition {
 		}
 
 		task ("Then the asset is filtered") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 		}
@@ -4582,7 +4595,7 @@ definition {
 		}
 
 		task ("Then the asset is filtered") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Web Content Title");
 		}
@@ -4617,7 +4630,7 @@ definition {
 
 			ContentDashboard.filterByStatus(filterOption = "Scheduled");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC Title Scheduled");
 		}
@@ -4644,13 +4657,13 @@ definition {
 		}
 
 		task ("Assert that the web content and filter label are present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Webcontent Title");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
-				value1 = "Subtype: Basic Web Content");
+				value1 = "Subtype: Basic Web Content (Global)");
 		}
 	}
 
@@ -4676,7 +4689,7 @@ definition {
 		}
 
 		task ("Assert that the web content and filter label are present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Subtype: Basic Document");
 		}
@@ -4705,11 +4718,11 @@ definition {
 		}
 
 		task ("Assert that the web content and filter label are present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Blogs Entry Title");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Subtype: Blogs Entry");
 		}
@@ -4774,9 +4787,45 @@ definition {
 
 			ContentDashboard.filterByTag(tagName = "test_tag");
 
+			AssertTextEquals(
+				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
+				value1 = "Web Content Title");
+		}
+	}
+
+	@description = "This is a test for LPS-182032. User can Filter by the to be reviewed column."
+	@priority = 5
+	test FilterByToBeReviewed {
+		task ("Given a web content with review date") {
+			JSONWebcontent.addWebContent(
+				content = "Webcontent Content",
+				groupName = "Test Site Name",
+				title = "Web Content Title");
+
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "Web Content Title");
+
+			WebContent.addReviewDate(reviewDate = "01/01/2100");
+
+			PortletEntry.publish();
+		}
+
+		task ("When navigating to the content dashboard") {
+			ContentDashboard.goToContentDashboard();
+		}
+
+		task ("Then the user can filter by to be reviewed option") {
+			ContentDashboard.filterByToBeReviewed(filterOption = "To Be Reviewed");
+
 			AssertTextPresent(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "Web Content Title");
+
+			AssertVisible(
+				key_columnName = "review-date",
+				key_tableEntry = "2100-01-01",
+				locator1 = "LexiconTable#TABLE_ENTRY_INFO");
 		}
 	}
 
@@ -4855,7 +4904,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: doc");
 		}
@@ -4893,7 +4942,7 @@ definition {
 		}
 
 		task ("Assert if both Web Contents are displayed") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Tag: test_tag");
 
@@ -5173,20 +5222,17 @@ definition {
 		task ("Go to content Dashboard and View the relative ordering of the categories remain the same") {
 			ContentDashboard.goToContentDashboard();
 
-			AssertTextPresent(
+			AssertElementPresent(
 				locator1 = "ContentDashboard#X_AXIS_VOCABULARY_NAME",
-				value1 = "Substage_1",
-				xAxisCategoryName = "stage");
+				xAxisCategoryName = "Substage_1");
 
-			AssertTextPresent(
+			AssertElementPresent(
 				locator1 = "ContentDashboard#X_AXIS_VOCABULARY_NAME",
-				value1 = "Substage_2",
-				xAxisCategoryName = "stage");
+				xAxisCategoryName = "Substage_2");
 
-			AssertTextPresent(
+			AssertElementPresent(
 				locator1 = "ContentDashboard#X_AXIS_VOCABULARY_NAME",
-				value1 = "Substage_3",
-				xAxisCategoryName = "stage");
+				xAxisCategoryName = "Substage_3");
 		}
 	}
 
@@ -5298,7 +5344,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: mp3");
 		}
@@ -5324,7 +5370,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: html");
 		}
@@ -5352,7 +5398,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: zip");
 		}
@@ -5378,7 +5424,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: json");
 		}
@@ -5404,7 +5450,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: pptx");
 		}
@@ -5430,7 +5476,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: xls");
 		}
@@ -5456,7 +5502,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: docx");
 		}
@@ -5482,7 +5528,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: pdf");
 		}
@@ -5508,7 +5554,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: mp4");
 		}
@@ -5537,9 +5583,9 @@ definition {
 		task ("Check if the Vocabulary appears in the list") {
 			Panel.expandPanel(panel = "Categorization");
 
-			AssertTextPresent(
-				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM",
-				value1 = "Vocabulary 1");
+			AssertElementPresent(
+				key_fieldLabel = "Vocabulary 1",
+				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM");
 		}
 	}
 
@@ -5566,9 +5612,9 @@ definition {
 		task ("Check if the Vocabulary appears in the list") {
 			Panel.expandPanel(panel = "Categorization");
 
-			AssertTextPresent(
-				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM",
-				value1 = "Vocabulary 1");
+			AssertElementPresent(
+				key_fieldLabel = "Vocabulary 1",
+				locator1 = "AssetCategorization#VOCABULARY_LIST_ITEM");
 		}
 	}
 
@@ -5582,7 +5628,7 @@ definition {
 		}
 
 		task ("Check if message of No results were found is present") {
-			if (IsElementNotPresent(locator1 = "ContentDashboard#FILTER_BY_EXTENSION_EMPTY", value1 = "No results were found.")) {
+			if (IsElementNotPresent(locator1 = "Message#EMPTY_STATE_TEXT", value1 = "No results were found.")) {
 				DMDocument.tearDownCP();
 
 				ContentDashboard.goToContentDashboard();
@@ -5590,8 +5636,8 @@ definition {
 				ContentDashboard.openFilterModal(filterOption = "Extension");
 			}
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FILTER_BY_EXTENSION_EMPTY",
+			AssertTextEquals(
+				locator1 = "Message#EMPTY_STATE_TEXT",
 				value1 = "No results were found.");
 		}
 	}
@@ -5644,37 +5690,34 @@ definition {
 		}
 
 		task ("Assert the categories of the vocabulary removed is not present") {
-			AssertTextNotPresent(
+			AssertElementNotPresent(
 				locator1 = "ContentDashboard#X_AXIS_VOCABULARY_NAME",
-				value1 = "Substage_1",
-				xAxisCategoryName = "stage");
+				xAxisCategoryName = "Substage_1");
 
-			AssertTextNotPresent(
+			AssertElementNotPresent(
 				locator1 = "ContentDashboard#X_AXIS_VOCABULARY_NAME",
-				value1 = "Substage_2",
-				xAxisCategoryName = "stage");
+				xAxisCategoryName = "Substage_2");
 
-			AssertTextNotPresent(
+			AssertElementNotPresent(
 				locator1 = "ContentDashboard#X_AXIS_VOCABULARY_NAME",
-				value1 = "Substage_3",
-				xAxisCategoryName = "stage");
+				xAxisCategoryName = "Substage_3");
 		}
 
 		task ("Validate if the remaining categories are shown in order of creating") {
-			AssertTextPresent(
+			AssertTextEquals(
 				categoryIndex = 1,
 				locator1 = "ContentDashboard#X_AXIS_CATEGORIES_NAME",
-				value1 = "C_Subaudience_1");
+				value1 = "C_Subaudien…");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				categoryIndex = 2,
 				locator1 = "ContentDashboard#X_AXIS_CATEGORIES_NAME",
-				value1 = "B_Subaudience_2");
+				value1 = "B_Subaudien…");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				categoryIndex = 3,
 				locator1 = "ContentDashboard#X_AXIS_CATEGORIES_NAME",
-				value1 = "A_Subaudience_3");
+				value1 = "A_Subaudien…");
 		}
 	}
 
@@ -5697,12 +5740,59 @@ definition {
 		task ("Order assets by modification data in Content Dashboard") {
 			ContentDashboard.orderByModificationDate(filterOption = "Modified Date");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC Title 5");
 		}
 
 		task ("Change the order of assets") {
+			Click(locator1 = "ContentDashboard#REVERSE_SORT_DIRECTION_BUTTON");
+
+			AssertTextEquals(
+				locator1 = "ContentDashboard#LAST_ELEMENT_LISTED",
+				value1 = "WC Title 5");
+		}
+	}
+
+	@description = "This is a test for LPS-182032. User can Order by the new column."
+	@priority = 5
+	test OrderByReviewDate {
+		task ("Given two web contents with review date") {
+			for (var count : list "1,2") {
+				JSONWebcontent.addWebContent(
+					content = "WC Content ${count}",
+					groupName = "Test Site Name",
+					title = "WC Title ${count}");
+			}
+
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "WC Title 1");
+
+			WebContent.addReviewDate(reviewDate = "01/01/2100");
+
+			PortletEntry.publish();
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "WC Title 2");
+
+			WebContent.addReviewDate(reviewDate = "01/01/2200");
+
+			PortletEntry.publish();
+		}
+
+		task ("When navigating to the content dashboard") {
+			ContentDashboard.goToContentDashboard();
+
+			ContentDashboard.filterByType(typeName = "Basic Web Content");
+		}
+
+		task ("Then the user can Order by the review date column.") {
+			ContentDashboard.orderByReviewDate(filterOption = "Review Date");
+
+			AssertTextPresent(
+				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
+				value1 = "WC Title 2");
+
 			Click(locator1 = "ContentDashboard#REVERSE_SORT_DIRECTION_BUTTON");
 
 			AssertTextPresent(
@@ -5730,17 +5820,17 @@ definition {
 
 			ContentDashboard.orderByTitle(filterOption = "Title");
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
+			AssertTextEquals(
+				locator1 = "ContentDashboard#LAST_ELEMENT_LISTED",
 				value1 = "WC Title 5");
 		}
 
 		task ("Change de order of assets") {
 			Click(locator1 = "ContentDashboard#REVERSE_SORT_DIRECTION_BUTTON");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "WC Title 1");
+				value1 = "WC Title 5");
 		}
 	}
 
@@ -5945,11 +6035,11 @@ definition {
 		}
 
 		task ("Then a new major version is created") {
-			ContentDashboard.openInfoPanel(assetName = "DM Document Title Edit");
+			ContentDashboard.openInfoPanel(assetName = "DM Document Title");
 
 			ContentDashboard.openVersionsTab();
 
-			AssertTextPresent(
+			AssertTextEquals(
 				index = 1,
 				locator1 = "ContentDashboard#ASSET_VERSION_NUMBER_INDEX",
 				value1 = "Version 2.0");
@@ -5984,7 +6074,7 @@ definition {
 				assetNewTitle = "WC Title Edited",
 				assetTitle = "WC Title");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Author: Test Test");
 		}
@@ -6024,9 +6114,9 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FILTER_TEXT",
-				value1 = "8 Results for");
+			AssertTextEquals(
+				locator1 = "ManagementBar#SEARCH_RESULT_SUMMARY",
+				value1 = "9 Results for");
 		}
 	}
 
@@ -6048,7 +6138,7 @@ definition {
 		}
 
 		task ("Check if extension is present") {
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FILTER_TEXT",
 				value1 = "Extension: doc");
 		}
@@ -6075,9 +6165,10 @@ definition {
 		}
 
 		task ("Check if content is correct") {
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED_MODIFIED_DATE",
-				value1 = "0 Seconds Ago");
+			LexiconTable.viewTableEntryInfo(
+				columnName = "modified-date",
+				tableEntry = "WC WebContent New Title",
+				tableEntryInfo = "0 Seconds Ago");
 		}
 	}
 
@@ -6110,11 +6201,10 @@ definition {
 		task ("Check in Content Dashboard if WC is assiciated with Display Page Template") {
 			ContentDashboard.goToContentDashboard();
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "Webcontent Title");
-
-			AssertVisible(locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED_DISPLAY_PAGE");
+			AssertVisible(
+				key_tableEntry = "Webcontent Title",
+				key_text = "page",
+				locator1 = "LexiconTable#TABLE_ENTRY_ICON");
 		}
 	}
 
@@ -6133,11 +6223,12 @@ definition {
 		task ("Check if WC is not associated in Content Dashboard") {
 			ContentDashboard.goToContentDashboard();
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "WC Title");
+			LexiconTable.viewTableEntryTitle(tableEntry = "WC Title");
 
-			AssertElementNotPresent(locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED_DISPLAY_PAGE");
+			AssertElementNotPresent(
+				key_tableEntry = "WC Title",
+				key_text = "page",
+				locator1 = "LexiconTable#TABLE_ENTRY_ICON");
 		}
 	}
 
@@ -6289,13 +6380,9 @@ definition {
 		task ("Filter by both authors and assert both assets are displayed") {
 			ContentDashboard.filterByAuthor(authorNameList = "Test,userfn");
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "WC Title 2");
+			LexiconTable.viewTableEntryTitle(tableEntry = "WC Title 2");
 
-			AssertTextPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "WC Title 1");
+			LexiconTable.viewTableEntryTitle(tableEntry = "WC Title 1");
 		}
 	}
 
@@ -6380,13 +6467,13 @@ definition {
 		task ("Filter by author Me and assert asset displayed") {
 			ContentDashboard.filterByAuthor(authorNameList = "userfn");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
 				value1 = "WC Title 2");
 
-			AssertTextNotPresent(
-				locator1 = "ContentDashboard#FIRST_ELEMENT_LISTED",
-				value1 = "WC Title Edit");
+			AssertElementNotPresent(
+				key_tableEntry = "WC Title Edit",
+				locator1 = "LexiconTable#TABLE_ENTRY_TITLE");
 		}
 	}
 
@@ -6409,10 +6496,11 @@ definition {
 			ContentDashboard.goToContentDashboard();
 		}
 
-		task ("Assert the type of the web content is shown in the Type column") {
-			AssertTextPresent(
-				locator1 = "ContentDashboard#TYPE_COLUMN_VALUE",
-				value1 = "Document");
+		task ("Assert the type of the document is shown in the Type column") {
+			LexiconTable.viewTableEntryInfo(
+				columnName = "type",
+				tableEntry = "DM Document Title",
+				tableEntryInfo = "Document");
 		}
 	}
 
@@ -6431,9 +6519,10 @@ definition {
 		}
 
 		task ("Assert the type of the web content is shown in the Type column") {
-			AssertTextPresent(
-				locator1 = "ContentDashboard#TYPE_COLUMN_VALUE",
-				value1 = "Web Content Article");
+			LexiconTable.viewTableEntryInfo(
+				columnName = "type",
+				tableEntry = "WC WebContent Title",
+				tableEntryInfo = "Web Content Article");
 		}
 	}
 
@@ -6557,6 +6646,35 @@ definition {
 		}
 	}
 
+	@description = "This is a test for LPS-182032. The .xls file is exported with the review date column."
+	@priority = 3
+	test ViewExportXLSButtonWithReviewDate {
+		task ("Given a web content with review date") {
+			JSONWebcontent.addWebContent(
+				content = "Webcontent Content",
+				groupName = "Test Site Name",
+				title = "Web Content Title");
+
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "Web Content Title");
+
+			WebContent.addReviewDate(reviewDate = "01/01/2100");
+
+			PortletEntry.publish();
+		}
+
+		task ("When navigating to the content dashboard") {
+			ContentDashboard.goToContentDashboard();
+		}
+
+		task ("Then the Export XLS button is enabled") {
+			AssertEditable(
+				key_text = "Export XLS",
+				locator1 = "Button#ANY");
+		}
+	}
+
 	@description = "LPS-151911 Bug: Content Dashboard shows error when displaying details of article whose authors has been deleted"
 	@priority = 4
 	test ViewInfoPanelDeletedUser {
@@ -6624,7 +6742,7 @@ definition {
 				item = "Info",
 				tableEntry = "Web Content Title");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#INFO_PANEL_TITLE",
 				value1 = "Web Content Title");
 		}
@@ -6719,6 +6837,70 @@ definition {
 			ControlMenu.viewHeaderTitle(headerTitle = "Content Dashboard");
 
 			AssertElementNotPresent(locator1 = "ContentDashboard#INFO_PANEL");
+		}
+	}
+
+	@description = "This is a test for LPS-182032. If a content has the Never Review field checked, the column must shows -"
+	@priority = 4
+	test ViewNeverReviewChecked {
+		task ("Given a web content with never review checked") {
+			JSONWebcontent.addWebContent(
+				content = "Webcontent Content",
+				groupName = "Test Site Name",
+				title = "Web Content Title");
+
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "Web Content Title");
+
+			Panel.expandPanel(panel = "Schedule");
+
+			AssertChecked(locator1 = "Checkbox#NEVER_REVIEW");
+
+			PortletEntry.publish();
+		}
+
+		task ("When navigating to the content dashboard") {
+			ContentDashboard.goToContentDashboard();
+
+			ContentDashboard.filterByType(typeName = "Basic Web Content");
+		}
+
+		task ("Then the review date column must shows -") {
+			AssertVisible(
+				key_columnName = "review-date",
+				key_tableEntry = "-",
+				locator1 = "LexiconTable#TABLE_ENTRY_INFO");
+		}
+	}
+
+	@description = "This is a test for LPS-182032. The Review Date column is visible and shows the values propertly."
+	@priority = 5
+	test ViewReviewDateColumn {
+		task ("Given a web content with review date") {
+			JSONWebcontent.addWebContent(
+				content = "Webcontent Content",
+				groupName = "Test Site Name",
+				title = "Web Content Title");
+
+			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "Web Content Title");
+
+			WebContent.addReviewDate(reviewDate = "01/01/2100");
+
+			PortletEntry.publish();
+		}
+
+		task ("When navigating to the content dashboard") {
+			ContentDashboard.goToContentDashboard();
+		}
+
+		task ("Then the review date column should be visible") {
+			AssertVisible(
+				key_columnName = "review-date",
+				key_tableEntry = "2100-01-01",
+				locator1 = "LexiconTable#TABLE_ENTRY_INFO");
 		}
 	}
 
@@ -6819,7 +7001,7 @@ definition {
 				item = "Info",
 				tableEntry = "Web Content Title");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#INFO_PANEL_ASSET_TYPE",
 				value1 = "Web Content Article - WC Structure Name");
 		}
@@ -6846,7 +7028,7 @@ definition {
 				item = "Info",
 				tableEntry = "WC Title");
 
-			AssertTextPresent(
+			AssertTextEquals(
 				locator1 = "ContentDashboard#INFO_PANEL_TITLE",
 				value1 = "WC Title");
 		}

@@ -14,18 +14,24 @@
 
 import ClayButton from '@clayui/button';
 import ClayDatePicker from '@clayui/date-picker';
-import ClayForm, {ClayInput, ClaySelectWithOption} from '@clayui/form';
+import ClayForm, {
+	ClayInput,
+	ClayRadio,
+	ClayRadioGroup,
+	ClaySelectWithOption,
+} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import ClayLayout from '@clayui/layout';
 import ClayModal from '@clayui/modal';
+import ClayMultiSelect from '@clayui/multi-select';
 import classNames from 'classnames';
-import {isBefore} from 'date-fns';
-import {fetch, navigate, openModal, openToast} from 'frontend-js-web';
+import {format, getYear, isBefore} from 'date-fns';
+import {fetch, navigate, openModal, openToast, sub} from 'frontend-js-web';
 import React, {useEffect, useState} from 'react';
 
 import {API_URL, OBJECT_RELATIONSHIP} from '../Constants';
 import {FDSViewType} from '../FDSViews';
-import {getFields} from '../api';
+import {IPickList, getAllPicklists, getFields} from '../api';
 import OrderableTable from '../components/OrderableTable';
 
 interface IField {
@@ -36,6 +42,7 @@ interface IField {
 }
 
 interface IFilter {
+	fieldName: string;
 	id: number;
 	label: string;
 	name: string;
@@ -47,81 +54,14 @@ interface IDateFilter extends IFilter {
 	to: string;
 }
 
-function DateRange({
-	from,
-	namespace,
-	onFromChange,
-	onToChange,
-	to,
-}: {
-	from: string;
-	namespace: string;
-	onFromChange: (from: string) => void;
-	onToChange: (to: string) => void;
-	to: string;
-}) {
-	const [isValid, setIsValid] = useState(true);
-
-	useEffect(() => {
-		if (from && to) {
-			setIsValid(isBefore(new Date(from), new Date(to)));
-		}
-	}, [from, to]);
-
-	return (
-		<>
-			<ClayForm.Group className="form-group-autofit">
-				<div
-					className={classNames('form-group-item', {
-						'has-error': !isValid,
-					})}
-				>
-					<label htmlFor={namespace + 'date-range-from'}>
-						{Liferay.Language.get('from')}
-					</label>
-
-					<ClayDatePicker
-						onChange={(value: string) => onFromChange(value)}
-						placeholder="YYYY-MM-DD"
-						value={from}
-					/>
-
-					{!isValid && (
-						<ClayForm.FeedbackGroup>
-							<ClayForm.FeedbackItem>
-								<ClayForm.FeedbackIndicator symbol="exclamation-full" />
-
-								{Liferay.Language.get(
-									'date-range-is-invalid.-from-must-be-before-to'
-								)}
-							</ClayForm.FeedbackItem>
-						</ClayForm.FeedbackGroup>
-					)}
-				</div>
-
-				<div className="form-group-item">
-					<label htmlFor={namespace + 'date-range-to'}>
-						{Liferay.Language.get('to')}
-					</label>
-
-					<ClayDatePicker
-						onChange={(value: string) => onToChange(value)}
-						placeholder="YYYY-MM-DD"
-						value={to}
-					/>
-				</div>
-			</ClayForm.Group>
-		</>
-	);
+interface IDynamicFilter extends IFilter {
+	include: boolean;
+	listTypeDefinitionId: string;
+	multiple: boolean;
+	preselectedValues: string;
 }
 
-interface IPropsAddFDSFilterModalContent {
-	closeModal: Function;
-	fdsView: FDSViewType;
-	fields: IField[];
-	namespace: string;
-	onSave: (newFilter: IFilter) => void;
-}
+type FilterCollection = Array<IDateFilter | IDynamicFilter>;
 
 function alertFailed() {
 	openToast({
@@ -137,53 +77,130 @@ function alertSuccess() {
 	});
 }
 
+interface IPropsAddFDSFilterModalContent {
+	closeModal: Function;
+	fdsView: FDSViewType;
+	fields: IField[];
+	filter?: IDateFilter | IDynamicFilter;
+	namespace: string;
+	onSave: (newFilter: IFilter) => void;
+}
+
 function AddFDSFilterModalContent({
 	closeModal,
 	fdsView,
 	fields,
+	filter,
 	namespace,
 	onSave,
 }: IPropsAddFDSFilterModalContent) {
-	const [selectedField, setSelectedField] = useState<string>();
-	const [label, setLabel] = useState<string>();
-	const [from, setFrom] = useState<string>('');
-	const [to, setTo] = useState<string>('');
+	const [from, setFrom] = useState<string>(
+		(filter as IDateFilter)?.from ?? ''
+	);
+	const [includeMode, setIncludeMode] = useState<string>(
+		filter
+			? (filter as IDynamicFilter)?.include
+				? 'include'
+				: 'exclude'
+			: 'include'
+	);
+	const [isValidDateRange, setIsValidDateRange] = useState(true);
+	const [multiple, setMultiple] = useState<boolean>(
+		(filter as IDynamicFilter)?.multiple ?? true
+	);
+	const [name, setName] = useState(filter?.name || '');
+	const [picklists, setPicklists] = useState<IPickList[]>([]);
+	const [preselectedValues, setPreselectedValues] = useState<any[]>([]);
+	const [selectedField, setSelectedField] = useState<IField | null>(
+		fields.find((item) => item.name === filter?.fieldName) || null
+	);
+	const [selectedPicklist, setSelectedPicklist] = useState<IPickList>();
+	const [to, setTo] = useState<string>((filter as IDateFilter)?.to ?? '');
 
-	const handleFilterSave = async () => {
-		const field = fields.find(
-			(item: IField) => item.name === selectedField
-		);
+	useEffect(() => {
+		getAllPicklists().then((items) => {
+			setPicklists(items);
 
-		if (!field) {
+			const newVal = items.find(
+				(item) =>
+					String(item.id) === (filter as any)?.listTypeDefinitionId
+			);
+
+			if (newVal) {
+				setSelectedPicklist(newVal);
+
+				setPreselectedValues(
+					newVal.listTypeEntries.filter((item) =>
+						JSON.parse(
+							(filter as IDynamicFilter).preselectedValues || '[]'
+						).includes(item.id)
+					)
+				);
+			}
+		});
+	}, [filter]);
+
+	useEffect(() => {
+		let isValid = true;
+
+		if (to && from) {
+			isValid = isBefore(new Date(from), new Date(to));
+		}
+
+		setIsValidDateRange(isValid);
+	}, [from, to]);
+
+	const handleFilterSave = async (event: any) => {
+		event.preventDefault();
+
+		if (!selectedField) {
 			alertFailed();
 
 			return null;
 		}
 
-		let body: any = {};
+		let body: any = {
+			fieldName: selectedField.name,
+			name: name || selectedField.label,
+		};
+
+		let displayType: string = '';
 		let url: string = '';
 
-		if (field.format === 'date-time') {
+		if (selectedField.format === 'date-time') {
 			url = API_URL.FDS_DATE_FILTERS;
 
 			body = {
+				...body,
 				[OBJECT_RELATIONSHIP.FDS_VIEW_FDS_DATE_FILTER_ID]: fdsView.id,
-				fieldName: field.name,
 				from,
-				label: label || field.label,
 				to,
-				type: field.format,
+				type: selectedField.format,
 			};
+
+			displayType = Liferay.Language.get('date-filter');
 		}
 		else {
 			url = API_URL.FDS_DYNAMIC_FILTERS;
 
 			body = {
+				...body,
 				[OBJECT_RELATIONSHIP.FDS_VIEW_FDS_DYNAMIC_FILTER_ID]:
 					fdsView.id,
-				fieldName: field.name,
-				label: label || field.label,
+				include: includeMode === 'include',
+				listTypeDefinitionId: selectedPicklist?.id,
+				multiple,
+				preselectedValues: preselectedValues.map((item) => item.id),
 			};
+
+			displayType = Liferay.Language.get('dynamic-filter');
+		}
+
+		let method = 'POST';
+
+		if (filter) {
+			method = 'PUT';
+			url = `${url}/${filter.id}`;
 		}
 
 		const response = await fetch(url, {
@@ -192,7 +209,7 @@ function AddFDSFilterModalContent({
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
-			method: 'POST',
+			method,
 		});
 
 		if (!response.ok) {
@@ -205,52 +222,42 @@ function AddFDSFilterModalContent({
 
 		alertSuccess();
 
-		onSave(responseJSON);
+		onSave({...responseJSON, displayType});
 
 		closeModal();
 	};
 
-	const field = fields.find((item: IField) => item.name === selectedField);
+	const isValidSingleMode =
+		multiple || (!multiple && !(preselectedValues.length > 1));
+
+	const formElementId = `${namespace}Form`;
+	const fromFormElementId = `${namespace}From`;
+	const includeModeFormElementId = `${namespace}IncludeMode`;
+	const multipleFormElementId = `${namespace}Multiple`;
+	const nameFormElementId = `${namespace}Name`;
+	const preselectedValuesFormElementId = `${namespace}PreselectedValues`;
+	const selectedFieldFormElementId = `${namespace}SelectedField`;
+	const sourceOptionFormElementId = `${namespace}SourceOption`;
+	const toFormElementId = `${namespace}To`;
 
 	return (
-		<div className="fds-view-fields-modal">
+		<>
 			<ClayModal.Header>
-				{Liferay.Language.get('new-filter')}
+				{filter
+					? sub(Liferay.Language.get('edit-x-filter'), [filter.name])
+					: Liferay.Language.get('new-filter')}
 			</ClayModal.Header>
 
 			<ClayModal.Body>
-				<ClayForm.Group>
-					<label htmlFor={namespace + 'type'}>
-						{Liferay.Language.get('filter-by')}
-					</label>
-
-					<ClaySelectWithOption
-						aria-label={Liferay.Language.get('filter-by')}
-						name={namespace + 'type'}
-						onChange={(event) => {
-							setSelectedField(event.target.value);
-						}}
-						options={[
-							{},
-							...fields.map((item) => ({
-								label: item.label,
-								value: item.name,
-							})),
-						]}
-						title={Liferay.Language.get('filter-by')}
-						value={selectedField}
-					/>
-				</ClayForm.Group>
-
-				{selectedField && (
+				<ClayForm id={formElementId} onSubmit={handleFilterSave}>
 					<ClayForm.Group>
-						<label htmlFor={namespace + 'label'}>
-							{Liferay.Language.get('label')}
+						<label htmlFor={nameFormElementId}>
+							{Liferay.Language.get('name')}
 
 							<span
 								className="label-icon lfr-portal-tooltip ml-2"
 								title={Liferay.Language.get(
-									'if-this-value-is-not-provided,-the-label-will-default-to-the-field-name'
+									'if-this-value-is-not-provided,-the-name-will-default-to-the-field-name'
 								)}
 							>
 								<ClayIcon symbol="question-circle-full" />
@@ -258,34 +265,343 @@ function AddFDSFilterModalContent({
 						</label>
 
 						<ClayInput
-							aria-label={Liferay.Language.get('label')}
-							name={namespace + 'label'}
-							onChange={(event) => setLabel(event.target.value)}
+							aria-label={Liferay.Language.get('name')}
+							name={nameFormElementId}
+							onChange={(event) => setName(event.target.value)}
 							placeholder={
-								fields.find(
-									(item) => item.name === selectedField
-								)?.label
+								selectedField?.label ||
+								Liferay.Language.get('name')
 							}
-							value={label}
+							value={name}
 						/>
 					</ClayForm.Group>
-				)}
 
-				{field?.format === 'date-time' && (
-					<DateRange
-						from={from}
-						namespace={namespace}
-						onFromChange={setFrom}
-						onToChange={setTo}
-						to={to}
-					/>
-				)}
+					<ClayForm.Group>
+						<label htmlFor={selectedFieldFormElementId}>
+							{Liferay.Language.get('filter-by')}
+						</label>
+
+						<ClaySelectWithOption
+							aria-label={Liferay.Language.get('filter-by')}
+							disabled={!!filter}
+							onChange={(event) => {
+								const newVal = fields.find(
+									(item) => item.name === event.target.value
+								);
+
+								if (newVal) {
+									setSelectedField(newVal);
+								}
+							}}
+							options={[
+								{
+									disabled: true,
+									label: Liferay.Language.get('select'),
+									selected: true,
+									value: '',
+								},
+								...fields.map((item) => ({
+									label: item.label,
+									value: item.name,
+								})),
+							]}
+							title={Liferay.Language.get('filter-by')}
+							value={selectedField?.name}
+						/>
+					</ClayForm.Group>
+
+					{selectedField?.format === 'date-time' && (
+						<ClayForm.Group className="form-group-autofit">
+							<div
+								className={classNames('form-group-item', {
+									'has-error': !isValidDateRange,
+								})}
+							>
+								<label htmlFor={fromFormElementId}>
+									{Liferay.Language.get('from')}
+								</label>
+
+								<ClayDatePicker
+									inputName={fromFormElementId}
+									onChange={setFrom}
+									placeholder="YYYY-MM-DD"
+									value={format(
+										from ? new Date(from) : new Date(),
+										'yyyy-MM-dd'
+									)}
+									years={{
+										end: getYear(new Date()) + 25,
+										start: getYear(new Date()) - 50,
+									}}
+								/>
+
+								{!isValidDateRange && (
+									<ClayForm.FeedbackGroup>
+										<ClayForm.FeedbackItem>
+											<ClayForm.FeedbackIndicator symbol="exclamation-full" />
+
+											{Liferay.Language.get(
+												'date-range-is-invalid.-from-must-be-before-to'
+											)}
+										</ClayForm.FeedbackItem>
+									</ClayForm.FeedbackGroup>
+								)}
+							</div>
+
+							<div className="form-group-item">
+								<label htmlFor={toFormElementId}>
+									{Liferay.Language.get('to')}
+								</label>
+
+								<ClayDatePicker
+									inputName={toFormElementId}
+									onChange={setTo}
+									placeholder="YYYY-MM-DD"
+									value={format(
+										to ? new Date(to) : new Date(),
+										'yyyy-MM-dd'
+									)}
+									years={{
+										end: getYear(new Date()) + 25,
+										start: getYear(new Date()) - 50,
+									}}
+								/>
+							</div>
+						</ClayForm.Group>
+					)}
+
+					{selectedField?.format === 'string' && (
+						<>
+							<ClayForm.Group>
+								<label htmlFor={sourceOptionFormElementId}>
+									{Liferay.Language.get('source-options')}
+
+									<span
+										className="label-icon lfr-portal-tooltip ml-2"
+										title={Liferay.Language.get(
+											'choose-a-picklist-to-associate-with-this-filter'
+										)}
+									>
+										<ClayIcon symbol="question-circle-full" />
+									</span>
+								</label>
+
+								<ClaySelectWithOption
+									aria-label={Liferay.Language.get(
+										'source-options'
+									)}
+									name={sourceOptionFormElementId}
+									onChange={(event) => {
+										setSelectedPicklist(
+											picklists.find(
+												(item) =>
+													String(item.id) ===
+													event.target.value
+											)
+										);
+
+										setPreselectedValues([]);
+									}}
+									options={[
+										{
+											disabled: true,
+											label: Liferay.Language.get(
+												'select'
+											),
+											selected: true,
+											value: '',
+										},
+										...picklists.map((item) => ({
+											label: item.name,
+											value: item.id,
+										})),
+									]}
+									title={Liferay.Language.get(
+										'source-options'
+									)}
+									value={selectedPicklist?.id}
+								/>
+							</ClayForm.Group>
+
+							{selectedPicklist && (
+								<>
+									<ClayForm.Group>
+										<label htmlFor={multipleFormElementId}>
+											{Liferay.Language.get('selection')}
+
+											<span
+												className="label-icon lfr-portal-tooltip ml-2"
+												title={Liferay.Language.get(
+													'determines-how-many-preselected-values-for-the-filter-can-be-added'
+												)}
+											>
+												<ClayIcon symbol="question-circle-full" />
+											</span>
+										</label>
+
+										<ClayRadioGroup
+											name={multipleFormElementId}
+											onChange={(newVal: any) => {
+												setMultiple(newVal === 'true');
+											}}
+											value={multiple ? 'true' : 'false'}
+										>
+											<ClayRadio
+												label={Liferay.Language.get(
+													'multiple'
+												)}
+												value="true"
+											/>
+
+											<ClayRadio
+												label={Liferay.Language.get(
+													'single'
+												)}
+												value="false"
+											/>
+										</ClayRadioGroup>
+									</ClayForm.Group>
+									<ClayForm.Group
+										className={classNames({
+											'has-error': !isValidSingleMode,
+										})}
+									>
+										<label
+											htmlFor={
+												preselectedValuesFormElementId
+											}
+										>
+											{Liferay.Language.get(
+												'preselected-values'
+											)}
+
+											<span
+												className="label-icon lfr-portal-tooltip ml-2"
+												title={Liferay.Language.get(
+													'choose-values-to-preselect-for-your-filters-source-option'
+												)}
+											>
+												<ClayIcon symbol="question-circle-full" />
+											</span>
+										</label>
+
+										<ClayMultiSelect
+											allowsCustomLabel={false}
+											aria-label={Liferay.Language.get(
+												'preselected-values'
+											)}
+											inputName={
+												preselectedValuesFormElementId
+											}
+											items={preselectedValues.map(
+												(item) => ({
+													label: item.name,
+													value: item.id,
+												})
+											)}
+											onItemsChange={(items: any) => {
+												setPreselectedValues(
+													items.map((item: any) =>
+														selectedPicklist.listTypeEntries.find(
+															(entry) =>
+																String(
+																	entry.id
+																) ===
+																String(
+																	item.value
+																)
+														)
+													)
+												);
+											}}
+											placeholder={Liferay.Language.get(
+												'select-a-default-value-for-your-filter'
+											)}
+											sourceItems={
+												!selectedPicklist
+													? []
+													: selectedPicklist.listTypeEntries.map(
+															(item) => ({
+																label:
+																	item.name,
+																value: String(
+																	item.id
+																),
+															})
+													  )
+											}
+										/>
+
+										{!isValidSingleMode && (
+											<ClayForm.FeedbackGroup>
+												<ClayForm.FeedbackItem>
+													<ClayForm.FeedbackIndicator symbol="exclamation-full" />
+
+													{Liferay.Language.get(
+														'only-one-value-is-allowed-in-single-selection-mode'
+													)}
+												</ClayForm.FeedbackItem>
+											</ClayForm.FeedbackGroup>
+										)}
+									</ClayForm.Group>
+									<ClayForm.Group>
+										<label
+											htmlFor={includeModeFormElementId}
+										>
+											{Liferay.Language.get(
+												'filter-mode'
+											)}
+
+											<span
+												className="label-icon lfr-portal-tooltip ml-2"
+												title={Liferay.Language.get(
+													'include-returns-only-the-selected-values.-exclude-returns-all-except-the-selected-ones'
+												)}
+											>
+												<ClayIcon symbol="question-circle-full" />
+											</span>
+										</label>
+
+										<ClayRadioGroup
+											name={includeModeFormElementId}
+											onChange={(val: any) =>
+												setIncludeMode(val)
+											}
+											value={includeMode}
+										>
+											<ClayRadio
+												label={Liferay.Language.get(
+													'include'
+												)}
+												value="include"
+											/>
+
+											<ClayRadio
+												label={Liferay.Language.get(
+													'exclude'
+												)}
+												value="exclude"
+											/>
+										</ClayRadioGroup>
+									</ClayForm.Group>
+								</>
+							)}
+						</>
+					)}
+				</ClayForm>
 			</ClayModal.Body>
 
 			<ClayModal.Footer
 				last={
 					<ClayButton.Group spaced>
-						<ClayButton onClick={handleFilterSave}>
+						<ClayButton
+							disabled={
+								!selectedField ||
+								(!multiple && preselectedValues.length > 1)
+							}
+							form={formElementId}
+							type="submit"
+						>
 							{Liferay.Language.get('save')}
 						</ClayButton>
 
@@ -298,7 +614,7 @@ function AddFDSFilterModalContent({
 					</ClayButton.Group>
 				}
 			/>
-		</div>
+		</>
 	);
 }
 
@@ -312,6 +628,67 @@ function Filters({fdsView, fdsViewsURL, namespace}: IProps) {
 	const [fields, setFields] = useState<IField[]>([]);
 	const [filters, setFilters] = useState<IFilter[]>([]);
 	const [newFiltersOrder, setNewFiltersOrder] = useState<string>('');
+
+	useEffect(() => {
+		const getFilters = async () => {
+			const response = await fetch(
+				`${API_URL.FDS_VIEWS}/${fdsView.id}?nestedFields=${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_DATE_FILTER},${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_DYNAMIC_FILTER}`
+			);
+
+			const responseJSON = await response.json();
+
+			const dateFiltersOrderer = responseJSON[
+				OBJECT_RELATIONSHIP.FDS_VIEW_FDS_DATE_FILTER
+			] as IDateFilter[];
+			const dynamicFiltersOrderer = responseJSON[
+				OBJECT_RELATIONSHIP.FDS_VIEW_FDS_DYNAMIC_FILTER
+			] as IDynamicFilter[];
+
+			let filtersOrdered: FilterCollection = [
+				...dateFiltersOrderer.map((item) => ({
+					...item,
+					displayType: Liferay.Language.get('date-filter'),
+				})),
+				...dynamicFiltersOrderer.map((item) => ({
+					...item,
+					displayType: Liferay.Language.get('dynamic-filter'),
+				})),
+			];
+
+			if (fdsView.fdsFiltersOrder) {
+				const order = fdsView.fdsFiltersOrder.split(',');
+
+				let notOrdered: FilterCollection = [];
+
+				if (filtersOrdered.length > order.length) {
+					notOrdered = filtersOrdered.filter(
+						(filter) => !order.includes(String(filter.id))
+					);
+				}
+
+				filtersOrdered = fdsView.fdsFiltersOrder
+					.split(',')
+					.map((fdsFilterId) =>
+						filtersOrdered.find(
+							(filter) => filter.id === Number(fdsFilterId)
+						)
+					)
+					.filter(Boolean) as FilterCollection;
+
+				filtersOrdered = [...filtersOrdered, ...notOrdered];
+			}
+
+			setFilters(filtersOrdered);
+		};
+
+		getFields(fdsView).then((newFields) => {
+			if (newFields) {
+				setFields(newFields);
+			}
+		});
+
+		getFilters();
+	}, [fdsView]);
 
 	const updateFDSFiltersOrder = async () => {
 		const response = await fetch(
@@ -350,6 +727,7 @@ function Filters({fdsView, fdsViewsURL, namespace}: IProps) {
 
 	const onCreationButtonClick = () =>
 		openModal({
+			className: 'overflow-auto',
 			contentComponent: ({closeModal}: {closeModal: Function}) => (
 				<AddFDSFilterModalContent
 					closeModal={closeModal}
@@ -359,6 +737,33 @@ function Filters({fdsView, fdsViewsURL, namespace}: IProps) {
 					onSave={(newfilter) => setFilters([...filters, newfilter])}
 				/>
 			),
+			disableAutoClose: true,
+		});
+
+	const handleEdit = ({item}: {item: IDateFilter | IDynamicFilter}) =>
+		openModal({
+			className: 'overflow-auto',
+			contentComponent: ({closeModal}: {closeModal: Function}) => (
+				<AddFDSFilterModalContent
+					closeModal={closeModal}
+					fdsView={fdsView}
+					fields={fields}
+					filter={item}
+					namespace={namespace}
+					onSave={(newfilter) => {
+						const newFilters = filters.map((item) => {
+							if (item.id === newfilter.id) {
+								return {...item, ...newfilter};
+							}
+
+							return item;
+						});
+
+						setFilters(newFilters);
+					}}
+				/>
+			),
+			disableAutoClose: true,
 		});
 
 	const handleDelete = async ({item}: {item: IFilter}) => {
@@ -409,61 +814,6 @@ function Filters({fdsView, fdsViewsURL, namespace}: IProps) {
 		});
 	};
 
-	useEffect(() => {
-		const getFilters = async () => {
-			const response = await fetch(
-				`${API_URL.FDS_VIEWS}/${fdsView.id}?nestedFields=${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_DATE_FILTER},${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_DYNAMIC_FILTER}`
-			);
-
-			const responseJSON = await response.json();
-
-			const dateFiltersOrderer = responseJSON[
-				OBJECT_RELATIONSHIP.FDS_VIEW_FDS_DATE_FILTER
-			] as IDateFilter[];
-			const dynamicFiltersOrderer = responseJSON[
-				OBJECT_RELATIONSHIP.FDS_VIEW_FDS_DYNAMIC_FILTER
-			] as IFilter[];
-
-			let filtersOrdered = [
-				...dateFiltersOrderer,
-				...dynamicFiltersOrderer,
-			];
-
-			if (fdsView.fdsFiltersOrder) {
-				const order = fdsView.fdsFiltersOrder.split(',');
-
-				let notOrdered: IFilter[] = [];
-
-				if (filtersOrdered.length > order.length) {
-					notOrdered = filtersOrdered.filter(
-						(filter) => !order.includes(String(filter.id))
-					);
-				}
-
-				filtersOrdered = fdsView.fdsFiltersOrder
-					.split(',')
-					.map((fdsFilterId) =>
-						filtersOrdered.find(
-							(filter) => filter.id === Number(fdsFilterId)
-						)
-					)
-					.filter(Boolean) as IFilter[];
-
-				filtersOrdered = [...filtersOrdered, ...notOrdered];
-			}
-
-			setFilters(filtersOrdered);
-		};
-
-		getFields(fdsView).then((newFields) => {
-			if (newFields) {
-				setFields(newFields);
-			}
-		});
-
-		getFilters();
-	}, [fdsView]);
-
 	return (
 		<ClayLayout.ContainerFluid>
 			<OrderableTable
@@ -473,12 +823,17 @@ function Filters({fdsView, fdsViewsURL, namespace}: IProps) {
 						label: Liferay.Language.get('delete'),
 						onClick: handleDelete,
 					},
+					{
+						icon: 'pencil',
+						label: Liferay.Language.get('edit'),
+						onClick: handleEdit,
+					},
 				]}
 				disableSave={!newFiltersOrder.length}
 				fields={[
 					{
-						label: Liferay.Language.get('label'),
-						name: 'label',
+						label: Liferay.Language.get('name'),
+						name: 'name',
 					},
 					{
 						label: Liferay.Language.get('Field Name'),
@@ -486,7 +841,7 @@ function Filters({fdsView, fdsViewsURL, namespace}: IProps) {
 					},
 					{
 						label: Liferay.Language.get('type'),
-						name: 'type',
+						name: 'displayType',
 					},
 				]}
 				items={filters}

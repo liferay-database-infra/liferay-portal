@@ -279,6 +279,12 @@ definition {
 		ContentDashboard.applySelectedFilter();
 	}
 
+	macro filterByToBeReviewed {
+		ContentDashboard.openFilterAndOrder();
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+	}
+
 	macro filterByType {
 		ContentDashboard.openFilterModal(filterOption = "Type");
 
@@ -407,6 +413,12 @@ definition {
 		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
 	}
 
+	macro orderByReviewDate {
+		ContentDashboard.openFilterAndOrder();
+
+		Click(locator1 = "ContentDashboard#FILTER_BY_OPTION");
+	}
+
 	macro orderByTitle {
 		ContentDashboard.openFilterAndOrder();
 
@@ -447,11 +459,11 @@ definition {
 
 		var secondVocabulary = selenium.getText("ContentDashboard#AUDIT_GRAPH_CONFIGURATION_SECOND_VOCABULARY_IN_USE");
 
-		if (contains(${secondVocabulary}, ${key_vocabularyName})) {
+		if (!(contains(${secondVocabulary}, ${key_vocabularyName}))) {
 			Click(locator1 = "ContentDashboard#AUDIT_GRAPH_CONFIGURATION_VOCABULARY_IN_USE");
 
 			Click(
-				ariaLabel = "Reorder Up",
+				ariaLabel = "Reorder Down",
 				locator1 = "Button#ANY_WITH_ARIA_LABEL");
 		}
 
@@ -467,7 +479,7 @@ definition {
 
 		var firstVocabulary = selenium.getText("ContentDashboard#AUDIT_GRAPH_CONFIGURATION_FIRST_VOCABULARY_IN_USE");
 
-		if (contains(${key_vocabularyName}, ${firstVocabulary})) {
+		if (!(contains(${firstVocabulary}, ${key_vocabularyName}))) {
 			Click(locator1 = "ContentDashboard#AUDIT_GRAPH_CONFIGURATION_VOCABULARY_IN_USE");
 
 			Click(

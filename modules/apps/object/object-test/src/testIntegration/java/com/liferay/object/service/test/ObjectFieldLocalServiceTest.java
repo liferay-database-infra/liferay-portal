@@ -371,6 +371,26 @@ public class ObjectFieldLocalServiceTest {
 							).build())
 					).build())));
 
+		_assertFailure(
+			ObjectFieldSettingValueException.MissingRequiredValues.class,
+			"The settings timeStorage are required for object field datetime",
+			() -> ObjectDefinitionTestUtil.addObjectDefinition(
+				_objectDefinitionLocalService,
+				Collections.singletonList(
+					new ObjectFieldBuilder(
+					).businessType(
+						ObjectFieldConstants.BUSINESS_TYPE_DATE_TIME
+					).dbType(
+						ObjectFieldConstants.DB_TYPE_DATE_TIME
+					).labelMap(
+						LocalizedMapUtil.getLocalizedMap(
+							RandomTestUtil.randomString())
+					).name(
+						"datetime"
+					).objectFieldSettings(
+						Collections.emptyList()
+					).build())));
+
 		// Object field setting not allowed names
 
 		_assertFailure(
@@ -535,6 +555,9 @@ public class ObjectFieldLocalServiceTest {
 				objectFieldBusinessTypes) {
 
 			if (Objects.equals(
+					objectFieldBusinessType.getName(),
+					ObjectFieldConstants.BUSINESS_TYPE_ENCRYPTED) ||
+				Objects.equals(
 					objectFieldBusinessType.getName(),
 					ObjectFieldConstants.BUSINESS_TYPE_MULTISELECT_PICKLIST) ||
 				Objects.equals(
@@ -1333,7 +1356,7 @@ public class ObjectFieldLocalServiceTest {
 		Assert.assertEquals(
 			labelMap.get(LocaleUtil.GERMANY), labelMap.get(LocaleUtil.US));
 
-		// Object field relationship name and DB type cannot be changed
+		// Object field relationship
 
 		ObjectDefinition relatedObjectDefinition =
 			ObjectDefinitionTestUtil.addObjectDefinition(
@@ -1353,6 +1376,29 @@ public class ObjectFieldLocalServiceTest {
 				relatedObjectDefinition.getObjectDefinitionId(),
 				"r_relationship_" + objectDefinition.getPKObjectFieldName());
 
+		long relationshipObjectFieldId =
+			relationshipObjectField.getObjectFieldId();
+
+		relationshipObjectField = _updateCustomObjectField(
+			relationshipObjectField,
+			Arrays.asList(
+				_objectFieldSettingLocalService.fetchObjectFieldSetting(
+					relationshipObjectFieldId,
+					ObjectFieldSettingConstants.
+						NAME_OBJECT_DEFINITION_1_SHORT_NAME),
+				_objectFieldSettingLocalService.fetchObjectFieldSetting(
+					relationshipObjectFieldId,
+					ObjectFieldSettingConstants.
+						NAME_OBJECT_RELATIONSHIP_ERC_OBJECT_FIELD_NAME)));
+
+		String relationshipObjectFieldDBColumnName =
+			relationshipObjectField.getDBColumnName();
+
+		Assert.assertNotEquals(
+			StringPool.UNDERLINE,
+			relationshipObjectFieldDBColumnName.charAt(
+				relationshipObjectFieldDBColumnName.length() - 1));
+
 		_assertFailure(
 			ObjectFieldRelationshipTypeException.class,
 			"Object field relationship name and DB type cannot be changed",
@@ -1364,7 +1410,7 @@ public class ObjectFieldLocalServiceTest {
 				).name(
 					"able"
 				).objectFieldId(
-					relationshipObjectField.getObjectFieldId()
+					relationshipObjectFieldId
 				).objectFieldSettings(
 					Collections.emptyList()
 				).build()));

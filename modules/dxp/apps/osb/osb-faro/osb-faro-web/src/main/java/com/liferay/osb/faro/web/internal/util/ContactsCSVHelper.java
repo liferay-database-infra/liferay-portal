@@ -24,17 +24,17 @@ import com.liferay.osb.faro.contacts.model.constants.ContactsConstants;
 import com.liferay.osb.faro.engine.client.model.DataSource;
 import com.liferay.osb.faro.engine.client.model.DataSourceField;
 import com.liferay.osb.faro.web.internal.exception.FaroException;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedWriter;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Repository;
-import com.liferay.portal.kernel.portletfilerepository.PortletFileRepositoryUtil;
+import com.liferay.portal.kernel.portletfilerepository.PortletFileRepository;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -133,7 +133,7 @@ public class ContactsCSVHelper {
 	public void deleteFileEntry(long groupId, String dataSourceId)
 		throws Exception {
 
-		Repository repository = _portletFileRepositoryUtil.getPortletRepository(
+		Repository repository = _portletFileRepository.getPortletRepository(
 			groupId, ContactsConstants.SERVICE_NAME);
 
 		_dlFileEntryLocalService.deleteFileEntry(
@@ -329,9 +329,8 @@ public class ContactsCSVHelper {
 				dlFileEntry.getReviewDate(), serviceContext);
 		}
 		else {
-			Repository repository =
-				_portletFileRepositoryUtil.addPortletRepository(
-					groupId, ContactsConstants.SERVICE_NAME, serviceContext);
+			Repository repository = _portletFileRepository.addPortletRepository(
+				groupId, ContactsConstants.SERVICE_NAME, serviceContext);
 
 			dlFileEntry = _dlFileEntryLocalService.addFileEntry(
 				null, userId, groupId, repository.getRepositoryId(),
@@ -374,6 +373,6 @@ public class ContactsCSVHelper {
 	private DLFileVersionLocalService _dlFileVersionLocalService;
 
 	@Reference
-	private PortletFileRepositoryUtil _portletFileRepositoryUtil;
+	private PortletFileRepository _portletFileRepository;
 
 }

@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation; either version 2.1 of the License, or (at your option)
+ * any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ */
+
 import brightnessEmptyIcon from '../../assets/icons/brightness_empty_icon.svg';
 import creditCardIcon from '../../assets/icons/credit_card_icon.svg';
 import {Header} from '../../components/Header/Header';
@@ -29,14 +43,14 @@ export function ChoosePricingModelPage({
 	return (
 		<div className="choose-pricing-model-page-container">
 			<Header
-				description="Select one of the pricing models for your app. This will define how much users will pay and their acquisition experience."
+				description="Select one of the pricing models for your app. This will define how much users will pay. To enable paid apps, you must be a business and enter payment information in your Marketplace account profile."
 				title="Choose pricing model"
 			/>
 
 			<Section
 				label="App Price"
 				required
-				tooltip="More Info"
+				tooltip="Choose Free or Paid. Apps that are free have no further payment obligations once installed."
 				tooltipText="More Info"
 			>
 				<div className="choose-pricing-model-page-radio-container">
@@ -51,7 +65,7 @@ export function ChoosePricingModelPage({
 						}}
 						selected={priceModel.value === 'Free'}
 						title="FREE"
-						tooltip="More Info"
+						tooltip="The app is offered in the Marketplace with no charge."
 					/>
 
 					<RadioCard
@@ -65,7 +79,7 @@ export function ChoosePricingModelPage({
 						}}
 						selected={priceModel.value === 'Paid'}
 						title="Paid"
-						tooltip="More Info"
+						tooltip="For paid apps, you can choose the subscription model you want to use on the next screen."
 					/>
 				</div>
 			</Section>

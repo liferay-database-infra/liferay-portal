@@ -55,7 +55,6 @@ import com.liferay.portlet.asset.model.impl.AssetEntryModelImpl;
 
 import java.io.Serializable;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 
 import java.sql.Timestamp;
@@ -6180,7 +6179,6 @@ public class AssetEntryPersistenceImpl
 
 	static {
 		Set<String> ctControlColumnNames = new HashSet<String>();
-		Set<String> ctIgnoreColumnNames = new HashSet<String>();
 		Set<String> ctMergeColumnNames = new HashSet<String>();
 		Set<String> ctStrictColumnNames = new HashSet<String>();
 
@@ -6191,13 +6189,13 @@ public class AssetEntryPersistenceImpl
 		ctStrictColumnNames.add("userId");
 		ctStrictColumnNames.add("userName");
 		ctStrictColumnNames.add("createDate");
-		ctIgnoreColumnNames.add("modifiedDate");
+		ctMergeColumnNames.add("modifiedDate");
 		ctStrictColumnNames.add("classNameId");
 		ctStrictColumnNames.add("classPK");
 		ctStrictColumnNames.add("classUuid");
 		ctStrictColumnNames.add("classTypeId");
 		ctStrictColumnNames.add("listable");
-		ctStrictColumnNames.add("visible");
+		ctMergeColumnNames.add("visible");
 		ctStrictColumnNames.add("startDate");
 		ctStrictColumnNames.add("endDate");
 		ctStrictColumnNames.add("publishDate");
@@ -6215,8 +6213,6 @@ public class AssetEntryPersistenceImpl
 
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.CONTROL, ctControlColumnNames);
-		_ctColumnNamesMap.put(
-			CTColumnResolutionType.IGNORE, ctIgnoreColumnNames);
 		_ctColumnNamesMap.put(CTColumnResolutionType.MERGE, ctMergeColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.PK, Collections.singleton("entryId"));
@@ -6439,30 +6435,15 @@ public class AssetEntryPersistenceImpl
 			},
 			false);
 
-		_setAssetEntryUtilPersistence(this);
+		AssetEntryUtil.setPersistence(this);
 	}
 
 	public void destroy() {
-		_setAssetEntryUtilPersistence(null);
+		AssetEntryUtil.setPersistence(null);
 
 		EntityCacheUtil.removeCache(AssetEntryImpl.class.getName());
 
 		TableMapperFactory.removeTableMapper("AssetEntries_AssetTags");
-	}
-
-	private void _setAssetEntryUtilPersistence(
-		AssetEntryPersistence assetEntryPersistence) {
-
-		try {
-			Field field = AssetEntryUtil.class.getDeclaredField("_persistence");
-
-			field.setAccessible(true);
-
-			field.set(null, assetEntryPersistence);
-		}
-		catch (ReflectiveOperationException reflectiveOperationException) {
-			throw new RuntimeException(reflectiveOperationException);
-		}
 	}
 
 	@BeanReference(type = AssetTagPersistence.class)

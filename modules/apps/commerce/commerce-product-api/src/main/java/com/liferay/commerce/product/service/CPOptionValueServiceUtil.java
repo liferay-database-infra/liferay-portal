@@ -40,13 +40,13 @@ public class CPOptionValueServiceUtil {
 	 * Never modify this class directly. Add custom service methods to <code>com.liferay.commerce.product.service.impl.CPOptionValueServiceImpl</code> and rerun ServiceBuilder to regenerate this class.
 	 */
 	public static CPOptionValue addCPOptionValue(
-			long cpOptionId, Map<java.util.Locale, String> titleMap,
+			long cpOptionId, Map<java.util.Locale, String> nameMap,
 			double priority, String key,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws PortalException {
 
 		return getService().addCPOptionValue(
-			cpOptionId, titleMap, priority, key, serviceContext);
+			cpOptionId, nameMap, priority, key, serviceContext);
 	}
 
 	public static CPOptionValue addOrUpdateCPOptionValue(
@@ -127,17 +127,21 @@ public class CPOptionValueServiceUtil {
 	}
 
 	public static CPOptionValue updateCPOptionValue(
-			long cpOptionValueId, Map<java.util.Locale, String> titleMap,
+			long cpOptionValueId, Map<java.util.Locale, String> nameMap,
 			double priority, String key,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws PortalException {
 
 		return getService().updateCPOptionValue(
-			cpOptionValueId, titleMap, priority, key, serviceContext);
+			cpOptionValueId, nameMap, priority, key, serviceContext);
 	}
 
 	public static CPOptionValueService getService() {
 		return _service;
+	}
+
+	public static void setService(CPOptionValueService service) {
+		_service = service;
 	}
 
 	private static volatile CPOptionValueService _service;

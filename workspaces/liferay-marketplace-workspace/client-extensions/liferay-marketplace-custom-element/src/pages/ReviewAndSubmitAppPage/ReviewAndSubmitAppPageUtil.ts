@@ -1,81 +1,79 @@
-import brightnessEmptyIcon from '../../assets/icons/brightness_empty_icon.svg';
-import scheduleIcon from '../../assets/icons/schedule_icon.svg';
+/**
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation; either version 2.1 of the License, or (at your option)
+ * any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ */
 
-export type File = {
-	fileDescription: string;
-	fileName: string;
-	image: string;
-};
+import documentationIcon from '../../assets/icons/documentation_icon.svg';
+import globeIcon from '../../assets/icons/globe_icon.svg';
+import guideIcon from '../../assets/icons/guide_icon.svg';
+import phoneIcon from '../../assets/icons/phone_icon.svg';
+import usageTermsIcon from '../../assets/icons/usage_terms_icon.svg';
 
-export type CardInfo = {
-	icon: string;
-	link: string;
-	title: string;
-};
-
-export type CardTag = {
-	icon: string;
+export type App = {
+	attachmentTitle: string;
+	categories: string[];
+	description: string;
+	licenseType: string;
+	name: string;
+	price: number;
+	priceModel: string;
+	storefront: ProductImages[];
+	supportAndHelp: {
+		icon: string;
+		link: string;
+		title: string;
+	}[];
 	tags: string[];
-	title: string;
+	thumbnail: string;
+	version: string;
+	versionDescription: string;
 };
 
-export type ReviewAndSubmitAppPageUtilProps = {
-	cardInfos?: CardInfo[];
-	cardTags?: CardTag[];
-	description?: string;
-	fileName?: string;
-	files?: File[];
-	icon?: string;
-	section: string;
-	tags?: string[];
-	title?: string;
-	version?: string;
-};
-
-export const initialReviewAndSubmitAppPageItems: ReviewAndSubmitAppPageUtilProps[] =
+export const supportAndHelpMap = new Map<string, {icon: string; title: string}>(
 	[
-		{
-			section: 'Categories',
-			tags: [
-				'Experience Management',
-				'Collaboration and Knowledge Sharing',
-			],
-		},
-		{
-			section: 'Tags',
-			tags: [
-				'CRM',
-				'Employee Experience',
-				'Employee Portal',
-				'Knowledge Management',
-			],
-		},
-		{
-			fileName: 'a-co-libraries-01.lpkg',
-			section: 'Build',
-		},
-		{
-			icon: brightnessEmptyIcon,
-			section: 'Pricing',
-			title: 'Free',
-		},
-		{
-			description: 'License never expires.',
-			icon: scheduleIcon,
-			section: 'Licensing',
-			title: 'Perpetual License',
-		},
-		{
-			section: 'Storefront',
-		},
-		{
-			description:
-				'Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor. Aenean eu leo quam. Pellentesque ornare sem lacinia quam venenatis vestibulum. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Donec sed odio dui. Aenean eu leo quam. Pellentesque ornare sem lacinia quam venenatis vestibulum. Cras mattison purus sit amet fermentum.',
-			section: 'Version',
-			title: 'Release Notes',
-			version: '0.0.1',
-		},
-		{
-			section: 'Support & Help',
-		},
-	];
+		[
+			'supporturl',
+			{
+				icon: phoneIcon,
+				title: 'Support URL',
+			},
+		],
+		[
+			'publisherwebsiteurl',
+			{
+				icon: globeIcon,
+				title: 'Publisher website URL',
+			},
+		],
+		[
+			'appusagetermsurl',
+			{
+				icon: usageTermsIcon,
+				title: 'App usage terms (EULA) URL',
+			},
+		],
+		[
+			'appdocumentationurl',
+			{
+				icon: documentationIcon,
+				title: 'App documentation URL',
+			},
+		],
+		[
+			'appinstallationguideurl',
+			{
+				icon: guideIcon,
+				title: 'App installation guide URL',
+			},
+		],
+	]
+);

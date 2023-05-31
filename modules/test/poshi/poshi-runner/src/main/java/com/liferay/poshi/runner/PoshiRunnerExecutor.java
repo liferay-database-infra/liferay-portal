@@ -755,6 +755,10 @@ public class PoshiRunnerExecutor {
 			"macro", className, namespace);
 
 		for (Element rootVarElement : rootVarElements) {
+			if (Validator.isNotNull(rootVarElement.attributeValue("static"))) {
+				_poshiVariablesContext.pushStaticVarsIntoCommandMap();
+			}
+
 			runRootVarElement(rootVarElement, true);
 		}
 
@@ -1067,6 +1071,10 @@ public class PoshiRunnerExecutor {
 			"test-case", className, namespace);
 
 		for (Element rootVarElement : rootVarElements) {
+			if (Validator.isNotNull(rootVarElement.attributeValue("static"))) {
+				_poshiVariablesContext.pushStaticVarsIntoCommandMap();
+			}
+
 			runRootVarElement(rootVarElement, false);
 		}
 

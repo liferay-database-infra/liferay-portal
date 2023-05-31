@@ -34,7 +34,6 @@ import {
 import {useSetSidebarPanelId} from '../contexts/SidebarPanelIdContext';
 import getFlatItems from '../utils/getFlatItems';
 import getItemPath from '../utils/getItemPath';
-import getOrder from '../utils/getOrder';
 import {useDragItem, useDropTarget} from '../utils/useDragAndDrop';
 import useKeyboardNavigation from '../utils/useKeyboardNavigation';
 import {AddItemDropDown} from './AddItemDropdown';
@@ -76,23 +75,10 @@ export function MenuItem({item, onMenuItemRemoved}) {
 	);
 
 	const updateMenuItemParent = (itemId, parentId, order) => {
-		let computedOrder;
-
-		if (Liferay.FeatureFlags['LPS-134527']) {
-			computedOrder = order;
-		}
-		else {
-			computedOrder = getOrder({
-				items,
-				parentSiteNavigationMenuItemId: parentId,
-				siteNavigationMenuItemId: itemId,
-			});
-		}
-
 		updateMenuItem({
 			editSiteNavigationMenuItemParentURL,
 			itemId,
-			order: computedOrder,
+			order,
 			parentId,
 			portletNamespace,
 		})
@@ -156,10 +142,6 @@ export function MenuItem({item, onMenuItemRemoved}) {
 	} = useKeyboardNavigation();
 
 	const onDragHandlerKeyDown = (event) => {
-		if (!Liferay.FeatureFlags['LPS-134527']) {
-			return;
-		}
-
 		if (event.key === 'Enter') {
 			event.preventDefault();
 			event.stopPropagation();
@@ -267,17 +249,13 @@ export function MenuItem({item, onMenuItemRemoved}) {
 	return (
 		<>
 			<div
-				aria-description={
+				aria-label={
 					item.icon
-						? sub(
-								Liferay.Language.get(
-									'x-does-not-have-a-display-page-available'
-								),
-								`${title} (${type})`
-						  )
-						: null
+						? `${title} (${type}). ${Liferay.Language.get(
+								'this-item-does-not-have-a-display-page'
+						  )}`
+						: `${title} (${type})`
 				}
-				aria-label={`${title} (${type})`}
 				aria-level={itemPath.length}
 				className={classNames(
 					'focusable-menu-item site_navigation_menu_editor_MenuItem',
@@ -337,25 +315,24 @@ export function MenuItem({item, onMenuItemRemoved}) {
 										onKeyDown={onDragHandlerKeyDown}
 										size="sm"
 										symbol="drag"
-										tabIndex={
-											isTarget &&
-											Liferay.FeatureFlags['LPS-134527']
-												? '0'
-												: '-1'
-										}
+										tabIndex={isTarget ? '0' : '-1'}
 									/>
 								</ClayLayout.ContentCol>
 
 								<ClayLayout.ContentCol expand>
 									<ClayCard.Description
 										displayType="title"
-										title={title}
+										title={null}
+										truncate={false}
 									>
 										{title}
 
 										{item.icon && (
 											<ClayIcon
-												className="ml-2 text-warning"
+												className="lfr-portal-tooltip ml-2 text-warning"
+												data-title={Liferay.Language.get(
+													'this-item-does-not-have-a-display-page'
+												)}
 												symbol={item.icon}
 											/>
 										)}
@@ -382,87 +359,69 @@ export function MenuItem({item, onMenuItemRemoved}) {
 									</div>
 								</ClayLayout.ContentCol>
 
-								{Liferay.FeatureFlags['LPS-134527'] && (
-									<div
-										onClick={(event) =>
-											event.stopPropagation()
+								<div
+									onClick={(event) => event.stopPropagation()}
+								>
+									<AddItemDropDown
+										className="position-absolute site_navigation_menu_editor_MenuItem-add-button-dropdown top-button"
+										order={order}
+										parentSiteNavigationMenuItemId={
+											item.parentSiteNavigationMenuItemId
 										}
-									>
-										<AddItemDropDown
-											className="position-absolute site_navigation_menu_editor_MenuItem-add-button-dropdown top-button"
-											order={order}
-											parentSiteNavigationMenuItemId={
-												item.parentSiteNavigationMenuItemId
-											}
-											trigger={
-												<ClayButtonWithIcon
-													aria-label={sub(
-														Liferay.Language.get(
-															'add-item-before-x'
-														),
-														`${title} (${type})`
-													)}
-													className="site_navigation_menu_editor_MenuItem-add-button"
-													displayType="primary"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-													}}
-													size="xs"
-													symbol="plus"
-													tabIndex={
-														isTarget &&
-														Liferay.FeatureFlags[
-															'LPS-134527'
-														]
-															? '0'
-															: '-1'
-													}
-													title={Liferay.Language.get(
-														'add-item-at-the-same-level'
-													)}
-												/>
-											}
-										/>
+										trigger={
+											<ClayButtonWithIcon
+												aria-label={sub(
+													Liferay.Language.get(
+														'add-item-before-x'
+													),
+													`${title} (${type})`
+												)}
+												className="site_navigation_menu_editor_MenuItem-add-button"
+												displayType="primary"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+												}}
+												size="xs"
+												symbol="plus"
+												tabIndex={isTarget ? '0' : '-1'}
+												title={Liferay.Language.get(
+													'add-item-at-the-same-level'
+												)}
+											/>
+										}
+									/>
 
-										<AddItemDropDown
-											className="bottom-button position-absolute site_navigation_menu_editor_MenuItem-add-button-dropdown"
-											order={order + 1}
-											parentSiteNavigationMenuItemId={
-												item.parentSiteNavigationMenuItemId
-											}
-											trigger={
-												<ClayButtonWithIcon
-													aria-label={sub(
-														Liferay.Language.get(
-															'add-item-after-x'
-														),
-														`${title} (${type})`
-													)}
-													className="site_navigation_menu_editor_MenuItem-add-button"
-													displayType="primary"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-													}}
-													size="xs"
-													symbol="plus"
-													tabIndex={
-														isTarget &&
-														Liferay.FeatureFlags[
-															'LPS-134527'
-														]
-															? '0'
-															: '-1'
-													}
-													title={Liferay.Language.get(
-														'add-item-at-the-same-level'
-													)}
-												/>
-											}
-										/>
-									</div>
-								)}
+									<AddItemDropDown
+										className="bottom-button position-absolute site_navigation_menu_editor_MenuItem-add-button-dropdown"
+										order={order + 1}
+										parentSiteNavigationMenuItemId={
+											item.parentSiteNavigationMenuItemId
+										}
+										trigger={
+											<ClayButtonWithIcon
+												aria-label={sub(
+													Liferay.Language.get(
+														'add-item-after-x'
+													),
+													`${title} (${type})`
+												)}
+												className="site_navigation_menu_editor_MenuItem-add-button"
+												displayType="primary"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+												}}
+												size="xs"
+												symbol="plus"
+												tabIndex={isTarget ? '0' : '-1'}
+												title={Liferay.Language.get(
+													'add-item-at-the-same-level'
+												)}
+											/>
+										}
+									/>
+								</div>
 
 								<ClayLayout.ContentCol
 									gutters

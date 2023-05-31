@@ -106,6 +106,7 @@ import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnection;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
+import com.liferay.portal.kernel.encryptor.Encryptor;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.json.JSONArray;
@@ -147,6 +148,7 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.FileUtil;
@@ -169,6 +171,7 @@ import com.liferay.portal.search.searcher.SearchResponse;
 import com.liferay.portal.search.searcher.Searcher;
 import com.liferay.portal.search.sort.SortOrder;
 import com.liferay.portal.search.sort.Sorts;
+import com.liferay.portal.util.PropsValues;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -178,6 +181,8 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 
 import java.nio.charset.StandardCharsets;
+
+import java.security.Key;
 
 import java.sql.Blob;
 import java.sql.Clob;
@@ -189,6 +194,8 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.sql.Types;
 
+import java.time.LocalDateTime;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -196,6 +203,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.io.IOUtils;
 
@@ -254,6 +263,7 @@ public class ObjectEntryLocalServiceImpl
 		objectEntry.setCompanyId(user.getCompanyId());
 		objectEntry.setUserId(user.getUserId());
 		objectEntry.setUserName(user.getFullName());
+		objectEntry.setCreateDate(new Date());
 		objectEntry.setObjectDefinitionId(objectDefinitionId);
 		objectEntry.setStatus(WorkflowConstants.STATUS_DRAFT);
 		objectEntry.setStatusByUserId(user.getUserId());
@@ -440,10 +450,12 @@ public class ObjectEntryLocalServiceImpl
 			Collections.emptyMap(), objectDefinition.getObjectDefinitionId(),
 			values);
 
-		Indexer<ObjectEntry> indexer = IndexerRegistryUtil.getIndexer(
-			objectDefinition.getClassName());
+		if (objectDefinition.isActive()) {
+			Indexer<ObjectEntry> indexer = IndexerRegistryUtil.getIndexer(
+				objectDefinition.getClassName());
 
-		indexer.delete(objectEntry);
+			indexer.delete(objectEntry);
+		}
 
 		ObjectActionThreadLocal.clearObjectEntryIdsMap();
 
@@ -492,9 +504,17 @@ public class ObjectEntryLocalServiceImpl
 				ObjectEntryThreadLocal.setSkipObjectEntryResourcePermission(
 					true);
 
+				String deletionType = objectRelationship.getDeletionType();
+
+				if (ObjectEntryThreadLocal.isDisassociateRelatedModels()) {
+					deletionType =
+						ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE;
+				}
+
 				objectRelatedModelsProvider.deleteRelatedModel(
 					PrincipalThreadLocal.getUserId(), groupId,
-					objectRelationship.getObjectRelationshipId(), primaryKey);
+					objectRelationship.getObjectRelationshipId(), primaryKey,
+					deletionType);
 			}
 			catch (PrincipalException principalException) {
 				throw new ObjectRelationshipDeletionTypeException(
@@ -1906,6 +1926,12 @@ public class ObjectEntryLocalServiceImpl
 		throw new IllegalArgumentException("Invalid function " + function);
 	}
 
+	private Key _getKey() throws PortalException {
+		return new SecretKeySpec(
+			Base64.decode(PropsValues.OBJECT_ENCRYPTION_KEY),
+			PropsValues.OBJECT_ENCRYPTION_ALGORITHM);
+	}
+
 	private GroupByStep _getManyToManyObjectEntriesGroupByStep(
 			long groupId, long objectRelationshipId, long primaryKey,
 			boolean related, boolean reverse, FromStep fromStep)
@@ -2628,6 +2654,30 @@ public class ObjectEntryLocalServiceImpl
 
 			if (columnName.endsWith(StringPool.UNDERLINE)) {
 				columnName = columnName.substring(0, columnName.length() - 1);
+
+				ObjectField objectField =
+					_objectFieldLocalService.fetchObjectField(
+						objectDefinitionId, columnName);
+
+				if ((objectField != null) &&
+					objectField.compareBusinessType(
+						ObjectFieldConstants.BUSINESS_TYPE_ENCRYPTED)) {
+
+					try {
+						objects[i] = _encryptor.decrypt(
+							_getKey(), (String)objects[i]);
+					}
+					catch (IllegalArgumentException illegalArgumentException) {
+						throw new IllegalArgumentException(
+							"Please insert an encryption key or remove the " +
+								"object's encryption field to recover these " +
+									"entries.",
+							illegalArgumentException);
+					}
+					catch (Exception exception) {
+						throw new PortalException(exception);
+					}
+				}
 			}
 
 			_putValue(javaTypeClass, columnName, objects[i], values);
@@ -2913,6 +2963,9 @@ public class ObjectEntryLocalServiceImpl
 		else if (javaTypeClass == String.class) {
 			values.put(name, (String)object);
 		}
+		else if (javaTypeClass == Timestamp.class) {
+			values.put(name, (Timestamp)object);
+		}
 		else {
 			throw new IllegalArgumentException(
 				"Unable to put value with class " + javaTypeClass.getName());
@@ -2943,9 +2996,15 @@ public class ObjectEntryLocalServiceImpl
 
 		Object value = values.get(objectField.getName());
 
-		if (StringUtil.equals(
-				objectField.getBusinessType(),
-				ObjectFieldConstants.BUSINESS_TYPE_MULTISELECT_PICKLIST)) {
+		if (objectField.compareBusinessType(
+				ObjectFieldConstants.BUSINESS_TYPE_ENCRYPTED)) {
+
+			_setColumn(
+				preparedStatement, index, column.getSQLType(),
+				_encryptor.encrypt(_getKey(), (String)value));
+		}
+		else if (objectField.compareBusinessType(
+					ObjectFieldConstants.BUSINESS_TYPE_MULTISELECT_PICKLIST)) {
 
 			String valueString = String.valueOf(value);
 
@@ -3001,7 +3060,7 @@ public class ObjectEntryLocalServiceImpl
 					index, new StringReader(String.valueOf(value)));
 			}
 		}
-		else if (sqlType == Types.DATE) {
+		else if ((sqlType == Types.DATE) || (sqlType == Types.TIMESTAMP)) {
 			String valueString = GetterUtil.getString(value);
 
 			if (value instanceof Date) {
@@ -3009,6 +3068,12 @@ public class ObjectEntryLocalServiceImpl
 
 				preparedStatement.setTimestamp(
 					index, new Timestamp(date.getTime()));
+			}
+			else if (value instanceof LocalDateTime) {
+				LocalDateTime localDateTime = (LocalDateTime)value;
+
+				preparedStatement.setTimestamp(
+					index, Timestamp.valueOf(localDateTime));
 			}
 			else if (valueString.isEmpty()) {
 				preparedStatement.setTimestamp(index, null);
@@ -3450,6 +3515,15 @@ public class ObjectEntryLocalServiceImpl
 		}
 	}
 
+	private void _validateTextMaxLength280(
+			Map.Entry<String, Serializable> entry, ObjectField objectField)
+		throws PortalException {
+
+		_validateTextMaxLength(
+			280, GetterUtil.getString(entry.getValue()),
+			objectField.getObjectFieldId(), objectField.getName());
+	}
+
 	private void _validateUniqueValueConstraintViolation(
 			DynamicObjectDefinitionTable dynamicObjectDefinitionTable,
 			List<ObjectField> objectFields,
@@ -3565,6 +3639,11 @@ public class ObjectEntryLocalServiceImpl
 					objectField.getName());
 			}
 		}
+		else if (objectField.compareBusinessType(
+					ObjectFieldConstants.BUSINESS_TYPE_ENCRYPTED)) {
+
+			_validateTextMaxLength280(entry, objectField);
+		}
 		else if (StringUtil.equals(
 					objectField.getBusinessType(),
 					ObjectFieldConstants.BUSINESS_TYPE_LONG_TEXT)) {
@@ -3658,9 +3737,7 @@ public class ObjectEntryLocalServiceImpl
 					objectField.getDBType(),
 					ObjectFieldConstants.DB_TYPE_STRING)) {
 
-			_validateTextMaxLength(
-				280, GetterUtil.getString(entry.getValue()),
-				objectField.getObjectFieldId(), objectField.getName());
+			_validateTextMaxLength280(entry, objectField);
 		}
 
 		if (objectField.getListTypeDefinitionId() != 0) {
@@ -3732,6 +3809,9 @@ public class ObjectEntryLocalServiceImpl
 
 	@Reference
 	private DLFolderLocalService _dlFolderLocalService;
+
+	@Reference
+	private Encryptor _encryptor;
 
 	@Reference
 	private FilterPredicateFactory _filterPredicateFactory;

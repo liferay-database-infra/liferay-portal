@@ -41,7 +41,7 @@ CSSCommentsCheck | [Styling](styling_checks.markdown#styling-checks) | .css or .
 CSSImportsCheck | [Styling](styling_checks.markdown#styling-checks) | .css or .scss | Sorts and groups imports in `.css` files. |
 CSSPropertiesOrderCheck | [Styling](styling_checks.markdown#styling-checks) | .css or .scss | Sorts properties in `.css` files. |
 [CamelCaseNameCheck](check/camel_case_name_check.markdown#camelcasenamecheck) | [Naming Conventions](naming_conventions_checks.markdown#naming-conventions-checks) | .java, .jsp, .jspf, .jspx, .tag, .tpl or .vm | Checks variable names for correct use of `CamelCase`. |
-[ChainingCheck](check/chaining_check.markdown#chainingcheck) | [Styling](styling_checks.markdown#styling-checks) | .java, .jsp, .jspf, .jspx, .tag, .tpl or .vm | Checks that chaining is only applied on certain types and methods. |
+ChainingCheck | [Styling](styling_checks.markdown#styling-checks) | .java, .jsp, .jspf, .jspx, .tag, .tpl or .vm | Checks that method chaining can be used when possible. |
 [CodeownersFileLocationCheck](check/codeowners_file_location_check.markdown#codeownersfilelocationcheck) | [Bug Prevention](bug_prevention_checks.markdown#bug-prevention-checks) | CODEOWNERS | Checks that `CODEOWNERS` files are located in `.github` directory. |
 CodeownersWhitespaceCheck | [Styling](styling_checks.markdown#styling-checks) | CODEOWNERS | Finds missing and unnecessary whitespace in `CODEOWNERS` files. |
 [CompanyIterationCheck](check/company_iteration_check.markdown#companyiterationcheck) | [Bug Prevention](bug_prevention_checks.markdown#bug-prevention-checks) | .java, .jsp, .jspf, .jspx, .tag, .tpl or .vm | Checks that `CompanyLocalService.forEachCompany` or `CompanyLocalService.forEachCompanyId` is used when iterating over companies |
@@ -446,6 +446,7 @@ UnwrappedVariableInfoCheck | [Bug Prevention](bug_prevention_checks.markdown#bug
 UpgradeBNDIncludeResourceCheck | [Upgrade](upgrade_checks.markdown#upgrade-checks) | .bnd, .gradle, .java or .vm | Checks if the property value `-includeresource` or `Include-Resource` exists and removes it |
 UpgradeDeprecatedAPICheck | [Upgrade](upgrade_checks.markdown#upgrade-checks) | .java | Finds calls to deprecated classes, constructors, fields or methods after an upgrade |
 UpgradeGradleIncludeResourceCheck | [Upgrade](upgrade_checks.markdown#upgrade-checks) | .bnd, .gradle, .java or .vm | Replaces with `compileInclude` the configuration attribute for dependencies in `build.gradle` that are listed at `Include-Resource` property at `bnd.bnd` associated file. |
+UpgradeJavaAddFolderParameterCheck | [Upgrade](upgrade_checks.markdown#upgrade-checks) | .bnd, .gradle, .java or .vm | Fill the new parameter of the method `addFolder` of `JournalFolderService`, `JournalFolderLocalService`, and `JournalFolderLocalServiceUtil` classes |
 UpgradeJavaCheck | [Upgrade](upgrade_checks.markdown#upgrade-checks) | .bnd, .gradle, .java or .vm | Performs upgrade checks for `java` files |
 [UpgradeProcessCheck](check/upgrade_process_check.markdown#upgradeprocesscheck) | [Performance](performance_checks.markdown#performance-checks) | .java | Performs several checks on `*UpgradeProcess` classes. |
 UpgradeRemovedAPICheck | [Upgrade](upgrade_checks.markdown#upgrade-checks) | .java | Finds cases where calls are made to removed API after an upgrade. |

@@ -14,6 +14,7 @@
 
 package com.liferay.frontend.data.set.views.web.internal.portlet;
 
+import com.liferay.client.extension.type.manager.CETManager;
 import com.liferay.frontend.data.set.views.web.internal.constants.FDSViewsPortletKeys;
 import com.liferay.frontend.data.set.views.web.internal.constants.FDSViewsWebKeys;
 import com.liferay.frontend.data.set.views.web.internal.display.context.FDSViewsDisplayContext;
@@ -101,7 +102,8 @@ public class FDSViewsPortlet extends MVCPortlet {
 
 		renderRequest.setAttribute(
 			FDSViewsWebKeys.FDS_VIEWS_DISPLAY_CONTEXT,
-			new FDSViewsDisplayContext(renderRequest, _serviceTrackerList));
+			new FDSViewsDisplayContext(
+				_cetManager, renderRequest, _serviceTrackerList));
 
 		super.doDispatch(renderRequest, renderResponse);
 	}
@@ -232,6 +234,11 @@ public class FDSViewsPortlet extends MVCPortlet {
 						ObjectFieldConstants.DB_TYPE_STRING, true, false, null,
 						_language.get(locale, "renderer"), "renderer", false),
 					ObjectFieldUtil.createObjectField(
+						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+						ObjectFieldConstants.DB_TYPE_STRING, true, false, null,
+						_language.get(locale, "rendererType"), "rendererType",
+						false),
+					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_BOOLEAN,
 						ObjectFieldConstants.DB_TYPE_BOOLEAN, true, false, null,
 						_language.get(locale, "sortable"), "sortable", true)));
@@ -271,7 +278,7 @@ public class FDSViewsPortlet extends MVCPortlet {
 					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 						ObjectFieldConstants.DB_TYPE_STRING, true, false, null,
-						_language.get(locale, "label"), "label", true),
+						_language.get(locale, "name"), "name", true),
 					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 						ObjectFieldConstants.DB_TYPE_STRING, true, false, null,
@@ -305,7 +312,25 @@ public class FDSViewsPortlet extends MVCPortlet {
 					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 						ObjectFieldConstants.DB_TYPE_STRING, true, false, null,
-						_language.get(locale, "label"), "label", true)));
+						_language.get(locale, "name"), "name", true),
+					ObjectFieldUtil.createObjectField(
+						ObjectFieldConstants.BUSINESS_TYPE_BOOLEAN,
+						ObjectFieldConstants.DB_TYPE_BOOLEAN, true, false, null,
+						_language.get(locale, "include"), "include", false),
+					ObjectFieldUtil.createObjectField(
+						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+						ObjectFieldConstants.DB_TYPE_STRING, true, false, null,
+						_language.get(locale, "list-type-definition-id"),
+						"listTypeDefinitionId", false),
+					ObjectFieldUtil.createObjectField(
+						ObjectFieldConstants.BUSINESS_TYPE_BOOLEAN,
+						ObjectFieldConstants.DB_TYPE_BOOLEAN, true, false, null,
+						_language.get(locale, "multiple"), "multiple", false),
+					ObjectFieldUtil.createObjectField(
+						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+						ObjectFieldConstants.DB_TYPE_CLOB, true, false, null,
+						_language.get(locale, "preselected-values"),
+						"preselectedValues", false)));
 
 		_objectDefinitionLocalService.publishCustomObjectDefinition(
 			userId, fdsDynamicFilterObjectDefinition.getObjectDefinitionId());
@@ -351,6 +376,9 @@ public class FDSViewsPortlet extends MVCPortlet {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		FDSViewsPortlet.class);
+
+	@Reference
+	private CETManager _cetManager;
 
 	@Reference
 	private Language _language;

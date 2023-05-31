@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation; either version 2.1 of the License, or (at your option)
+ * any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ */
+
 import {Header} from '../../components/Header/Header';
 import {Input} from '../../components/Input/Input';
 import {NewAppPageFooterButtons} from '../../components/NewAppPageFooterButtons/NewAppPageFooterButtons';
@@ -41,7 +55,7 @@ export function ProvideAppSupportAndHelpPage({
 
 			<Section
 				label="App Support and help"
-				tooltip="More info"
+				tooltip="Define the support and help references. Users can access these resources pre and post purchase to find out more information about your app or solution."
 				tooltipText="More Info"
 			>
 				<Input

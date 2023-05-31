@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation; either version 2.1 of the License, or (at your option)
+ * any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ */
+
 import classNames from 'classnames';
 
 import './DashboardNavigationList.scss';
@@ -9,7 +23,7 @@ interface DashboardNavigationListProps {
 	dashboardNavigationItems: DashboardListItems[];
 	navigationItemMock: DashboardListItems;
 	navigationItemsMock: DashboardListItems[];
-	onSelectAppChange?: (value: AppProps) => void;
+	onSelectAppChange?: (value: AppProps | undefined) => void;
 	setDashboardNavigationItems: (values: DashboardListItems[]) => void;
 }
 
@@ -39,12 +53,36 @@ export function DashboardNavigationList({
 								};
 							}
 
+							if (navigationItem.itemName === 'apps') {
+								const newAppNavigationItems =
+									navigationItem.items?.map((item) => {
+										return {
+											...item,
+											selected: false,
+										};
+									});
+
+								const newNavigationItem = {
+									...navigationItem,
+									items: newAppNavigationItems,
+								};
+
+								return {
+									...newNavigationItem,
+									itemSelected: false,
+								};
+							}
+
 							return {
 								...navigationItem,
 								itemSelected: false,
 							};
 						}
 					);
+
+					if (onSelectAppChange) {
+						onSelectAppChange(undefined);
+					}
 
 					setDashboardNavigationItems(newItems);
 				}}

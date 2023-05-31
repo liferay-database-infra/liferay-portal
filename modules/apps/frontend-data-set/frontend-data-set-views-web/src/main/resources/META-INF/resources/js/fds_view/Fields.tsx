@@ -13,38 +13,30 @@
  */
 
 import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
-import ClayForm, {
-	ClayCheckbox,
-	ClayInput,
-	ClaySelectWithOption,
-} from '@clayui/form';
+import ClayDropDown from '@clayui/drop-down';
+import ClayForm, {ClayCheckbox, ClayInput} from '@clayui/form';
+import ClayLabel from '@clayui/label';
 import ClayLayout from '@clayui/layout';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import ClayModal from '@clayui/modal';
-import {DataRenderers} from '@liferay/frontend-data-set-web';
+import {
+	FDSInternalCellRenderer,
+	FDS_INTERNAL_CELL_RENDERERS,
+} from '@liferay/frontend-data-set-web';
 import {ManagementToolbar} from 'frontend-js-components-web';
 import {fetch, navigate, openModal, openToast} from 'frontend-js-web';
 import React, {useEffect, useRef, useState} from 'react';
 
 import {API_URL, OBJECT_RELATIONSHIP} from '../Constants';
-import {FDSViewSectionInterface} from '../FDSView';
+import {IFDSViewSectionInterface} from '../FDSView';
 import {FDSViewType} from '../FDSViews';
-import {getFields} from '../api';
+import {
+	IClientExtensionCellRenderer as FDSClientExtensionCellRenderer,
+	getFields,
+} from '../api';
 import OrderableTable from '../components/OrderableTable';
 
-const DATA_RENDERER_LABELS: {[key: string]: string} = {
-	actionLink: Liferay.Language.get('action-link'),
-	boolean: Liferay.Language.get('boolean'),
-	date: Liferay.Language.get('date'),
-	dateTime: Liferay.Language.get('date-and-time'),
-	default: Liferay.Language.get('default'),
-	image: Liferay.Language.get('image'),
-	label: Liferay.Language.get('label'),
-	link: Liferay.Language.get('link'),
-	list: Liferay.Language.get('list'),
-	quantitySelector: Liferay.Language.get('quantity-selector'),
-	status: Liferay.Language.get('status'),
-};
+import '../../css/FDSEntries.scss';
 
 interface IFDSField {
 	externalReferenceCode: string;
@@ -156,7 +148,10 @@ const SaveFDSFieldsModalContent = ({
 		});
 
 		onSave({
-			createdFDSFields,
+			createdFDSFields: createdFDSFields.map((fdsField) => ({
+				...fdsField,
+				id: Number(fdsField.id),
+			})),
 			deletedFDSFieldsIds: deletionIds,
 		});
 	};
@@ -328,6 +323,7 @@ const SaveFDSFieldsModalContent = ({
 
 interface IEditFDSFieldModalContentProps {
 	closeModal: Function;
+	fdsClientExtensionCellRenderers: FDSClientExtensionCellRenderer[];
 	fdsField: IFDSField;
 	namespace: string;
 	onSave: Function;
@@ -335,6 +331,7 @@ interface IEditFDSFieldModalContentProps {
 
 const EditFDSFieldModalContent = ({
 	closeModal,
+	fdsClientExtensionCellRenderers,
 	fdsField,
 	namespace,
 	onSave,
@@ -348,10 +345,19 @@ const EditFDSFieldModalContent = ({
 
 	const fdsFieldLabelRef = useRef<HTMLInputElement>(null);
 
+	const fdsInternalCellRendererLabels = FDS_INTERNAL_CELL_RENDERERS.map(
+		(cellRenderer) => cellRenderer.label
+	);
+
 	const editFDSField = async () => {
 		const body = {
 			label: fdsFieldLabelRef.current?.value,
 			renderer: selectedFDSFieldRenderer,
+			rendererType: !fdsInternalCellRendererLabels.includes(
+				selectedFDSFieldRenderer
+			)
+				? 'clientExtension'
+				: 'internal',
 			sortable: fdsFieldSortable,
 		};
 
@@ -394,6 +400,78 @@ const EditFDSFieldModalContent = ({
 	const fdsFieldLabelInputId = `${namespace}fdsFieldLabelInput`;
 	const fdsFieldRendererSelectId = `${namespace}fdsFieldRendererSelectId`;
 
+	const options = FDS_INTERNAL_CELL_RENDERERS.map(
+		(renderer: FDSInternalCellRenderer) => ({
+			label: renderer.label!,
+			value: renderer.name!,
+		})
+	);
+
+	options.push(
+		...fdsClientExtensionCellRenderers.map((item) => ({
+			label: item.name!,
+			value: item.erc!,
+		}))
+	);
+
+	const CellRendererDropdown = ({
+		cellRenderers,
+		namespace,
+		onItemClick,
+	}: {
+		cellRenderers: {
+			label: string;
+			value: string;
+		}[];
+		namespace: string;
+		onItemClick: Function;
+	}) => {
+		const fdsClientExtensionCellRenderersERCs = fdsClientExtensionCellRenderers.map(
+			(cellRendererCET) => cellRendererCET.erc
+		);
+
+		return (
+			<ClayDropDown
+				menuElementAttrs={{
+					className: 'fds-cell-renderers-dropdown-menu',
+				}}
+				trigger={
+					<ClayButton
+						aria-labelledby={`${namespace}cellRenderersLabel`}
+						className="form-control form-control-select form-control-select-secondary"
+						displayType="secondary"
+						id={fdsFieldRendererSelectId}
+					>
+						{selectedFDSFieldRenderer
+							? selectedFDSFieldRenderer
+							: Liferay.Language.get('choose-an-option')}
+					</ClayButton>
+				}
+			>
+				<ClayDropDown.ItemList items={cellRenderers} role="listbox">
+					{cellRenderers.map((cellRenderer) => (
+						<ClayDropDown.Item
+							className="align-items-center d-flex justify-content-between"
+							key={cellRenderer.value}
+							onClick={() => onItemClick(cellRenderer.label)}
+							roleItem="option"
+						>
+							{cellRenderer.label}
+
+							{fdsClientExtensionCellRenderersERCs.includes(
+								cellRenderer.value
+							) && (
+								<ClayLabel displayType="info">
+									{Liferay.Language.get('cell-renderer')}
+								</ClayLabel>
+							)}
+						</ClayDropDown.Item>
+					))}
+				</ClayDropDown.ItemList>
+			</ClayDropDown>
+		);
+	};
+
 	return (
 		<>
 			<ClayModal.Header>
@@ -435,19 +513,12 @@ const EditFDSFieldModalContent = ({
 						{Liferay.Language.get('cell-renderer')}
 					</label>
 
-					<ClaySelectWithOption
-						aria-label={Liferay.Language.get('cell-renderer')}
-						id={fdsFieldRendererSelectId}
-						onChange={(event) => {
-							setSelectedFDSFieldRenderer(event.target.value);
-						}}
-						options={Object.keys(DataRenderers).map(
-							(dataRendererId) => ({
-								label: DATA_RENDERER_LABELS[dataRendererId],
-								value: dataRendererId,
-							})
-						)}
-						value={selectedFDSFieldRenderer}
+					<CellRendererDropdown
+						cellRenderers={options}
+						namespace={namespace}
+						onItemClick={(item: string) =>
+							setSelectedFDSFieldRenderer(item)
+						}
 					/>
 				</ClayForm.Group>
 
@@ -483,11 +554,12 @@ const EditFDSFieldModalContent = ({
 };
 
 const Fields = ({
+	fdsClientExtensionCellRenderers,
 	fdsView,
 	fdsViewsURL,
 	namespace,
 	saveFDSFieldsURL,
-}: FDSViewSectionInterface) => {
+}: IFDSViewSectionInterface) => {
 	const [fdsFields, setFDSFields] = useState<Array<IFDSField> | null>(null);
 
 	const fdsFieldsOrderRef = useRef('');
@@ -680,6 +752,7 @@ const Fields = ({
 
 	const onCreationButtonClick = () =>
 		openModal({
+			className: 'overflow-auto',
 			contentComponent: ({closeModal}: {closeModal: Function}) => (
 				<SaveFDSFieldsModalContent
 					closeModal={closeModal}
@@ -734,6 +807,7 @@ const Fields = ({
 							label: Liferay.Language.get('edit'),
 							onClick: ({item}: {item: IFDSField}) => {
 								openModal({
+									className: 'overflow-auto',
 									contentComponent: ({
 										closeModal,
 									}: {
@@ -741,6 +815,9 @@ const Fields = ({
 									}) => (
 										<EditFDSFieldModalContent
 											closeModal={closeModal}
+											fdsClientExtensionCellRenderers={
+												fdsClientExtensionCellRenderers
+											}
 											fdsField={item}
 											namespace={namespace}
 											onSave={onEditFDSField}

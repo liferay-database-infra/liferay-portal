@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation; either version 2.1 of the License, or (at your option)
+ * any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ */
+
 import {filesize} from 'filesize';
 import {uniqueId} from 'lodash';
 
@@ -80,14 +94,14 @@ export function CustomizeAppStorefrontPage({
 	return (
 		<div className="storefront-page-container">
 			<Header
-				description="Design the storefront for your app. This will set the information displayed on ths app’s page."
+				description="Design the storefront for your app.  This will set the information displayed on the app page in the Marketplace."
 				title="Customize app storefront"
 			/>
 
 			<Section
 				label="App Storefront"
 				required
-				tooltip="More Info"
+				tooltip="Screenshots for your app must not exceed 1080 pixels in width and 678 pixels in height and must be in JPG or PNG format.  The file site of each screenshot must not exceed 384KB.  Each screenshot should preferrably be the same size, but each will be automatically scaled to match the aspect ratio of the above dimensions. It is preferrable if they are named sequentially, but you can reorder them as needed."
 				tooltipText="More Info"
 			>
 				<div className="storefront-page-info-container">
@@ -138,8 +152,8 @@ export function CustomizeAppStorefrontPage({
 				}
 				onClickBack={() => onClickBack()}
 				onClickContinue={() => {
-					appStorefrontImages?.forEach((image, index) => {
-						submitBase64EncodedFile({
+					appStorefrontImages?.forEach(async (image, index) => {
+						await submitBase64EncodedFile({
 							appERC,
 							file: image.file,
 							index,

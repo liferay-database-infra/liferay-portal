@@ -65,7 +65,6 @@ import com.liferay.osb.faro.web.internal.param.FaroParam;
 import com.liferay.osb.faro.web.internal.search.FaroSearchContext;
 import com.liferay.osb.faro.web.internal.util.ContactsCSVHelper;
 import com.liferay.osb.faro.web.internal.util.FieldMappingUtil;
-import com.liferay.osb.faro.web.internal.util.JSONUtil;
 import com.liferay.osb.faro.web.internal.util.OAuthUtil;
 import com.liferay.osb.faro.web.internal.util.TokenManager;
 import com.liferay.petra.function.transform.TransformUtil;
@@ -73,13 +72,14 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Repository;
 import com.liferay.portal.kernel.model.RoleConstants;
 import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.portletfilerepository.PortletFileRepositoryUtil;
+import com.liferay.portal.kernel.portletfilerepository.PortletFileRepository;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -479,7 +479,7 @@ public class DataSourceController extends BaseFaroController {
 
 			if (providerType.equals(CSVProvider.TYPE)) {
 				Repository repository =
-					_portletFileRepositoryUtil.getPortletRepository(
+					_portletFileRepository.getPortletRepository(
 						groupId, ContactsConstants.SERVICE_NAME);
 
 				DLFileEntry dlFileEntry =
@@ -1321,12 +1321,11 @@ public class DataSourceController extends BaseFaroController {
 				url, StringPool.SLASH + dataSourceId, StringPool.BLANK);
 		}
 
-		String json = JSONUtil.writeValueAsString(
-			HashMapBuilder.<String, Object>put(
-				"token", _tokenManager.getToken(dataSourceId, faroProjectId)
-			).put(
-				"url", url
-			));
+		String json = JSONUtil.put(
+			"token", _tokenManager.getToken(dataSourceId, faroProjectId)
+		).put(
+			"url", url
+		).toString();
 
 		return Base64.encode(json.getBytes(StandardCharsets.UTF_8));
 	}
@@ -1599,7 +1598,7 @@ public class DataSourceController extends BaseFaroController {
 	private Portal _portal;
 
 	@Reference
-	private PortletFileRepositoryUtil _portletFileRepositoryUtil;
+	private PortletFileRepository _portletFileRepository;
 
 	@Reference
 	private TokenManager _tokenManager;

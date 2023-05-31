@@ -12,6 +12,8 @@
  * details.
  */
 
+import {Renderer} from '@liferay/frontend-data-set-web/src/main/resources/META-INF/resources/utils/renderer';
+import {FDSCellRenderer} from '@liferay/js-api/data-set';
 import {fetch, openToast} from 'frontend-js-web';
 
 import {OBJECT_RELATIONSHIP} from './Constants';
@@ -37,7 +39,7 @@ export async function getFields(fdsView: FDSViewType) {
 			type: 'danger',
 		});
 
-		return;
+		return [];
 	}
 
 	const responseJSON = await response.json();
@@ -51,7 +53,7 @@ export async function getFields(fdsView: FDSViewType) {
 			type: 'danger',
 		});
 
-		return;
+		return [];
 	}
 
 	const fieldsArray: Array<IField> = [];
@@ -89,4 +91,63 @@ export async function getFields(fdsView: FDSViewType) {
 	});
 
 	return fieldsArray;
+}
+
+export interface IPickList {
+	externalReferenceCode: string;
+	id: string;
+	listTypeEntries: IListTypeEntry[];
+	name: string;
+	name_i18n: {
+		[key: string]: string;
+	};
+}
+
+interface IListTypeEntry {
+	externalReferenceCode: string;
+	id: number;
+	key: string;
+	name: string;
+	name_i18n: {
+		[key: string]: string;
+	};
+}
+
+export async function getAllPicklists(
+	page: number = 1,
+	items: IPickList[] = []
+) {
+	const response = await fetch(
+		`/o/headless-admin-list-type/v1.0/list-type-definitions?pageSize=100&page=${page}`
+	);
+
+	if (!response.ok) {
+		openToast({
+			message: Liferay.Language.get('your-request-failed-to-complete'),
+			type: 'danger',
+		});
+
+		return [];
+	}
+
+	const responseJSON = await response.json();
+
+	items = [...items, ...responseJSON.items];
+
+	if (responseJSON.lastPage > page) {
+		items = await getAllPicklists(page + 1, items);
+	}
+
+	return items;
+}
+
+export interface IClientExtensionRenderer extends Renderer {
+	erc?: string;
+	label?: string;
+	name?: string;
+	type: 'clientExtension';
+}
+
+export interface IClientExtensionCellRenderer extends IClientExtensionRenderer {
+	renderer: FDSCellRenderer;
 }

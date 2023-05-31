@@ -15,6 +15,7 @@
 package com.liferay.commerce.currency.service;
 
 import com.liferay.portal.kernel.service.ServiceWrapper;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 
 /**
  * Provides a wrapper for {@link CommerceCurrencyLocalService}.
@@ -503,7 +504,7 @@ public class CommerceCurrencyLocalServiceWrapper
 	@Override
 	public com.liferay.commerce.currency.model.CommerceCurrency
 			updateCommerceCurrency(
-				long commerceCurrencyId, String code,
+				long commerceCurrencyId,
 				java.util.Map<java.util.Locale, String> nameMap, String symbol,
 				java.math.BigDecimal rate,
 				java.util.Map<java.util.Locale, String> formatPatternMap,
@@ -514,7 +515,7 @@ public class CommerceCurrencyLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _commerceCurrencyLocalService.updateCommerceCurrency(
-			commerceCurrencyId, code, nameMap, symbol, rate, formatPatternMap,
+			commerceCurrencyId, nameMap, symbol, rate, formatPatternMap,
 			maxFractionDigits, minFractionDigits, roundingMode, primary,
 			priority, active, serviceContext);
 	}
@@ -543,6 +544,11 @@ public class CommerceCurrencyLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		_commerceCurrencyLocalService.updateExchangeRates();
+	}
+
+	@Override
+	public BasePersistence<?> getBasePersistence() {
+		return _commerceCurrencyLocalService.getBasePersistence();
 	}
 
 	@Override

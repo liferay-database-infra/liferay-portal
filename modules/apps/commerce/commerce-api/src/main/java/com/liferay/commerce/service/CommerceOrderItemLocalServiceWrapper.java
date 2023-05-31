@@ -15,6 +15,7 @@
 package com.liferay.commerce.service;
 
 import com.liferay.portal.kernel.service.ServiceWrapper;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 
 /**
  * Provides a wrapper for {@link CommerceOrderItemLocalService}.
@@ -616,6 +617,20 @@ public class CommerceOrderItemLocalServiceWrapper
 	}
 
 	@Override
+	public java.util.List<Long> getCustomerCommerceOrderIds(
+		long commerceOrderId) {
+
+		return _commerceOrderItemLocalService.getCustomerCommerceOrderIds(
+			commerceOrderId);
+	}
+
+	@Override
+	public int getCustomerCommerceOrderIdsCount(long commerceOrderId) {
+		return _commerceOrderItemLocalService.getCustomerCommerceOrderIdsCount(
+			commerceOrderId);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.ExportActionableDynamicQuery
 		getExportActionableDynamicQuery(
 			com.liferay.exportimport.kernel.lar.PortletDataContext
@@ -659,6 +674,20 @@ public class CommerceOrderItemLocalServiceWrapper
 		getSubscriptionCommerceOrderItems(long commerceOrderId) {
 
 		return _commerceOrderItemLocalService.getSubscriptionCommerceOrderItems(
+			commerceOrderId);
+	}
+
+	@Override
+	public java.util.List<Long> getSupplierCommerceOrderIds(
+		long commerceOrderId) {
+
+		return _commerceOrderItemLocalService.getSupplierCommerceOrderIds(
+			commerceOrderId);
+	}
+
+	@Override
+	public int getSupplierCommerceOrderIdsCount(long commerceOrderId) {
+		return _commerceOrderItemLocalService.getSupplierCommerceOrderIdsCount(
 			commerceOrderId);
 	}
 
@@ -983,6 +1012,11 @@ public class CommerceOrderItemLocalServiceWrapper
 
 		return _commerceOrderItemLocalService.updateExternalReferenceCode(
 			commerceOrderItemId, externalReferenceCode);
+	}
+
+	@Override
+	public BasePersistence<?> getBasePersistence() {
+		return _commerceOrderItemLocalService.getBasePersistence();
 	}
 
 	@Override

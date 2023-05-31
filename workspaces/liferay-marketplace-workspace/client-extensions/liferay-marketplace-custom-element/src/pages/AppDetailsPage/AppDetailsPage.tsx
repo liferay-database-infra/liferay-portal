@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation; either version 2.1 of the License, or (at your option)
+ * any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ */
+
 import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
 import ClayNavigationBar from '@clayui/navigation-bar';
@@ -15,7 +29,11 @@ import {ReviewAndSubmitAppPage} from '../ReviewAndSubmitAppPage/ReviewAndSubmitA
 
 import './AppDetailsPage.scss';
 import {getProductSpecifications} from '../../utils/api';
-import {getProductVersionFromSpecifications} from '../../utils/util';
+import {
+	getProductVersionFromSpecifications,
+	getThumbnailByProductAttachment,
+	showAppImage,
+} from '../../utils/util';
 
 interface AppDetailsPageProps {
 	dashboardNavigationItems: DashboardListItems[];
@@ -33,6 +51,7 @@ export function AppDetailsPage({
 		useState('App Details');
 
 	const [_, dispatch] = useAppContext();
+	const thumbnail = getThumbnailByProductAttachment(selectedApp.attachments);
 
 	useEffect(() => {
 		dispatch({
@@ -90,17 +109,20 @@ export function AppDetailsPage({
 				</div>
 			</button>
 
-			<ClayAlert
-				className="app-details-page-alert-container"
-				displayType="info"
-			>
-				<span className="app-details-page-alert-text">
-					This submission is currently under review by Liferay. Once
-					the process is complete, you will be able to publish it to
-					the marketplace. Meanwhile, any information or data from
-					this app submission cannot be updated.
-				</span>
-			</ClayAlert>
+			{selectedApp.status === 'Draft' && (
+				<ClayAlert
+					className="app-details-page-alert-container"
+					displayType="info"
+				>
+					<span className="app-details-page-alert-text">
+						This submission is currently under review by Liferay.
+						Once the process is complete, you will be able to
+						publish it to the marketplace. Meanwhile, any
+						information or data from this app submission cannot be
+						updated.
+					</span>
+				</ClayAlert>
+			)}
 
 			<div className="app-details-page-app-info-main-container">
 				<div className="app-details-page-app-info-left-container">
@@ -108,7 +130,7 @@ export function AppDetailsPage({
 						<img
 							alt="App Logo"
 							className="app-details-page-app-info-logo"
-							src={selectedApp.thumbnail}
+							src={showAppImage(thumbnail)}
 						/>
 					</div>
 
@@ -128,11 +150,11 @@ export function AppDetailsPage({
 									'app-details-page-app-info-subtitle-icon',
 									{
 										'app-details-page-app-info-subtitle-icon-hidden':
-											selectedApp.status === 'Hidden',
+											selectedApp.status === 'Draft',
 										'app-details-page-app-info-subtitle-icon-pending':
 											selectedApp.status === 'Pending',
 										'app-details-page-app-info-subtitle-icon-published':
-											selectedApp.status === 'Published',
+											selectedApp.status === 'Approved',
 									}
 								)}
 								src={circleFullIcon}
@@ -182,6 +204,8 @@ export function AppDetailsPage({
 				<ReviewAndSubmitAppPage
 					onClickBack={() => {}}
 					onClickContinue={() => {}}
+					productERC={selectedApp.externalReferenceCode}
+					productId={selectedApp.productId}
 					readonly
 				/>
 			</div>

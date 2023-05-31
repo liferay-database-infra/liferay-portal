@@ -31,6 +31,7 @@ import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.SetUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.odata.filter.ExpressionConvert;
@@ -143,7 +144,7 @@ public abstract class BasePriceEntryResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'PATCH' 'http://localhost:8080/o/headless-commerce-admin-pricing/v2.0/price-entries/by-externalReferenceCode/{externalReferenceCode}' -d $'{"active": ___, "bulkPricing": ___, "customFields": ___, "discountDiscovery": ___, "discountLevel1": ___, "discountLevel2": ___, "discountLevel3": ___, "discountLevel4": ___, "discountLevelsFormatted": ___, "displayDate": ___, "expirationDate": ___, "externalReferenceCode": ___, "hasTierPrice": ___, "neverExpire": ___, "price": ___, "priceEntryId": ___, "priceFormatted": ___, "priceListExternalReferenceCode": ___, "priceListId": ___, "skuExternalReferenceCode": ___, "skuId": ___, "tierPrices": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'PATCH' 'http://localhost:8080/o/headless-commerce-admin-pricing/v2.0/price-entries/by-externalReferenceCode/{externalReferenceCode}' -d $'{"active": ___, "bulkPricing": ___, "customFields": ___, "discountDiscovery": ___, "discountLevel1": ___, "discountLevel2": ___, "discountLevel3": ___, "discountLevel4": ___, "discountLevelsFormatted": ___, "displayDate": ___, "expirationDate": ___, "externalReferenceCode": ___, "hasTierPrice": ___, "neverExpire": ___, "price": ___, "priceEntryId": ___, "priceFormatted": ___, "priceListExternalReferenceCode": ___, "priceListId": ___, "priceOnApplication": ___, "skuExternalReferenceCode": ___, "skuId": ___, "tierPrices": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -279,7 +280,7 @@ public abstract class BasePriceEntryResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'PATCH' 'http://localhost:8080/o/headless-commerce-admin-pricing/v2.0/price-entries/{priceEntryId}' -d $'{"active": ___, "bulkPricing": ___, "customFields": ___, "discountDiscovery": ___, "discountLevel1": ___, "discountLevel2": ___, "discountLevel3": ___, "discountLevel4": ___, "discountLevelsFormatted": ___, "displayDate": ___, "expirationDate": ___, "externalReferenceCode": ___, "hasTierPrice": ___, "neverExpire": ___, "price": ___, "priceEntryId": ___, "priceFormatted": ___, "priceListExternalReferenceCode": ___, "priceListId": ___, "skuExternalReferenceCode": ___, "skuId": ___, "tierPrices": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'PATCH' 'http://localhost:8080/o/headless-commerce-admin-pricing/v2.0/price-entries/{priceEntryId}' -d $'{"active": ___, "bulkPricing": ___, "customFields": ___, "discountDiscovery": ___, "discountLevel1": ___, "discountLevel2": ___, "discountLevel3": ___, "discountLevel4": ___, "discountLevelsFormatted": ___, "displayDate": ___, "expirationDate": ___, "externalReferenceCode": ___, "hasTierPrice": ___, "neverExpire": ___, "price": ___, "priceEntryId": ___, "priceFormatted": ___, "priceListExternalReferenceCode": ___, "priceListId": ___, "priceOnApplication": ___, "skuExternalReferenceCode": ___, "skuId": ___, "tierPrices": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -369,7 +370,7 @@ public abstract class BasePriceEntryResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/headless-commerce-admin-pricing/v2.0/price-lists/by-externalReferenceCode/{externalReferenceCode}/price-entries' -d $'{"active": ___, "bulkPricing": ___, "customFields": ___, "discountDiscovery": ___, "discountLevel1": ___, "discountLevel2": ___, "discountLevel3": ___, "discountLevel4": ___, "discountLevelsFormatted": ___, "displayDate": ___, "expirationDate": ___, "externalReferenceCode": ___, "hasTierPrice": ___, "neverExpire": ___, "price": ___, "priceEntryId": ___, "priceFormatted": ___, "priceListExternalReferenceCode": ___, "priceListId": ___, "skuExternalReferenceCode": ___, "skuId": ___, "tierPrices": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/headless-commerce-admin-pricing/v2.0/price-lists/by-externalReferenceCode/{externalReferenceCode}/price-entries' -d $'{"active": ___, "bulkPricing": ___, "customFields": ___, "discountDiscovery": ___, "discountLevel1": ___, "discountLevel2": ___, "discountLevel3": ___, "discountLevel4": ___, "discountLevelsFormatted": ___, "displayDate": ___, "expirationDate": ___, "externalReferenceCode": ___, "hasTierPrice": ___, "neverExpire": ___, "price": ___, "priceEntryId": ___, "priceFormatted": ___, "priceListExternalReferenceCode": ___, "priceListId": ___, "priceOnApplication": ___, "skuExternalReferenceCode": ___, "skuId": ___, "tierPrices": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -458,7 +459,7 @@ public abstract class BasePriceEntryResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/headless-commerce-admin-pricing/v2.0/price-lists/{id}/price-entries' -d $'{"active": ___, "bulkPricing": ___, "customFields": ___, "discountDiscovery": ___, "discountLevel1": ___, "discountLevel2": ___, "discountLevel3": ___, "discountLevel4": ___, "discountLevelsFormatted": ___, "displayDate": ___, "expirationDate": ___, "externalReferenceCode": ___, "hasTierPrice": ___, "neverExpire": ___, "price": ___, "priceEntryId": ___, "priceFormatted": ___, "priceListExternalReferenceCode": ___, "priceListId": ___, "skuExternalReferenceCode": ___, "skuId": ___, "tierPrices": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/headless-commerce-admin-pricing/v2.0/price-lists/{id}/price-entries' -d $'{"active": ___, "bulkPricing": ___, "customFields": ___, "discountDiscovery": ___, "discountLevel1": ___, "discountLevel2": ___, "discountLevel3": ___, "discountLevel4": ___, "discountLevelsFormatted": ___, "displayDate": ___, "expirationDate": ___, "externalReferenceCode": ___, "hasTierPrice": ___, "neverExpire": ___, "price": ___, "priceEntryId": ___, "priceFormatted": ___, "priceListExternalReferenceCode": ___, "priceListId": ___, "priceOnApplication": ___, "skuExternalReferenceCode": ___, "skuId": ___, "tierPrices": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -622,7 +623,7 @@ public abstract class BasePriceEntryResourceImpl
 		String updateStrategy = (String)parameters.getOrDefault(
 			"updateStrategy", "UPDATE");
 
-		if ("PARTIAL_UPDATE".equalsIgnoreCase(updateStrategy)) {
+		if (StringUtil.equalsIgnoreCase(updateStrategy, "PARTIAL_UPDATE")) {
 			priceEntryUnsafeConsumer = priceEntry -> patchPriceEntry(
 				(priceEntry.getPriceEntryId() != null) ?
 					priceEntry.getPriceEntryId() :

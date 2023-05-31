@@ -12,6 +12,8 @@
  * details.
  */
 
+import {Renderer} from '@liferay/frontend-data-set-web/src/main/resources/META-INF/resources/utils/renderer';
+import {FDSCellRenderer} from '@liferay/js-api/data-set';
 import {FDSViewType} from './FDSViews';
 interface IField {
 	format: string;
@@ -19,7 +21,36 @@ interface IField {
 	name: string;
 	type: string;
 }
-export declare function getFields(
-	fdsView: FDSViewType
-): Promise<IField[] | undefined>;
+export declare function getFields(fdsView: FDSViewType): Promise<IField[]>;
+export interface IPickList {
+	externalReferenceCode: string;
+	id: string;
+	listTypeEntries: IListTypeEntry[];
+	name: string;
+	name_i18n: {
+		[key: string]: string;
+	};
+}
+interface IListTypeEntry {
+	externalReferenceCode: string;
+	id: number;
+	key: string;
+	name: string;
+	name_i18n: {
+		[key: string]: string;
+	};
+}
+export declare function getAllPicklists(
+	page?: number,
+	items?: IPickList[]
+): Promise<IPickList[]>;
+export interface IClientExtensionRenderer extends Renderer {
+	erc?: string;
+	label?: string;
+	name?: string;
+	type: 'clientExtension';
+}
+export interface IClientExtensionCellRenderer extends IClientExtensionRenderer {
+	renderer: FDSCellRenderer;
+}
 export {};

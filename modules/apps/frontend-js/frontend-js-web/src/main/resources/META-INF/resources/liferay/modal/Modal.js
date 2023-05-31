@@ -29,6 +29,7 @@ const Modal = ({
 	bodyHTML,
 	buttons,
 	center,
+	className,
 	containerProps = {
 		className: 'cadmin',
 	},
@@ -53,12 +54,19 @@ const Modal = ({
 	zIndex,
 }) => {
 	const [loading, setLoading] = useState(true);
-	const [visible, setVisible] = useState(true);
+
+	const {observer, onOpenChange, open} = useModal({
+		onClose: () => processClose(),
+	});
+
+	useEffect(() => {
+		onOpenChange(true);
+	}, [onOpenChange]);
 
 	const eventHandlersRef = useRef([]);
 
 	const processClose = useCallback(() => {
-		setVisible(false);
+		onOpenChange(false);
 
 		document.body.classList.remove('modal-open');
 
@@ -73,11 +81,7 @@ const Modal = ({
 		if (onClose) {
 			onClose();
 		}
-	}, [eventHandlersRef, onClose]);
-
-	const {observer} = useModal({
-		onClose: () => processClose(),
-	});
+	}, [eventHandlersRef, onClose, onOpenChange]);
 
 	const onButtonClick = ({formId, onClick, type}) => {
 		const submitForm = (form) => {
@@ -200,10 +204,10 @@ const Modal = ({
 
 	return (
 		<>
-			{visible && (
+			{open && (
 				<ClayModal
 					center={center}
-					className="liferay-modal"
+					className={classNames('liferay-modal', className)}
 					containerProps={{...containerProps}}
 					disableAutoClose={disableAutoClose}
 					id={id}
@@ -247,11 +251,9 @@ const Modal = ({
 							>
 								{url && (
 									<>
-										{loading ? (
-											<ClayLoadingIndicator />
-										) : (
-											<StatusMessage />
-										)}
+										{loading && <ClayLoadingIndicator />}
+
+										<StatusMessage loading={loading} />
 
 										<Iframe
 											iframeBodyCssClass={
@@ -333,16 +335,18 @@ const Modal = ({
 	);
 };
 
-const StatusMessage = () => {
+const StatusMessage = ({loading}) => {
 	const [showMessage, setShowMessage] = useState(true);
 
 	useEffect(() => {
-		setTimeout(() => setShowMessage(false), 1000);
-	});
+		if (!loading) {
+			setTimeout(() => setShowMessage(false), 1000);
+		}
+	}, [loading]);
 
 	return showMessage ? (
 		<span className="sr-only" role="status">
-			{Liferay.Language.get('loaded')}
+			{!loading && Liferay.Language.get('loaded')}
 		</span>
 	) : null;
 };

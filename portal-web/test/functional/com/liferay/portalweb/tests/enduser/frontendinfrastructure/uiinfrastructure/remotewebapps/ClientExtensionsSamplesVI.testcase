@@ -21,9 +21,7 @@ definition {
 	tearDown {
 		if (isSet(clientExtensionSamples)) {
 			for (var clientExtension : list ${clientExtensionSamples}) {
-				AntCommand(
-					locator1 = "build-test-liferay-sample-workspace.xml",
-					value1 = "undeploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtension}");
+				AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "undeploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtension}");
 			}
 
 			var clientExtensionSamples = "";
@@ -43,9 +41,7 @@ definition {
 			var clientExtensionSamples = "liferay-sample-custom-element-1,liferay-sample-custom-element-2,liferay-sample-global-css,liferay-sample-global-js,liferay-sample-iframe-1,liferay-sample-theme-css-1,liferay-sample-theme-favicon,liferay-sample-theme-spritemap-1";
 
 			for (var clientExtension : list ${clientExtensionSamples}) {
-				AntCommand(
-					locator1 = "build-test-liferay-sample-workspace.xml",
-					value1 = "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtension}");
+				AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtension}");
 			}
 		}
 
@@ -93,9 +89,7 @@ definition {
 		task ("Deploy Liferay Sample Custom Element 1 into the current virtual instance") {
 			var clientExtensionSamples = "liferay-sample-custom-element-1";
 
-			AntCommand(
-				locator1 = "build-test-liferay-sample-workspace.xml",
-				value1 = "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
 		}
 
 		task ("Create a new widget page") {
@@ -149,9 +143,7 @@ definition {
 		task ("Deploy Liferay Sample Custom Element 2 into the current virtual instance") {
 			var clientExtensionSamples = "liferay-sample-custom-element-2";
 
-			AntCommand(
-				locator1 = "build-test-liferay-sample-workspace.xml",
-				value1 = "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
 		}
 
 		task ("Given: The Liferay Sample Custom Element 2 is added to a page") {
@@ -191,15 +183,118 @@ definition {
 		}
 	}
 
+	@description = "Smoke test Liferay Sample Etc Cron"
+	@priority = 4
+	test LiferaySampleEtcCronSmoke {
+		task ("Deploy Liferay Sample Etc Cron into the current virtual instance") {
+			var clientExtensionName = "liferay-sample-etc-cron";
+
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionName}");
+		}
+
+		task ("Get the Sample Etc Cron Client Secret") {
+			var portalURL = PropsUtil.get("portal.url");
+
+			OAuth2.openOAuth2Admin();
+
+			while (IsElementNotPresent(key_rowEntry = "Liferay Sample Etc Cron Oauth Application Headless Server", locator1 = "Icon#ROW_VERTICAL_ELLIPSIS")) {
+				OAuth2.openOAuth2Admin();
+			}
+
+			LexiconEntry.gotoEntryMenuItem(
+				menuItem = "Edit",
+				rowEntry = "Liferay Sample Etc Cron Oauth Application Headless Server");
+
+			OAuth2.assertPortletHeader(header = "Liferay Sample Etc Cron Oauth Application Headless Server");
+
+			var clientSecret = selenium.getElementValue("OAuth2#ADMIN_INPUT_FORM_CLIENT_SECRET");
+		}
+
+		task ("Assert the Message Board Thread Count of 0") {
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "start-liferay-sample-etc-cron -Doauth2.headless.server.client.secret=${clientSecret} -Dvirtual.instance.id=${companyWebId}");
+
+			var projectDir = PropsUtil.get("project.dir");
+
+			var springBootLogFile = "${projectDir}/workspaces/liferay-sample-workspace/client-extensions/liferay-sample-etc-cron/logs/spring.log";
+
+			var springBootLogFileContent = FileUtil.read(${springBootLogFile});
+
+			echo(${springBootLogFileContent});
+
+			if (!(contains(${springBootLogFileContent}, "There are 0 message board threads in the Guest site"))) {
+				fail("Could not find 'There are 0 message board threads in the Guest site'");
+			}
+		}
+
+		task ("Add a new Message Board Thread") {
+			JSONMBMessage.addMessage(
+				groupName = "Guest",
+				threadBody = "MB Thread Message Body",
+				threadSubject = "MB Thread Message Subject");
+		}
+
+		task ("Assert the Message Board Thread Count of 1") {
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "start-liferay-sample-etc-cron -Doauth2.headless.server.client.secret=${clientSecret} -Dvirtual.instance.id=${companyWebId}");
+
+			var springBootLogFileContent = FileUtil.read(${springBootLogFile});
+
+			echo(${springBootLogFileContent});
+
+			if (!(contains(${springBootLogFileContent}, "There are 1 message board threads in the Guest site"))) {
+				fail("Could not find 'There are 1 message board threads in the Guest site'");
+			}
+		}
+	}
+
+	@description = "Smoke test Liferay Sample Etc Spring Boot"
+	@priority = 4
+	test LiferaySampleEtcSpringBootSmoke {
+		task ("Given: Liferay Sample Custom Element 2 and Liferay Sample Etc Spring Boot are deployed into the current virtual instance") {
+			var clientExtensionSamples = "liferay-sample-custom-element-2,liferay-sample-etc-spring-boot";
+
+			for (var clientExtension : list ${clientExtensionSamples}) {
+				AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtension}");
+			}
+		}
+
+		task ("And: A new widget page is created") {
+			JSONLayout.addPublicLayout(
+				groupName = "Guest",
+				layoutName = "Test Page");
+
+			Navigator.openSitePage(
+				pageName = "Test Page",
+				siteName = "Guest");
+
+			Portlet.addPG(portletName = "Liferay Sample Custom Element 2");
+		}
+
+		task ("When: The Spring-boot is started") {
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "start-liferay-sample-etc-spring-boot -Dvirtual.instance.id=${companyWebId}");
+
+			var projectDir = PropsUtil.get("project.dir");
+
+			var springBootLogFile = "${projectDir}/workspaces/liferay-sample-workspace/client-extensions/liferay-sample-etc-spring-boot/logs/spring.log";
+
+			var springBootLogFileContent = FileUtil.read(${springBootLogFile});
+
+			var dadJoke = RegexUtil.replace(${springBootLogFileContent}, "Dad joke:(^\n+)", 1);
+		}
+
+		task ("Then: Sample element displays a dad joke") {
+			AssertTextEquals.assertPartialText(
+				locator1 = "ClientExtension#SAMPLE_CUSTOM_ELEMENT_2_DAD_JOKE",
+				value1 = ${dadJoke});
+		}
+	}
+
 	@description = "Smoke test Liferay Sample Global CSS"
 	@priority = 4
 	test LiferaySampleGlobalCSSSmoke {
 		task ("Deploy Liferay Sample Global CSS into the current virtual instance") {
 			var clientExtensionSamples = "liferay-sample-global-css";
 
-			AntCommand(
-				locator1 = "build-test-liferay-sample-workspace.xml",
-				value1 = "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
 		}
 
 		task ("Given: A new widget page is created") {
@@ -254,9 +349,7 @@ definition {
 		task ("Deploy Liferay Sample Global JS into the current virtual instance") {
 			var clientExtensionSamples = "liferay-sample-global-js";
 
-			AntCommand(
-				locator1 = "build-test-liferay-sample-workspace.xml",
-				value1 = "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
 		}
 
 		task ("Go to the Site Pages configuration screen in Page Admin") {
@@ -292,9 +385,7 @@ definition {
 		task ("Deploy Liferay Sample IFrame 1 into the current virtual instance") {
 			var clientExtensionSamples = "liferay-sample-iframe-1";
 
-			AntCommand(
-				locator1 = "build-test-liferay-sample-workspace.xml",
-				value1 = "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
 		}
 
 		task ("Given: A user is on a widget page") {
@@ -330,9 +421,7 @@ definition {
 		task ("Deploy Liferay Sample Theme CSS 1 into the current virtual instance") {
 			var clientExtensionSamples = "liferay-sample-theme-css-1";
 
-			AntCommand(
-				locator1 = "build-test-liferay-sample-workspace.xml",
-				value1 = "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
 		}
 
 		task ("Go to the Site Pages configuration screen in Page Admin") {
@@ -368,9 +457,7 @@ definition {
 		task ("Deploy Liferay Sample Theme Favicon into the current virtual instance") {
 			var clientExtensionSamples = "liferay-sample-theme-favicon";
 
-			AntCommand(
-				locator1 = "build-test-liferay-sample-workspace.xml",
-				value1 = "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
 		}
 
 		task ("Go to the Site Pages configuration screen in Page Admin") {
@@ -410,9 +497,7 @@ definition {
 		task ("Deploy Liferay Sample Theme Spritemap 1 into the current virtual instance") {
 			var clientExtensionSamples = "liferay-sample-theme-spritemap-1";
 
-			AntCommand(
-				locator1 = "build-test-liferay-sample-workspace.xml",
-				value1 = "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
+			AntCommands.runCommand("build-test-liferay-sample-workspace.xml", "deploy-workspace-client-extension -Dvirtual.instance.id=${companyWebId} -Dworkspace.client.extension.name=${clientExtensionSamples}");
 		}
 
 		task ("Navigate to Page Admin") {

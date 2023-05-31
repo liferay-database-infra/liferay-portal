@@ -12,6 +12,7 @@
  * details.
  */
 
+import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
 import ClayForm, {ClayCheckbox} from '@clayui/form';
 import ClayLayout from '@clayui/layout';
@@ -20,6 +21,7 @@ import {useForm} from 'react-hook-form';
 import {useLocation, useNavigate, useOutletContext} from 'react-router-dom';
 import {KeyedMutator} from 'swr';
 import {TestrayContext} from '~/context/TestrayContext';
+import {withPagePermission} from '~/hoc/withPagePermission';
 
 import Form from '../../../components/Form';
 import Container from '../../../components/Layout/Container';
@@ -77,6 +79,7 @@ const UserForm = () => {
 
 	const {mutateUser = () => {}, userAccount} =
 		useOutletContext<OutletContext>() || {};
+
 	const {
 		form: {onClose, onError, onSave, onSubmit, onSuccess},
 	} = useFormActions();
@@ -155,7 +158,6 @@ const UserForm = () => {
 
 		setValue('roles', rolesFiltered);
 	};
-
 	const inputProps = {
 		errors,
 		register,
@@ -306,8 +308,8 @@ const UserForm = () => {
 									displayType="danger"
 									onClick={() =>
 										liferayUserAccountsImpl
-											.remove(userAccount?.id)
-											.then(() => {
+											.removeResource(userAccount?.id)
+											?.then(() => {
 												navigate('/manage/user');
 												onSuccess();
 											})
@@ -324,11 +326,23 @@ const UserForm = () => {
 				<Form.Footer
 					onClose={onClose}
 					onSubmit={handleSubmit(_onSubmit)}
-					primaryButtonProps={{loading: isSubmitting}}
+					primaryButtonProps={{
+						loading: isSubmitting,
+					}}
 				/>
 			</ClayForm>
 		</Container>
 	);
 };
 
-export default UserForm;
+export default withPagePermission(UserForm, {
+	createPath: 'manage/user/create',
+	deniedChildren: (
+		<ClayAlert displayType="danger">
+			{i18n.translate(
+				'you-do-not-have-permission-to-access-the-requested-resource.'
+			)}
+		</ClayAlert>
+	),
+	restImpl: liferayUserAccountsImpl,
+});

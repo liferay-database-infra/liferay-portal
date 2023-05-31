@@ -50,7 +50,7 @@
 </tr>
 <tr>
 	<td>NUMBER_OF_VIEWS</td>
-	<td>//div[contains(@class,'dnd-table')]//div[normalize-space(text())='Views']/../../../..//span[contains(@class,'badge') and contains(.,'${numberOfViews}')]</td>
+	<td>//div[contains(@class,'dnd-table')]//div[normalize-space(text())='Views']/../../../..//span[contains(@class,'badge') and (text()='${numberOfViews}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -92,8 +92,46 @@
 	<td></td>
 </tr>
 <tr>
+	<td>FIELDS_TABLE</td>
+	<td>//table[contains(@class,'table-list')]//tr[@class='orderable-table-row'][${key_position}]//*[contains(.,'${keyName}')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>MODAL_SEARCH</td>
 	<td>//div[contains(@class,'modal')]//*[contains(@class, 'input-group-item')]//*[@placeholder="Search"]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FIELDS_TAB_SEARCH</td>
+	<td>//li[contains(@class,'nav-item')]//*[contains(@class, 'input-group-item')]//*[@placeholder="Search"]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FIELDS_DRAG_DOTS_ICON</td>
+	<td>//table[contains(@class,'table-list')]//tr[@class='orderable-table-row']//td[@class="drag-handle-cell"]//button[@aria-label="Drag ${key_nameField}"]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>VERTICAL_ELLIPSIS_BY_FIELDS_NAME</td>
+	<td>//tr[contains(.,'${key_fieldName}')]//button[contains(@class,'dropdown-toggle')]//*[contains(@class,'lexicon-icon-ellipsis-v')]</td>
+	<td></td>
+</tr>
+
+<!-- DATA SET PAGINATION -->
+
+<tr>
+	<td>VIEW_ERROR_MESSAGE</td>
+	<td>//div[contains(@class,'has-error')]//div[contains(@class,'form-feedback-item') and (text()='${key_errorMessage}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PAGINATION_LIST_OF_ITEMS</td>
+	<td>//div[contains(@class,'form-group')]//textarea[contains(@id,'ViewListOfItemsPerPage')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PAGINATION_DEFAULT_ITEMS</td>
+	<td>//div[contains(@class,'form-group')]//input[contains(@id,'ViewDefaultItemsPerPage')]</td>
 	<td></td>
 </tr>
 </tbody>

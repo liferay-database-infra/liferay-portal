@@ -30,7 +30,7 @@ for (FormNavigatorEntry<Object> curFormNavigatorEntry : formNavigatorEntries) {
 
 	String label = curFormNavigatorEntry.getLabel(locale);
 
-	if ((i == 0) && (formNavigatorEntries.size() == 1)) {
+	if ((i == 0) && (formNavigatorEntries.size() == 1) && (formNavigatorDisplayContext.getType() != FormNavigatorConstants.FormNavigatorType.SHEET_SECTIONS)) {
 		label = StringPool.BLANK;
 	}
 %>
@@ -40,7 +40,7 @@ for (FormNavigatorEntry<Object> curFormNavigatorEntry : formNavigatorEntries) {
 	<c:choose>
 		<c:when test="<%= formNavigatorDisplayContext.getType() == FormNavigatorConstants.FormNavigatorType.SHEET_SECTIONS %>">
 			<clay:sheet
-				cssClass="ml-0"
+				cssClass="mb-4 ml-0 mt-4"
 			>
 				<clay:sheet-section>
 					<h3 class="mb-4"><%= label %></h3>

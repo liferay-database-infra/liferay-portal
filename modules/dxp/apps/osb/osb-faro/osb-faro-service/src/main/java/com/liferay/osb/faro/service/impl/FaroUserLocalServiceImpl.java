@@ -21,9 +21,10 @@ import com.liferay.osb.faro.constants.FaroUserConstants;
 import com.liferay.osb.faro.model.FaroProject;
 import com.liferay.osb.faro.model.FaroUser;
 import com.liferay.osb.faro.service.FaroPreferencesLocalService;
-import com.liferay.osb.faro.service.FaroProjectLocalService;
 import com.liferay.osb.faro.service.base.FaroUserLocalServiceBaseImpl;
+import com.liferay.osb.faro.service.persistence.FaroProjectPersistence;
 import com.liferay.osb.faro.util.EmailUtil;
+import com.liferay.osb.faro.util.FaroPropsValues;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.aop.AopService;
@@ -247,8 +248,8 @@ public class FaroUserLocalServiceImpl extends FaroUserLocalServiceBaseImpl {
 			roleName = "member-fragment";
 		}
 
-		FaroProject faroProject =
-			_faroProjectLocalService.fetchFaroProjectByGroupId(groupId);
+		FaroProject faroProject = _faroProjectPersistence.fetchByGroupId(
+			groupId);
 
 		return _language.format(
 			resourceBundle, "you-have-been-added-as-a-team-x-on-workspace-x",
@@ -334,7 +335,8 @@ public class FaroUserLocalServiceImpl extends FaroUserLocalServiceBaseImpl {
 				_language.format(
 					resourceBundle, "email-sign-in-or-create-an-account",
 					new String[] {
-						"<a class=\"body-link\" href=\"" + _FARO_URL + "\">",
+						"<a class=\"body-link\" href=\"" +
+							FaroPropsValues.FARO_URL + "\">",
 						"</a>",
 						"<b class=\"link-override\">" +
 							faroUser.getEmailAddress() + "</strong>"
@@ -360,8 +362,8 @@ public class FaroUserLocalServiceImpl extends FaroUserLocalServiceBaseImpl {
 		InternetAddress from = new InternetAddress(
 			"ac@liferay.com", senderUser.getFullName() + " (Analytics Cloud)");
 
-		FaroProject faroProject =
-			_faroProjectLocalService.getFaroProjectByGroupId(groupId);
+		FaroProject faroProject = _faroProjectPersistence.findByGroupId(
+			groupId);
 
 		User receiverUser = _userLocalService.getUser(faroProject.getUserId());
 
@@ -421,8 +423,6 @@ public class FaroUserLocalServiceImpl extends FaroUserLocalServiceBaseImpl {
 		}
 	}
 
-	private static final String _FARO_URL = System.getenv("FARO_URL");
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		FaroUserLocalServiceImpl.class);
 
@@ -430,7 +430,7 @@ public class FaroUserLocalServiceImpl extends FaroUserLocalServiceBaseImpl {
 	private FaroPreferencesLocalService _faroPreferencesLocalService;
 
 	@Reference
-	private FaroProjectLocalService _faroProjectLocalService;
+	private FaroProjectPersistence _faroProjectPersistence;
 
 	@Reference
 	private GroupLocalService _groupLocalService;

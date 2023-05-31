@@ -47,8 +47,14 @@ export {
 	SidePanelForm,
 } from './components/SidePanelContent';
 export {Toggle} from './components/Toggle';
-export {invalidateRequired, useForm, FormError} from './hooks/useForm';
+export {
+	invalidateLocalizableLabelRequired,
+	invalidateRequired,
+	useForm,
+	FormError,
+} from './hooks/useForm';
 export {onActionDropdownItemClick} from './utils/fdsUtil';
+export {createAutoCorrectedDatePipe} from './utils/createAutoCorrectedDatePipe';
 export {Panel} from './components/Panel/Panel';
 export {PanelBody, PanelSimpleBody} from './components/Panel/PanelBody';
 export {PanelHeader} from './components/Panel/PanelHeader';
@@ -56,3 +62,4 @@ export * as API from './utils/api';
 export * from './utils/string';
 export * from './utils/array';
 export * from './utils/constants';
+export * from './utils/datetime';

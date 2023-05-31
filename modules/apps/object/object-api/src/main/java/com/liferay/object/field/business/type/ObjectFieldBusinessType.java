@@ -20,6 +20,7 @@ import com.liferay.object.exception.ObjectFieldDefaultValueException;
 import com.liferay.object.exception.ObjectFieldSettingNameException;
 import com.liferay.object.exception.ObjectFieldSettingValueException;
 import com.liferay.object.field.render.ObjectFieldRenderingContext;
+import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.model.ObjectFieldSetting;
 import com.liferay.petra.string.StringBundler;
@@ -55,6 +56,13 @@ public interface ObjectFieldBusinessType {
 		return StringPool.BLANK;
 	}
 
+	public default Object getDisplayContextValue(
+			ObjectField objectField, long userId, Map<String, Object> values)
+		throws PortalException {
+
+		return getValue(objectField, userId, values);
+	}
+
 	public String getLabel(Locale locale);
 
 	public String getName();
@@ -75,18 +83,18 @@ public interface ObjectFieldBusinessType {
 		return Collections.emptySet();
 	}
 
-	public default Set<String> getUnmodifiablObjectFieldSettingsNames() {
+	public default Set<String> getUnmodifiableObjectFieldSettingsNames() {
 		return Collections.emptySet();
 	}
 
 	public default Object getValue(
-			ObjectField objectField, Map<String, Object> values)
+			ObjectField objectField, long userId, Map<String, Object> values)
 		throws PortalException {
 
 		return values.get(objectField.getName());
 	}
 
-	public default boolean isVisible() {
+	public default boolean isVisible(ObjectDefinition objectDefinition) {
 		return true;
 	}
 

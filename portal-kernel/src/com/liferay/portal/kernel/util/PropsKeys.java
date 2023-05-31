@@ -1040,6 +1040,9 @@ public interface PropsKeys {
 	public static final String GZIP_COMPRESSION_LEVEL =
 		"gzip.compression.level";
 
+	public static final String HEALTH_CHECK_DATA_SOURCE_ENABLED =
+		"health.check.data.source.enabled";
+
 	public static final String HIBERNATE_CONFIGS = "hibernate.configs";
 
 	public static final String HIBERNATE_DIALECT = "hibernate.dialect";
@@ -1764,11 +1767,19 @@ public interface PropsKeys {
 	public static final String NETVIBES_SERVLET_MAPPING =
 		"netvibes.servlet.mapping";
 
-	public static final String NOTIFICATION_EMAIL_TEMPLATE_RESTRICTED =
-		"notification.email.template.restricted";
+	public static final String NOTIFICATION_EMAIL_TEMPLATE_ENABLED =
+		"notification.email.template.enabled";
 
 	public static final String NOTIFICATIONS_MAX_EVENTS =
 		"notifications.max.events";
+
+	public static final String OBJECT_ENCRYPTION_ALGORITHM =
+		"object.encryption.algorithm";
+
+	public static final String OBJECT_ENCRYPTION_ENABLED =
+		"object.encryption.enabled";
+
+	public static final String OBJECT_ENCRYPTION_KEY = "object.encryption.key";
 
 	public static final String OBJECT_NESTED_FIELDS_MAX_QUERY_DEPTH =
 		"object.nested.fields.max.query.depth";

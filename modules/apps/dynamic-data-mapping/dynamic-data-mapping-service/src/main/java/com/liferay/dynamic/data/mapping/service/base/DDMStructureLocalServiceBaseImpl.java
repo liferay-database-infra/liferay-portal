@@ -17,7 +17,6 @@ package com.liferay.dynamic.data.mapping.service.base;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
-import com.liferay.dynamic.data.mapping.service.persistence.DDMStructureFinder;
 import com.liferay.dynamic.data.mapping.service.persistence.DDMStructurePersistence;
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
 import com.liferay.exportimport.kernel.lar.ManifestSummary;
@@ -58,8 +57,6 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
-
-import java.lang.reflect.Field;
 
 import java.util.List;
 
@@ -557,7 +554,7 @@ public abstract class DDMStructureLocalServiceBaseImpl
 
 	@Deactivate
 	protected void deactivate() {
-		_setLocalServiceUtilService(null);
+		DDMStructureLocalServiceUtil.setService(null);
 	}
 
 	@Override
@@ -572,7 +569,7 @@ public abstract class DDMStructureLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		ddmStructureLocalService = (DDMStructureLocalService)aopProxy;
 
-		_setLocalServiceUtilService(ddmStructureLocalService);
+		DDMStructureLocalServiceUtil.setService(ddmStructureLocalService);
 	}
 
 	/**
@@ -632,29 +629,10 @@ public abstract class DDMStructureLocalServiceBaseImpl
 		}
 	}
 
-	private void _setLocalServiceUtilService(
-		DDMStructureLocalService ddmStructureLocalService) {
-
-		try {
-			Field field = DDMStructureLocalServiceUtil.class.getDeclaredField(
-				"_service");
-
-			field.setAccessible(true);
-
-			field.set(null, ddmStructureLocalService);
-		}
-		catch (ReflectiveOperationException reflectiveOperationException) {
-			throw new RuntimeException(reflectiveOperationException);
-		}
-	}
-
 	protected DDMStructureLocalService ddmStructureLocalService;
 
 	@Reference
 	protected DDMStructurePersistence ddmStructurePersistence;
-
-	@Reference
-	protected DDMStructureFinder ddmStructureFinder;
 
 	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService

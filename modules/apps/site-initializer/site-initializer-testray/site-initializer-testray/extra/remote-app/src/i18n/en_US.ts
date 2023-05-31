@@ -319,6 +319,7 @@ export default {
 	'search-filters': 'Search Filters',
 	'search-in': 'Search in...',
 	'search-x': 'Search {0}',
+	'select-all': 'Select All',
 	'select-build': 'Select Build',
 	'select-case-parameters': 'Select Case Parameters',
 	'select-cases': 'Select Cases',
@@ -450,6 +451,8 @@ export default {
 	'you-are-not-the-assigned-user': 'You are not the assigned user.',
 	'you-cannot-split-all-case-results-from-a-subtask':
 		'You cannot split all case results from a subtask.',
+	'you-do-not-have-permission-to-access-the-requested-resource.':
+		'You do not have permission to access the requested resource.',
 	'you-do-not-have-permissions-to-access-this-app-contact-the-app-administrator-to-request-the-access':
 		'You do not have permissions to access this app. Contact the app administrator to request the access.',
 	'you-must-have-at-least-one-column-selected':

@@ -1256,18 +1256,22 @@ public class DDMStructureLocalServiceUtil {
 
 	public static DDMStructure updateStructure(
 			long userId, long structureId, long parentStructureId,
-			Map<java.util.Locale, String> nameMap,
+			String structureKey, Map<java.util.Locale, String> nameMap,
 			Map<java.util.Locale, String> descriptionMap, String definition,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws PortalException {
 
 		return getService().updateStructure(
-			userId, structureId, parentStructureId, nameMap, descriptionMap,
-			definition, serviceContext);
+			userId, structureId, parentStructureId, structureKey, nameMap,
+			descriptionMap, definition, serviceContext);
 	}
 
 	public static DDMStructureLocalService getService() {
 		return _service;
+	}
+
+	public static void setService(DDMStructureLocalService service) {
+		_service = service;
 	}
 
 	private static volatile DDMStructureLocalService _service;

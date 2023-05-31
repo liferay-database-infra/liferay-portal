@@ -355,8 +355,18 @@ public class CTEntryLocalServiceUtil {
 		return getService().updateCTEntry(ctEntry);
 	}
 
+	public static CTEntry updateModelMvccVersion(
+		long ctEntryId, long modelMvccVersion) {
+
+		return getService().updateModelMvccVersion(ctEntryId, modelMvccVersion);
+	}
+
 	public static CTEntryLocalService getService() {
 		return _service;
+	}
+
+	public static void setService(CTEntryLocalService service) {
+		_service = service;
 	}
 
 	private static volatile CTEntryLocalService _service;

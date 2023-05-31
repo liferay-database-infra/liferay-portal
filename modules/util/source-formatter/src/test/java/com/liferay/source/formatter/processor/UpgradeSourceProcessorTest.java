@@ -54,6 +54,16 @@ public class UpgradeSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testUpgradeJavaAddFolderParameterCheck() throws Exception {
+		test("upgrade/UpgradeJavaAddFolderParameterCheck.testjava");
+	}
+
+	@Test
+	public void testUpgradeJavaCheck() throws Exception {
+		test("upgrade/UpgradeJavaCheck.testjava");
+	}
+
+	@Test
 	public void testUpgradeVelocityMigrationCheck() throws Exception {
 		test(
 			SourceProcessorTestParameters.create(
@@ -65,7 +75,7 @@ public class UpgradeSourceProcessorTest extends BaseSourceProcessorTestCase {
 
 	@Test
 	public void testXMLUpgradeDTDVersionCheck() throws Exception {
-		test("upgrade/GradleUpgradeReleaseDxpCheck.testgradle");
+		test("upgrade/XMLUpgradeDTDVersionCheck.testxml");
 	}
 
 	@Override
@@ -83,6 +93,7 @@ public class UpgradeSourceProcessorTest extends BaseSourceProcessorTestCase {
 			super.getSourceFormatterArgs();
 
 		sourceFormatterArgs.setCheckCategoryNames(checkCategoryNames);
+		sourceFormatterArgs.setJavaParserEnabled(false);
 		sourceFormatterArgs.setSourceFormatterProperties(
 			sourceFormatterProperties);
 

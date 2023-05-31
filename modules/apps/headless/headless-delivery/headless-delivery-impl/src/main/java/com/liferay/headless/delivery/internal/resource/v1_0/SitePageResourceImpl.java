@@ -14,6 +14,8 @@
 
 package com.liferay.headless.delivery.internal.resource.v1_0;
 
+import com.liferay.asset.kernel.model.AssetCategory;
+import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.client.extension.constants.ClientExtensionEntryConstants;
 import com.liferay.client.extension.service.ClientExtensionEntryRelLocalService;
 import com.liferay.client.extension.type.CET;
@@ -39,6 +41,8 @@ import com.liferay.headless.delivery.dto.v1_0.SiteMapSettings;
 import com.liferay.headless.delivery.dto.v1_0.SitePage;
 import com.liferay.headless.delivery.dto.v1_0.SitePageNavigationMenuSettings;
 import com.liferay.headless.delivery.dto.v1_0.StyleBook;
+import com.liferay.headless.delivery.dto.v1_0.TaxonomyCategoryBrief;
+import com.liferay.headless.delivery.dto.v1_0.TaxonomyCategoryReference;
 import com.liferay.headless.delivery.dto.v1_0.util.CustomFieldsUtil;
 import com.liferay.headless.delivery.internal.odata.entity.v1_0.SitePageEntityModel;
 import com.liferay.headless.delivery.resource.v1_0.SitePageResource;
@@ -79,6 +83,7 @@ import com.liferay.portal.kernel.search.filter.TermFilter;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
@@ -127,6 +132,7 @@ import com.liferay.style.book.service.StyleBookEntryLocalService;
 
 import java.io.Serializable;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -297,6 +303,10 @@ public class SitePageResourceImpl extends BaseSitePageResourceImpl {
 				contextHttpServletRequest, layout.getPlid(),
 				contextAcceptLanguage.getPreferredLocale(), contextUriInfo,
 				contextUser);
+
+		dtoConverterContext.setAttribute(
+			"embeddedPageDefinition", Boolean.TRUE);
+		dtoConverterContext.setAttribute("groupId", layout.getGroupId());
 
 		return _sitePageDTOConverter.toDTO(dtoConverterContext, layout);
 	}
@@ -476,10 +486,14 @@ public class SitePageResourceImpl extends BaseSitePageResourceImpl {
 	private ServiceContext _createServiceContext(
 		long groupId, SitePage sitePage) {
 
-		Long[] assetCategoryIds = {};
+		Long[] assetCategoryIds = null;
 
-		if (sitePage.getTaxonomyCategoryIds() != null) {
-			assetCategoryIds = sitePage.getTaxonomyCategoryIds();
+		if (sitePage.getTaxonomyCategoryBriefs() != null) {
+			assetCategoryIds = transformToArray(
+				Arrays.asList(sitePage.getTaxonomyCategoryBriefs()),
+				taxonomyCategoryBrief -> _toAssetCategoryId(
+					groupId, taxonomyCategoryBrief),
+				Long.class);
 		}
 
 		String[] assetTagNames = new String[0];
@@ -762,6 +776,61 @@ public class SitePageResourceImpl extends BaseSitePageResourceImpl {
 		return nestedFields.contains("pageDefinition");
 	}
 
+	private Long _toAssetCategoryId(
+		long groupId, TaxonomyCategoryBrief taxonomyCategoryBrief) {
+
+		TaxonomyCategoryReference taxonomyCategoryReference =
+			taxonomyCategoryBrief.getTaxonomyCategoryReference();
+
+		if (taxonomyCategoryReference == null) {
+			return null;
+		}
+
+		long assetCategoryGroupId = groupId;
+
+		String siteKey = taxonomyCategoryReference.getSiteKey();
+
+		if (siteKey != null) {
+			Group group = _groupLocalService.fetchGroup(
+				contextCompany.getCompanyId(), siteKey);
+
+			if (group == null) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"No group exists with company ID ",
+							contextCompany.getCompanyId(), " and site key ",
+							siteKey));
+				}
+
+				return null;
+			}
+
+			assetCategoryGroupId = group.getGroupId();
+		}
+
+		AssetCategory assetCategory =
+			_assetCategoryLocalService.
+				fetchAssetCategoryByExternalReferenceCode(
+					taxonomyCategoryReference.getExternalReferenceCode(),
+					assetCategoryGroupId);
+
+		if (assetCategory == null) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					StringBundler.concat(
+						"No asset category exists with external reference ",
+						"code ",
+						taxonomyCategoryReference.getExternalReferenceCode(),
+						" and group ID ", assetCategoryGroupId));
+			}
+
+			return null;
+		}
+
+		return assetCategory.getCategoryId();
+	}
+
 	private String _toHTML(
 			String friendlyUrlPath, long groupId, String segmentsExperienceKey)
 		throws Exception {
@@ -835,6 +904,7 @@ public class SitePageResourceImpl extends BaseSitePageResourceImpl {
 
 		dtoConverterContext.setAttribute(
 			"embeddedPageDefinition", embeddedPageDefinition);
+		dtoConverterContext.setAttribute("groupId", layout.getGroupId());
 
 		if (Validator.isNotNull(segmentsExperienceKey)) {
 			dtoConverterContext.setAttribute(
@@ -1122,6 +1192,9 @@ public class SitePageResourceImpl extends BaseSitePageResourceImpl {
 	private static final EntityModel _entityModel = new SitePageEntityModel();
 
 	@Reference
+	private AssetCategoryLocalService _assetCategoryLocalService;
+
+	@Reference
 	private CETManager _cetManager;
 
 	@Reference
@@ -1142,6 +1215,9 @@ public class SitePageResourceImpl extends BaseSitePageResourceImpl {
 
 	@Reference
 	private FriendlyURLEntryLocalService _friendlyURLEntryLocalService;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
 
 	@Reference
 	private JSONFactory _jsonFactory;

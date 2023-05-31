@@ -532,6 +532,14 @@ public class CommerceOrderItemLocalServiceUtil {
 		return getService().getCommerceOrderItemsQuantity(commerceOrderId);
 	}
 
+	public static List<Long> getCustomerCommerceOrderIds(long commerceOrderId) {
+		return getService().getCustomerCommerceOrderIds(commerceOrderId);
+	}
+
+	public static int getCustomerCommerceOrderIdsCount(long commerceOrderId) {
+		return getService().getCustomerCommerceOrderIdsCount(commerceOrderId);
+	}
+
 	public static com.liferay.portal.kernel.dao.orm.ExportActionableDynamicQuery
 		getExportActionableDynamicQuery(
 			com.liferay.exportimport.kernel.lar.PortletDataContext
@@ -569,6 +577,14 @@ public class CommerceOrderItemLocalServiceUtil {
 		long commerceOrderId) {
 
 		return getService().getSubscriptionCommerceOrderItems(commerceOrderId);
+	}
+
+	public static List<Long> getSupplierCommerceOrderIds(long commerceOrderId) {
+		return getService().getSupplierCommerceOrderIds(commerceOrderId);
+	}
+
+	public static int getSupplierCommerceOrderIdsCount(long commerceOrderId) {
+		return getService().getSupplierCommerceOrderIdsCount(commerceOrderId);
 	}
 
 	public static CommerceOrderItem importCommerceOrderItem(
@@ -858,6 +874,10 @@ public class CommerceOrderItemLocalServiceUtil {
 
 	public static CommerceOrderItemLocalService getService() {
 		return _service;
+	}
+
+	public static void setService(CommerceOrderItemLocalService service) {
+		_service = service;
 	}
 
 	private static volatile CommerceOrderItemLocalService _service;

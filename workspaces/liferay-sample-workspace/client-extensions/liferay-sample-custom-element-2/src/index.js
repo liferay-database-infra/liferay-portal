@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation; either version 2.1 of the License, or (at your option)
+ * any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ */
+
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 
@@ -10,7 +24,7 @@ import HelloWorld from './routes/hello-world/pages/HelloWorld';
 
 import './common/styles/index.scss';
 
-const App = ({oAuth2Client, route}) => {
+const App = ({route}) => {
 	if (route === 'hello-bar') {
 		return <HelloBar />;
 	}
@@ -25,7 +39,7 @@ const App = ({oAuth2Client, route}) => {
 
 			{Liferay.ThemeDisplay.isSignedIn() && (
 				<div>
-					<DadJoke oAuth2Client={oAuth2Client} />
+					<DadJoke />
 				</div>
 			)}
 		</div>
@@ -33,25 +47,9 @@ const App = ({oAuth2Client, route}) => {
 };
 
 class WebComponent extends HTMLElement {
-	constructor() {
-		super();
-
-		try {
-			this.oAuth2Client = Liferay.OAuth2Client.FromUserAgentApplication(
-				'liferay-sample-oauth-application-user-agent'
-			);
-		}
-		catch (error) {
-			console.log("Unable to get user agent application");
-		}
-	}
-
 	connectedCallback() {
 		createRoot(this).render(
-			<App
-				oAuth2Client={this.oAuth2Client}
-				route={this.getAttribute('route')}
-			/>,
+			<App route={this.getAttribute('route')} />,
 			this
 		);
 
@@ -60,14 +58,17 @@ class WebComponent extends HTMLElement {
 				.then((response) => response.json())
 				.then((response) => {
 					if (response.givenName) {
-						const nameElements = document.getElementsByClassName(
-							'hello-world-name'
-						);
+						const nameElements =
+							document.getElementsByClassName('hello-world-name');
 
 						if (nameElements.length) {
 							nameElements[0].innerHTML = response.givenName;
 						}
 					}
+				})
+				.catch((error) => {
+					// eslint-disable-next-line no-console
+					console.log(error);
 				});
 		}
 	}

@@ -18,12 +18,10 @@ export {default as FrontendDataSet} from './FrontendDataSet';
 
 // Renderers API
 
-export {
-	dataRenderers as DataRenderers,
-	inputRenderers as InputRenderers,
-} from './data_renderers/index';
-export {default as DateTimeRenderer} from './data_renderers/DateTimeRenderer';
-export {default as StatusRenderer} from './data_renderers/StatusRenderer';
+export {INTERNAL_CELL_RENDERERS as FDS_INTERNAL_CELL_RENDERERS} from './cell_renderers/InternalCellRenderer';
+export {getInternalCellRenderer as getFDSInternalCellRenderer} from './cell_renderers/getInternalCellRenderer';
+export {default as DateTimeRenderer} from './cell_renderers/DateTimeRenderer';
+export {default as StatusRenderer} from './cell_renderers/StatusRenderer';
 
 // Data Set Events API
 

@@ -10,8 +10,6 @@
  *
  */
 
-import {isEdge} from 'react-flow-renderer';
-
 import {defaultLanguageId} from '../constants';
 import {removeNewLine, replaceTabSpaces} from '../util/utils';
 import {DEFAULT_LANGUAGE} from './constants';
@@ -43,7 +41,12 @@ DeserializeUtil.prototype = {
 
 		instance.definition.forEachField((_, fieldData) => {
 			fieldData.results.forEach((node) => {
-				nodesNames.push(node.name);
+				if (node.name) {
+					nodesNames.push(node.name);
+				}
+				else if (node.id) {
+					nodesNames.push(node.id);
+				}
 			});
 		});
 
@@ -142,8 +145,14 @@ DeserializeUtil.prototype = {
 					type,
 				});
 
-				if (node.transitions) {
-					node.transitions.forEach((transition) => {
+				const transitions = node.transitions;
+
+				if (transitions) {
+					let hasDefaultEdge = transitions?.find(
+						(transition) => transition?.default === 'true'
+					);
+
+					transitions.forEach((transition) => {
 						let label = {};
 
 						if (Array.isArray(transition.labels)) {
@@ -182,22 +191,15 @@ DeserializeUtil.prototype = {
 						else {
 							transitionsNames.push(transitionName);
 						}
-
-						const hasDefaultEdge = elements.find(
-							(element) =>
-								isEdge(element) &&
-								element.source === nodeName &&
-								element.data.defaultEdge
-						);
+						const defaultEdge =
+							transition?.default === 'true' || !hasDefaultEdge
+								? true
+								: false;
 
 						elements.push({
 							arrowHeadType: 'arrowclosed',
 							data: {
-								defaultEdge:
-									transition?.default === 'true' ||
-									!hasDefaultEdge
-										? true
-										: false,
+								defaultEdge,
 								label,
 							},
 							id: transitionName,
@@ -205,6 +207,10 @@ DeserializeUtil.prototype = {
 							target: transition.target,
 							type: 'transition',
 						});
+
+						if (defaultEdge && !hasDefaultEdge) {
+							hasDefaultEdge = true;
+						}
 					});
 				}
 			});

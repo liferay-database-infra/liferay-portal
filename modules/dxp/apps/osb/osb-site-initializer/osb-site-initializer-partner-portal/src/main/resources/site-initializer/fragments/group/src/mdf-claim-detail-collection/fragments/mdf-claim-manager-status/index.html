@@ -16,7 +16,7 @@
 	[#assign mdfClaimStatusKey = mdfClaim.mdfClaimStatus.key /]
 
 	[#if mdfClaimStatusKey != 'approved']
-		[#if hasMarketingReviewAction || hasFinanceReviewAction || hasRequestMoreInfoAction || hasExpireAction || hasRejectAction || hasApproveAction || hasDirectorReviewAction]
+		[#if hasMarketingReviewAction || hasFinanceReviewAction || hasRequestMoreInfoAction || hasExpireAction || hasRejectAction || hasApproveAction || hasDirectorReviewAction || hasClaimPaidAction]
 		<script>
 			const modalStatusTypes = {
 				canceled: 'Canceled',
@@ -113,7 +113,7 @@
 								).value;
 
 								if (checkNumber && paymentReceived) {
-									updatePaidClaimStatus(
+									return updatePaidClaimStatus(
 										status,
 										paymentReceived,
 										checkNumber
@@ -125,6 +125,7 @@
 										'The MDF Claim Status cannot be changed without the fields being filled.',
 									type: 'danger',
 								});
+
 							},
 							type: 'submit',
 						},
@@ -251,7 +252,7 @@
 
 					[#if hasDirectorReviewAction]
 						<li class="dropdown-item" onclick="callMDFClaimModal('inDirectorReview')">
-							Rejected
+							In Director Review
 						</li>
 					[/#if]
 				[/#if]
