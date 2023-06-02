@@ -297,6 +297,18 @@ public abstract class BaseDB implements DB {
 	}
 
 	@Override
+	public String getDefaultValue(String columnDef) {
+		Matcher matcher = getColumnStoredDefaultClausePattern().matcher(
+			columnDef);
+
+		if (matcher.find()) {
+			columnDef = matcher.group(2);
+		}
+
+		return columnDef;
+	}
+
+	@Override
 	public List<Index> getIndexes(Connection connection) throws SQLException {
 		return TransformUtil.transform(
 			getIndexes(connection, null, null, false),
@@ -971,6 +983,10 @@ public abstract class BaseDB implements DB {
 		return new int[] {-1, -1};
 	}
 
+	protected Pattern getColumnStoredDefaultClausePattern() {
+		return columnStoredDefaultClausePattern;
+	}
+
 	protected abstract String[] getTemplate();
 
 	protected boolean isSupportsDuplicatedIndexName() {
@@ -1051,6 +1067,9 @@ public abstract class BaseDB implements DB {
 		" SBLOB", " BOOLEAN", " DATE", " DOUBLE", " INTEGER", " LONG",
 		" STRING", " TEXT", " VARCHAR", " IDENTITY", "COMMIT_TRANSACTION"
 	};
+
+	protected static final Pattern columnStoredDefaultClausePattern = Pattern.compile(
+		"^('?)(.*)\1(::.*| )?", Pattern.CASE_INSENSITIVE);
 
 	protected static final Pattern columnTypePattern = Pattern.compile(
 		"(^\\w+)", Pattern.CASE_INSENSITIVE);

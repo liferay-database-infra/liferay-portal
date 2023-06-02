@@ -145,13 +145,11 @@ public class DBInspector {
 					"actualColumnDefaultValue: " + actualColumnDefaultValue);
 
 				if (actualColumnDefaultValue != null) {
-					Matcher matcher = _columnDbDefaultTypePattern.matcher(
-						actualColumnDefaultValue);
-
-					if (matcher.find()) {
-						actualColumnDefaultValue = matcher.group(2);
-					}
+					actualColumnDefaultValue = _getStoredColumnDefaultValue(
+						actualColumnDefaultValue, DB::getDefaultValue);
 				}
+
+				_log.error("defaultValue: " + actualColumnDefaultValue);
 
 				return StringUtil.equals(
 					expectedColumnDefaultValue, actualColumnDefaultValue);
@@ -288,7 +286,7 @@ public class DBInspector {
 	}
 
 	private String _getColumnDefaultValue(String columnType) {
-		Matcher matcher = _columnDefaultTypePattern.matcher(columnType);
+		Matcher matcher = _columnDefaultClausePattern.matcher(columnType);
 
 		if (matcher.find()) {
 			return matcher.group(1);
@@ -329,6 +327,12 @@ public class DBInspector {
 		return DB.SQL_SIZE_NONE;
 	}
 
+	private String _getStoredColumnDefaultValue(
+		String columnDef, BiFunction<DB, String, String> biFunction) {
+
+		return biFunction.apply(DBManagerUtil.getDB(), columnDef);
+	}
+
 	private boolean _hasTable(String tableName) throws Exception {
 		DatabaseMetaData metadata = _connection.getMetaData();
 
@@ -357,11 +361,7 @@ public class DBInspector {
 
 	private static final Log _log = LogFactoryUtil.getLog(DBInspector.class);
 
-	private static final Pattern _columnDbDefaultTypePattern = Pattern.compile(
-		"^(\\()?(?(1)(\\()?)(?(2)|(')?)([^\\(\\)\\d]+|\\d+)(?(3)')(?(2)\\))(?" +
-			"(1)\\))(?(1)|(?(2)|(?(3)(::[^\\(\\)\\d]+)?| ?)))$",
-		Pattern.CASE_INSENSITIVE);
-	private static final Pattern _columnDefaultTypePattern = Pattern.compile(
+	private static final Pattern _columnDefaultClausePattern = Pattern.compile(
 		".*DEFAULT '?(.*[^'])'? NOT NULL", Pattern.CASE_INSENSITIVE);
 	private static final Pattern _columnSizePattern = Pattern.compile(
 		"^\\w+(?:\\((\\d+)\\))?.*", Pattern.CASE_INSENSITIVE);
