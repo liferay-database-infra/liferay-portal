@@ -1069,7 +1069,7 @@ public abstract class BaseDB implements DB {
 	};
 
 	protected static final Pattern columnStoredDefaultClausePattern =
-		Pattern.compile("^('?)(.*)\\1(::.*| )?", Pattern.CASE_INSENSITIVE);
+		Pattern.compile("^('?)(\\d+|.*)\\1(::.*| )?", Pattern.CASE_INSENSITIVE);
 	protected static final Pattern columnTypePattern = Pattern.compile(
 		"(^\\w+)", Pattern.CASE_INSENSITIVE);
 
