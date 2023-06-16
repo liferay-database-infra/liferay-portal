@@ -12,18 +12,13 @@
  * details.
  */
 
-package com.liferay.asset.list.service.persistence;
-
-import org.osgi.annotation.versioning.ProviderType;
+package com.liferay.portal.json;
 
 /**
- * @author Brian Wing Shun Chan
- * @generated
+ * @author Olivér Kecskeméty
  */
-@ProviderType
-public interface AssetListEntryAssetEntryRelFinder {
+public enum FooBean7 {
 
-	public int countByA_S(
-		long assetListEntryId, long segmentsEntryId, boolean visible);
+	TEST_1, TEST_2, TEST_3
 
 }

@@ -35,6 +35,20 @@ public class DB2DBTest extends BaseDBTestCase {
 		LiferayUnitTestRule.INSTANCE;
 
 	@Test
+	public void testGetLongDefaultValue() {
+		DB db = getDB();
+
+		Assert.assertEquals("10", db.getDefaultValue("10"));
+	}
+
+	@Test
+	public void testGetVarcharDefaultValue() {
+		DB db = getDB();
+
+		Assert.assertEquals("test", db.getDefaultValue("'test'"));
+	}
+
+	@Test
 	public void testRewordAlterColumnType() throws Exception {
 		Assert.assertEquals(
 			"alter table DLFolder alter column userName set data type " +

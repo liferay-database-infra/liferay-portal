@@ -35,6 +35,20 @@ public class PostgreSQLDBTest extends BaseDBTestCase {
 		LiferayUnitTestRule.INSTANCE;
 
 	@Test
+	public void testGetLongDefaultValue() {
+		DB db = getDB();
+
+		Assert.assertEquals("10", db.getDefaultValue("10"));
+	}
+
+	@Test
+	public void testGetVarcharDefaultValue() {
+		DB db = getDB();
+
+		Assert.assertEquals("test", db.getDefaultValue("'test'::type"));
+	}
+
+	@Test
 	public void testRewordAlterColumnType() throws Exception {
 		Assert.assertEquals(
 			"alter table DLFolder alter userName type varchar(75) using " +
