@@ -22,6 +22,9 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.dao.jdbc.util.ConnectionWrapper;
 import com.liferay.portal.dao.jdbc.util.DataSourceWrapper;
 import com.liferay.portal.dao.jdbc.util.StatementWrapper;
+import com.liferay.portal.dao.orm.hibernate.event.CompanySynchronizerPreDeleteEventListener;
+import com.liferay.portal.dao.orm.hibernate.event.CompanySynchronizerPreInsertEventListener;
+import com.liferay.portal.dao.orm.hibernate.event.CompanySynchronizerPreUpdateEventListener;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -57,6 +60,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import javax.sql.DataSource;
+
+import org.hibernate.event.service.spi.EventListenerRegistry;
+import org.hibernate.event.spi.EventType;
 
 /**
  * @author Alberto Chaparro
@@ -165,6 +171,24 @@ public class DBPartitionUtil {
 
 	public static boolean isPartitionEnabled() {
 		return _DATABASE_PARTITION_ENABLED;
+	}
+
+	public static void registerEventListeners(
+		EventListenerRegistry eventListenerRegistry) {
+
+		if (!_DATABASE_PARTITION_ENABLED) {
+			return;
+		}
+
+		eventListenerRegistry.appendListeners(
+			EventType.PRE_DELETE,
+			CompanySynchronizerPreDeleteEventListener.INSTANCE);
+		eventListenerRegistry.appendListeners(
+			EventType.PRE_INSERT,
+			CompanySynchronizerPreInsertEventListener.INSTANCE);
+		eventListenerRegistry.appendListeners(
+			EventType.PRE_UPDATE,
+			CompanySynchronizerPreUpdateEventListener.INSTANCE);
 	}
 
 	public static boolean removeDBPartition(long companyId)
@@ -464,7 +488,7 @@ public class DBPartitionUtil {
 			}
 
 			private void _setCatalog() throws SQLException {
-				long companyId = CompanyThreadLocal.getCompanyId();
+				long companyId = CompanyThreadLocal.popCompanyId();
 
 				String schemaName = _getSchemaName(companyId);
 

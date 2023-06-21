@@ -21,13 +21,15 @@ import {ErrorMessage} from '../../src/main/resources/META-INF/resources/ai_creat
 
 describe('ErrorMessage', () => {
 	it('shows the given error message inside an alert', () => {
-		render(<ErrorMessage message="Sample message" />);
+		render(
+			<ErrorMessage message="Sample message" showRetryMessage={false} />
+		);
 
 		expect(screen.getByRole('alert')).toHaveTextContent('Sample message');
 	});
 
 	it('has a submit button to retry', () => {
-		render(<ErrorMessage message="" />);
+		render(<ErrorMessage message="" showRetryMessage />);
 
 		const button = screen.getByRole('button');
 

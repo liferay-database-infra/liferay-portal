@@ -12,17 +12,17 @@
  * details.
  */
 
-package com.liferay.portal.scripting.executor.internal.constants;
+package com.liferay.headless.builder.application.publisher;
+
+import com.liferay.headless.builder.application.APIApplication;
 
 /**
- * @author Michael C. Han
+ * @author Luis Miguel Barcos
  */
-public class ScriptingExecutorConstants {
+public interface APIApplicationPublisher {
 
-	public static final String LIFERAY_SCRIPTING_EXECUTOR_CLUSTER_MASTER_ONLY =
-		"Liferay-Scripting-Executor-Cluster-Master-Only";
+	public void publish(APIApplication apiApplication) throws Exception;
 
-	public static final String LIFERAY_SCRIPTING_EXECUTOR_SCRIPTING_LANGUAGE =
-		"Liferay-Scripting-Executor-Scripting-Language";
+	public void unpublish(APIApplication apiApplication) throws Exception;
 
 }
