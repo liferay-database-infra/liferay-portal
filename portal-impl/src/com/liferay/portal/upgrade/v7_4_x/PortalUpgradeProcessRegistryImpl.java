@@ -308,6 +308,9 @@ public class PortalUpgradeProcessRegistryImpl
 			new Version(26, 3, 0),
 			new CTModelUpgradeProcess(
 				"AnnouncementsEntry", "AnnouncementsFlag"));
+
+		upgradeVersionTreeMap.put(
+			new Version(26, 3, 1), new UpgradeDBPartitionDLFileEntryType());
 	}
 
 }
