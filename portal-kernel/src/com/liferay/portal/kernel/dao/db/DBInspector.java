@@ -193,7 +193,7 @@ public class DBInspector {
 				_connection, normalizeName(tableName, databaseMetaData))) {
 
 			while (resultSet.next()) {
-				if (Objects.equals(
+				if (StringUtil.equalsIgnoreCase(
 						normalizeName(indexName, databaseMetaData),
 						resultSet.getString("index_name"))) {
 
