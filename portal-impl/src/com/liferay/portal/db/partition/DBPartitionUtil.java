@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
+import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.model.ShardedModel;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
@@ -126,6 +127,10 @@ public class DBPartitionUtil {
 	}
 
 	public static void checkCompanyId(Object object) {
+		if (_log.isInfoEnabled() && (object instanceof ResourcePermission)) {
+			_log.info("CheckCompanyId execution");
+		}
+
 		if (!_DATABASE_PARTITION_ENABLED) {
 			return;
 		}
@@ -134,6 +139,14 @@ public class DBPartitionUtil {
 			long companyId = ((ShardedModel)object).getCompanyId();
 
 			long currentCompanyId = getCurrentCompanyId();
+
+			if (_log.isInfoEnabled() &&
+				(object instanceof ResourcePermission)) {
+
+				_log.info("companydId " + companyId);
+				_log.info("currentCompanyId " + currentCompanyId);
+				_log.info("defaultCompanyId " + _defaultCompanyId);
+			}
 
 			if ((companyId != currentCompanyId) &&
 				((companyId != CompanyConstants.SYSTEM) ||
@@ -575,7 +588,7 @@ public class DBPartitionUtil {
 
 	private static String _getSessionCharsetEncoding() {
 		Connection connection = CurrentConnectionUtil.getConnection(
-			InfrastructureUtil.getDataSource());
+			InfrastrucureUtil.getDataSource());
 
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				"select variable_value from " +

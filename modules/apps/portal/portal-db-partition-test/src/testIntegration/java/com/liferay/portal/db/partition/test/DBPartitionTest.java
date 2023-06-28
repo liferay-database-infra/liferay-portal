@@ -21,6 +21,8 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
@@ -100,18 +102,22 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	@Test
 	public void testAddObjectDifferentCompanyId() {
+		_log.error("testAddObjectDifferentCompanyId: CASE 1");
 		_addObjectAndAssert(
 			CompanyConstants.SYSTEM, PortalInstances.getDefaultCompanyId(),
 			false);
+		_log.error("testAddObjectDifferentCompanyId: CASE 2");
 		_addObjectAndAssert(
 			PortalInstances.getDefaultCompanyId(), CompanyConstants.SYSTEM,
 			false);
+		_log.error("testAddObjectDifferentCompanyId: CASE 3");
 		_addObjectAndAssert(
 			PortalInstances.getDefaultCompanyId(), COMPANY_IDS[0], true);
 	}
 
 	@Test
 	public void testAddObjectSameCompanyId() {
+		_log.error("testAddObjectSameCompanyId");
 		_addObjectAndAssert(COMPANY_IDS[0], COMPANY_IDS[0], false);
 	}
 
@@ -305,6 +311,9 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		long companyId, long companyThreadLocalCompanyId,
 		boolean throwException) {
 
+		_log.error("Test companyId " + companyId);
+		_log.error("Test companyThreadLocalCompanyId " + companyThreadLocalCompanyId);
+
 		long resourcePermissionId = _counterLocalService.increment();
 
 		ResourcePermission resourcePermission =
@@ -352,6 +361,9 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	private static final String _DB_PARTITION_SCHEMA_NAME_PREFIX =
 		"lpartitiontest_";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		DBPartitionTest.class);
 
 	@Inject
 	private CompanyLocalService _companyLocalService;
