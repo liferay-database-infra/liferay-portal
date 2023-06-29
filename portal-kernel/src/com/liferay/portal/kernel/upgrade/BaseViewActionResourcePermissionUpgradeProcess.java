@@ -30,34 +30,29 @@ public abstract class BaseViewActionResourcePermissionUpgradeProcess
 	protected void doUpgrade() throws Exception {
 		long bitwiseValue = _getBitwiseValue();
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
-				StringBundler.concat(
-					"select resourcePermissionId, actionIds from ",
-					"ResourcePermission where name = ? and primKeyId != ? and ",
-					"viewActionId = ?"));
-			PreparedStatement preparedStatement2 =
-				AutoBatchPreparedStatementUtil.autoBatch(
-					connection,
-					"update ResourcePermission set actionIds = ? where " +
-						"resourcePermissionId = ?")) {
-
-			preparedStatement1.setString(1, getClassName());
-			preparedStatement1.setLong(2, 0L);
-			preparedStatement1.setBoolean(3, true);
-
-			ResultSet resultSet = preparedStatement1.executeQuery();
-
-			while (resultSet.next()) {
-				preparedStatement2.setLong(
-					1, bitwiseValue | resultSet.getLong("actionIds"));
-				preparedStatement2.setLong(
-					2, resultSet.getLong("resourcePermissionId"));
-
-				preparedStatement2.addBatch();
-			}
-
-			preparedStatement2.executeBatch();
-		}
+		processConcurrently(
+			StringBundler.concat(
+				"select resourcePermissionId, actionIds from ",
+				"ResourcePermission where name = ? and primKeyId != ? and ",
+				"viewActionId = ?"),
+			preparedStatement -> {
+				preparedStatement.setString(1, getClassName());
+				preparedStatement.setLong(2, 0L);
+				preparedStatement.setBoolean(3, true);
+			},
+			"update ResourcePermission set actionIds = ? where " +
+				"resourcePermissionId = ?",
+			resultSet -> new Object[] {
+				resultSet.getLong("actionIds"),
+				resultSet.getLong("resourcePermissionId")
+			},
+			(values, preparedStatement) -> {
+				preparedStatement.setLong(1, bitwiseValue | (Long)values[0]);
+				preparedStatement.setLong(2, (Long)values[1]);
+			},
+			"Unable to set DOWNLOAD permission to file entry with VIEW " +
+				"permission."
+		);
 	}
 
 	protected abstract String getActionId();
