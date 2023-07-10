@@ -29,19 +29,24 @@ import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnection;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.model.UserConstants;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.AssumeTestRule;
+import com.liferay.portal.kernel.test.util.PropsTestUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Props;
+import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsUtil;
+import com.liferay.portal.util.PropsValues;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -140,10 +145,10 @@ public abstract class BaseDBPartitionTestCase {
 			return;
 		}
 
+		com.liferay.portal.kernel.util.PropsUtil.setProps(_originalProps);
+
 		ReflectionTestUtil.setFieldValue(
 			DBInitUtil.class, "_dataSource", _currentDataSource);
-		ReflectionTestUtil.setFieldValue(
-			DBPartitionUtil.class, "_DATABASE_PARTITION_ENABLED", false);
 		ReflectionTestUtil.setFieldValue(
 			DBPartitionUtil.class, "_DATABASE_PARTITION_SCHEMA_NAME_PREFIX",
 			StringPool.BLANK);
@@ -174,15 +179,22 @@ public abstract class BaseDBPartitionTestCase {
 	protected static void enableDBPartition() throws Exception {
 		CompanyThreadLocal.setCompanyId(PortalInstances.getDefaultCompanyId());
 
-		_dbPartitionEnabled = GetterUtil.getBoolean(
-			_props.get("database.partition.enabled"));
+		_dbPartitionEnabled = DBPartition.isPartitionEnabled();
 
 		if (_dbPartitionEnabled) {
 			return;
 		}
 
-		ReflectionTestUtil.setFieldValue(
-			DBPartitionUtil.class, "_DATABASE_PARTITION_ENABLED", true);
+		_originalProps = com.liferay.portal.kernel.util.PropsUtil.getProps();
+
+		PropsTestUtil.setProps(
+			HashMapBuilder.<String, Object>put(
+				PropsKeys.COMPANY_DEFAULT_WEB_ID,
+				PropsValues.COMPANY_DEFAULT_WEB_ID
+			).put(
+				"database.partition.enabled", "true"
+			).build());
+
 		ReflectionTestUtil.setFieldValue(
 			DBPartitionUtil.class, "_DATABASE_PARTITION_SCHEMA_NAME_PREFIX",
 			_DATABASE_PARTITION_SCHEMA_NAME_PREFIX);
@@ -387,6 +399,7 @@ public abstract class BaseDBPartitionTestCase {
 		ReflectionTestUtil.getFieldValue(DBInitUtil.class, "_dataSource");
 	private static boolean _dbPartitionEnabled;
 	private static LazyConnectionDataSourceProxy _lazyConnectionDataSourceProxy;
+	private static Props _originalProps;
 
 	@Inject
 	private static Props _props;
