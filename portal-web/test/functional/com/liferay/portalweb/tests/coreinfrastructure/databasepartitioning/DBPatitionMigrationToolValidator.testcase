@@ -140,4 +140,37 @@ This tool allows to migrate a virtual instance to a new partition in a database 
         }
     }
 
+	@priority = 5
+	test ValidateSuccessfulConnectionBetweenSourceAdTargetDB {
+		property custom.properties = "virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com";
+		property test.liferay.virtual.instance = "false";
+		property portal.acceptance = "true";
+		property test.assert.warning.exceptions = "true";
+
+		task ("And the source and target database are set") {
+			HeadlessPortalInstanceAPI.addPortalInstance(
+				domain = "www.able.com",
+				portalInstanceId = "www.able.com",
+				virtualHost = "www.able.com");
+
+			var companyId = JSONCompany.getCompanyId(portalInstanceName = "www.able.com");
+
+			Portlet.shutdownServer();
+
+			DBPartitionMigratorTool.updatePortalProperties(newProperty = "company.default.web.id=lpartitiondefault.com");
+
+			DBPartitionMigratorTool.prepareTargetSchema();
+
+			Portlet.startServer(keepOsGiState = "true");
+        }
+
+		task ("When run the migration tool AND there are no errors in the provided parameters passed AND the source database is set as a partition from a partitioned enviroment Then the connection between both schemas work") {
+            DBPartitionMigratorTool.executeDBPartitionMigratorTool(
+                databaseSchemaSourceName = "lpartition_${companyId}",
+                databaseSchemaPsswdSource = "",
+                databaseSchemaTargetName = "lpartition_default",
+                databaseSchemaPsswdTarget = "");
+        }
+	}
+
 }
