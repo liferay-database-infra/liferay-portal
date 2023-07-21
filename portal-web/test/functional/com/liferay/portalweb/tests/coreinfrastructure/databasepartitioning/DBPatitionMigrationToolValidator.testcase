@@ -1,0 +1,70 @@
+@component-name = "portal-database-partitioning"
+definition {
+
+	property app.server.types = "tomcat";
+	property ci.retries.disabled = "true";
+	property database.partition.enabled = "true";
+	property database.types = "mysql";
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property test.run.environment = "EE";
+	property testray.main.component.name = "Database Partitioning";
+	property timeout.explicit.wait = "180";
+
+	setUp {
+		task ("Given the user have the migration tool set When he uses the gradle script wrapper deploy at portal-tools-db-partition-virtual-instance-migrator") {
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+			AntCommands.runCommand("build-test.xml", "deploy-osgi-module-to-specific-bundle -DliferayHome=${liferayHome} -Dmodule.base.dir=/modules/util/portal-tools-db-partition-virtual-instance-migrator");
+		}
+	}
+
+	tearDown {
+		DBPartitionMigratorTool.cleanDBPartitionMigratorTool();
+
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
+
+		if (${testLiferayVirtualInstance} == "true") {
+			PortalInstances.tearDownCP();
+		}
+	}
+
+	@priority = 3
+    test ValidateMigrationToolReadmeInfo {
+        property database.partition.enabled = "false";
+
+        task ("When access the portal-tools-db-partition-virtual-instance-migrator util") {
+            var projectDir = PropsUtil.get("project.dir");
+
+            var readmeFile = FileUtil.read("${projectDir}/modules/util/portal-tools-db-partition-virtual-instance-migrator/README.markdown");
+        }
+
+        task ("Then a README it's provided with the usage information expected.") {
+            var readmeFileExpectedContent = '''# DB Partition Virtual Instance Migrator Tool
+This tool allows to migrate a virtual instance to a new partition in a database partitioned environment. Before starting the migration, it validates that all the needed conditions for a successful migration are met.
+
+## Requirements:
+    - MySQL
+    - Database user with DDL privileges
+
+## Usage
+    usage: Liferay Portal Tools DB Partition Virtual Instance Migrator
+    -h,--help Print help message.
+    -s,--source-jdbc-url <arg> Set the source JDBC URL.
+    -sp,--source-password <arg> Set the source password.
+    -su,--source-user <arg> Set the source user.
+    -t,--target-jdbc-url <arg> Set the target JDBC URL.
+    -tp,--target-password <arg> Set the target password.
+    -tsp,--target-schema-prefix <arg> Set the target schema prefix.
+    -tu,--target-user <arg> Set the target user.
+
+## Execution example
+    java -jar com.liferay.portal.tools.db.partition.virtual.instance.migrator.jar -s "jdbc:mysql://localhost:3306/lpartition_xxxxx?useUnicode=true&characterEncoding=UTF-8&useFastDateParsing=false&useTimezone=true&serverTimezone=GMT" -su sourceUser -sp sourcePassword -t "jdbc:mysql://localhost:3306/lportal?useUnicode=true&characterEncoding=UTF-8&useFastDateParsing=false&useTimezone=true&serverTimezone=GMT" -tu targetUser -tp targetPassword''';
+            
+            if (!(contains(${readmeFile}, "${readmeFileExpectedContent}"))) {
+                fail("Content doesn't match with what it's expected: ${readmeFile}");
+            }
+        }
+    }
+
+}
