@@ -200,4 +200,45 @@ This tool allows to migrate a virtual instance to a new partition in a database 
         }
 	}
 
+	@priority = 5
+	test ValidateBadConnectionWhenNonPartitionedSourceDBHaveMultipleInstancesAdded {
+		property ignore.errors = "true";
+		property portal.acceptance = "true";
+		property test.liferay.virtual.instance = "false";
+		property database.partition.enabled= "false";
+		property custom.properties = "virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com";
+
+		task ("And the source and target database are set") {
+			HeadlessPortalInstanceAPI.addPortalInstance(
+				domain = "www.able.com",
+				portalInstanceId = "www.able.com",
+				virtualHost = "www.able.com");
+
+			Portlet.shutdownServer();
+
+			DBPartitionMigratorTool.updatePortalProperties(newProperty = "database.partition.enabled=true");
+
+			DBPartitionMigratorTool.updatePortalProperties(newProperty = "company.default.web.id=lpartitiondefault.com");
+
+			DBPartitionMigratorTool.prepareTargetSchema();
+
+			Portlet.startServer(keepOsGiState = "true");
+        }
+
+		task ("When the source database is set from non partitioned environment with multiple companies defined AND the target database is a default partition of a database partitioned environment") {
+            DBPartitionMigratorTool.executeDBPartitionMigratorTool(
+                databaseSchemaSourceName = "lportal",
+                databaseSchemaPsswdSource = "",
+                databaseSchemaTargetName = "lpartition_default",
+                databaseSchemaPsswdTarget = "");
+        }
+
+		task ("Then the tool stops immediately with a console message as: Source has more than one company info") {
+            DBPartitionMigratorTool.validateDBPartitionMigratorToolOutput(
+                dbPartitionMigratorOutputMessage = "Source has more than one company info",
+                cleanDBPartitionMigratorTool= "true");
+        }
+
+	}
+
 }
