@@ -822,35 +822,63 @@ public abstract class BaseDB implements DB {
 	}
 
 	protected String[] buildColumnNameTokens(String line) {
-		String[] words = StringUtil.split(line, CharPool.SPACE);
+		Matcher matcher = _alterColumnNamePattern.matcher(line);
 
-		String nullable = "";
-
-		if (words.length == 7) {
-			nullable = "not null;";
+		if (!matcher.find()) {
+			throw new IllegalArgumentException(
+				"Invalid alter column name statement");
 		}
 
-		return new String[] {words[1], words[2], words[3], words[4], nullable};
-	}
-
-	protected String[] buildColumnTypeTokens(String line) {
-		String[] words = StringUtil.split(line, CharPool.SPACE);
-
+		String defaults = matcher.group(7);
 		String nullable = "";
 
-		if (words.length == 6) {
+		if (defaults != null) {
 			nullable = "not null";
 		}
-		else if (words.length == 5) {
-			nullable = "null";
-		}
-		else if (words.length == 4) {
-			if (words[3].endsWith(";")) {
-				words[3] = words[3].substring(0, words[3].length() - 1);
+		else {
+			defaults = "";
+
+			nullable = matcher.group(8);
+
+			if (nullable == null) {
+				nullable = "";
 			}
 		}
 
-		return new String[] {words[1], words[2], "", words[3], nullable};
+		return new String[] {
+			matcher.group(1), matcher.group(2), matcher.group(3),
+			matcher.group(4), defaults, nullable
+		};
+	}
+
+	protected String[] buildColumnTypeTokens(String line) {
+		Matcher matcher = _alterColumnTypePattern.matcher(line);
+
+		if (!matcher.find()) {
+			throw new IllegalArgumentException(
+				"Invalid alter column type statement");
+		}
+
+		String defaults = matcher.group(6);
+		String nullable = "";
+
+		if (defaults != null) {
+			nullable = "not null";
+		}
+		else {
+			defaults = "";
+
+			nullable = matcher.group(7);
+
+			if (nullable == null) {
+				nullable = "";
+			}
+		}
+
+		return new String[] {
+			matcher.group(1), matcher.group(2), "", matcher.group(3), defaults,
+			nullable
+		};
 	}
 
 	protected String[] buildTableNameTokens(String line) {
@@ -1284,7 +1312,8 @@ public abstract class BaseDB implements DB {
 	};
 
 	protected static final String[] REWORD_TEMPLATE = {
-		"@table@", "@old-column@", "@new-column@", "@type@", "@nullable@"
+		"@table@", "@old-column@", "@new-column@", "@type@", "@default@",
+		"@nullable@"
 	};
 
 	protected static final int[] SQL_VARCHAR_TYPES = {
@@ -1426,6 +1455,14 @@ public abstract class BaseDB implements DB {
 
 	private static final Log _log = LogFactoryUtil.getLog(BaseDB.class);
 
+	private static final Pattern _alterColumnNamePattern = Pattern.compile(
+		"^ALTER_COLUMN_NAME (\\S+) (\\S+) (\\S+) (\\S+) ?((DEFAULT " +
+			"('?.*[^']'?) NOT NULL)|((NOT )?NULL))?$",
+		Pattern.CASE_INSENSITIVE);
+	private static final Pattern _alterColumnTypePattern = Pattern.compile(
+		"^ALTER_COLUMN_TYPE (\\S+) (\\S+) (\\S+) ?((DEFAULT ('?.*[^']'?) " +
+			"NOT NULL)|((NOT )?NULL))?$",
+		Pattern.CASE_INSENSITIVE);
 	private static final Pattern _columnLengthPattern = Pattern.compile(
 		"([^,(\\s]+)\\[\\$COLUMN_LENGTH:(\\d+)\\$\\]");
 	private static final Pattern _defaultValuePattern = Pattern.compile(
