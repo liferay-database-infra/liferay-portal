@@ -501,23 +501,36 @@ public class DB2DB extends BaseDB {
 
 					String nullable = template[template.length - 1];
 
-					if (!Validator.isBlank(nullable)) {
-						String nullableAlter;
-
-						if (nullable.equals("not null")) {
-							nullableAlter = StringUtil.replace(
+					if (nullable.equals("not null")) {
+						runSQL(
+							StringUtil.replace(
 								"alter table @table@ alter column " +
 									"@old-column@ set not null;",
-								REWORD_TEMPLATE, template);
-						}
-						else {
-							nullableAlter = StringUtil.replace(
+								REWORD_TEMPLATE, template));
+					}
+					else {
+						runSQL(
+							StringUtil.replace(
 								"alter table @table@ alter column " +
 									"@old-column@ drop not null;",
-								REWORD_TEMPLATE, template);
-						}
+								REWORD_TEMPLATE, template));
+					}
 
-						runSQL(nullableAlter);
+					String defaults = template[template.length - 2];
+
+					if (!Validator.isBlank(defaults)) {
+						runSQL(
+							StringUtil.replace(
+								"alter table @table@ alter column " +
+									"@old-column@ set default @default@;",
+								REWORD_TEMPLATE, template));
+					}
+					else {
+						runSQL(
+							StringUtil.replace(
+								"alter table @table@ alter column " +
+									"@old-column@ drop default;",
+								REWORD_TEMPLATE, template));
 					}
 				}
 				else if (line.startsWith(ALTER_TABLE_NAME)) {

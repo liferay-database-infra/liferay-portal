@@ -473,6 +473,23 @@ public class OracleDB extends BaseDB {
 						REWORD_TEMPLATE, template);
 
 					line = StringUtil.replace(line, " ;", ";");
+
+					String defaults = template[template.length - 2];
+
+					if (!Validator.isBlank(defaults)) {
+						line = line.concat(
+							StringUtil.replace(
+								"alter table @table@ modify @old-column@ " +
+									"default @default@;",
+								REWORD_TEMPLATE, template));
+					}
+					else {
+						line = line.concat(
+							StringUtil.replace(
+								"alter table @table@ modify @old-column@ " +
+									"default null;",
+								REWORD_TEMPLATE, template));
+					}
 				}
 				else if (line.startsWith(ALTER_TABLE_NAME)) {
 					String[] template = buildTableNameTokens(line);

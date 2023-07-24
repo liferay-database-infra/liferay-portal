@@ -426,6 +426,23 @@ public class SQLServerDB extends BaseDB {
 						REWORD_TEMPLATE, template);
 
 					line = StringUtil.replace(line, " ;", ";");
+
+					line = line.concat(
+						StringUtil.replace(
+							"alter table @table@ drop constraint if exists " +
+								"@old-column@_default;",
+							REWORD_TEMPLATE, template));
+
+					String defaults = template[template.length - 2];
+
+					if (!Validator.isBlank(defaults)) {
+						line = line.concat(
+							StringUtil.replace(
+								"alter table @table@ add constraint " +
+									"@old-column@_default default @default@ " +
+										"for @old-column@;",
+								REWORD_TEMPLATE, template));
+					}
 				}
 				else if (line.startsWith(ALTER_TABLE_NAME)) {
 					String[] template = buildTableNameTokens(line);

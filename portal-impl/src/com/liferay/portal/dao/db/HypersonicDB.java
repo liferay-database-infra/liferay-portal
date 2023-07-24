@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Types;
 
+import java.util.Objects;
+
 /**
  * @author Alexander Chow
  * @author Sandeep Soni
@@ -213,11 +215,35 @@ public class HypersonicDB extends BaseDB {
 
 					String nullable = template[template.length - 1];
 
-					if (!Validator.isBlank(nullable)) {
+					if (Objects.equals(nullable, "not null")) {
 						line = line.concat(
 							StringUtil.replace(
 								"alter table @table@ alter column " +
-									"@old-column@ set @nullable@;",
+									"@old-column@ set not null;",
+								REWORD_TEMPLATE, template));
+					}
+					else {
+						line = line.concat(
+							StringUtil.replace(
+								"alter table @table@ alter column " +
+									"@old-column@ set null;",
+								REWORD_TEMPLATE, template));
+					}
+
+					String defaults = template[template.length - 2];
+
+					if (!Validator.isBlank(defaults)) {
+						line = line.concat(
+							StringUtil.replace(
+								"alter table @table@ alter column " +
+									"@old-column@ set default @default@;",
+								REWORD_TEMPLATE, template));
+					}
+					else {
+						line = line.concat(
+							StringUtil.replace(
+								"alter table @table@ alter column " +
+									"@old-column@ set default null;",
 								REWORD_TEMPLATE, template));
 					}
 				}
