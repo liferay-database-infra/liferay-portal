@@ -377,11 +377,6 @@ public abstract class BaseDB implements DB {
 	}
 
 	@Override
-	public Integer getSQLVarcharSize(String templateType) {
-		return _sqlVarcharSizes.get(templateType);
-	}
-
-	@Override
 	public String getTemplateBlob() {
 		return getTemplate()[5];
 	}
@@ -1489,7 +1484,6 @@ public abstract class BaseDB implements DB {
 	private final int _minorVersion;
 	private final Map<String, Integer> _sqlTypes = new HashMap<>();
 	private final Map<String, Integer> _sqlTypeSizes = new HashMap<>();
-	private final Map<String, Integer> _sqlVarcharSizes = new HashMap<>();
 	private boolean _supportsStringCaseSensitiveQuery = true;
 	private final Map<String, String> _templates = new HashMap<>();
 
