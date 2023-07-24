@@ -1237,7 +1237,7 @@ public abstract class BaseDB implements DB {
 	protected abstract int[] getSQLTypes();
 
 	protected int[] getSQLVarcharSizes() {
-		return new int[] {-1, -1};
+		return new int[] {SQL_SIZE_NONE, SQL_SIZE_NONE};
 	}
 
 	protected abstract String[] getTemplate();
