@@ -174,7 +174,7 @@ public class DBInspector {
 
 			if (!expectedColumnNullable) {
 				return StringUtil.equals(
-					getColumnDefaultValue(columnType),
+					StringUtil.unquote(getColumnDefaultValue(columnType)),
 					_getColumnDefaultValue(
 						resultSet.getString("COLUMN_DEF"),
 						DB::getDefaultValue));
