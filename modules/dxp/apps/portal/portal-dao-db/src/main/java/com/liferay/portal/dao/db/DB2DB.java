@@ -131,7 +131,9 @@ public class DB2DB extends BaseDB {
 
 			String tempColumnName = "temp" + columnName;
 
-			if (newColumnType.endsWith("not null")) {
+			if (newColumnType.endsWith("not null") &&
+				(dbInspector.getColumnDefaultValue(newColumnType) == null)) {
+
 				runSQL(
 					StringBundler.concat(
 						"alter table ", tableName, " add ", tempColumnName,
