@@ -2,7 +2,7 @@
 
 <project basedir="." name="portal-tools-db-partition-virtual-instance-migrator" xmlns:antelope="antlib:ise.antelope.tasks">
 	<import file="../../../../../../build-test.xml" />
-	
+
 	<macrodef name="change-db-partition-migrator-sh-exit-code">
 		<sequential>
 			<echo append="true" file="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh">
@@ -67,10 +67,10 @@ exit 0
 			<then>
 				<change-db-partition-migrator-sh-exit-code />
 
-				<run-db-partition-migrator-sh database.schema.source.name="${database.schema.source.name}" database.schema.psswd.source="${database.schema.psswd.source}" database.schema.target.name="${database.schema.target.name}" database.schema.psswd.target="${database.schema.psswd.target}" />
+				<run-db-partition-migrator-sh database.schema.psswd.source="${database.schema.psswd.source}" database.schema.psswd.target="${database.schema.psswd.target}" database.schema.source.name="${database.schema.source.name}" database.schema.target.name="${database.schema.target.name}" />
 			</then>
 			<else>
-				<run-db-partition-migrator-sh database.schema.source.name="${database.schema.source.name}" database.schema.psswd.source="${database.schema.psswd.source}" database.schema.target.name="${database.schema.target.name}" database.schema.psswd.target="${database.schema.psswd.target}" />
+				<run-db-partition-migrator-sh database.schema.psswd.source="${database.schema.psswd.source}" database.schema.psswd.target="${database.schema.psswd.target}" database.schema.source.name="${database.schema.source.name}" database.schema.target.name="${database.schema.target.name}" />
 			</else>
 		</if>
 
