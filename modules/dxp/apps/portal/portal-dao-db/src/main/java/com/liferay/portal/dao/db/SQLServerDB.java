@@ -63,6 +63,8 @@ public class SQLServerDB extends BaseDB {
 			removePrimaryKey(connection, tableName);
 		}
 
+		_dropDefaultConstraint(connection, tableName, columnName);
+
 		super.alterColumnType(connection, tableName, columnName, newColumnType);
 
 		if (primaryKey) {
@@ -426,12 +428,6 @@ public class SQLServerDB extends BaseDB {
 						REWORD_TEMPLATE, template);
 
 					line = StringUtil.replace(line, " ;", ";");
-
-					line = line.concat(
-						StringUtil.replace(
-							"alter table @table@ drop constraint if exists " +
-								"@old-column@_default;",
-							REWORD_TEMPLATE, template));
 
 					String defaults = template[template.length - 2];
 
