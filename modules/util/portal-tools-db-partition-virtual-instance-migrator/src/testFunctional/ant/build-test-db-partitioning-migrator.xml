@@ -2,79 +2,78 @@
 
 <project basedir="." name="portal-tools-db-partition-virtual-instance-migrator" xmlns:antelope="antlib:ise.antelope.tasks">
 	<import file="../../../../../../build-test.xml" />
-
-    <macrodef name="change-db-partition-migrator-sh-exit-code">
+	
+	<macrodef name="change-db-partition-migrator-sh-exit-code">
 		<sequential>
-            <echo file="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh" append="true">
+			<echo append="true" file="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh">
                 <![CDATA[
 exit 0
                 ]]>
-            </echo>
+			</echo>
 
-            <chmod
-                file="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh"
-                perm="a+x"
-            />
-        </sequential>
-	</macrodef>
-
-    <macrodef name="clean-db-partition-migrator-tool">
-		<sequential>
-			<delete failonerror="false" file="${project.dir}/modules/util/portal-tools-db-partition-virtual-instance-migrator/src/testFunctional/ant/db_partition_virtual_instance_migrator_log.txt" />
-			
-            <replace
-                file="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh"
-                token="exit 0"
-                value=""
-            />
+			<chmod
+				file="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh"
+				perm="a+x"
+			/>
 		</sequential>
 	</macrodef>
 
-    <macrodef name="run-db-partition-migrator-sh">
+	<macrodef name="clean-db-partition-migrator-tool">
+		<sequential>
+			<delete failonerror="false" file="${project.dir}/modules/util/portal-tools-db-partition-virtual-instance-migrator/src/testFunctional/ant/db_partition_virtual_instance_migrator_log.txt" />
+
+			<replace
+				file="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh"
+				token="exit 0"
+				value=""
+			/>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="run-db-partition-migrator-sh">
 		<attribute default="lportal" name="database.schema.source.name" />
-        <attribute default="" name="database.schema.psswd.source" />
+		<attribute default="" name="database.schema.psswd.source" />
 		<attribute default="lpartition_default" name="database.schema.target.name" />
 		<attribute default="" name="database.schema.psswd.target" />
 
 		<sequential>
-			<exec dir="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator" failonerror="false" executable="/bin/bash" output="db_partition_virtual_instance_migrator_log.txt">
-                <arg value="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh" />
-                <arg value="-s" />
-                <arg value="jdbc:mysql://localhost:3307/${database.schema.source.name}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false&amp;useTimezone=true&amp;serverTimezone=GMT" />
-                <arg value="-su" />
-                <arg value="${database.mysql.username}" />
-                <arg value="-sp" /> 
-                <arg value="${database.schema.psswd.source}" />
-                <arg value="-t" />
-                <arg value="jdbc:mysql://localhost:3307/${database.schema.target.name}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false&amp;useTimezone=true&amp;serverTimezone=GMT" />
-                <arg value="-tu" />
-                <arg value="${database.mysql.username}" />
-                <arg value="-tp" />
-                <arg value="${database.schema.psswd.target}" />
-            </exec>
+			<exec dir="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator" executable="/bin/bash" failonerror="false" output="db_partition_virtual_instance_migrator_log.txt">
+				<arg value="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh" />
+				<arg value="-s" />
+				<arg value="jdbc:mysql://localhost:3307/${database.schema.source.name}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false&amp;useTimezone=true&amp;serverTimezone=GMT" />
+				<arg value="-su" />
+				<arg value="${database.mysql.username}" />
+				<arg value="-sp" />
+				<arg value="${database.schema.psswd.source}" />
+				<arg value="-t" />
+				<arg value="jdbc:mysql://localhost:3307/${database.schema.target.name}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false&amp;useTimezone=true&amp;serverTimezone=GMT" />
+				<arg value="-tu" />
+				<arg value="${database.mysql.username}" />
+				<arg value="-tp" />
+				<arg value="${database.schema.psswd.target}" />
+			</exec>
 		</sequential>
 	</macrodef>
 
-    <target name="clean-db-partition-migrator-tool">
-        <clean-db-partition-migrator-tool />
-    </target>
-
-    <target name="execute-db-partition-migrator-tool">
-        <get-testcase-property property.name="ignore.errors" />
-
-        <if>
-            <isset property="ignore.errors" />
-            <then>
-                <change-db-partition-migrator-sh-exit-code />
-
-                <run-db-partition-migrator-sh database.schema.source.name="${database.schema.source.name}" database.schema.psswd.source="${database.schema.psswd.source}" database.schema.target.name="${database.schema.target.name}" database.schema.psswd.target="${database.schema.psswd.target}" />
-            </then>
-            <else>
-                <run-db-partition-migrator-sh database.schema.source.name="${database.schema.source.name}" database.schema.psswd.source="${database.schema.psswd.source}" database.schema.target.name="${database.schema.target.name}" database.schema.psswd.target="${database.schema.psswd.target}" />
-            </else>
-        </if>
-
-        <print-file file.name="modules/util/portal-tools-db-partition-virtual-instance-migrator/src/testFunctional/ant/db_partition_virtual_instance_migrator_log.txt" />
+	<target name="clean-db-partition-migrator-tool">
+		<clean-db-partition-migrator-tool />
 	</target>
 
+	<target name="execute-db-partition-migrator-tool">
+		<get-testcase-property property.name="ignore.errors" />
+
+		<if>
+			<isset property="ignore.errors" />
+			<then>
+				<change-db-partition-migrator-sh-exit-code />
+
+				<run-db-partition-migrator-sh database.schema.source.name="${database.schema.source.name}" database.schema.psswd.source="${database.schema.psswd.source}" database.schema.target.name="${database.schema.target.name}" database.schema.psswd.target="${database.schema.psswd.target}" />
+			</then>
+			<else>
+				<run-db-partition-migrator-sh database.schema.source.name="${database.schema.source.name}" database.schema.psswd.source="${database.schema.psswd.source}" database.schema.target.name="${database.schema.target.name}" database.schema.psswd.target="${database.schema.psswd.target}" />
+			</else>
+		</if>
+
+		<print-file file.name="modules/util/portal-tools-db-partition-virtual-instance-migrator/src/testFunctional/ant/db_partition_virtual_instance_migrator_log.txt" />
+	</target>
 </project>
