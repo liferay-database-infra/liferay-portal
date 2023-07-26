@@ -37,21 +37,44 @@ exit 0
 		<attribute default="" name="database.schema.psswd.target" />
 
 		<sequential>
-			<exec dir="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator" executable="/bin/bash" failonerror="false" output="db_partition_virtual_instance_migrator_log.txt">
-				<arg value="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh" />
-				<arg value="-s" />
-				<arg value="jdbc:mysql://localhost:3307/${database.schema.source.name}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false&amp;useTimezone=true&amp;serverTimezone=GMT" />
-				<arg value="-su" />
-				<arg value="${database.mysql.username}" />
-				<arg value="-sp" />
-				<arg value="${database.schema.psswd.source}" />
-				<arg value="-t" />
-				<arg value="jdbc:mysql://localhost:3307/${database.schema.target.name}?useUnicode=true&amp;characterEncoding=UTF-8&amp;useFastDateParsing=false&amp;useTimezone=true&amp;serverTimezone=GMT" />
-				<arg value="-tu" />
-				<arg value="${database.mysql.username}" />
-				<arg value="-tp" />
-				<arg value="${database.schema.psswd.target}" />
-			</exec>
+			<get-database-property property.name="database.host" />
+			<if>
+				<equals arg1="${database.host}" arg2="localhost_mysql" />
+				<then>
+					<exec dir="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator" executable="/bin/bash" failonerror="false" output="db_partition_virtual_instance_migrator_log.txt">
+						<arg value="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh" />
+						<arg value="-s" />
+						<arg value="jdbc:mysql://localhost:3307/${database.schema.source.name}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
+						<arg value="-su" />
+						<arg value="${database.mysql.username}" />
+						<arg value="-sp" />
+						<arg value="${database.schema.psswd.source}" />
+						<arg value="-t" />
+						<arg value="jdbc:mysql://localhost:3307/${database.schema.target.name}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
+						<arg value="-tu" />
+						<arg value="${database.mysql.username}" />
+						<arg value="-tp" />
+						<arg value="${database.schema.psswd.target}" />
+					</exec>
+				</then>
+				<else>
+					<exec dir="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator" executable="/bin/bash" failonerror="false" output="db_partition_virtual_instance_migrator_log.txt">
+						<arg value="${liferay.home}/tools/portal-tools-db-partition-virtual-instance-migrator/db_partition_virtual_instance_migrator.sh" />
+						<arg value="-s" />
+						<arg value="jdbc:mysql://${database.host}/${database.schema.source.name}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
+						<arg value="-su" />
+						<arg value="${database.mysql.username}" />
+						<arg value="-sp" />
+						<arg value="${database.schema.psswd.source}" />
+						<arg value="-t" />
+						<arg value="jdbc:mysql://${database.host}/${database.schema.target.name}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
+						<arg value="-tu" />
+						<arg value="${database.mysql.username}" />
+						<arg value="-tp" />
+						<arg value="${database.schema.psswd.target}" />
+					</exec>
+				</else>
+			</if>
 		</sequential>
 	</macrodef>
 
