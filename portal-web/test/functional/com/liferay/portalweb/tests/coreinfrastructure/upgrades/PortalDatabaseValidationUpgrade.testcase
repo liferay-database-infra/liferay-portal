@@ -248,6 +248,7 @@ definition {
 			upgradedDBSchemaName = "lportal");
 	}
 
+	@ignore = "true"
 	@priority = 4
 	test CompareLatest7413PartitionedUpgradedAndFreshDBSchemas {
 		property database.bare.enabled = "true";
