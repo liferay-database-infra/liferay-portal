@@ -5,10 +5,9 @@ definition {
 	property ci.retries.disabled = "true";
 	property database.types = "mysql";
 	property portal.release = "true";
-	property portal.upstream = "true";
+	property portal.upstream = "lucas";
 	property testray.main.component.name = "Database Upgrade Framework";
 
-	@ignore = "true"
 	@priority = 4
 	test CompareLatest7413PartitionedUpgradedAndFreshDBSchemas {
 		property database.bare.enabled = "true";
