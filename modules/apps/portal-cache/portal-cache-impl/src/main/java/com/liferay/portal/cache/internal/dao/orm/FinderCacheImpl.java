@@ -30,7 +30,6 @@ import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
-import com.liferay.portal.kernel.model.ShardedModel;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LRUMap;
@@ -622,8 +621,7 @@ public class FinderCacheImpl
 					Class<?> modelImplClass = classLoader.loadClass(
 						argumentsResolver.getClassName());
 
-					sharded = ShardedModel.class.isAssignableFrom(
-						modelImplClass);
+					sharded = DBPartition.isPartitionedModel(modelImplClass);
 				}
 				catch (ClassNotFoundException classNotFoundException) {
 					if (_log.isWarnEnabled()) {
