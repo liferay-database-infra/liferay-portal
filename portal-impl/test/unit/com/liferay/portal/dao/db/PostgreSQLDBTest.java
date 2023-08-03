@@ -5,6 +5,7 @@
 
 package com.liferay.portal.dao.db;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.test.BaseDBTestCase;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
@@ -39,7 +40,8 @@ public class PostgreSQLDBTest extends BaseDBTestCase {
 	public void testRewordAlterColumnType() throws Exception {
 		Assert.assertEquals(
 			"alter table DLFolder alter userName type varchar(75) using " +
-				"userName::varchar(75);\n",
+				"userName::varchar(75);alter table DLFolder alter column " +
+					"userName drop default;\n",
 			buildSQL("alter_column_type DLFolder userName VARCHAR(75);"));
 	}
 
@@ -47,16 +49,19 @@ public class PostgreSQLDBTest extends BaseDBTestCase {
 	public void testRewordAlterColumnTypeNoSemicolon() throws Exception {
 		Assert.assertEquals(
 			"alter table DLFolder alter userName type varchar(75) using " +
-				"userName::varchar(75);\n",
+				"userName::varchar(75);alter table DLFolder alter column " +
+					"userName drop default;\n",
 			buildSQL("alter_column_type DLFolder userName VARCHAR(75)"));
 	}
 
 	@Test
 	public void testRewordAlterColumnTypeNotNull() throws Exception {
 		Assert.assertEquals(
-			"alter table DLFolder alter userName type varchar(75) using " +
-				"userName::varchar(75);alter table DLFolder alter column " +
-					"userName set not null;\n",
+			StringBundler.concat(
+				"alter table DLFolder alter userName type varchar(75) using ",
+				"userName::varchar(75);alter table DLFolder alter column ",
+				"userName drop default;alter table DLFolder alter column ",
+				"userName set not null;\n"),
 			buildSQL(
 				"alter_column_type DLFolder userName VARCHAR(75) not null;"));
 	}
@@ -64,10 +69,25 @@ public class PostgreSQLDBTest extends BaseDBTestCase {
 	@Test
 	public void testRewordAlterColumnTypeNull() throws Exception {
 		Assert.assertEquals(
-			"alter table DLFolder alter userName type varchar(75) using " +
-				"userName::varchar(75);alter table DLFolder alter column " +
-					"userName drop not null;\n",
+			StringBundler.concat(
+				"alter table DLFolder alter userName type varchar(75) using ",
+				"userName::varchar(75);alter table DLFolder alter column ",
+				"userName drop default;alter table DLFolder alter column ",
+				"userName drop not null;\n"),
 			buildSQL("alter_column_type DLFolder userName VARCHAR(75) null;"));
+	}
+
+	@Test
+	public void testRewordAlterColumnTypeWithDefault() throws Exception {
+		Assert.assertEquals(
+			StringBundler.concat(
+				"alter table DLFolder alter userName type varchar(75) using ",
+				"userName::varchar(75);alter table DLFolder alter column ",
+				"userName set default 'test test';alter table DLFolder alter ",
+				"column userName set not null;\n"),
+			buildSQL(
+				"alter_column_type DLFolder userName VARCHAR(75) default " +
+					"'test test' not null;"));
 	}
 
 	@Test

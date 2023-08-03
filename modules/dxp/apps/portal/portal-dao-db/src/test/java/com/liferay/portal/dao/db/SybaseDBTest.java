@@ -49,21 +49,24 @@ public class SybaseDBTest extends BaseDBTestCase {
 	@Test
 	public void testRewordAlterColumnType() throws Exception {
 		Assert.assertEquals(
-			"alter table DLFolder modify userName varchar(75)\ngo\n",
+			"alter table DLFolder modify userName varchar(75);alter table " +
+				"DLFolder replace userName default null;\n",
 			buildSQL("alter_column_type DLFolder userName VARCHAR(75);"));
 	}
 
 	@Test
 	public void testRewordAlterColumnTypeNoSemicolon() throws Exception {
 		Assert.assertEquals(
-			"alter table DLFolder modify userName varchar(75)\ngo\n",
+			"alter table DLFolder modify userName varchar(75);alter table " +
+				"DLFolder replace userName default null;\n",
 			buildSQL("alter_column_type DLFolder userName VARCHAR(75)"));
 	}
 
 	@Test
 	public void testRewordAlterColumnTypeNotNull() throws Exception {
 		Assert.assertEquals(
-			"alter table DLFolder modify userName varchar(75) not null;\n",
+			"alter table DLFolder modify userName varchar(75) not null;" +
+				"alter table DLFolder replace userName default null;\n",
 			buildSQL(
 				"alter_column_type DLFolder userName VARCHAR(75) not null;"));
 	}
@@ -71,8 +74,19 @@ public class SybaseDBTest extends BaseDBTestCase {
 	@Test
 	public void testRewordAlterColumnTypeNull() throws Exception {
 		Assert.assertEquals(
-			"alter table DLFolder modify userName varchar(75) null;\n",
+			"alter table DLFolder modify userName varchar(75) null;alter " +
+				"table DLFolder replace userName default null;\n",
 			buildSQL("alter_column_type DLFolder userName VARCHAR(75) null;"));
+	}
+
+	@Test
+	public void testRewordAlterColumnTypeWithDefault() throws Exception {
+		Assert.assertEquals(
+			"alter table DLFolder modify userName varchar(75) not null;" +
+				"alter table DLFolder replace userName default 'test test';\n",
+			buildSQL(
+				"alter_column_type DLFolder userName VARCHAR(75) default " +
+					"'test test' not null;"));
 	}
 
 	@Test
