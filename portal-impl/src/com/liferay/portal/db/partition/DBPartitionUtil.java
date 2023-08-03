@@ -180,6 +180,26 @@ public class DBPartitionUtil {
 		return _dropDBPartition(companyId);
 	}
 
+	public static void replaceByTable(Connection connection, String viewName)
+		throws Exception {
+
+		long companyId = getCurrentCompanyId();
+
+		if (companyId == _defaultCompanyId) {
+			return;
+		}
+
+		try (Statement statement = connection.createStatement()) {
+			statement.execute(_getDropViewSQL(companyId, viewName));
+
+			statement.execute(_getCreateTableSQL(companyId, viewName));
+
+			_copyData(
+				viewName, _defaultSchemaName, _getSchemaName(companyId),
+				statement, StringPool.BLANK);
+		}
+	}
+
 	public static void setDefaultCompanyId(Connection connection)
 		throws SQLException {
 
