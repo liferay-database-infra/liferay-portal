@@ -20,6 +20,30 @@
 		</sequential>
 	</macrodef>
 
+	<macrodef name="clean-upgrade-manager">
+		<sequential>
+			<stop-app-server />
+
+			<loadresource property="originalCatalinaOPTS">
+				<file file="${project.dir}/original_OTPS_record.txt" />
+				<filterchain>
+					<headfilter lines="1" />
+				</filterchain>
+			</loadresource>
+
+			<replace 
+				file="${app.server.tomcat.dir}/bin/setenv${file.suffix.bat}"
+				token='CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF-8 -Djava.locale.providers=JRE,COMPAT,CLDR -Djava.net.preferIPv4Stack=true -Duser.timezone=GMT -Xms4096m -Xmx4096m -XX:MaxNewSize=1536m -XX:MaxMetaspaceSize=768m -XX:MetaspaceSize=768m -XX:NewSize=1536m -XX:SurvivorRatio=7 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=1234 -Dcom.sun.management.jmxremote.ssl=false"'
+				value="${originalCatalinaOPTS}"
+			/>
+
+			<delete file="${project.dir}/original_OTPS_record.txt" />
+
+			<delete file="${project.dir}/mbean-attributes-output.txt" />
+			
+		</sequential>
+	</macrodef>
+
 	<macrodef name="get-database-upgrade-client-paths">
 		<sequential>
 			<property name="db.upgrade.client.home" value="${liferay.home}/tools/portal-tools-db-upgrade-client" />
@@ -28,6 +52,45 @@
 			<property name="db.upgrade.client.jar" value="${db.upgrade.client.home}/com.liferay.portal.tools.db.upgrade.client.jar" />
 			<property name="db.upgrade.client.log" value="${db.upgrade.client.home}/logs/upgrade.log" />
 			<property name="db.upgrade.client.src.dir" value="${project.dir}/modules/util/portal-tools-db-upgrade-client" />
+		</sequential>
+	</macrodef>
+
+	<macrodef name="get-mbean-attributes">
+		<sequential>
+			<beanshell>
+				<![CDATA[
+					import javax.management.*;
+					import javax.management.MBeanServer;
+					import javax.management.ObjectName;
+					import javax.management.remote.JMXConnector;
+					import javax.management.remote.JMXConnectorFactory;
+					import javax.management.remote.JMXServiceURL;
+
+					ObjectName objectName = new ObjectName("com.liferay.portal.upgrade:classification=upgrade,name=UpgradeManager");
+
+					String port = "1234";
+					String hostname = "localhost";
+
+					JMXServiceURL jmxServiceURL = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + hostname + ":" + port + "/jmxrmi");
+					JMXConnector jmxConnector = JMXConnectorFactory.connect(jmxServiceURL);
+					
+					MBeanServerConnection mBeanServerConnection = jmxConnector.getMBeanServerConnection();
+
+					if (mBeanServerConnection.isRegistered(objectName)) {
+						String type = (String)mBeanServerConnection.getAttribute(objectName, "Type");
+						String result = (String)mBeanServerConnection.getAttribute(objectName, "Result");
+
+						PrintWriter writer = new PrintWriter(new FileWriter("mbean-attributes-output.txt"));
+						writer.println("Type: " + type);
+						writer.println("Result: " + result);
+						writer.close();
+					} else {
+						PrintWriter writer = new PrintWriter(new FileWriter("mbean-attributes-output.txt"));
+						writer.println("Not Registered");
+						writer.close();
+					}
+				]]>
+			</beanshell>
 		</sequential>
 	</macrodef>
 
@@ -45,6 +108,30 @@
 				file="${db.upgrade.client.home}/db_upgrade_client${file.suffix.bat}"
 				perm="a+x"
 			/>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="modify-setenv-script">
+		<sequential>
+			<loadfile 
+				property="setenv" 
+				srcFile="${app.server.tomcat.dir}/bin/setenv${file.suffix.bat}"
+			/>
+
+			<propertyregex 
+				property="catalinaOPTS" 
+				input="${setenv}" 
+				regexp="^(.*)(\r?\n).*" 
+				select="\1"
+			/>
+
+			<replace 
+				file="${app.server.tomcat.dir}/bin/setenv${file.suffix.bat}"
+				token="${catalinaOPTS}"
+				value='CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF-8 -Djava.locale.providers=JRE,COMPAT,CLDR -Djava.net.preferIPv4Stack=true -Duser.timezone=GMT -Xms4096m -Xmx4096m -XX:MaxNewSize=1536m -XX:MaxMetaspaceSize=768m -XX:MetaspaceSize=768m -XX:NewSize=1536m -XX:SurvivorRatio=7 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=1234 -Dcom.sun.management.jmxremote.ssl=false"'
+			/>
+
+			<echo file="${project.dir}/original_OTPS_record.txt"><![CDATA[${catalinaOPTS}]]></echo>
 		</sequential>
 	</macrodef>
 
@@ -148,6 +235,30 @@
 		</waitfor>
 
 		<fail if="gogoshell.timeout" message="The Gogo shell connection did not connect as expected." />
+	</target>
+
+	<target name="check-mbean-attributes">
+		<get-testcase-property property.name="testcase.url" />
+
+		<if>
+			<isset property="testcase.url" />
+			<then>
+				<parallel>	
+					<start-app-server />
+
+					<sequential>
+						<wait-for-app-server-log-message log.message="Started web bundles" />
+
+						<get-mbean-attributes />
+					</sequential>
+				</parallel>
+			</then>
+			<else>
+				<start-app-server />
+
+				<get-mbean-attributes />
+			</else>
+		</if>
 	</target>
 
 	<target name="check-unresolved-upgrade-log">
@@ -639,6 +750,10 @@ upgrade.database.auto.run=false</echo>
 		<clean-database-upgrade-client />
 	</target>
 
+	<target name="clean-upgrade-manager">
+		<clean-upgrade-manager />
+	</target>
+
 	<target name="delete-indexes-sql">
 		<get-test-app-server-lib-portal-dir />
 
@@ -668,5 +783,9 @@ upgrade.database.auto.run=false</echo>
 			expect.file="execute-all-pending-upgrades-from-gogo-shell.expect"
 			file.suffix.bat="${file.suffix.bat}"
 		/>
+	</target>
+
+	<target name="modify-setenv-script">
+		<modify-setenv-script />
 	</target>
 </project>
