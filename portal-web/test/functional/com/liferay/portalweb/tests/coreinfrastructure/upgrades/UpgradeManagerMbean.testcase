@@ -2,27 +2,27 @@
 definition {
 
 	property app.server.types = "tomcat";
+	property custom.properties = "upgrade.database.auto.run=true";
 	property database.types = "mysql";
 	property portal.release = "true";
 	property portal.upstream = "true";
-    property custom.properties = "upgrade.database.auto.run=true";
-	property testray.main.component.name = "Database Upgrade Framework";
 	property skip.start.app.server = "true";
+	property testray.main.component.name = "Database Upgrade Framework";
 
 	setUp {
 		task ("Given the enviroment is set AND upgrade.database.auto.run is enabled") {
 			AntCommands.runCommand("modules/util/portal-tools-db-upgrade-client/src/testFunctional/ant/build-test-db-upgrade-client.xml", "modify-setenv-script");
 		}
 	}
-	
+
 	tearDown {
 		AntCommands.runCommand("modules/util/portal-tools-db-upgrade-client/src/testFunctional/ant/build-test-db-upgrade-client.xml", "clean-upgrade-manager");
 	}
 
 	@priority = 3
 	test CheckMbeanDuringUpgradeIsRunning {
-		property portal.version = "7.4.13";
 		property data.archive.type = "data-archive-portal";
+		property portal.version = "7.4.13";
 		property skip.upgrade-legacy-database = "true";
 		property testcase.url = "http://www.example.com";
 
@@ -42,7 +42,7 @@ definition {
 
 				fail("Expected upgrade type not present in the mBean file");
 			}
-			
+
 			if (!(contains(${mBeanAttibutesFile}, "Result: running"))) {
 				echo(${mBeanAttibutesFile});
 
@@ -53,10 +53,10 @@ definition {
 
 	@priority = 5
 	test CheckMbeanFailedUpgrade {
-		property portal.version = "7.4.13";
-		property data.archive.type = "data-archive-portal";
-		property skip.upgrade-legacy-database = "true";
 		property custom.mysql.sql.statement = "ALTER TABLE FragmentComposition DROP description;";
+		property data.archive.type = "data-archive-portal";
+		property portal.version = "7.4.13";
+		property skip.upgrade-legacy-database = "true";
 
 		task ("When the portal is started with auto.upgrade enabled AND failures were registered during the upgrade") {
 			AntCommands.runCommand("modules/util/portal-tools-db-upgrade-client/src/testFunctional/ant/build-test-db-upgrade-client.xml", "check-mbean-attributes");
@@ -85,10 +85,10 @@ definition {
 
 	@priority = 4
 	test CheckMbeanSuccessfulUpgrade {
-		property portal.version = "7.4.13";
 		property data.archive.type = "data-archive-portal";
+		property portal.version = "7.4.13";
 		property skip.upgrade-legacy-database = "true";
-		
+
 		task ("When the portal is started AND the upgrade is executed successfully") {
 			AntCommands.runCommand("modules/util/portal-tools-db-upgrade-client/src/testFunctional/ant/build-test-db-upgrade-client.xml", "check-mbean-attributes");
 		}
@@ -116,9 +116,9 @@ definition {
 
 	@priority = 4
 	test CheckMbeanWarningUpgrade {
-		property skip.get.testcase.database.properties = "true";
-		property portal.version = "7.4.13";
 		property data.archive.type = "data-archive-portal";
+		property portal.version = "7.4.13";
+		property skip.get.testcase.database.properties = "true";
 		property skip.upgrade-legacy-database = "true";
 		property test.assert.warning.exceptions = "false";
 
@@ -166,7 +166,7 @@ definition {
 		}
 
 		task ("And the output file returns that the mBean it's not registered") {
-				if (!(contains(${mBeanAttibutesFile}, "Not Registered"))) {
+			if (!(contains(${mBeanAttibutesFile}, "Not Registered"))) {
 				echo(${mBeanAttibutesFile});
 
 				fail("Upgrade Manager MBean is registered");
@@ -176,12 +176,12 @@ definition {
 
 	@priority = 5
 	test CheckMbeanWhenUpgradeHaveWarnAndError {
-		property skip.get.testcase.database.properties = "true";
-		property portal.version = "7.4.13";
+		property custom.mysql.sql.statement = "ALTER TABLE FragmentComposition DROP description;";
 		property data.archive.type = "data-archive-portal";
+		property portal.version = "7.4.13";
+		property skip.get.testcase.database.properties = "true";
 		property skip.upgrade-legacy-database = "true";
 		property test.assert.warning.exceptions = "false";
-		property custom.mysql.sql.statement = "ALTER TABLE FragmentComposition DROP description;";
 
 		task ("When the indexes.sql file from portal-impl.jar is deleted") {
 			AntCommands.runCommand("modules/util/portal-tools-db-upgrade-client/src/testFunctional/ant/build-test-db-upgrade-client.xml", "delete-indexes-sql");

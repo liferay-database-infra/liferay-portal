@@ -31,16 +31,15 @@
 				</filterchain>
 			</loadresource>
 
-			<replace 
+			<replace
 				file="${app.server.tomcat.dir}/bin/setenv${file.suffix.bat}"
-				token='CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF-8 -Djava.locale.providers=JRE,COMPAT,CLDR -Djava.net.preferIPv4Stack=true -Duser.timezone=GMT -Xms4096m -Xmx4096m -XX:MaxNewSize=1536m -XX:MaxMetaspaceSize=768m -XX:MetaspaceSize=768m -XX:NewSize=1536m -XX:SurvivorRatio=7 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=1234 -Dcom.sun.management.jmxremote.ssl=false"'
+				token="CATALINA_OPTS=&quot;$CATALINA_OPTS -Dfile.encoding=UTF-8 -Djava.locale.providers=JRE,COMPAT,CLDR -Djava.net.preferIPv4Stack=true -Duser.timezone=GMT -Xms4096m -Xmx4096m -XX:MaxNewSize=1536m -XX:MaxMetaspaceSize=768m -XX:MetaspaceSize=768m -XX:NewSize=1536m -XX:SurvivorRatio=7 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=1234 -Dcom.sun.management.jmxremote.ssl=false&quot;"
 				value="${originalCatalinaOPTS}"
 			/>
 
 			<delete file="${project.dir}/original_OTPS_record.txt" />
 
 			<delete file="${project.dir}/mbean-attributes-output.txt" />
-			
 		</sequential>
 	</macrodef>
 
@@ -73,7 +72,7 @@
 
 					JMXServiceURL jmxServiceURL = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + hostname + ":" + port + "/jmxrmi");
 					JMXConnector jmxConnector = JMXConnectorFactory.connect(jmxServiceURL);
-					
+
 					MBeanServerConnection mBeanServerConnection = jmxConnector.getMBeanServerConnection();
 
 					if (mBeanServerConnection.isRegistered(objectName)) {
@@ -113,22 +112,22 @@
 
 	<macrodef name="modify-setenv-script">
 		<sequential>
-			<loadfile 
-				property="setenv" 
+			<loadfile
+				property="setenv"
 				srcFile="${app.server.tomcat.dir}/bin/setenv${file.suffix.bat}"
 			/>
 
-			<propertyregex 
-				property="catalinaOPTS" 
-				input="${setenv}" 
-				regexp="^(.*)(\r?\n).*" 
+			<propertyregex
+				input="${setenv}"
+				property="catalinaOPTS"
+				regexp="^(.*)(\r?\n).*"
 				select="\1"
 			/>
 
-			<replace 
+			<replace
 				file="${app.server.tomcat.dir}/bin/setenv${file.suffix.bat}"
 				token="${catalinaOPTS}"
-				value='CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF-8 -Djava.locale.providers=JRE,COMPAT,CLDR -Djava.net.preferIPv4Stack=true -Duser.timezone=GMT -Xms4096m -Xmx4096m -XX:MaxNewSize=1536m -XX:MaxMetaspaceSize=768m -XX:MetaspaceSize=768m -XX:NewSize=1536m -XX:SurvivorRatio=7 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=1234 -Dcom.sun.management.jmxremote.ssl=false"'
+				value="CATALINA_OPTS=&quot;$CATALINA_OPTS -Dfile.encoding=UTF-8 -Djava.locale.providers=JRE,COMPAT,CLDR -Djava.net.preferIPv4Stack=true -Duser.timezone=GMT -Xms4096m -Xmx4096m -XX:MaxNewSize=1536m -XX:MaxMetaspaceSize=768m -XX:MetaspaceSize=768m -XX:NewSize=1536m -XX:SurvivorRatio=7 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=1234 -Dcom.sun.management.jmxremote.ssl=false&quot;"
 			/>
 
 			<echo file="${project.dir}/original_OTPS_record.txt"><![CDATA[${catalinaOPTS}]]></echo>
@@ -243,7 +242,7 @@
 		<if>
 			<isset property="testcase.url" />
 			<then>
-				<parallel>	
+				<parallel>
 					<start-app-server />
 
 					<sequential>
