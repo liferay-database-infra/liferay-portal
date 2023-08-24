@@ -9591,6 +9591,13 @@ org.apache.catalina.tribes.level = FINE]]>
 					</and>
 					<then>
 						<delete dir="${test.app.server.liferay.home}/osgi/state" />
+
+						<if>
+							<equals arg1="${app.server.type}" arg2="websphere" />
+							<then>
+								<delete dir="${test.app.server.liferay.home}/logs" />
+							</then>
+						</if>
 					</then>
 					<else>
 						<if>
