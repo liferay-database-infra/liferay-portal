@@ -186,8 +186,9 @@ public class DBUpgradeClient {
 			" -Dexternal-properties=portal-upgrade.properties " +
 				"-Dserver.detector.server.id=" +
 					_appServer.getServerDetectorServerId() +
-						" -Dliferay.shielded.container.lib.portal.dir=" +
-							_appServer.getPortalShieldedContainerLibDir());
+						" -Dliferay.shielded.container.lib.portal.dir=\"" +
+							_appServer.getPortalShieldedContainerLibDir() +
+								"\"");
 
 		System.out.println("JVM arguments: " + jvmOptsCommands);
 
