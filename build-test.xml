@@ -11250,6 +11250,17 @@ ${update.properties}</echo>
 			</then>
 		</if>
 
+		<!-- Temporarily increase tika log level until LPS-193838 -->
+
+		<var name="text.extractor.impl.log.level" value="WARN" />
+
+		<if>
+			<equals arg1="${app.server.type}" arg2="websphere" />
+			<then>
+				<var name="text.extractor.impl.log.level" value="ERROR" />
+			</then>
+		</if>
+
 		<get-testcase-property property.name="log.context.enabled" />
 
 		<if>
@@ -11329,6 +11340,8 @@ ${update.properties}</echo>
 		<Logger level="${release.local.service.impl.log.level}" name="com.liferay.portal.service.impl.ReleaseLocalServiceImpl" />
 
 		<Logger level="${dialect.detector.log.level}" name="com.liferay.portal.spring.hibernate.DialectDetector" />
+
+		<Logger level="${text.extractor.impl.log.level}" name="com.liferay.portal.tika.internal.extract.TextExtractorImpl" />
 
 		<Logger level="ERROR" name="com.zaxxer.hikari.pool.PoolBase" />
 
