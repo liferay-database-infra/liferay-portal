@@ -11380,6 +11380,25 @@ ${update.properties}</echo>
 		<Logger level="DEBUG" name="com.liferay.portal.cache.ehcache.internal.event.PortalCacheCacheEventListener.test.cache" />
 	</Loggers>
 </Configuration>]]></echo>
+
+		<!-- Temporarily increase tika log level until LPS-193838 -->
+
+		<get-testcase-property property.name="portal.version" />
+
+		<if>
+			<and>
+				<equals arg1="${app.server.type}" arg2="websphere" />
+				<isset property="portal.version" />
+			</and>
+			<then>
+				<echo file="${liferay.home}/osgi/log4j/com.liferay.portal.tika-log4j-ext.xml"><![CDATA[<?xml version="1.0"?>
+<Configuration strict="true">
+	<Loggers>
+		<Logger level="ERROR" name="com.liferay.portal.tika.internal.extract.TextExtractorImpl" />
+	</Loggers>
+</Configuration>]]></echo>
+			</then>
+		</if>
 	</target>
 
 	<target name="prepare-ms-exchange-configuration">
