@@ -328,7 +328,7 @@ public class PortalUpgradeProcessRegistryImpl
 			new UpgradePartitionedControlTable("ResourceAction"));
 
 		upgradeVersionTreeMap.put(
-			new Version(29, 0, 0), new UpgradePartitionedListType());
+			new Version(29, 0, 0), new UpgradeListTypeCompanyId());
 	}
 
 }
