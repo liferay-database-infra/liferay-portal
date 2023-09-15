@@ -462,11 +462,17 @@ public class UpgradeReport {
 	private File _getReportFile() {
 		File reportsDir;
 
-		if (DBUpgrader.isUpgradeClient()) {
-			reportsDir = new File(".", "reports");
+		if (PropsValues.UPGRADE_REPORT_DIRECTORY.isEmpty()) {
+			if (DBUpgrader.isUpgradeClient()) {
+				reportsDir = new File(".", "reports");
+			}
+			else {
+				reportsDir = new File(PropsValues.LIFERAY_HOME, "reports");
+			}
 		}
 		else {
-			reportsDir = new File(PropsValues.LIFERAY_HOME, "reports");
+			reportsDir = new File(
+				PropsValues.UPGRADE_REPORT_DIRECTORY);
 		}
 
 		if ((reportsDir != null) && !reportsDir.exists()) {
