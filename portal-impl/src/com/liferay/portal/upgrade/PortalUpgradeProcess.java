@@ -70,7 +70,7 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 			_currentPortalReleaseDTODCLSingleton.getSingleton(
 				() -> new PortalReleaseDTO(
-					schemaVersion, ReleaseInfo.getBuildNumber(), 0,
+					ReleaseInfo.getBuildNumber(), schemaVersion, 0,
 					ReleaseConstants.TEST_STRING));
 		}
 	}
@@ -252,8 +252,8 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 				preparedStatement.setDate(2, new Date(buildDate.getTime()));
 			},
 			portalReleaseDTO -> new PortalReleaseDTO(
-				portalReleaseDTO._schemaVersion, portalReleaseDTO._state,
 				ReleaseInfo.getParentBuildNumber(),
+				portalReleaseDTO._schemaVersion, portalReleaseDTO._state,
 				portalReleaseDTO._testString));
 	}
 
@@ -266,8 +266,8 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 			preparedStatement -> preparedStatement.setString(
 				1, newSchemaVersion.toString()),
 			portalReleaseDTO -> new PortalReleaseDTO(
-				newSchemaVersion, portalReleaseDTO._state,
-				portalReleaseDTO._buildNumber, portalReleaseDTO._testString));
+				portalReleaseDTO._buildNumber, newSchemaVersion,
+				portalReleaseDTO._state, portalReleaseDTO._testString));
 	}
 
 	public static void updateState(Connection connection, int state)
@@ -281,8 +281,8 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 				preparedStatement.setInt(2, state);
 			},
 			portalReleaseDTO -> new PortalReleaseDTO(
-				portalReleaseDTO._schemaVersion, state,
-				portalReleaseDTO._buildNumber, portalReleaseDTO._testString));
+				portalReleaseDTO._buildNumber, portalReleaseDTO._schemaVersion,
+				state, portalReleaseDTO._testString));
 	}
 
 	@Override
@@ -358,9 +358,9 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 						while (resultSet.next()) {
 							return new PortalReleaseDTO(
+								resultSet.getInt("buildNumber"),
 								Version.parseVersion(
 									resultSet.getString("schemaVersion")),
-								resultSet.getInt("buildNumber"),
 								resultSet.getInt("state_"),
 								resultSet.getString("testString"));
 						}
@@ -429,9 +429,8 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 				_currentPortalReleaseDTODCLSingleton.getSingleton(
 					() -> new PortalReleaseDTO(
-						_initialSchemaVersion, portalReleaseDTO._state,
-						portalReleaseDTO._buildNumber,
-						portalReleaseDTO._testString));
+						portalReleaseDTO._buildNumber, _initialSchemaVersion,
+						portalReleaseDTO._state, portalReleaseDTO._testString));
 			}
 		}
 	}
@@ -464,17 +463,17 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 	private static class PortalReleaseDTO {
 
 		private PortalReleaseDTO(
-			Version schemaVersion, int buildNumber, int state,
+			int buildNumber, Version schemaVersion, int state,
 			String testString) {
 
-			_schemaVersion = schemaVersion;
 			_buildNumber = buildNumber;
+			_schemaVersion = schemaVersion;
 			_state = state;
 			_testString = testString;
 		}
 
 		private static final PortalReleaseDTO _NULL_INSTANCE =
-			new PortalReleaseDTO(null, 0, -1, null);
+			new PortalReleaseDTO(0, null, -1, null);
 
 		private final int _buildNumber;
 		private final Version _schemaVersion;
