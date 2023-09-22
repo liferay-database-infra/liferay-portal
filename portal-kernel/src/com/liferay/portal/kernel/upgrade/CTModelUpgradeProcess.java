@@ -31,6 +31,47 @@ public class CTModelUpgradeProcess extends UpgradeProcess {
 
 		DBInspector dbInspector = new DBInspector(connection);
 
+		try {
+			if (hasTable("DDMTemplate")) {
+				if ((hasIndex("DDMTemplate", "IX_40E22774"))) {
+
+					String[] indexesInDDMTemplate = {
+						"IX_13A3AC0E",
+						"IX_147A0D41",
+						"IX_17F6EC05",
+						"IX_25F23981",
+						"IX_27ACCA26",
+						"IX_2A228ED0",
+						"IX_3A6CBFF1",
+						"IX_3EE9B9D7",
+						"IX_40E22774",
+						"IX_492F3DCB",
+						"IX_8DFF58A7",
+						"IX_A967DEEF",
+						"IX_C64F367F",
+						"IX_D3180904",
+						"IX_ED2AF9E2",
+						"IX_EFDA5A3B",
+						"IX_F365A086"};
+
+					for (String index : indexesInDDMTemplate) {
+						try {
+							if (hasIndex("DDMTemplate", index)) {
+								runSQL(
+									"drop index " + index + " on DDMTemplate");
+							}
+						}
+						catch (Exception e) {
+							System.out.println(e.getMessage());
+						}
+					}
+				}
+			}
+		}
+		catch(Exception e){
+			System.out.println(e.getMessage());
+		}
+
 		for (String tableName : _tableNames) {
 			try (LoggingTimer loggingTimer = new LoggingTimer(
 					CTModelUpgradeProcess.class, tableName)) {
