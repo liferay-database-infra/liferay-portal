@@ -463,8 +463,7 @@ public class UpgradeReport {
 			}
 		}
 		else {
-			reportsDir = new File(
-				PropsValues.UPGRADE_REPORT_DIRECTORY);
+			reportsDir = new File(PropsValues.UPGRADE_REPORT_DIRECTORY);
 		}
 
 		if ((reportsDir != null) && !reportsDir.exists()) {
