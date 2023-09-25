@@ -137,6 +137,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ThreadLocalRandom;
 
 import javax.portlet.PortletException;
 import javax.portlet.PortletPreferences;
@@ -201,7 +202,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		validateMx(-1, mx);
 
 		if ((companyId == null) || (companyId == 0)) {
-			companyId = counterLocalService.increment();
+			companyId = _nextCompanyId();
 		}
 
 		Company company = companyPersistence.create(companyId);
@@ -2054,6 +2055,18 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 				return null;
 			});
+	}
+
+	private long _nextCompanyId() {
+		ThreadLocalRandom current = ThreadLocalRandom.current();
+
+		long nextLong = current.nextLong(Long.MAX_VALUE) + 1;
+
+		while (ArrayUtil.contains(PortalInstances.getCompanyIds(), nextLong)) {
+			nextLong = current.nextLong(Long.MAX_VALUE) + 1;
+		}
+
+		return nextLong;
 	}
 
 	private void _updateGroupLanguageIds(
