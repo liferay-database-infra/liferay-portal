@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,6 +41,11 @@ import org.junit.runner.RunWith;
  */
 @RunWith(Arquillian.class)
 public class AccountEntryImplTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new LiferayIntegrationTestRule();
 
 	@Test
 	public void testFetchOrganizations() throws Exception {
@@ -129,10 +135,6 @@ public class AccountEntryImplTest {
 
 		Assert.assertEquals(address, accountEntry.getDefaultShippingAddress());
 	}
-
-	@Rule
-	public final AggregateTestRule aggregateTestRule =
-		new LiferayIntegrationTestRule();
 
 	private Address _addAddress() throws Exception {
 		User user = TestPropsValues.getUser();

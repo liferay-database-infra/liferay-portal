@@ -18,6 +18,7 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,6 +28,11 @@ import org.junit.runner.RunWith;
  */
 @RunWith(Arquillian.class)
 public class AccountEntryOrganizationRelImplTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new LiferayIntegrationTestRule();
 
 	@Before
 	public void setUp() throws Exception {
@@ -63,10 +69,6 @@ public class AccountEntryOrganizationRelImplTest {
 		Assert.assertEquals(
 			_organization, _accountEntryOrganizationRel.getOrganization());
 	}
-
-	@Rule
-	public final AggregateTestRule aggregateTestRule =
-		new LiferayIntegrationTestRule();
 
 	private AccountEntry _accountEntry;
 	private AccountEntryOrganizationRel _accountEntryOrganizationRel;
