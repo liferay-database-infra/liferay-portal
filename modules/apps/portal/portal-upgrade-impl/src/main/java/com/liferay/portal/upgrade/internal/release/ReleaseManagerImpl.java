@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 
+import com.liferay.portal.verify.extender.internal.osgi.commands.VerifyProcessTrackerOSGiCommands;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Activate;
@@ -125,6 +126,8 @@ public class ReleaseManagerImpl implements ReleaseManager {
 
 			sb.append(StringPool.NEW_LINE);
 		}
+
+		sb.append(_verifyProcessTrackerOSGiCommands.checkAllGetMessage());
 
 		return sb.toString();
 	}
@@ -406,6 +409,9 @@ public class ReleaseManagerImpl implements ReleaseManager {
 
 	@Reference
 	private UpgradeExecutor _upgradeExecutor;
+
+	@Reference
+	private VerifyProcessTrackerOSGiCommands _verifyProcessTrackerOSGiCommands;
 
 	private class SchemaCreatorServiceTrackerCustomizer
 		implements ServiceTrackerCustomizer<SchemaCreator, Release> {

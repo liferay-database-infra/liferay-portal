@@ -38,6 +38,7 @@ public class DDMServiceVerifyProcess extends VerifyProcess {
 	protected void doVerify() throws Exception {
 		verifyStructureLinks();
 		verifyTemplateLinks();
+		throw new Exception("Test exception");
 	}
 
 	protected DDMFormValues getDDMFormValues(

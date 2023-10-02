@@ -68,44 +68,7 @@ public class VerifyProcessTrackerOSGiCommands {
 		"List latest execution result for a module's verify process by symbolic name"
 	)
 	public void check(String bundleSymbolicName) {
-		VerifyProcess verifyProcess;
-
-		try {
-			verifyProcess = _getVerifyProcess(
-				_serviceTrackerMap, bundleSymbolicName);
-		}
-		catch (IllegalArgumentException illegalArgumentException) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(illegalArgumentException);
-			}
-
-			System.out.println(
-				"No verify process exists for " + bundleSymbolicName);
-
-			return;
-		}
-
-		String message =
-			"Verify process " + ClassUtil.getClassName(verifyProcess);
-
-		Release release = _fetchRelease(verifyProcess);
-
-		if ((release == null) ||
-			(!release.isVerified() &&
-			 (release.getState() == ReleaseConstants.STATE_GOOD))) {
-
-			System.out.println(message + " was not executed");
-		}
-		else {
-			if (release.isVerified()) {
-				System.out.println(message + " succeeded");
-			}
-			else if (release.getState() ==
-						ReleaseConstants.STATE_VERIFY_FAILURE) {
-
-				System.out.println(message + " failed");
-			}
-		}
+		System.out.println(_getStatusMessage(bundleSymbolicName));
 	}
 
 	@Descriptor("List latest execution result for all verify processes")
@@ -114,6 +77,17 @@ public class VerifyProcessTrackerOSGiCommands {
 			check(bundleSymbolicName);
 		}
 	}
+
+	public String checkAllGetMessage() {
+		StringBundler sb = new StringBundler(1);
+
+		for (String bundleSymbolicName : _serviceTrackerMap.keySet()) {
+			sb.append(_getStatusMessage(bundleSymbolicName));
+		}
+
+		return sb.toString();
+	}
+
 
 	@Descriptor("Execute a module's verify process by symbolic name")
 	public void execute(String bundleSymbolicName) {
@@ -346,6 +320,49 @@ public class VerifyProcessTrackerOSGiCommands {
 		Bundle bundle = FrameworkUtil.getBundle(verifyProcess.getClass());
 
 		return _releaseLocalService.fetchRelease(bundle.getSymbolicName());
+	}
+
+	private String _getStatusMessage(String bundleSymbolicName) {
+		VerifyProcess verifyProcess;
+
+		StringBundler sb = new StringBundler(1);
+
+		try {
+			verifyProcess = _getVerifyProcess(
+				_serviceTrackerMap, bundleSymbolicName);
+		}
+		catch (IllegalArgumentException illegalArgumentException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(illegalArgumentException);
+			}
+
+			sb.append(
+				"No verify process exists for " + bundleSymbolicName);
+
+			return sb.toString();
+		}
+
+		sb.append("Verify process " + ClassUtil.getClassName(verifyProcess));
+
+		Release release = _fetchRelease(verifyProcess);
+
+		if ((release == null) ||
+			(!release.isVerified() &&
+			 (release.getState() == ReleaseConstants.STATE_GOOD))) {
+
+			sb.append(" was not executed");
+		}
+		else {
+			if (release.isVerified()) {
+				sb.append(" succeeded");
+			}
+			else if (release.getState() ==
+					 ReleaseConstants.STATE_VERIFY_FAILURE) {
+
+				sb.append(" failed");
+			}
+		}
+		return sb.toString();
 	}
 
 	private VerifyProcess _getVerifyProcess(
