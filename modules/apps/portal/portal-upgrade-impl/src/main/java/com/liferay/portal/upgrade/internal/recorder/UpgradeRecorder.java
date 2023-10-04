@@ -14,6 +14,7 @@ import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.version.Version;
 import com.liferay.portal.tools.DBUpgrader;
+import com.liferay.portal.upgrade.internal.executor.UpgradeExecutor;
 import com.liferay.portal.util.PropsValues;
 
 import java.sql.Connection;
@@ -22,6 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,9 +87,15 @@ public class UpgradeRecorder {
 	}
 
 	public void recordErrorMessage(String loggerName, String message) {
-		Map<String, Integer> messages = _errorMessages.computeIfAbsent(
-			loggerName, key -> new ConcurrentHashMap<>());
-
+		Map<String, Integer> messages = new HashMap<>();
+		if(loggerName.equals(UpgradeExecutor.class.getName())) {
+			messages = _errorMessages.computeIfAbsent(
+				loggerName, key -> new ConcurrentHashMap<>());
+		}
+		else{
+			messages = _otherErrorMessages.computeIfAbsent(
+				loggerName, key -> new ConcurrentHashMap<>());
+		}
 		int occurrences = messages.computeIfAbsent(message, key -> 0);
 
 		occurrences++;
@@ -127,7 +135,7 @@ public class UpgradeRecorder {
 	}
 
 	public void stop() {
-		_filter(_errorMessages);
+		_filter(_otherErrorMessages);
 		_filter(_warningMessages);
 
 		_result = _calculateResult();
@@ -309,6 +317,8 @@ public class UpgradeRecorder {
 		UpgradeRecorder.class);
 
 	private static final Map<String, Map<String, Integer>> _errorMessages =
+		new ConcurrentHashMap<>();
+	private static final Map<String, Map<String, Integer>>  _otherErrorMessages =
 		new ConcurrentHashMap<>();
 	private static String _result;
 	private static final Map<String, SchemaVersions> _schemaVersionsMap =
