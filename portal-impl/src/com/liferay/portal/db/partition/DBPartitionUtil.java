@@ -90,9 +90,7 @@ public class DBPartitionUtil {
 						continue;
 					}
 
-					if (dbInspector.isControlTable(
-							_getCompanyIds(), tableName)) {
-
+					if (dbInspector.isControlTable(tableName)) {
 						statement.executeUpdate(
 							_getCreateViewSQL(companyId, tableName));
 					}
@@ -332,8 +330,7 @@ public class DBPartitionUtil {
 				while (resultSet.next()) {
 					String tableName = resultSet.getString("TABLE_NAME");
 
-					if (dbInspector.isControlTable(
-							_getCompanyIds(), tableName) &&
+					if (dbInspector.isControlTable(tableName) &&
 						dbInspector.hasColumn(tableName, "companyId")) {
 
 						statement.executeUpdate(
@@ -376,9 +373,7 @@ public class DBPartitionUtil {
 				while (resultSet.next()) {
 					String tableName = resultSet.getString("TABLE_NAME");
 
-					if (dbInspector.isControlTable(
-							_getCompanyIds(), tableName)) {
-
+					if (dbInspector.isControlTable(tableName)) {
 						controlTableNames.add(tableName);
 
 						_extractTable(
@@ -781,7 +776,7 @@ public class DBPartitionUtil {
 		try {
 			DBInspector dbInspector = new DBInspector(connection);
 
-			if (dbInspector.isControlTable(_getCompanyIds(), tableName) &&
+			if (dbInspector.isControlTable(tableName) &&
 				!(CompanyThreadLocal.getCompanyId() == _defaultCompanyId)) {
 
 				return true;
@@ -858,9 +853,7 @@ public class DBPartitionUtil {
 					DBInspector dbInspector = new DBInspector(connection);
 					String tableName = query[2];
 
-					if (!dbInspector.isControlTable(
-							_getCompanyIds(), tableName)) {
-
+					if (!dbInspector.isControlTable(tableName)) {
 						return returnValue;
 					}
 
