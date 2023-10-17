@@ -216,10 +216,6 @@ public class UpgradeRecorder {
 
 			SchemaVersions schemaVersions = schemaVersionsEntry.getValue();
 
-			if (schemaVersions._getInitial() == null) {
-				continue;
-			}
-
 			Version initialVersion = Version.parseVersion(
 				schemaVersions._getInitial());
 			Version finalVersion = Version.parseVersion(
@@ -283,7 +279,7 @@ public class UpgradeRecorder {
 					servletContextName);
 
 				if (moduleSchemaVersions == null) {
-					moduleSchemaVersions = new SchemaVersions(null);
+					moduleSchemaVersions = new SchemaVersions();
 
 					_schemaVersionsMap.put(
 						servletContextName, moduleSchemaVersions);
@@ -336,10 +332,6 @@ public class UpgradeRecorder {
 
 	private class SchemaVersions {
 
-		public SchemaVersions(String initial) {
-			_initial = initial;
-		}
-
 		private String _getFinal() {
 			return _final;
 		}
@@ -354,8 +346,6 @@ public class UpgradeRecorder {
 
 		private void _setInitial(String initial) {
 			if (initial == null) {
-				_initial = "0.0.0";
-
 				return;
 			}
 
@@ -363,7 +353,7 @@ public class UpgradeRecorder {
 		}
 
 		private String _final;
-		private String _initial;
+		private String _initial = "0.0.0";
 
 	}
 
