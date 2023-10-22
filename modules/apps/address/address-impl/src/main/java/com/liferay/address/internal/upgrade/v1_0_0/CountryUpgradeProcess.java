@@ -232,6 +232,10 @@ public class CountryUpgradeProcess extends UpgradeProcess {
 			return;
 		}
 
+		if (_countriesJSONArray == null) {
+			_preloadCountriesAndRegions();
+		}
+
 		_companyAvailableLocales = LanguageUtil.getCompanyAvailableLocales(
 			company.getCompanyId());
 
@@ -243,9 +247,6 @@ public class CountryUpgradeProcess extends UpgradeProcess {
 			_log.debug(
 				"Initializing countries for company " + company.getCompanyId());
 		}
-
-		JSONArray countriesJSONArray = _getJSONArray(
-			"com/liferay/address/dependencies/countries.json");
 
 		try (PreparedStatement countryPreparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
@@ -290,9 +291,9 @@ public class CountryUpgradeProcess extends UpgradeProcess {
 			_regionLocalizationPreparedStatement =
 				regionLocalizationPreparedStatement;
 
-			for (int i = 0; i < countriesJSONArray.length(); i++) {
-				JSONObject countryJSONObject = countriesJSONArray.getJSONObject(
-					i);
+			for (int i = 0; i < _countriesJSONArray.length(); i++) {
+				JSONObject countryJSONObject =
+					_countriesJSONArray.getJSONObject(i);
 
 				_addCountry(company, countryJSONObject);
 			}
@@ -307,21 +308,39 @@ public class CountryUpgradeProcess extends UpgradeProcess {
 		}
 	}
 
+	private void _preloadCountriesAndRegions() throws Exception {
+		_countriesJSONArray = _getJSONArray(
+			"com/liferay/address/dependencies/countries.json");
+
+		for (int i = 0; i < _countriesJSONArray.length(); i++) {
+			JSONObject countryJSONObject = _countriesJSONArray.getJSONObject(i);
+
+			String a2 = countryJSONObject.getString("a2");
+
+			String path =
+				"com/liferay/address/dependencies/regions/" + a2 + ".json";
+
+			if (_classLoader.getResource(path) == null) {
+				_regionsJSONArrays.put(a2, null);
+			}
+			else {
+				if (_log.isDebugEnabled()) {
+					_log.debug("Regions found for country " + a2);
+				}
+
+				_regionsJSONArrays.put(a2, _getJSONArray(path));
+			}
+		}
+	}
+
 	private void _processCountryRegions(
 			Company company, String a2, long countryId)
 		throws Exception {
 
-		String path =
-			"com/liferay/address/dependencies/regions/" + a2 + ".json";
+		JSONArray regionsJSONArray = _regionsJSONArrays.get(a2);
 
-		if (_classLoader.getResource(path) == null) {
+		if (regionsJSONArray == null) {
 			return;
-		}
-
-		JSONArray regionsJSONArray = _getJSONArray(path);
-
-		if (_log.isDebugEnabled()) {
-			_log.debug("Regions found for country " + a2);
 		}
 
 		for (int i = 0; i < regionsJSONArray.length(); i++) {
@@ -350,10 +369,12 @@ public class CountryUpgradeProcess extends UpgradeProcess {
 	private Date _companyDate;
 	private User _companyGuestUser;
 	private final CompanyLocalService _companyLocalService;
+	private JSONArray _countriesJSONArray;
 	private PreparedStatement _countryLocalizationPreparedStatement;
 	private PreparedStatement _countryPreparedStatement;
 	private final Map<Locale, String> _localesLanguageIds = new HashMap<>();
 	private PreparedStatement _regionLocalizationPreparedStatement;
 	private PreparedStatement _regionPreparedStatement;
+	private final Map<String, JSONArray> _regionsJSONArrays = new HashMap<>();
 
 }
