@@ -6,8 +6,10 @@
 package com.liferay.portal.scheduler.quartz.internal;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -23,6 +25,7 @@ import com.liferay.portal.kernel.scheduler.SchedulerException;
 import com.liferay.portal.kernel.scheduler.StorageType;
 import com.liferay.portal.kernel.scheduler.TriggerState;
 import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalRunMode;
 import com.liferay.portal.kernel.util.Props;
@@ -55,6 +58,7 @@ import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerContext;
 import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.TriggerUtils;
 import org.quartz.impl.StdSchedulerFactory;
@@ -108,13 +112,12 @@ public class QuartzSchedulerEngine implements SchedulerEngine {
 		try {
 			Scheduler scheduler = _getScheduler(storageType);
 
-			jobName = _fixMaxLength(jobName, _jobNameMaxLength, storageType);
+			jobName = _fixJobName(jobName, storageType);
+
 			groupName = _fixMaxLength(
 				groupName, _groupNameMaxLength, storageType);
 
-			JobKey jobKey = new JobKey(jobName, groupName);
-
-			scheduler.deleteJob(jobKey);
+			scheduler.deleteJob(new JobKey(jobName, groupName));
 		}
 		catch (Exception exception) {
 			throw new SchedulerException(
@@ -145,13 +148,12 @@ public class QuartzSchedulerEngine implements SchedulerEngine {
 		try {
 			Scheduler scheduler = _getScheduler(storageType);
 
-			jobName = _fixMaxLength(jobName, _jobNameMaxLength, storageType);
+			jobName = _fixJobName(jobName, storageType);
+
 			groupName = _fixMaxLength(
 				groupName, _groupNameMaxLength, storageType);
 
-			JobKey jobKey = new JobKey(jobName, groupName);
-
-			return getScheduledJob(scheduler, jobKey);
+			return getScheduledJob(scheduler, new JobKey(jobName, groupName));
 		}
 		catch (Exception exception) {
 			throw new SchedulerException(
@@ -236,7 +238,8 @@ public class QuartzSchedulerEngine implements SchedulerEngine {
 		try {
 			Scheduler scheduler = _getScheduler(storageType);
 
-			jobName = _fixMaxLength(jobName, _jobNameMaxLength, storageType);
+			jobName = _fixJobName(jobName, storageType);
+
 			groupName = _fixMaxLength(
 				groupName, _groupNameMaxLength, storageType);
 
@@ -263,7 +266,8 @@ public class QuartzSchedulerEngine implements SchedulerEngine {
 		try {
 			Scheduler scheduler = _getScheduler(storageType);
 
-			jobName = _fixMaxLength(jobName, _jobNameMaxLength, storageType);
+			jobName = _fixJobName(jobName, storageType);
+
 			groupName = _fixMaxLength(
 				groupName, _groupNameMaxLength, storageType);
 
@@ -316,6 +320,29 @@ public class QuartzSchedulerEngine implements SchedulerEngine {
 
 			if (quartzTrigger == null) {
 				return;
+			}
+
+			if (DBPartition.isPartitionEnabled() &&
+				(storageType == StorageType.PERSISTED)) {
+
+				long companyId = CompanyThreadLocal.getCompanyId();
+
+				if (message.contains("companyId")) {
+					companyId = message.getLong("companyId");
+				}
+
+				JobKey jobKey = quartzTrigger.getJobKey();
+
+				String jobName = _fixJobName(
+					companyId, jobKey.getName(), storageType);
+
+				TriggerBuilder<? extends Trigger> quartzTriggerBuilder =
+					quartzTrigger.getTriggerBuilder();
+
+				quartzTriggerBuilder.forJob(jobName, jobKey.getGroup());
+				quartzTriggerBuilder.withIdentity(jobName, jobKey.getGroup());
+
+				quartzTrigger = quartzTriggerBuilder.build();
 			}
 
 			Scheduler scheduler = _getScheduler(storageType);
@@ -618,6 +645,29 @@ public class QuartzSchedulerEngine implements SchedulerEngine {
 					objectAlreadyExistsException);
 			}
 		}
+	}
+
+	private String _fixJobName(
+		long companyId, String jobName, StorageType storageType) {
+
+		if ((storageType != StorageType.PERSISTED) ||
+			jobName.matches(".+@\\d+$")) {
+
+			return jobName;
+		}
+
+		jobName = _fixMaxLength(jobName, _jobNameMaxLength, storageType);
+
+		if (DBPartition.isPartitionEnabled()) {
+			jobName = jobName.concat(StringPool.AT + companyId);
+		}
+
+		return jobName;
+	}
+
+	private String _fixJobName(String jobName, StorageType storageType) {
+		return _fixJobName(
+			CompanyThreadLocal.getCompanyId(), jobName, storageType);
 	}
 
 	private String _fixMaxLength(
