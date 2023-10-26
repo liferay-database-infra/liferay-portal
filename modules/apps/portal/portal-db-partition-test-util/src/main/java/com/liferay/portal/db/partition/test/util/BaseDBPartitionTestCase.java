@@ -23,6 +23,8 @@ import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.UserConstants;
+import com.liferay.portal.kernel.module.util.BundleUtil;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
@@ -48,6 +50,10 @@ import javax.sql.DataSource;
 import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Rule;
+
+import org.osgi.framework.Bundle;
+import org.osgi.service.component.runtime.ServiceComponentRuntime;
+import org.osgi.util.promise.Promise;
 
 import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
 
@@ -181,6 +187,11 @@ public abstract class BaseDBPartitionTestCase {
 			"database.partition.enabled");
 
 		PropsUtil.set("database.partition.enabled", "true");
+
+		_refreshComponent(
+			"com.liferay.portal.db.partition",
+			"com.liferay.portal.db.partition.internal.component.enabler." +
+				"DBPartitionComponentEnabler");
 
 		ReflectionTestUtil.setFieldValue(
 			DBPartitionUtil.class, "_DATABASE_PARTITION_SCHEMA_NAME_PREFIX",
@@ -397,6 +408,26 @@ public abstract class BaseDBPartitionTestCase {
 	@Inject
 	protected static Portal portal;
 
+	private static void _refreshComponent(
+			String bundleSymbolicName, String component)
+		throws Exception {
+
+		Bundle bundle = BundleUtil.getBundle(
+			SystemBundleUtil.getBundleContext(), bundleSymbolicName);
+
+		Promise<?> promise = _serviceComponentRuntime.disableComponent(
+			_serviceComponentRuntime.getComponentDescriptionDTO(
+				bundle, component));
+
+		promise.getValue();
+
+		promise = _serviceComponentRuntime.enableComponent(
+			_serviceComponentRuntime.getComponentDescriptionDTO(
+				bundle, component));
+
+		promise.getValue();
+	}
+
 	private static DataSource _wrapDataSource(DataSource dataSource) {
 		return new DataSourceWrapper(dataSource) {
 
@@ -447,5 +478,8 @@ public abstract class BaseDBPartitionTestCase {
 
 	@Inject
 	private static Props _props;
+
+	@Inject
+	private static ServiceComponentRuntime _serviceComponentRuntime;
 
 }
