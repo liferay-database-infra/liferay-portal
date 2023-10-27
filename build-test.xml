@@ -2904,6 +2904,12 @@ jdbc.default.url=${database.url.upgrade}
 jdbc.default.username=${database.username}
 jdbc.default.password=${database.password}</echo>
 
+			<replace
+				file="${liferay.home}/tools/portal-tools-db-upgrade-client/portal-upgrade-database.properties"
+				token="${database.mysql.driver}"
+				value="${database.mariadb.driver}"
+				/>
+
 			<get-testcase-property property.name="upgrade.reports.enabled" />
 
 			<if>
@@ -11707,6 +11713,8 @@ ${update.properties}</echo>
 			</else>
 		</if>
 
+
+
 		<get-database-property property.name="database.driver" />
 		<get-database-property property.name="database.password" />
 		<get-database-property property.name="database.url" />
@@ -11714,6 +11722,8 @@ ${update.properties}</echo>
 		<get-database-property property.name="database.version" />
 
 		<echo append="true" file="portal-impl/src/portal-ext.properties">
+
+
 
 liferay.home=${liferay.home}
 
@@ -14205,6 +14215,8 @@ ANT_OPTS=${env.ANT_OPTS}</echo>
 		<antcall inheritAll="false" target="prepare-portal-ext-properties">
 			<param name="app.server.tomcat.version" value="${app.server.tomcat.version}" />
 		</antcall>
+
+
 		<antcall target="prepare-portlet-ext-properties" />
 		<antcall target="prepare-system-ext-properties" />
 
@@ -15646,6 +15658,12 @@ mail.send.blacklist=</echo>
 				<antcall target="prepare-portal-ext-properties" />
 
 				<antcall target="prepare-portlet-ext-properties" />
+
+				<replace
+				file="portal-impl/src/portal-ext.properties"
+				token="${database.mysql.driver}"
+				value="${database.mariadb.driver}"
+				/>
 
 				<antcall target="prepare-system-ext-properties" />
 			</else>

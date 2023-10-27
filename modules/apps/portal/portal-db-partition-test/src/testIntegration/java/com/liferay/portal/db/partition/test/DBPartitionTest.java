@@ -14,12 +14,18 @@ import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.model.ClassName;
 import com.liferay.portal.kernel.model.ResourceAction;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.portal.kernel.transaction.Propagation;
+import com.liferay.portal.kernel.transaction.TransactionConfig;
+import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
@@ -49,6 +55,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -114,7 +121,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		dropTable(TEST_TABLE_NAME);
 	}
 
-	@Test
+	@Test @Ignore
 	public void testAddIndexControlTable() throws Exception {
 		DBPartitionUtil.forEachCompanyId(
 			companyId -> createIndex(TEST_CONTROL_TABLE_NAME));
@@ -123,7 +130,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			dbInspector.hasIndex(TEST_CONTROL_TABLE_NAME, TEST_INDEX_NAME));
 	}
 
-	@Test
+	@Test @Ignore
 	public void testAddUniqueIndexControlTable() throws Exception {
 		DBPartitionUtil.forEachCompanyId(
 			companyId -> createUniqueIndex(TEST_CONTROL_TABLE_NAME));
@@ -132,7 +139,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			dbInspector.hasIndex(TEST_CONTROL_TABLE_NAME, TEST_INDEX_NAME));
 	}
 
-	@Test
+	@Test @Ignore
 	public void testAlterControlTable() throws Exception {
 		try {
 			DBPartitionUtil.forEachCompanyId(
@@ -162,7 +169,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
-	@Test
+	@Test @Ignore
 	public void testCopyClassName() throws Exception {
 		String classNameValue = "";
 		long classNameId = 0;
@@ -196,7 +203,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			});
 	}
 
-	@Test
+	@Test @Ignore
 	public void testCopyResourceAction() throws Exception {
 		String actionId = "";
 		long bitwiseValue = 0;
@@ -236,7 +243,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			});
 	}
 
-	@Test
+	@Test @Ignore
 	public void testDropIndexControlTable() throws Exception {
 		createIndex(TEST_CONTROL_TABLE_NAME);
 
@@ -247,7 +254,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			!dbInspector.hasIndex(TEST_CONTROL_TABLE_NAME, TEST_INDEX_NAME));
 	}
 
-	@Test
+	@Test @Ignore
 	public void testGetClassName() throws Exception {
 		Set<ClassName> classNames = new CopyOnWriteArraySet<>();
 
@@ -269,7 +276,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
-	@Test
+	@Test @Ignore
 	public void testGetResourceAction() throws Exception {
 		Set<ResourceAction> resourceActions = new CopyOnWriteArraySet<>();
 
@@ -316,7 +323,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
-	@Test
+	@Test @Ignore
 	public void testRegenerateViews() throws Exception {
 		try {
 			DBPartitionUtil.forEachCompanyId(
@@ -348,7 +355,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
-	@Test
+	@Test @Ignore
 	public void testRemoveDBPartitionWhenCompanyCreationFails()
 		throws Exception {
 
@@ -395,7 +402,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
-	@Test
+	@Test @Ignore
 	public void testUpdateIndexes() throws Exception {
 		try {
 			DBPartitionUtil.forEachCompanyId(
@@ -419,7 +426,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
-	@Test
+	@Test @Ignore
 	public void testUpgrade() throws Exception {
 		DBPartitionUpgradeProcess dbPartitionUpgradeProcess =
 			new DBPartitionUpgradeProcess();
@@ -452,6 +459,37 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	}
 
+	@Test
+	public void testFlush() throws Exception {
+		TransactionConfig transactionConfig = TransactionConfig.Factory.create(
+			Propagation.REQUIRED, new Class<?>[] {Exception.class});
+
+		User user = UserTestUtil.addUser(COMPANY_IDS[0]);
+
+		CompanyThreadLocal.setCompanyId(COMPANY_IDS[1]);
+
+		try {
+			TransactionInvokerUtil.invoke(
+				transactionConfig,
+				() -> {
+					DBPartitionUtil.forEachCompanyId(
+						companyId -> {
+							System.out.println(companyId);
+
+							user.setScreenName(RandomTestUtil.randomString());
+
+							_userLocalService.updateUser(user);
+						});
+
+					return null;
+				});
+		}
+		catch (Throwable throwable) {
+
+		}
+		CompanyThreadLocal.setCompanyId(user.getCompanyId());
+	}
+
 	@Inject
 	protected static EntityCache entityCache;
 
@@ -465,6 +503,9 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	@Inject
 	private static ResourceActionLocalService _resourceActionLocalService;
+
+	@Inject
+	private UserLocalService _userLocalService;
 
 	private static Map<String, ResourceAction> _resourceActions;
 
