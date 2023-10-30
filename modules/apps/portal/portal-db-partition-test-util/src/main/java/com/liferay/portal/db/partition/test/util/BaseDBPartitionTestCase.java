@@ -224,7 +224,7 @@ public abstract class BaseDBPartitionTestCase {
 			InfrastructureUtil.class, "_dataSource",
 			_lazyConnectionDataSourceProxy);
 
-		_refreshComponent(
+		_restartComponent(
 			"com.liferay.portal.db.partition",
 			"com.liferay.portal.db.partition.internal.component.enabler." +
 				"DBPartitionComponentEnabler");
@@ -435,7 +435,7 @@ public abstract class BaseDBPartitionTestCase {
 		}
 	}
 
-	private static void _refreshComponent(
+	private static void _restartComponent(
 			String bundleSymbolicName, String component)
 		throws Exception {
 
