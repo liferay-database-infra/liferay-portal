@@ -1243,7 +1243,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 					return null;
 				});
 
-			DBPartitionUtil.removeDBPartition(companyId);
+			DBPartitionUtil.migrateDBPartition(companyId);
 
 			return company;
 		}
