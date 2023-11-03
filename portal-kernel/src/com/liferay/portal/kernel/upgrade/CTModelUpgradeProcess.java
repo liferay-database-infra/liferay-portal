@@ -107,6 +107,8 @@ public class CTModelUpgradeProcess extends UpgradeProcess {
 		}
 
 		sb.append(", ctCollectionId)");
+		
+		System.out.println(sb.toString());
 
 		runSQL(sb.toString());
 	}
