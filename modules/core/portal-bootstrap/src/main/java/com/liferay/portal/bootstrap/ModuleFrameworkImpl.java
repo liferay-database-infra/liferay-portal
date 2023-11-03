@@ -92,8 +92,6 @@ import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import javax.sql.DataSource;
-
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
@@ -976,7 +974,6 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 		Constructor<?> constructor =
 			configurationFileInstallerClass.getDeclaredConstructor(
 				classLoader.loadClass("org.osgi.service.cm.ConfigurationAdmin"),
-				classLoader.loadClass(DataSource.class.getName()),
 				String.class);
 
 		constructor.setAccessible(true);
@@ -992,11 +989,6 @@ public class ModuleFrameworkImpl implements ModuleFramework {
 			bundleContext.getService(
 				bundleContext.getServiceReference(
 					"org.osgi.service.cm.ConfigurationAdmin")),
-			bundleContext.getService(
-				bundleContext.getServiceReferences(
-					DataSource.class, "(bean.id=liferayDataSource)"
-				).iterator(
-				).next()),
 			ModuleFrameworkPropsValues.
 				MODULE_FRAMEWORK_FILE_INSTALL_CONFIG_ENCODING);
 
