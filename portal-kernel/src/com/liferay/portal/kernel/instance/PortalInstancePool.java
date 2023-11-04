@@ -23,6 +23,17 @@ public class PortalInstancePool {
 		_portalInstances.put(company.getCompanyId(), company.getWebId());
 	}
 
+	public static long getCompanyId(String webId) {
+		for (Map.Entry<Long, String> entry : _portalInstances.entrySet()) {
+			if (Objects.equals(entry.getValue(), webId)) {
+				return entry.getKey();
+			}
+		}
+
+		throw new IllegalArgumentException(
+			"Unable to get company ID with web ID" + webId);
+	}
+
 	public static long[] getCompanyIds() {
 		return ArrayUtil.toLongArray(_portalInstances.keySet());
 	}
