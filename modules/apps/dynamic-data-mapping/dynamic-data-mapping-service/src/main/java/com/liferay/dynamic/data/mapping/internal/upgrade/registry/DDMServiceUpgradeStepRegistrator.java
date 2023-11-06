@@ -316,8 +316,8 @@ public class DDMServiceUpgradeStepRegistrator
 		registry.register(
 			"3.2.9", "3.3.0",
 			new CTModelUpgradeProcess(
-				"DDMStructure", "DDMStructureVersion", "DDMTemplate",
-				"DDMTemplateVersion"));
+				"DDMStructure", "DDMStructureVersion",
+				"DDMTemplateVersion"), new CTModelUpgradeProcess("DDMTemplate"));
 
 		registry.register(
 			"3.3.0", "3.4.0",
