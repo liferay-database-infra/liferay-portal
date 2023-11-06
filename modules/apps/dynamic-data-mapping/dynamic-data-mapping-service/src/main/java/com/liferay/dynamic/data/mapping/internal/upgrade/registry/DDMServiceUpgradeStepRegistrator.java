@@ -324,7 +324,7 @@ public class DDMServiceUpgradeStepRegistrator
 			new CTModelUpgradeProcess("DDMStructureLink", "DDMTemplateLink"));
 
 		registry.register(
-			"3.4.0", "3.5.0", DDMFormInstanceReportTable.create());
+			"3.4.0", "3.5.0", DDMFormInstanceReportTable.create(), new CTModelUpgradeProcess("DDMTemplate"));
 
 		registry.register(
 			"3.5.0", "3.6.0",
