@@ -5,6 +5,8 @@
 
 package com.liferay.portal.kernel.upgrade;
 
+import java.util.Map;
+
 /**
  * @author Samuel Ziemer
  * @author Alberto Chaparro
@@ -15,6 +17,6 @@ public interface ReleaseManager {
 
 	public String getStatusMessage(boolean showUpgradeSteps);
 
-	public boolean isUpgraded() throws Exception;
+	public Map<String, Boolean> isUpgraded() throws Exception;
 
 }

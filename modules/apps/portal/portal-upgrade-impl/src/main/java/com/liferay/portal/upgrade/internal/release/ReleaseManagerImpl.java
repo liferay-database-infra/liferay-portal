@@ -30,7 +30,9 @@ import com.liferay.portal.upgrade.release.SchemaCreator;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 
@@ -118,16 +120,22 @@ public class ReleaseManagerImpl implements ReleaseManager {
 	}
 
 	@Override
-	public boolean isUpgraded() throws Exception {
-		try (Connection connection = DataAccess.getConnection()) {
-			if (!PortalUpgradeProcess.isInLatestSchemaVersion(connection) ||
-				_isPendingModuleUpgrades()) {
+	public Map<String, Boolean> isUpgraded() throws Exception {
+		Map<String, Boolean> statuses = new LinkedHashMap<>();
 
-				return false;
-			}
+		try (Connection connection = DataAccess.getConnection()) {
+			statuses.put(
+				"Core Upgrade",
+				PortalUpgradeProcess.isInLatestSchemaVersion(connection));
+
+			statuses.put("Modules Upgrade", !_isPendingModuleUpgrades());
+
+			statuses.put(
+				"Unsatisfied Upgrade Components",
+				_hasUnsatisfiedUpgradeComponents());
 		}
 
-		return _hasUnsatisfiedUpgradeComponents();
+		return statuses;
 	}
 
 	@Activate
