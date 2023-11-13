@@ -6,7 +6,7 @@ definition {
 	property minimum.slave.ram = "24";
 	property portal.release = "true";
 	property portal.smoke.upgrades = "false";
-	property portal.upstream = "true";
+	property portal.upstream = "lucas";
 	property test.liferay.virtual.instance = "false";
 	property test.run.type = "single";
 	property testcase.url = "file:///opt/dev/projects/github/liferay-portal/";
