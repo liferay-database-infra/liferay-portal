@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -130,7 +131,10 @@ public class UpgradeRecorder {
 		_filter(_errorMessages);
 		_filter(_warningMessages);
 
-		_result = _calculateResult();
+		_results = _calculateResult();
+
+		_result = _results.get("Upgrade Status");
+
 		_type = _calculateType();
 
 		if (PropsValues.UPGRADE_LOG_CONTEXT_ENABLED) {
@@ -140,7 +144,7 @@ public class UpgradeRecorder {
 
 		if (_log.isInfoEnabled()) {
 			if (_type.equals("no upgrade")) {
-				if (_result.equals("success")) {
+				if (_result.equals("Success")) {
 					_log.info("No pending upgrades to run");
 				}
 				else {
@@ -176,17 +180,15 @@ public class UpgradeRecorder {
 		_serviceTracker.close();
 	}
 
-	private String _calculateResult() {
-		if (!_errorMessages.isEmpty()) {
-			return "failure";
-		}
+	private Map<String, String> _calculateResult() {
+		Map<String, Boolean> statuses = null;
+
+		Map<String, String> results = new LinkedHashMap<>();
 
 		try {
 			ReleaseManager releaseManager = _serviceTracker.getService();
 
-			if (!releaseManager.isUpgraded()) {
-				return "unresolved";
-			}
+			statuses = releaseManager.isUpgraded();
 		}
 		catch (Exception exception) {
 			_log.error(
@@ -194,14 +196,37 @@ public class UpgradeRecorder {
 					"Unable to check the upgrade result due to ",
 					exception.getMessage(), ". Please check manually."));
 
-			return "failure";
+			results.put("Upgrade Status", "Failure");
+
+			return results;
 		}
 
-		if (!_warningMessages.isEmpty()) {
-			return "warning";
+		for (Map.Entry<String, Boolean> status : statuses.entrySet()) {
+			if (status.getValue()) {
+				results.put(status.getKey(), "Pass");
+			}
+			else {
+				results.put(status.getKey(), "Fail");
+			}
 		}
 
-		return "success";
+		if (statuses.containsValue(false)) {
+			if (!_errorMessages.isEmpty()) {
+				results.put("Upgrade Status", "Failure");
+			}
+
+			results.put("Upgrade Status", "Unresolved");
+		}
+		else {
+			if (!_errorMessages.isEmpty() || !_warningMessages.isEmpty()) {
+				results.put("Upgrade Status", "Warning");
+			}
+			else {
+				results.put("Upgrade Status", "Success");
+			}
+		}
+
+		return results;
 	}
 
 	private String _calculateType() {
@@ -311,6 +336,7 @@ public class UpgradeRecorder {
 	private static final Map<String, Map<String, Integer>> _errorMessages =
 		new ConcurrentHashMap<>();
 	private static String _result;
+	private static Map<String, String> _results;
 	private static final Map<String, SchemaVersions> _schemaVersionsMap =
 		new ConcurrentHashMap<>();
 	private static String _type;
