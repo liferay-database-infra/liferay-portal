@@ -52,7 +52,13 @@ public class ReleaseManagerTest {
 
 	@Test
 	public void testSuccessfulUpgrade() throws Exception {
-		Assert.assertTrue(_releaseManager.isUpgraded());
+		boolean upgraded = !_releaseManager.isUpgraded(
+		).containsValue(
+			false
+		);
+
+		Assert.assertTrue(upgraded);
+
 		Assert.assertTrue(
 			Validator.isBlank(_releaseManager.getShortStatusMessage(false)));
 		Assert.assertTrue(
@@ -79,7 +85,13 @@ public class ReleaseManagerTest {
 
 			release = _releaseLocalService.updateRelease(release);
 
-			Assert.assertFalse(_releaseManager.isUpgraded());
+			boolean upgraded = !_releaseManager.isUpgraded(
+			).containsValue(
+				false
+			);
+
+			Assert.assertFalse(upgraded);
+
 			Assert.assertFalse(
 				Validator.isBlank(
 					_releaseManager.getShortStatusMessage(false)));
@@ -103,7 +115,13 @@ public class ReleaseManagerTest {
 				connection, new Version(0, 0, 0));
 
 			try {
-				Assert.assertFalse(_releaseManager.isUpgraded());
+				boolean upgraded = !_releaseManager.isUpgraded(
+				).containsValue(
+					false
+				);
+
+				Assert.assertFalse(upgraded);
+
 				Assert.assertFalse(
 					Validator.isBlank(
 						_releaseManager.getShortStatusMessage(false)));
