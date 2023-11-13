@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
@@ -42,7 +43,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -272,6 +275,14 @@ public class DBPartitionUtil {
 
 		try (Connection connection = dataSource.getConnection()) {
 			_defaultSchemaName = connection.getCatalog();
+
+			for (Map.Entry<Long, String> company :
+					_getCompanyIdsAndWebIdsFromSQL(
+						connection
+					).entrySet()) {
+
+				PortalInstancePool.add(company.getKey(), company.getValue());
+			}
 		}
 
 		return new DataSourceWrapper(dataSource) {
@@ -504,6 +515,26 @@ public class DBPartitionUtil {
 		}
 
 		return _companyIds;
+	}
+
+	private static Map<Long, String> _getCompanyIdsAndWebIdsFromSQL(
+			Connection connection)
+		throws SQLException {
+
+		Map<Long, String> companies = new HashMap<>();
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				StringBundler.concat(
+					"select companyId, webId from ", _defaultSchemaName,
+					".Company"));
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			while (resultSet.next()) {
+				companies.put(resultSet.getLong(1), resultSet.getString(2));
+			}
+		}
+
+		return companies;
 	}
 
 	private static Connection _getConnectionWrapper(Connection connection) {
