@@ -217,7 +217,7 @@ public class UpgradeReport {
 		).put(
 			"type", upgradeRecorder.getType()
 		).put(
-			"result", upgradeRecorder.getResult()
+			"result", upgradeRecorder.getResults()
 		).put(
 			"status",
 			() -> {

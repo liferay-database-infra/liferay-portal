@@ -73,6 +73,19 @@ public class UpgradeRecorder {
 		return _result;
 	}
 
+	public String getResults() {
+		StringBundler sb = new StringBundler();
+
+		for (Map.Entry<String, String> result : _results.entrySet()) {
+			sb.append("\n");
+			sb.append(result.getKey());
+			sb.append(" : ");
+			sb.append(result.getValue());
+		}
+
+		return sb.toString();
+	}
+
 	public String getType() {
 		return _type;
 	}
