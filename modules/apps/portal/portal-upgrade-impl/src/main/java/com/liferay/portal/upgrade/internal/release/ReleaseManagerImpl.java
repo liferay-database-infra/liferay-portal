@@ -388,8 +388,24 @@ public class ReleaseManagerImpl implements ReleaseManager {
 			Release release = _releaseLocalService.fetchRelease(
 				bundleSymbolicName);
 
+			if (release != null) {
+				String bundleSchemaVersion = release.getSchemaVersion();
+
+				if (bundleSchemaVersion.equals("0.0.0")) {
+					_releaseLocalService.deleteRelease(release);
+
+					release = null;
+				}
+				else {
+					return release;
+				}
+			}
+
 			if (release == null) {
 				try {
+					_releaseLocalService.addRelease(
+						bundleSymbolicName, "0.0.0");
+
 					schemaCreator.create();
 
 					release = _releaseLocalService.updateRelease(

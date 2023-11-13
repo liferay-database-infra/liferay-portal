@@ -305,6 +305,16 @@ public class UpgradeExecutor {
 			Release release = _releaseLocalService.fetchRelease(
 				bundleSymbolicName);
 
+			if (release != null) {
+				String bundleSchemaVersion = release.getSchemaVersion();
+
+				if (bundleSchemaVersion.equals("0.0.0")) {
+					_releaseLocalService.deleteRelease(release);
+
+					release = null;
+				}
+			}
+
 			if (release == null) {
 				for (UpgradeStep releaseUpgradeStep :
 						upgradeStepRegistry.getReleaseCreationUpgradeSteps()) {
