@@ -185,6 +185,20 @@ public class DBPartitionUtil {
 		return companyId;
 	}
 
+	public static boolean insertDBPartition(long companyId)
+		throws PortalException {
+
+		if (!DBPartition.isPartitionEnabled() ||
+			(companyId == _defaultCompanyId)) {
+
+			return false;
+		}
+
+		_insertDBPartition(companyId);
+
+		return true;
+	}
+
 	public static boolean removeDBPartition(long companyId)
 		throws PortalException {
 
@@ -675,6 +689,66 @@ public class DBPartitionUtil {
 				"Unable to get session character set encoding", exception);
 
 			return "utf8";
+		}
+	}
+
+	private static void _insertDBPartition(long companyId)
+		throws PortalException {
+
+		Connection connection = CurrentConnectionUtil.getConnection(
+			InfrastructureUtil.getDataSource());
+
+		try (Statement statement = connection.createStatement()) {
+			String whereClause = " where companyId = " + companyId;
+
+			_copyData(
+				"Company", _getSchemaName(companyId), _defaultSchemaName,
+				statement, whereClause);
+			_copyData(
+				"VirtualHost", _getSchemaName(companyId), _defaultSchemaName,
+				statement, whereClause);
+		}
+		catch (Exception exception) {
+			throw new PortalException(
+				StringBundler.concat(
+					"Unable to move exported standalone schema. Recover a ",
+					"backup of the database schema ", _getSchemaName(companyId),
+					"."),
+				exception);
+		}
+
+		DBInspector dbInspector = new DBInspector(connection);
+
+		try {
+			DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+			try (ResultSet resultSet = databaseMetaData.getTables(
+					_defaultSchemaName, dbInspector.getSchema(), null,
+					new String[] {"TABLE"});
+				Statement statement = connection.createStatement()) {
+
+				while (resultSet.next()) {
+					String tableName = resultSet.getString("TABLE_NAME");
+
+					if (dbInspector.isControlTable(
+							_getCompanyIds(), tableName)) {
+
+						statement.executeUpdate(
+							_getDropTableSQL(companyId, tableName));
+
+						statement.executeUpdate(
+							_getCreateViewSQL(companyId, tableName));
+					}
+				}
+			}
+		}
+		catch (Exception exception) {
+			throw new PortalException(
+				StringBundler.concat(
+					"Unable to move exported standalone schema. Recover a ",
+					"backup of the database schema ", _getSchemaName(companyId),
+					"."),
+				exception);
 		}
 	}
 
