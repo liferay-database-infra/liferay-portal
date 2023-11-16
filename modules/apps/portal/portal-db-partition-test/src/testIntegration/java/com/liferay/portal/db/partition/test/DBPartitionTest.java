@@ -9,6 +9,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
+import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
@@ -23,6 +24,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.model.DefaultModelHintsImpl;
 import com.liferay.portal.model.impl.ClassNameImpl;
 import com.liferay.portal.model.impl.ResourceActionImpl;
@@ -70,6 +72,11 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 		createControlTable(TEST_CONTROL_TABLE_NAME);
 
+		_controlTableNames = ReflectionTestUtil.getFieldValue(
+			DBInspector.class, "_controlTableNames");
+
+		_controlTableNames.add(StringUtil.toLowerCase(TEST_CONTROL_TABLE_NAME));
+
 		addDBPartitions();
 
 		_resourceActions = ReflectionTestUtil.getFieldValue(
@@ -90,6 +97,9 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		removeDBPartitions();
 
 		dropTable(TEST_CONTROL_TABLE_NAME);
+
+		_controlTableNames.remove(
+			StringUtil.toLowerCase(TEST_CONTROL_TABLE_NAME));
 
 		disableDBPartition();
 
@@ -195,6 +205,31 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 				Assert.assertEquals(
 					finalClassNameId, className.getClassNameId());
 				Assert.assertEquals(finalClassNameValue, className.getValue());
+			});
+	}
+
+	@Test
+	public void testCopyConfiguration() throws Exception {
+		DBPartitionUtil.forEachCompanyId(
+			companyId -> {
+				int rowCount = -1;
+
+				try (PreparedStatement preparedStatement =
+						connection.prepareStatement(
+							"select count(1) from Configuration_");
+					ResultSet resultSet = preparedStatement.executeQuery()) {
+
+					if (resultSet.next()) {
+						rowCount = resultSet.getInt(1);
+					}
+				}
+
+				if (PortalInstances.getDefaultCompanyId() == companyId) {
+					Assert.assertTrue(rowCount > 0);
+				}
+				else {
+					Assert.assertEquals(0, rowCount);
+				}
 			});
 	}
 
@@ -464,6 +499,8 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	private static final String _DB_PARTITION_SCHEMA_NAME_PREFIX =
 		"lpartitiontest_";
+
+	private static Set<String> _controlTableNames;
 
 	@Inject
 	private static ResourceActionLocalService _resourceActionLocalService;
