@@ -13,11 +13,11 @@ import com.liferay.portal.dao.init.DBInitUtil;
 import com.liferay.portal.dao.jdbc.util.ConnectionWrapper;
 import com.liferay.portal.dao.jdbc.util.DataSourceWrapper;
 import com.liferay.portal.db.partition.DBPartitionUtil;
+import com.liferay.portal.db.partition.sql.DBPartitionDB;
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
-import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnection;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
@@ -198,6 +198,9 @@ public abstract class BaseDBPartitionTestCase {
 
 			dbInspector = new DBInspector(connection);
 
+			_dbPartitionDB = ReflectionTestUtil.getFieldValue(
+				DBPartitionUtil.class, "_dbPartitionDB");
+
 			return;
 		}
 
@@ -217,6 +220,9 @@ public abstract class BaseDBPartitionTestCase {
 
 		DataSource dbPartitionDataSource = _wrapDataSource(
 			DBPartitionUtil.wrapDataSource(_currentDataSource));
+
+		_dbPartitionDB = ReflectionTestUtil.getFieldValue(
+			DBPartitionUtil.class, "_dbPartitionDB");
 
 		_lazyConnectionDataSourceProxy =
 			(LazyConnectionDataSourceProxy)PortalBeanLocatorUtil.locate(
@@ -444,6 +450,7 @@ public abstract class BaseDBPartitionTestCase {
 	protected static Connection connection;
 	protected static DB db;
 	protected static DBInspector dbInspector;
+	protected static DBPartitionDB dbPartitionDB;
 
 	@Inject
 	protected static Portal portal;
