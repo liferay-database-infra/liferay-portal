@@ -15,6 +15,6 @@ public interface ReleaseManager {
 
 	public String getStatusMessage(boolean showUpgradeSteps);
 
-	public boolean isUpgraded() throws Exception;
+	public String getStatus() throws Exception;
 
 }
