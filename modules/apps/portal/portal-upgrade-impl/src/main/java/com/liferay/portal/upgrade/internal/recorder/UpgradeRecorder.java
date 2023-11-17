@@ -177,16 +177,12 @@ public class UpgradeRecorder {
 	}
 
 	private String _calculateResult() {
-		if (!_errorMessages.isEmpty()) {
-			return "failure";
-		}
+		String result;
 
 		try {
 			ReleaseManager releaseManager = _serviceTracker.getService();
 
-			if (!releaseManager.isUpgraded()) {
-				return "unresolved";
-			}
+			result = releaseManager.getStatus();
 		}
 		catch (Exception exception) {
 			_log.error(
@@ -194,15 +190,12 @@ public class UpgradeRecorder {
 					"Unable to check the upgrade result due to ",
 					exception.getMessage(), ". Please check manually."));
 
-			return "failure";
+			return "Failure";
 		}
 
-		if (!_warningMessages.isEmpty()) {
-			return "warning";
-		}
-
-		return "success";
+		return result;
 	}
+
 
 	private String _calculateType() {
 		_processRelease(
