@@ -145,6 +145,9 @@ public class InitUtil {
 			Log4JUtil.configureLog4J(InitUtil.class.getClassLoader());
 		}
 
+		Log4JUtil.setLevel(
+			"com.zaxxer.hikari", "ALL", true);
+		
 		// Log sanitizer
 
 		SanitizerLogWrapper.init();
