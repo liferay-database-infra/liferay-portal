@@ -752,9 +752,7 @@ public class DBPartitionUtil {
 				while (resultSet.next()) {
 					String tableName = resultSet.getString("TABLE_NAME");
 
-					if (dbInspector.isControlTable(
-							_getCompanyIds(), tableName)) {
-
+					if (dbInspector.isControlTable(tableName)) {
 						if (dbInspector.hasColumn(tableName, "companyId")) {
 							_copyData(
 								tableName, _getSchemaName(companyId),
