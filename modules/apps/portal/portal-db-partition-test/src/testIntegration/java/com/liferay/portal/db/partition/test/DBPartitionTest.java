@@ -8,10 +8,7 @@ package com.liferay.portal.db.partition.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
-import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
-import com.liferay.portal.kernel.dao.orm.EntityCache;
-import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.ClassName;
@@ -24,12 +21,8 @@ import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.model.DefaultModelHintsImpl;
-import com.liferay.portal.model.impl.ClassNameImpl;
-import com.liferay.portal.model.impl.ResourceActionImpl;
 import com.liferay.portal.service.impl.ClassNameLocalServiceImpl;
-import com.liferay.portal.service.impl.ResourceActionLocalServiceImpl;
 import com.liferay.portal.test.rule.Inject;
 
 import java.sql.Connection;
@@ -39,7 +32,6 @@ import java.sql.ResultSet;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -63,28 +55,9 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 	public static void setUpClass() throws Exception {
 		enableDBPartition();
 
-		entityCache.removeCache(ClassNameImpl.class.getName());
-		entityCache.removeCache(ResourceActionImpl.class.getName());
-
-		finderCache.removeCache(ClassNameImpl.class.getName());
-		finderCache.removeCache(ResourceActionImpl.class.getName());
-
 		createControlTable(TEST_CONTROL_TABLE_NAME);
 
-		_controlTableNames = ReflectionTestUtil.getFieldValue(
-			DBInspector.class, "_controlTableNames");
-
-		_controlTableNames.add(StringUtil.toLowerCase(TEST_CONTROL_TABLE_NAME));
-
 		addDBPartitions();
-
-		_resourceActions = ReflectionTestUtil.getFieldValue(
-			ResourceActionLocalServiceImpl.class, "_resourceActions");
-
-		_resourceActions.clear();
-
-		DBPartitionUtil.forEachCompanyId(
-			companyId -> _resourceActionLocalService.checkResourceActions());
 
 		insertPartitionRequiredData();
 	}
@@ -95,25 +68,9 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 		removeDBPartitions();
 
-		dropTable(TEST_CONTROL_TABLE_NAME);
-
-		_controlTableNames.remove(
-			StringUtil.toLowerCase(TEST_CONTROL_TABLE_NAME));
+		dropControlTable(TEST_CONTROL_TABLE_NAME);
 
 		disableDBPartition();
-
-		entityCache.removeCache(ClassNameImpl.class.getName());
-		entityCache.removeCache(ResourceActionImpl.class.getName());
-
-		finderCache.removeCache(ClassNameImpl.class.getName());
-		finderCache.removeCache(ResourceActionImpl.class.getName());
-
-		if (_resourceActions != null) {
-			_resourceActions.clear();
-		}
-
-		DBPartitionUtil.forEachCompanyId(
-			companyId -> _resourceActionLocalService.checkResourceActions());
 	}
 
 	@After
@@ -459,26 +416,16 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	}
 
-	@Inject
-	protected static EntityCache entityCache;
-
-	@Inject
-	protected static FinderCache finderCache;
-
 	private static final String _CLASS_NAME_VALUE = "class.name.test";
-
-	private static Set<String> _controlTableNames;
-
-	@Inject
-	private static ResourceActionLocalService _resourceActionLocalService;
-
-	private static Map<String, ResourceAction> _resourceActions;
 
 	@Inject
 	private ClassNameLocalService _classNameLocalService;
 
 	@Inject
 	private CompanyLocalService _companyLocalService;
+
+	@Inject
+	private ResourceActionLocalService _resourceActionLocalService;
 
 	private class ClassNameModelHints extends DefaultModelHintsImpl {
 
