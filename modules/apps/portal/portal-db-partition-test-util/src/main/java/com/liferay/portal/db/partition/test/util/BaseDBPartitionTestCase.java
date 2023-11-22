@@ -21,14 +21,19 @@ import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnection;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.dao.orm.EntityCache;
+import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.model.UserConstants;
 import com.liferay.portal.kernel.module.util.BundleUtil;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
+import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.AssumeTestRule;
@@ -36,6 +41,10 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Props;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.model.impl.ClassNameImpl;
+import com.liferay.portal.model.impl.ResourceActionImpl;
+import com.liferay.portal.service.impl.ResourceActionLocalServiceImpl;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -46,6 +55,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import java.util.Map;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -97,6 +109,9 @@ public abstract class BaseDBPartitionTestCase {
 				CurrentConnectionUtil.class, "_currentConnection",
 				defaultCurrentConnection);
 		}
+
+		DBPartitionUtil.forEachCompanyId(
+			companyId -> _resourceActionLocalService.checkResourceActions());
 	}
 
 	protected static void createControlTable(String tableName)
@@ -104,6 +119,13 @@ public abstract class BaseDBPartitionTestCase {
 
 		db.runSQL(
 			"create table " + tableName + " (testColumn bigint primary key)");
+
+		if (_controlTableNames == null) {
+			_controlTableNames = ReflectionTestUtil.getFieldValue(
+				DBInspector.class, "_controlTableNames");
+		}
+
+		_controlTableNames.add(StringUtil.toLowerCase(TEST_CONTROL_TABLE_NAME));
 	}
 
 	protected static void createIndex(String tableName) throws Exception {
@@ -137,6 +159,8 @@ public abstract class BaseDBPartitionTestCase {
 						"delete from VirtualHost where companyId = " +
 							companyId);
 				}
+
+				PortalInstancePool.remove(companyId);
 			}
 		}
 	}
@@ -173,6 +197,27 @@ public abstract class BaseDBPartitionTestCase {
 		ReflectionTestUtil.setFieldValue(
 			InfrastructureUtil.class, "_dataSource",
 			_lazyConnectionDataSourceProxy);
+
+		_entityCache.removeCache(ClassNameImpl.class.getName());
+		_entityCache.removeCache(ResourceActionImpl.class.getName());
+
+		_finderCache.removeCache(ClassNameImpl.class.getName());
+		_finderCache.removeCache(ResourceActionImpl.class.getName());
+
+		if (_resourceActions != null) {
+			_resourceActions.clear();
+		}
+
+		DBPartitionUtil.forEachCompanyId(
+			companyId -> _resourceActionLocalService.checkResourceActions());
+	}
+
+	protected static void dropControlTable(String tableName) throws Exception {
+		db.runSQL("drop table if exists " + tableName);
+
+		if (_controlTableNames != null) {
+			_controlTableNames.remove(StringUtil.toLowerCase(tableName));
+		}
 	}
 
 	protected static void dropIndex(String tableName) throws Exception {
@@ -242,6 +287,20 @@ public abstract class BaseDBPartitionTestCase {
 		connection = DataAccess.getConnection();
 
 		dbInspector = new DBInspector(connection);
+
+		_entityCache.removeCache(ClassNameImpl.class.getName());
+		_entityCache.removeCache(ResourceActionImpl.class.getName());
+
+		_finderCache.removeCache(ClassNameImpl.class.getName());
+		_finderCache.removeCache(ResourceActionImpl.class.getName());
+
+		_resourceActions = ReflectionTestUtil.getFieldValue(
+			ResourceActionLocalServiceImpl.class, "_resourceActions");
+
+		_resourceActions.clear();
+
+		DBPartitionUtil.forEachCompanyId(
+			companyId -> _resourceActionLocalService.checkResourceActions());
 	}
 
 	protected static void extractDBPartitions() throws Exception {
@@ -393,6 +452,8 @@ public abstract class BaseDBPartitionTestCase {
 
 				preparedStatement2.executeUpdate();
 			}
+
+			PortalInstancePool.add(companyId, "Test" + companyId);
 		}
 	}
 
@@ -409,11 +470,9 @@ public abstract class BaseDBPartitionTestCase {
 	protected void createAndPopulateControlTable(String tableName)
 		throws Exception {
 
-		try (Statement statement = connection.createStatement()) {
-			statement.execute(
-				"create table " + tableName +
-					" (testColumn bigint primary key)");
+		createControlTable(tableName);
 
+		try (Statement statement = connection.createStatement()) {
 			statement.execute("insert into " + tableName + " values (1)");
 		}
 	}
@@ -551,14 +610,27 @@ public abstract class BaseDBPartitionTestCase {
 	private static final String _DATABASE_PARTITION_SCHEMA_NAME_PREFIX =
 		"lpartitiontest_";
 
+	private static Set<String> _controlTableNames;
 	private static final DataSource _currentDataSource =
 		ReflectionTestUtil.getFieldValue(DBInitUtil.class, "_dataSource");
 	private static boolean _dbPartitionEnabled;
+
+	@Inject
+	private static EntityCache _entityCache;
+
+	@Inject
+	private static FinderCache _finderCache;
+
 	private static LazyConnectionDataSourceProxy _lazyConnectionDataSourceProxy;
 	private static String _originalDatabasePartitionEnabled;
 
 	@Inject
 	private static Props _props;
+
+	@Inject
+	private static ResourceActionLocalService _resourceActionLocalService;
+
+	private static Map<String, ResourceAction> _resourceActions;
 
 	@Inject
 	private static ServiceComponentRuntime _serviceComponentRuntime;

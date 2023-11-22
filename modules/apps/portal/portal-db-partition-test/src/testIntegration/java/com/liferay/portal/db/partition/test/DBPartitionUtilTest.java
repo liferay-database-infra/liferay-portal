@@ -272,7 +272,7 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 					}
 				}
 				finally {
-					dropTable(TEST_CONTROL_TABLE_NAME);
+					dropControlTable(TEST_CONTROL_TABLE_NAME);
 				}
 			}
 		}
