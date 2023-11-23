@@ -32,6 +32,7 @@ import org.apache.felix.cm.PersistenceManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 import org.osgi.framework.BundleContext;
@@ -56,15 +57,24 @@ public abstract class BaseConfigurationModelListenerTestCase
 		disableDBPartition();
 	}
 
+	@Before
+	public void setUp() throws Exception {
+		_serviceTracker = ServiceTrackerFactory.open(
+			SystemBundleUtil.getBundleContext(),
+			"(component.name=*." + getListenerName() + ")");
+	}
+
 	@After
 	public void tearDown() throws Exception {
 		_deleteConfiguration();
+
+		_configurationModelListener = null;
+
+		_serviceTracker.close();
 	}
 
 	protected void deployConfiguration(String pid, String content)
 		throws Exception {
-
-		_waitForConfigurationModelListenerEnabled();
 
 		Assert.assertNull(
 			_configurationAdmin.listConfigurations(
@@ -165,13 +175,7 @@ public abstract class BaseConfigurationModelListenerTestCase
 	}
 
 	private void _waitForConfigurationModelListenerEnabled() throws Exception {
-		ServiceTracker<?, ?> serviceTracker = ServiceTrackerFactory.open(
-			SystemBundleUtil.getBundleContext(),
-			"(component.name=*." + getListenerName() + ")");
-
-		_configurationModelListener = serviceTracker.waitForService(10000);
-
-		serviceTracker.close();
+		_configurationModelListener = _serviceTracker.waitForService(10000);
 	}
 
 	@Inject
@@ -183,5 +187,7 @@ public abstract class BaseConfigurationModelListenerTestCase
 
 	@Inject
 	private PersistenceManager _persistenceManager;
+
+	private ServiceTracker<?, ?> _serviceTracker;
 
 }
