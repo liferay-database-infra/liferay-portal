@@ -6,7 +6,11 @@
 package com.liferay.portal.db.partition.internal.configuration.persistence.listener.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.portal.kernel.util.GetterUtil;
 
+import java.util.Objects;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -24,16 +28,33 @@ public class DBPartitionVirtualInstanceInsertionConfigurationModelListenerTest
 
 	@Test
 	public void testDeployConfiguration() throws Exception {
-		deployConfiguration(
-			_PID,
-			"newWebId=T\"testNewWebId\"\ncompanyId=L\"" + COMPANY_IDS[0] +
-				"\"\n");
+		try (AutoCloseable autoCloseable = swapCompanyLocalService(
+				(proxy, method, args) -> {
+					if (Objects.equals(method.getName(), "insertCompany")) {
+						Assert.assertEquals(
+							COMPANY_IDS[0], GetterUtil.getLong(args[0]));
 
-		verifyConfigurationIsDeletedAfterDeploy(_PID);
+						_calledInsertCompany = true;
+					}
+
+					return null;
+				})) {
+
+			deployConfiguration(
+				_PID,
+				"newWebId=T\"testNewWebId\"\ncompanyId=L\"" + COMPANY_IDS[0] +
+					"\"\n");
+
+			Assert.assertTrue(_calledInsertCompany);
+
+			verifyConfigurationIsDeletedAfterDeploy(_PID);
+		}
 	}
 
 	private static final String _PID =
 		"com.liferay.portal.db.partition.internal.configuration." +
 			"DBPartitionVirtualInstanceInsertionConfiguration";
+
+	private boolean _calledInsertCompany;
 
 }
