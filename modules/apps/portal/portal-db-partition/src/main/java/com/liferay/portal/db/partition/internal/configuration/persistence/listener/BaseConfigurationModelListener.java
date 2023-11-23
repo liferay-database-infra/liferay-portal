@@ -18,7 +18,6 @@ import java.nio.file.Paths;
 
 import java.util.Dictionary;
 
-import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Reference;
 
@@ -27,10 +26,6 @@ import org.osgi.service.component.annotations.Reference;
  */
 public abstract class BaseConfigurationModelListener
 	implements ConfigurationModelListener {
-
-	public BaseConfigurationModelListener(String pid) {
-		_pid = pid;
-	}
 
 	@Override
 	public void onAfterSave(String pid, Dictionary<String, Object> properties)
@@ -58,15 +53,10 @@ public abstract class BaseConfigurationModelListener
 
 	private void _deleteConfiguration(String pid) {
 		try {
-			Configuration configuration = configurationAdmin.getConfiguration(
-				pid, "?");
-
-			if (configuration != null) {
-				Files.deleteIfExists(
-					Paths.get(
-						PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR,
-						_pid.concat(".config")));
-			}
+			Files.deleteIfExists(
+				Paths.get(
+					PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR,
+					pid.concat(".config")));
 		}
 		catch (IOException ioException) {
 			_log.error(ioException);
@@ -75,7 +65,5 @@ public abstract class BaseConfigurationModelListener
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		BaseConfigurationModelListener.class);
-
-	private final String _pid;
 
 }

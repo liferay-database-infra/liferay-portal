@@ -28,12 +28,6 @@ import org.osgi.service.component.annotations.Reference;
 public class DBPartitionVirtualInstanceInsertionConfigurationModelListener
 	extends BaseConfigurationModelListener {
 
-	public DBPartitionVirtualInstanceInsertionConfigurationModelListener() {
-		super(
-			"com.liferay.portal.db.partition.internal.configuration." +
-				"DBPartitionVirtualInstanceInsertionConfiguration");
-	}
-
 	@Override
 	public void doOnAfterSave(Dictionary<String, Object> properties)
 		throws PortalException {

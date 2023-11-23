@@ -25,12 +25,6 @@ import org.osgi.service.component.annotations.Reference;
 public class DBPartitionVirtualInstanceExtractionConfigurationModelListener
 	extends BaseConfigurationModelListener {
 
-	public DBPartitionVirtualInstanceExtractionConfigurationModelListener() {
-		super(
-			"com.liferay.portal.db.partition.internal.configuration." +
-				"DBPartitionVirtualInstanceExtractionConfiguration");
-	}
-
 	@Override
 	public void doOnAfterSave(Dictionary<String, Object> properties)
 		throws Exception {
