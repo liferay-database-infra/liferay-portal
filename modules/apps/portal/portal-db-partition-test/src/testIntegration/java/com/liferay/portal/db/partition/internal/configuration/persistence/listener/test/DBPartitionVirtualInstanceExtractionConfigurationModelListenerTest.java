@@ -7,6 +7,7 @@ package com.liferay.portal.db.partition.internal.configuration.persistence.liste
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.model.impl.CompanyImpl;
 
 import java.util.Objects;
 
@@ -35,6 +36,9 @@ public class DBPartitionVirtualInstanceExtractionConfigurationModelListenerTest
 							COMPANY_IDS[0], GetterUtil.getLong(args[0]));
 
 						_calledExtractCompany = true;
+					}
+					else if (Objects.equals(method.getName(), "fetchCompany")) {
+						return new CompanyImpl();
 					}
 
 					return null;

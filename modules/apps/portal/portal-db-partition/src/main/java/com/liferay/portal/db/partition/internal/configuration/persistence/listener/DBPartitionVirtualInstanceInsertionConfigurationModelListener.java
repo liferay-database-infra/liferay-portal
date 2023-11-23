@@ -32,13 +32,17 @@ public class DBPartitionVirtualInstanceInsertionConfigurationModelListener
 	public void doOnAfterSave(Dictionary<String, Object> properties)
 		throws PortalException {
 
-		_companyLocalService.insertCompany(
-			GetterUtil.getLong(properties.get("companyId")),
-			(String)properties.get("newName"),
-			(String)properties.get("newVirtualHostName"),
-			(String)properties.get("newWebId"));
+		long companyId = (long)properties.get("companyId");
 
-		_portalInstancesLocalService.synchronizePortalInstances();
+		if (_companyLocalService.fetchCompany(companyId) == null) {
+			_companyLocalService.insertCompany(
+				GetterUtil.getLong(companyId),
+				(String)properties.get("newName"),
+				(String)properties.get("newVirtualHostName"),
+				(String)properties.get("newWebId"));
+
+			_portalInstancesLocalService.synchronizePortalInstances();
+		}
 	}
 
 	@Override
