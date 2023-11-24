@@ -2358,6 +2358,7 @@ log.sanitizer.enabled=false</echo>
 	<macrodef name="run-modules-integration-test">
 		<attribute default="tomcat" name="app.server.type" />
 		<attribute default="" name="aws.store.enabled" />
+		<attribute default="" name="database.partition.enabled" />
 		<attribute name="database.type" />
 		<attribute default="${database.@{database.type}.version}" name="database.version" />
 		<attribute default="" name="refreshdependencies" />
@@ -2390,6 +2391,7 @@ log.sanitizer.enabled=false</echo>
 
 							<antcall if:set="env.JENKINS_HOME" inheritAll="false" target="prepare-portal-ext-properties">
 								<param name="aws.store.enabled" value="@{aws.store.enabled}" />
+								<param name="database.partition.enabled" value="@{database.partition.enabled}" />
 								<param name="database.type" value="@{database.type}" />
 							</antcall>
 
@@ -6813,6 +6815,14 @@ information. Make sure to commit in all format-javadoc results.
 
 	<target name="modules-integration-mysql56-jdk8">
 		<run-modules-integration-test database.type="mysql" />
+	</target>
+
+	<target name="modules-integration-mysql57-db-partition-jdk8">
+		<run-modules-integration-test
+			database.partition.enabled="true"
+			database.type="mysql"
+			database.version="5.7"
+		/>
 	</target>
 
 	<target name="modules-integration-mysql57-jdk8">
