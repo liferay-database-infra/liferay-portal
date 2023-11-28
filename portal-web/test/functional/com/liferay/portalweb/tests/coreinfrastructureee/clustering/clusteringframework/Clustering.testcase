@@ -5,7 +5,7 @@ definition {
 	property cluster.enabled = "true";
 	property minimum.slave.ram = "24";
 	property portal.release = "true";
-	property portal.upstream = "true";
+	property portal.upstream = "lucas";
 	property remote.elasticsearch.enabled = "true";
 	property test.assert.warning.exceptions = "true";
 	property testray.main.component.name = "Clustering";
