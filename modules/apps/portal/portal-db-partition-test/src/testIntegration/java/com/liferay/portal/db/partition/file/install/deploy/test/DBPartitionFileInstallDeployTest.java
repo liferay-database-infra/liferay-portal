@@ -51,11 +51,7 @@ public class DBPartitionFileInstallDeployTest extends BaseDBPartitionTestCase {
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
-		enableDBPartition();
-
-		addDBPartitions();
-
-		insertPartitionRequiredData();
+		setUpDBPartitions();
 
 		_companyId = TestPropsValues.getCompanyId();
 
@@ -86,11 +82,7 @@ public class DBPartitionFileInstallDeployTest extends BaseDBPartitionTestCase {
 
 	@AfterClass
 	public static void tearDownClass() throws Exception {
-		deletePartitionRequiredData();
-
-		removeDBPartitions();
-
-		disableDBPartition();
+		tearDownDBPartitions();
 	}
 
 	@Test

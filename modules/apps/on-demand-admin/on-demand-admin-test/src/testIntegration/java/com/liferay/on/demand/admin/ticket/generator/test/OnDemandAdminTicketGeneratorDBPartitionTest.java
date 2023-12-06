@@ -7,7 +7,6 @@ package com.liferay.on.demand.admin.ticket.generator.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.on.demand.admin.ticket.generator.OnDemandAdminTicketGenerator;
-import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Ticket;
@@ -16,7 +15,6 @@ import com.liferay.portal.kernel.model.UserWrapper;
 import com.liferay.portal.kernel.search.IndexStatusManagerThreadLocal;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
-import com.liferay.portal.kernel.service.ResourceActionLocalServiceUtil;
 import com.liferay.portal.security.DefaultAdminUtil;
 import com.liferay.portal.test.rule.Inject;
 
@@ -37,25 +35,12 @@ public class OnDemandAdminTicketGeneratorDBPartitionTest
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
-		enableDBPartition();
-
-		addDBPartitions();
-
-		DBPartitionUtil.forEachCompanyId(
-			company -> ResourceActionLocalServiceUtil.checkResourceActions());
-
-		insertPartitionRequiredData();
-
-		insertPartitionData();
+		setUpDBPartitions();
 	}
 
 	@AfterClass
 	public static void tearDownClass() throws Exception {
-		deletePartitionRequiredData();
-
-		removeDBPartitions();
-
-		disableDBPartition();
+		tearDownDBPartitions();
 	}
 
 	@Test

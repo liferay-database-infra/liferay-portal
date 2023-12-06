@@ -54,24 +54,16 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
-		enableDBPartition();
-
 		createControlTable(TEST_CONTROL_TABLE_NAME);
 
-		addDBPartitions();
-
-		insertPartitionRequiredData();
+		setUpDBPartitions();
 	}
 
 	@AfterClass
 	public static void tearDownClass() throws Exception {
-		deletePartitionRequiredData();
-
-		removeDBPartitions();
-
 		dropControlTable(TEST_CONTROL_TABLE_NAME);
 
-		disableDBPartition();
+		tearDownDBPartitions();
 	}
 
 	@After
