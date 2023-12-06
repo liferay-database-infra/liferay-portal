@@ -57,13 +57,7 @@ public class UpgradePartitionedConfigurationTableTest
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
-		enableDBPartition();
-
-		addDBPartitions();
-
-		insertPartitionRequiredData();
-
-		insertPartitionData();
+		setUpDBPartitions();
 
 		_companyId = TestPropsValues.getCompanyId();
 
@@ -74,11 +68,7 @@ public class UpgradePartitionedConfigurationTableTest
 
 	@AfterClass
 	public static void tearDownClass() throws Exception {
-		deletePartitionRequiredData();
-
-		removeDBPartitions();
-
-		disableDBPartition();
+		tearDownDBPartitions();
 	}
 
 	@Test

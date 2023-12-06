@@ -37,20 +37,12 @@ public class UpgradePartitionedControlTableTest
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
-		enableDBPartition();
-
-		addDBPartitions();
-
-		insertPartitionRequiredData();
+		setUpDBPartitions();
 	}
 
 	@AfterClass
 	public static void tearDownClass() throws Exception {
-		deletePartitionRequiredData();
-
-		removeDBPartitions();
-
-		disableDBPartition();
+		tearDownDBPartitions();
 	}
 
 	@Test
