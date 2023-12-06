@@ -460,6 +460,24 @@ public abstract class BaseDBPartitionTestCase {
 		_executeOnDBPartitions(companyIds, DBPartitionUtil::removeDBPartition);
 	}
 
+	protected static void setUpDBPartitions() throws Exception {
+		enableDBPartition();
+
+		addDBPartitions();
+
+		insertPartitionRequiredData();
+
+		insertPartitionData();
+	}
+
+	protected static void tearDownDBPartitions() throws Exception {
+		deletePartitionRequiredData();
+
+		removeDBPartitions();
+
+		disableDBPartition();
+	}
+
 	protected void createAndPopulateControlTable(String tableName)
 		throws Exception {
 
