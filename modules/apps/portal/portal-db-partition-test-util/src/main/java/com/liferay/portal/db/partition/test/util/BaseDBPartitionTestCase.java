@@ -185,7 +185,7 @@ public abstract class BaseDBPartitionTestCase {
 	}
 
 	protected static void dropTable(String tableName) throws Exception {
-		db.runSQL("drop table if exists " + tableName);
+		db.runSQL("drop table if exists " + tableName + " cascade");
 	}
 
 	protected static void enableDBPartition() throws Exception {
