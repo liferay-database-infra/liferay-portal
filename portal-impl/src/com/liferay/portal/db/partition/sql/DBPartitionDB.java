@@ -48,6 +48,8 @@ public interface DBPartitionDB {
 		return dbInspector.getSchema();
 	}
 
+	public boolean isTransactionAbortedOnFailure();
+
 	public void setPartition(Connection connection, String partitionName)
 		throws SQLException;
 

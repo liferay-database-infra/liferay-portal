@@ -132,13 +132,6 @@ public class DBPartitionUtil {
 			connection.commit();
 		}
 		catch (Exception exception) {
-			_executeCallable(
-				() -> {
-					connection.rollback();
-
-					return null;
-				});
-
 			throw new PortalException(exception);
 		}
 		finally {
@@ -469,7 +462,9 @@ public class DBPartitionUtil {
 			}
 		}
 		catch (Exception exception1) {
-			if (ListUtil.isEmpty(controlTableNames)) {
+			if (ListUtil.isEmpty(controlTableNames) ||
+				_dbPartitionDB.isTransactionAbortedOnFailure()) {
+
 				throw new PortalException(exception1);
 			}
 
