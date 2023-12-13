@@ -46,6 +46,7 @@ import java.sql.Statement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -70,9 +71,13 @@ public class DBPartitionUtil {
 		Connection connection = CurrentConnectionUtil.getConnection(
 			InfrastructureUtil.getDataSource());
 
+		boolean autoCommit = _executeCallable(connection::getAutoCommit);
+
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				_dbPartitionDB.getCreatePartitionSQL(
 					connection, _getPartitionName(companyId)))) {
+
+			connection.setAutoCommit(false);
 
 			preparedStatement.executeUpdate();
 
@@ -122,7 +127,22 @@ public class DBPartitionUtil {
 			connection.commit();
 		}
 		catch (Exception exception) {
+			_executeCallable(
+				() -> {
+					connection.rollback();
+
+					return null;
+				});
+
 			throw new PortalException(exception);
+		}
+		finally {
+			_executeCallable(
+				() -> {
+					connection.setAutoCommit(autoCommit);
+
+					return null;
+				});
 		}
 
 		_companyIds.add(companyId);
@@ -332,6 +352,8 @@ public class DBPartitionUtil {
 		Connection connection = CurrentConnectionUtil.getConnection(
 			InfrastructureUtil.getDataSource());
 
+		boolean autoCommit = _executeCallable(connection::getAutoCommit);
+
 		DBInspector dbInspector = new DBInspector(connection);
 
 		try {
@@ -343,6 +365,8 @@ public class DBPartitionUtil {
 					_dbPartitionDB.getSchema(connection, _defaultPartitionName),
 					null, new String[] {"TABLE"});
 				Statement statement = connection.createStatement()) {
+
+				connection.setAutoCommit(false);
 
 				while (resultSet.next()) {
 					String tableName = resultSet.getString("TABLE_NAME");
@@ -363,13 +387,41 @@ public class DBPartitionUtil {
 					_dbPartitionDB.getDropPartitionSQL(
 						_getPartitionName(companyId)));
 			}
+
+			connection.commit();
 		}
 		catch (Exception exception) {
+			_executeCallable(
+				() -> {
+					connection.rollback();
+
+					return null;
+				});
+
 			throw new PortalException(
 				"Unable to drop database partition", exception);
 		}
+		finally {
+			_executeCallable(
+				() -> {
+					connection.setAutoCommit(autoCommit);
+
+					return null;
+				});
+		}
 
 		_companyIds.remove(companyId);
+	}
+
+	private static <R> R _executeCallable(Callable<R> callable)
+		throws PortalException {
+
+		try {
+			return callable.call();
+		}
+		catch (Exception exception) {
+			throw new PortalException(exception);
+		}
 	}
 
 	private static void _extractDBPartition(long companyId)
@@ -379,10 +431,14 @@ public class DBPartitionUtil {
 			InfrastructureUtil.getDataSource());
 		List<String> controlTableNames = new ArrayList<>();
 
+		boolean autoCommit = _executeCallable(connection::getAutoCommit);
+
 		DBInspector dbInspector = new DBInspector(connection);
 
 		try {
 			DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+			connection.setAutoCommit(false);
 
 			try (ResultSet resultSet = databaseMetaData.getTables(
 					_dbPartitionDB.getCatalog(
@@ -403,6 +459,8 @@ public class DBPartitionUtil {
 							companyId, tableName, statement, dbInspector);
 					}
 				}
+
+				connection.commit();
 			}
 		}
 		catch (Exception exception1) {
@@ -417,6 +475,8 @@ public class DBPartitionUtil {
 							companyId, tableName, statement, dbInspector);
 					}
 				}
+
+				connection.commit();
 			}
 			catch (Exception exception2) {
 				throw new PortalException(
@@ -430,6 +490,14 @@ public class DBPartitionUtil {
 			throw new PortalException(
 				"Removal of database partition extraction was rolled back",
 				exception1);
+		}
+		finally {
+			_executeCallable(
+				() -> {
+					connection.setAutoCommit(autoCommit);
+
+					return null;
+				});
 		}
 
 		_companyIds.remove(companyId);
@@ -713,7 +781,11 @@ public class DBPartitionUtil {
 		Connection connection = CurrentConnectionUtil.getConnection(
 			InfrastructureUtil.getDataSource());
 
+		boolean autoCommit = _executeCallable(connection::getAutoCommit);
+
 		try (Statement statement = connection.createStatement()) {
+			connection.setAutoCommit(false);
+
 			DBInspector dbInspector = new DBInspector(connection);
 
 			DatabaseMetaData databaseMetaData = connection.getMetaData();
@@ -750,6 +822,8 @@ public class DBPartitionUtil {
 								_getPartitionName(companyId), tableName));
 					}
 				}
+
+				connection.commit();
 			}
 		}
 		catch (Exception exception1) {
@@ -761,6 +835,8 @@ public class DBPartitionUtil {
 						companyId, companyIdControlTable, _defaultPartitionName,
 						statement);
 				}
+
+				connection.commit();
 			}
 			catch (Exception exception2) {
 				throw new PortalException(
@@ -778,6 +854,14 @@ public class DBPartitionUtil {
 					"Recover a backup of the database schema ",
 					_getPartitionName(companyId), "."),
 				exception1);
+		}
+		finally {
+			_executeCallable(
+				() -> {
+					connection.setAutoCommit(autoCommit);
+
+					return null;
+				});
 		}
 
 		_companyIds.add(companyId);
