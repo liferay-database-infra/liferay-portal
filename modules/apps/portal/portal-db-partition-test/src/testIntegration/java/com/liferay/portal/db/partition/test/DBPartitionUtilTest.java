@@ -218,16 +218,16 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 		try {
 			for (long companyId : COMPANY_IDS) {
+				String fullTestTableName =
+					getPartitionName(companyId) + "." + TEST_CONTROL_TABLE_NAME;
+
+				createAndPopulateControlTable(fullTestTableName);
+
 				int tablesCount = _getTablesCount(companyId);
 				int viewsCount = _getViewsCount(companyId);
 
 				try {
-					String fullTestTableName =
-						getPartitionName(companyId) + "." +
-							TEST_CONTROL_TABLE_NAME;
-
 					createAndPopulateControlTable(TEST_CONTROL_TABLE_NAME);
-					createAndPopulateControlTable(fullTestTableName);
 
 					try {
 						extractDBPartitions();
@@ -235,10 +235,20 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 						Assert.fail("Should throw an exception");
 					}
 					catch (Exception exception) {
+						int offsetTransactionNotAbortedOnFailure = 1;
+
+						if (dbPartitionDB.isTransactionAbortedOnFailure()) {
+							offsetTransactionNotAbortedOnFailure = 0;
+						}
+
 						Assert.assertEquals(
-							tablesCount, _getTablesCount(companyId));
+							tablesCount,
+							_getTablesCount(companyId) +
+								offsetTransactionNotAbortedOnFailure);
 						Assert.assertEquals(
-							viewsCount, _getViewsCount(companyId) - 1);
+							viewsCount,
+							_getViewsCount(companyId) -
+								offsetTransactionNotAbortedOnFailure);
 					}
 				}
 				finally {
