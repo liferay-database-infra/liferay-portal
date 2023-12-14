@@ -106,7 +106,7 @@ definition {
 			webContentContent = "WC WebContent Content",
 			webContentTitle = "WC WebContent Title");
 
-		SQL.assertDatabaseCount(
+		SQL.assertMySQLDatabaseCount(
 			databaseFilter = "lpartition%",
 			databaseSubstring = "lpartition",
 			expectedCount = 1);
@@ -279,7 +279,7 @@ definition {
 			webContentContent = "WC WebContent Content",
 			webContentTitle = "WC WebContent Title");
 
-		SQL.assertDatabaseCount(
+		SQL.assertMySQLDatabaseCount(
 			databaseFilter = "lpartition%",
 			databaseSubstring = "lpartition",
 			expectedCount = 1);
@@ -401,7 +401,7 @@ definition {
 
 		DMDocument.viewCP(dmDocumentTitle = "DM Document Title");
 
-		SQL.assertDatabaseCount(
+		SQL.assertMySQLDatabaseCount(
 			databaseFilter = "lpartition%",
 			databaseSubstring = "lpartition",
 			expectedCount = 1);
@@ -484,7 +484,7 @@ definition {
 
 		DMDocument.viewCP(dmDocumentTitle = "DM Document Title");
 
-		SQL.assertDatabaseCount(
+		SQL.assertMySQLDatabaseCount(
 			databaseFilter = "testPartition%",
 			databaseSubstring = "testPartition",
 			expectedCount = 1);
@@ -569,7 +569,7 @@ definition {
 
 		PortalInstances.deleteCP(virtualHost = "www.able.com");
 
-		SQL.assertDatabaseCount(
+		SQL.assertMySQLDatabaseCount(
 			databaseFilter = "testPartition%",
 			databaseSubstring = "testPartition",
 			expectedCount = 0);
@@ -936,7 +936,7 @@ definition {
 
 		DMDocument.viewCP(dmDocumentTitle = "DM Document Title");
 
-		SQL.assertDatabaseCount(
+		SQL.assertMySQLDatabaseCount(
 			databaseFilter = "testPartition%",
 			databaseSubstring = "testPartition",
 			expectedCount = 2);

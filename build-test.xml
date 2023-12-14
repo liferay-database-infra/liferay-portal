@@ -10628,6 +10628,12 @@ send_user $expect_out(buffer)]]></echo>
 		<sql classpath="${test.app.server.lib.portal.dir}/${jdbc.mysql.driver}" driver="${database.mysql.driver}" onerror="continue" output="${mysql.output.file}" password="${database.mysql.password}" print="true" showheaders="false" showtrailers="false" src="${mysql.input.file}" url="${database.mysql.url}" userid="${database.mysql.username}" />
 	</target>
 
+	<target name="execute-psql">
+		<get-test-app-server-lib-portal-dir />
+
+		<sql classpath="${test.app.server.lib.portal.dir}/${jdbc.postgresql.driver}" driver="${database.postgresql.driver}" onerror="continue" output="${psql.output.file}" password="${database.postgresql.password}" print="true" showheaders="false" showtrailers="false" src="${psql.input.file}" url="${database.postgresql.url}" userid="${database.postgresql.username}" />
+	</target>
+
 	<target name="export-database-schema">
 		<export-database-mysql-compact database.file.prefix="${database.file.prefix}" database.schema.name="${database.schema.name}" />
 	</target>

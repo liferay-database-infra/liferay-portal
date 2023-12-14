@@ -1,12 +1,27 @@
 definition {
 
 	@summary = "Compare the database count with the ${expectedCount}"
-	macro assertDatabaseCount(databaseSubstring = null, databaseFilter = null, expectedCount = null) {
+	macro assertMySQLDatabaseCount(databaseSubstring = null, databaseFilter = null, expectedCount = null) {
 		Variables.assertDefined(parameterList = "${databaseFilter},${databaseSubstring},${expectedCount}");
 
 		var mysqlStatement = "SHOW DATABASES LIKE '${databaseFilter}';";
 
 		var sqlResults = SQL.executeMySQLStatement(mysqlStatement = ${mysqlStatement});
+
+		var matches = StringUtil.count(${sqlResults}, ${databaseSubstring});
+
+		if (${matches} != ${expectedCount}) {
+			fail("Expected ${expectedCount} matches of ${databaseSubstring}, found ${matches}.");
+		}
+	}
+
+	@summary = "Compare the database count with the ${expectedCount}"
+	macro assertPSQLDatabaseCount(databaseSubstring = null, databaseFilter = null, expectedCount = null) {
+		Variables.assertDefined(parameterList = "${databaseFilter},${databaseSubstring},${expectedCount}");
+
+		var psqlStatement = "SELECT datname FROM pg_catalog.pg_database WHERE datname LIKE '${databaseFilter}';";
+
+		var sqlResults = SQL.executePSQLStatement(psqlStatement = ${psqlStatement});
 
 		var matches = StringUtil.count(${sqlResults}, ${databaseSubstring});
 
@@ -57,6 +72,23 @@ definition {
 		FileUtil.write("${liferayHome}/${inputFile}", ${mysqlStatement});
 
 		AntCommands.runCommand("build-test.xml", "execute-mysql -Dmysql.input.file=${liferayHome}/${inputFile} -Dmysql.output.file=${liferayHome}/${outputFile}");
+
+		var output = FileUtil.read("${liferayHome}/${outputFile}");
+
+		return ${output};
+	}
+
+	@summary = "Execute ${psqlStatement}"
+	macro executePSQLStatement(psqlStatement = null) {
+		Variables.assertDefined(parameterList = ${psqlStatement});
+
+		var liferayHome = PropsUtil.get("liferay.home.dir.name");
+		var inputFile = "psqltemp.sql";
+		var outputFile = "psqltemp.txt";
+
+		FileUtil.write("${liferayHome}/${inputFile}", ${psqlStatement});
+
+		AntCommands.runCommand("build-test.xml", "execute-psql -Dpsql.input.file=${liferayHome}/${inputFile} -Dpsql.output.file=${liferayHome}/${outputFile}");
 
 		var output = FileUtil.read("${liferayHome}/${outputFile}");
 
