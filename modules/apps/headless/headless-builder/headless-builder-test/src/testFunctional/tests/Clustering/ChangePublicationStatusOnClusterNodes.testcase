@@ -132,9 +132,142 @@ definition {
 	}
 
 	@priority = 5
+	test CanAddAPIApplicationWithClusterPSQL {
+		property app.server.bundles.size = "1";
+		property cluster.enabled = "true";
+		property database.types = "postgresql";
+		property minimum.slave.ram = "24";
+		property portal.acceptance = "true";
+		property remote.elasticsearch.enabled = "true";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
+
+		task ("And Given APIApplication with endpoint created on the default node") {
+			var response = ApplicationAPI.createAPIApplication(
+				baseURL = "my-app",
+				endpointName = "testendpoint",
+				endpointPath = "/testendpoint",
+				mainObjectDefinitionErc = "Student",
+				objectFieldErc = "nameStudent",
+				relatedEndpoint = "true",
+				relatedSchema = "true",
+				schemaName = "testSchema",
+				status = "published",
+				title = "My-app");
+
+			SchemaAPI.relateRequestSchemaToEndpointByErc(
+				endpointErc = "My-app_testendpoint",
+				requestSchemaErc = "My-app_testSchema");
+
+			SchemaAPI.relateResponseSchemaToEndpointByErc(
+				endpointErc = "My-app_testendpoint",
+				responseSchemaErc = "My-app_testSchema");
+		}
+
+		task ("When executing the endpoint on second node") {
+			var response = APIApplicationEndpoint.getEndpoint(
+				baseURL = "my-app",
+				path = "/testendpoint",
+				portalURL = "http://localhost:9080");
+		}
+
+		task ("Then endpoint response is correct") {
+			var itemsCount = JSONUtil.getWithJSONPath(${response}, "$..totalCount");
+
+			TestUtils.assertEquals(
+				actual = ${itemsCount},
+				expected = 1);
+		}
+
+		task ("And Then api application present in API Builder of second node") {
+			User.loginPG(
+				nodePort = 9080,
+				password = "test",
+				userEmailAddress = "test@liferay.com");
+
+			ApplicationsMenu.gotoPortlet(
+				category = "Object",
+				panel = "Control Panel",
+				portlet = "API Builder");
+
+			AssertElementPresent(
+				key_name = "My-app",
+				locator1 = "ObjectAdmin#TABLE_LIST_TITLE");
+		}
+	}
+
+	@priority = 5
 	test CanAddAPIApplicationWithClusterSecondNode {
 		property app.server.bundles.size = "1";
 		property cluster.enabled = "true";
+		property minimum.slave.ram = "24";
+		property portal.acceptance = "true";
+		property remote.elasticsearch.enabled = "true";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
+
+		task ("And Given APIApplication with endpoint created on the second node") {
+			var response = ApplicationAPI.createAPIApplication(
+				baseURL = "my-app",
+				endpointName = "testendpoint",
+				endpointPath = "/testendpoint",
+				mainObjectDefinitionErc = "Student",
+				objectFieldErc = "nameStudent",
+				portalURL = "http://localhost:9080",
+				relatedEndpoint = "true",
+				relatedSchema = "true",
+				schemaName = "testSchema",
+				status = "published",
+				title = "My-app");
+
+			SchemaAPI.relateRequestSchemaToEndpointByErc(
+				endpointErc = "My-app_testendpoint",
+				portalURL = "http://localhost:9080",
+				requestSchemaErc = "My-app_testSchema");
+
+			SchemaAPI.relateResponseSchemaToEndpointByErc(
+				endpointErc = "My-app_testendpoint",
+				portalURL = "http://localhost:9080",
+				responseSchemaErc = "My-app_testSchema");
+		}
+
+		task ("When executing the endpoint on the default node") {
+			var response = APIApplicationEndpoint.getEndpoint(
+				baseURL = "my-app",
+				path = "/testendpoint",
+				portalURL = "http://localhost:8080");
+		}
+
+		task ("Then endpoint response is correct") {
+			var itemsCount = JSONUtil.getWithJSONPath(${response}, "$..totalCount");
+
+			TestUtils.assertEquals(
+				actual = ${itemsCount},
+				expected = 1);
+		}
+
+		task ("And Then api application present in API Builder of the default node") {
+			User.loginPG(
+				nodePort = 8080,
+				password = "test",
+				userEmailAddress = "test@liferay.com");
+
+			ApplicationsMenu.gotoPortlet(
+				category = "Object",
+				panel = "Control Panel",
+				portlet = "API Builder");
+
+			AssertElementPresent(
+				key_name = "My-app",
+				locator1 = "ObjectAdmin#TABLE_LIST_TITLE");
+		}
+	}
+
+	@priority = 5
+	test CanAddAPIApplicationWithClusterSecondNodePSQL {
+		property app.server.bundles.size = "1";
+		property cluster.enabled = "true";
+		property database.types = "postgresql";
 		property minimum.slave.ram = "24";
 		property portal.acceptance = "true";
 		property remote.elasticsearch.enabled = "true";

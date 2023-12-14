@@ -42,9 +42,66 @@ definition {
 		}
 	}
 
+	@description = "Any logs that would appear specifically in company A should never appear in the logs of company B"
+	@priority = 5
+	test AssertCompanyLogsIsolatedPSQL {
+		property database.types = "postgresql";
+		property portal.acceptance = "true";
+		property test.assert.warning.exceptions = "true";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "sequential";
+
+		for (var portalInstanceName : list "www.able.com,www.baker.com") {
+			HeadlessPortalInstanceAPI.addPortalInstance(
+				domain = ${portalInstanceName},
+				portalInstanceId = ${portalInstanceName},
+				virtualHost = ${portalInstanceName});
+
+			CompanyLogging.openServerLogsAdmin();
+
+			CompanyLogging.assertCompanyLogIsolated(portalInstanceName = ${portalInstanceName});
+
+			GoBack();
+		}
+	}
+
 	@description = "If a company log is deleted, it should also be removed from the company logs portlet"
 	@priority = 4
 	test CannotViewDeletedCompanyLog {
+		property test.assert.warning.exceptions = "true";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
+
+		task ("Given a log exists for a company") {
+			CompanyLogging.openServerLogsAdmin();
+
+			var logName = CompanyLogging.getCompanyLogName(portalInstanceName = "liferay.com");
+
+			AssertElementPresent(
+				key_logName = ${logName},
+				locator1 = "CompanyLogging#COMPANY_LOG_NAME");
+		}
+
+		task ("When the company log is deleted") {
+			var homeDir = PropsUtil.get("liferay.home.dir.name");
+			var companyId = JSONCompany.getCompanyId();
+
+			FileUtil.delete("${homeDir}/logs/companies/${companyId}/${logName}");
+		}
+
+		task ("Then the log is removed from the list in the UI") {
+			Refresh();
+
+			AssertElementNotPresent(
+				key_logName = ${logName},
+				locator1 = "CompanyLogging#COMPANY_LOG_NAME");
+		}
+	}
+
+	@description = "If a company log is deleted, it should also be removed from the company logs portlet"
+	@priority = 4
+	test CannotViewDeletedCompanyLogPSQL {
+		property database.types = "postgresql";
 		property test.assert.warning.exceptions = "true";
 		property test.liferay.virtual.instance = "false";
 		property test.run.type = "single";
@@ -121,9 +178,100 @@ definition {
 		}
 	}
 
+	@description = "If company.log.enabled=false, there should not be additional logging files created for each company and the UI access point should be unavailable"
+	@priority = 4
+	test CompanyLoggingDisabledPSQL {
+		property custom.properties = "company.log.enabled=false";
+		property database.types = "postgresql";
+
+		task ("Verify the user cannot access the company logs portlet with company logging disabled") {
+			ApplicationsMenuHelper.openApplicationsMenu();
+
+			ApplicationsMenu.gotoPanel(panel = "Control Panel");
+
+			AssertElementNotPresent(
+				key_category = "Security",
+				key_portlet = "Server Logs",
+				locator1 = "ApplicationsMenu#PORTLET");
+		}
+
+		task ("When the user tries navigating directly to the company logs page") {
+			Navigator.openWithAppendToBaseURL(urlAppend = "o/company-log");
+		}
+
+		task ("Then the page cannot be accessed") {
+			AssertElementNotPresent(
+				key_virtualHost = "liferay.com",
+				locator1 = "CompanyLogging#COMPANY_LOG_TITLE");
+
+			AssertLocation.assertPartialLocation(value1 = "web/guest");
+		}
+
+		task ("When the user adds a virtual instance") {
+			HeadlessPortalInstanceAPI.addPortalInstance(
+				domain = "www.able.com",
+				portalInstanceId = "www.able.com",
+				virtualHost = "www.able.com");
+		}
+
+		task ("Then additional company logging files should not be created") {
+			var homeDir = PropsUtil.get("liferay.home.dir.name");
+
+			var companiesFolderExists = FileUtil.exists("${homeDir}/logs/companies");
+
+			if (${companiesFolderExists} == "true") {
+				fail("logs/companies folder exists");
+			}
+		}
+	}
+
 	@description = "An Omniadmin can get log names from all companies and download logs from all companies though the UI"
 	@priority = 4
 	test GetAllCompanyLogs {
+		property test.assert.warning.exceptions = "true";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "sequential";
+
+		task ("Given two new virtual instances are created") {
+			for (var portalInstanceName : list "www.able.com,www.baker.com") {
+				HeadlessPortalInstanceAPI.addPortalInstance(
+					domain = ${portalInstanceName},
+					portalInstanceId = ${portalInstanceName},
+					virtualHost = ${portalInstanceName});
+			}
+		}
+
+		task ("When the Omniadmin navigates to the company logs portlet") {
+			CompanyLogging.openServerLogsAdmin();
+		}
+
+		task ("Then log files are present for all companies") {
+			var portalInstanceNames = JSONCompany.getAllCompanyNames();
+
+			for (var portalInstanceName : list ${portalInstanceNames}) {
+				AssertElementPresent(
+					key_virtualHost = ${portalInstanceName},
+					locator1 = "CompanyLogging#COMPANY_LOG_TITLE");
+			}
+		}
+
+		task ("And the log files can be downloaded and viewed for each company") {
+			for (var portalInstanceName : list ${portalInstanceNames}) {
+				var logContent = CompanyLogging.downloadCompanyLog(portalInstanceName = ${portalInstanceName});
+
+				CompanyLogging.assertCompanyLogContent(
+					logContent = ${logContent},
+					portalInstanceName = ${portalInstanceName});
+
+				GoBack();
+			}
+		}
+	}
+
+	@description = "An Omniadmin can get log names from all companies and download logs from all companies though the UI"
+	@priority = 4
+	test GetAllCompanyLogsPSQL {
+		property database.types = "postgresql";
 		property test.assert.warning.exceptions = "true";
 		property test.liferay.virtual.instance = "false";
 		property test.run.type = "sequential";
@@ -290,6 +438,134 @@ definition {
 		}
 	}
 
+	@description = "A company admin that tries to directly download the logs of a company they do not have access to should get a permissions error"
+	@priority = 4
+	test GetCompanyAdminLogsFromDifferentCompanyPSQL {
+		property database.types = "postgresql";
+		property test.assert.warning.exceptions = "true";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "sequential";
+
+		task ("Given a new instance is created") {
+			HeadlessPortalInstanceAPI.addPortalInstance(
+				domain = "www.able.com",
+				portalInstanceId = "www.able.com",
+				virtualHost = "www.able.com");
+		}
+
+		task ("And given a company admin user is added for that virtual instance") {
+			User.firstLoginUI(
+				password = "test",
+				specificURL = "http://www.able.com:8080",
+				userEmailAddress = "test@www.able.com");
+
+			JSONUser.addUser(
+				creatorEmailAddress = "test@www.able.com",
+				creatorPassword = "test",
+				portalInstanceName = "www.able.com",
+				specificURL = "http://www.able.com:8080",
+				userEmailAddress = "userea@www.able.com",
+				userFirstName = "userfn",
+				userLastName = "userln",
+				userScreenName = "usersn");
+
+			User.openUsersAdmin(baseURL = "http://www.able.com:8080");
+
+			User.assignRegularRoleCP(
+				roleTitle = "Administrator",
+				userScreenName = "usersn");
+
+			User.editPassword(newPassword = "test");
+		}
+
+		task ("And given the company admin logs in to the virtual instance") {
+			User.logoutPG();
+
+			SignIn._signIn(
+				userEmailAddress = "userea@www.able.com",
+				virtualHostsURL = "http://www.able.com:8080");
+		}
+
+		task ("When the company admin tries to directly download a specific company log from a different company") {
+			var companyId = JSONCompany.getCompanyId();
+			var logName = CompanyLogging.getCompanyLogName(portalInstanceName = "liferay.com");
+
+			Navigator.openWithAppendToBaseURL(urlAppend = "o/company-log/${companyId}/${logName}?download=true");
+		}
+
+		task ("Then a permissions error is shown and no log is downloaded") {
+			AssertTextPresent(
+				locator1 = "//body",
+				value1 = "You don't have authorization to view this page.");
+
+			CompanyLogging.assertNoLogDownloaded(logName = ${logName});
+		}
+	}
+
+	@description = "A company admin should only be able to see the logs from the company they are an admin of"
+	@priority = 5
+	test GetCompanyAdminLogsPSQL {
+		property database.types = "postgresql";
+		property portal.acceptance = "true";
+		property test.assert.warning.exceptions = "true";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "sequential";
+
+		task ("Given a new instance is created") {
+			HeadlessPortalInstanceAPI.addPortalInstance(
+				domain = "www.able.com",
+				portalInstanceId = "www.able.com",
+				virtualHost = "www.able.com");
+		}
+
+		task ("And given a company admin user is added for that virtual instance") {
+			User.firstLoginUI(
+				password = "test",
+				specificURL = "http://www.able.com:8080",
+				userEmailAddress = "test@www.able.com");
+
+			JSONUser.addUser(
+				creatorEmailAddress = "test@www.able.com",
+				creatorPassword = "test",
+				portalInstanceName = "www.able.com",
+				specificURL = "http://www.able.com:8080",
+				userEmailAddress = "userea@www.able.com",
+				userFirstName = "userfn",
+				userLastName = "userln",
+				userScreenName = "usersn");
+
+			User.openUsersAdmin(baseURL = "http://www.able.com:8080");
+
+			User.assignRegularRoleCP(
+				roleTitle = "Administrator",
+				userScreenName = "usersn");
+
+			User.editPassword(newPassword = "test");
+		}
+
+		task ("And given the company admin logs in to the virtual instance") {
+			User.logoutPG();
+
+			SignIn._signIn(
+				userEmailAddress = "userea@www.able.com",
+				virtualHostsURL = "http://www.able.com:8080");
+		}
+
+		task ("When the company admin navigates to the company logs portlet") {
+			CompanyLogging.openServerLogsAdmin(baseURL = "http://www.able.com:8080");
+		}
+
+		task ("Then only logs for that instance are shown") {
+			AssertElementPresent(
+				key_virtualHost = "www.able.com",
+				locator1 = "CompanyLogging#COMPANY_LOG_TITLE");
+
+			AssertElementNotPresent(
+				key_virtualHost = "liferay.com",
+				locator1 = "CompanyLogging#COMPANY_LOG_TITLE");
+		}
+	}
+
 	@description = "A non-administrative user should get a permissions denied error when trying to access company logging information"
 	@priority = 4
 	test GetCompanyLogsAsGuest {
@@ -353,9 +629,96 @@ definition {
 		}
 	}
 
+	@description = "A non-administrative user should get a permissions denied error when trying to access company logging information"
+	@priority = 4
+	test GetCompanyLogsAsGuestPSQL {
+		property custom.properties = "company.security.strangers.verify=false${line.separator}jsonws.web.service.paths.excludes=";
+		property database.types = "postgresql";
+		property test.assert.warning.exceptions = "true";
+
+		task ("Given a non-administrative company user") {
+			JSONUser.addUserWithRole(
+				roleTitle = "Power User",
+				userEmailAddress = "userea@liferay.com",
+				userFirstName = "userfn",
+				userLastName = "userln",
+				userScreenName = "usersn");
+		}
+
+		task ("And given the user can access the company logs portlet") {
+			Permissions.definePermissionViaJSONAPI(
+				resourceAction = "VIEW_CONTROL_PANEL",
+				resourceName = 90,
+				roleTitle = "Power User");
+
+			Permissions.definePermissionViaJSONAPI(
+				resourceAction = "ACCESS_IN_CONTROL_PANEL",
+				resourceName = "com_liferay_portal_company_log_web_internal_portlet_PortalCompanyLogPortlet",
+				roleTitle = "Power User");
+		}
+
+		task ("When the user navigates to the company logs portlet") {
+			User.logoutPG();
+
+			User.firstLoginUI(
+				password = "test",
+				userEmailAddress = "userea@liferay.com");
+
+			CompanyLogging.openServerLogsAdmin();
+		}
+
+		task ("The the user cannot view any company logs") {
+			AssertElementNotPresent(
+				key_virtualHost = "",
+				locator1 = "CompanyLogging#COMPANY_LOG_TITLE");
+		}
+
+		task ("When the user tries to directly download a specific company log") {
+			var companyId = JSONCompany.getCompanyId();
+			var logName = CompanyLogging.getCompanyLogName(portalInstanceName = "liferay.com");
+
+			Navigator.openWithAppendToBaseURL(urlAppend = "o/company-log/${companyId}/${logName}?download=true");
+		}
+
+		task ("Then a permissions error is shown and no log is downloaded") {
+			AssertTextPresent(
+				locator1 = "//body",
+				value1 = "You don't have authorization to view this page.");
+
+			AssertTextPresent(
+				locator1 = "//body",
+				value1 = "HTTP ERROR 403");
+
+			CompanyLogging.assertNoLogDownloaded(logName = ${logName});
+		}
+	}
+
 	@description = "If a user tries to download a logging file or company that doesn’t exist it should fail and throw a suitable error message"
 	@priority = 4
 	test GetInvalidCompanyLogs {
+		task ("When the user tries to download a log via an http request where the log name is invalid") {
+			var companyId = JSONCompany.getCompanyId();
+			var baseURL = PropsUtil.get("portal.url");
+
+			Open.openNoError(value1 = "${baseURL}/o/company-log/${companyId}/invalidLog.log");
+		}
+
+		task ("Then an error message is shown which indicates the log was not found and no log is downloaded") {
+			AssertTextPresent(
+				locator1 = "//body",
+				value1 = "No webpage was found for the web address");
+
+			AssertConsoleTextPresent(value1 = "java.io.FileNotFoundException: Unable to get file invalidLog.log for company ${companyId}");
+
+			CompanyLogging.assertNoLogDownloaded(logName = "invalidLog.log");
+		}
+	}
+
+	@description = "If a user tries to download a logging file or company that doesn’t exist it should fail and throw a suitable error message"
+	@priority = 4
+	test GetInvalidCompanyLogsPSQL {
+		property database.types = "postgresql";
+
 		task ("When the user tries to download a log via an http request where the log name is invalid") {
 			var companyId = JSONCompany.getCompanyId();
 			var baseURL = PropsUtil.get("portal.url");
