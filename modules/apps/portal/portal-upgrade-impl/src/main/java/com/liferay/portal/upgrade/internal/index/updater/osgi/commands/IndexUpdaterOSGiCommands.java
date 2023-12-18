@@ -41,7 +41,8 @@ public class IndexUpdaterOSGiCommands implements OSGiCommands {
 		if (BundleUtil.isLiferayServiceBundle(bundle)) {
 			IndexUpdaterUtil.updateIndexes(bundle);
 
-			return "Completed update of indexes for module " + bundleId;
+			return "Update of indexes for module " + bundleId +
+				" is executing on background";
 		}
 
 		return "Module " + bundleId + " has no indexes associated with it";
@@ -63,8 +64,8 @@ public class IndexUpdaterOSGiCommands implements OSGiCommands {
 		if (BundleUtil.isLiferayServiceBundle(bundle)) {
 			IndexUpdaterUtil.updateIndexes(bundle);
 
-			return "Completed update of indexes for module " +
-				bundleSymbolicName;
+			return "Update of indexes for module " + bundleSymbolicName +
+				" is executing on background";
 		}
 
 		return "Module " + bundleSymbolicName +
@@ -85,7 +86,7 @@ public class IndexUpdaterOSGiCommands implements OSGiCommands {
 			}
 		}
 
-		return "Completed updating module database indexes";
+		return "Updating module database indexes on background";
 	}
 
 	@Activate
