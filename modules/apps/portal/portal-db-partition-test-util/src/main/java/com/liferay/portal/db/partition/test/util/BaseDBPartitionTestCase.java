@@ -42,6 +42,7 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.model.impl.ClassNameImpl;
+import com.liferay.portal.model.impl.CompanyImpl;
 import com.liferay.portal.model.impl.ResourceActionImpl;
 import com.liferay.portal.service.impl.ResourceActionLocalServiceImpl;
 import com.liferay.portal.test.rule.Inject;
@@ -447,6 +448,13 @@ public abstract class BaseDBPartitionTestCase {
 
 				preparedStatement2.executeUpdate();
 			}
+
+			Company company = new CompanyImpl();
+
+			company.setCompanyId(companyId);
+			company.setWebId("Test" + companyId);
+
+			PortalInstancePool.add(company);
 		}
 	}
 
