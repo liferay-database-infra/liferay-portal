@@ -25,7 +25,7 @@ import java.sql.Connection;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -119,7 +119,7 @@ public class IndexUpdaterUtil {
 			IndexUpdaterUtil.class.getName() + "-BundleTrackerOpener");
 	}
 
-	public static void updateIndexes(Bundle bundle) throws Exception {
+	public static void updateIndexes(Bundle bundle) {
 		_addUpdateIndexesFutures(
 			bundle.getSymbolicName(), DBResourceUtil.getModuleTablesSQL(bundle),
 			DBResourceUtil.getModuleIndexesSQL(bundle));
@@ -162,7 +162,8 @@ public class IndexUpdaterUtil {
 					() -> {
 						try {
 							_updateIndexes(
-								entry.getKey(), tablesSQL, entry.getValue());
+								entry.getKey(), entry.getKey(),
+								entry.getValue());
 						}
 						catch (Exception exception) {
 							throw new RuntimeException(exception);
@@ -192,7 +193,7 @@ public class IndexUpdaterUtil {
 	private static Map<String, String> _getIndexesSQLMap(String indexesSQL) {
 		String[] lines = StringUtil.splitLines(indexesSQL);
 
-		Map<String, String> indexesSQLMap = new HashMap<>();
+		Map<String, String> indexesSQLMap = new LinkedHashMap<>();
 
 		for (String line : lines) {
 			if (Validator.isNull(line)) {
