@@ -6,6 +6,7 @@
 package com.liferay.portal.db.index;
 
 import com.liferay.petra.concurrent.DCLSingleton;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.DBResourceUtil;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -17,14 +18,16 @@ import com.liferay.portal.kernel.module.util.BundleUtil;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.util.PropsValues;
 
 import java.sql.Connection;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -42,19 +45,10 @@ import org.osgi.util.tracker.BundleTrackerCustomizer;
  */
 public class IndexUpdaterUtil {
 
-	public static void destroy() {
-		_executorServiceDCLSingleton.destroy(
-			executorService -> {
-				executorService.shutdown();
-
-				_awaitFuturesTermination();
-			});
-	}
-
 	public static void updateAllIndexes() {
 		if (!_processedServletContextNames.contains("portal")) {
 			try {
-				_addUpdateIndexesFuture(
+				_addUpdateIndexesFutures(
 					"portal", DBResourceUtil.getPortalTablesSQL(),
 					DBResourceUtil.getPortalIndexesSQL());
 			}
@@ -78,7 +72,7 @@ public class IndexUpdaterUtil {
 							if (!_processedServletContextNames.contains(
 									bundle.getSymbolicName())) {
 
-								_addUpdateIndexesFuture(
+								_addUpdateIndexesFutures(
 									bundle.getSymbolicName(),
 									DBResourceUtil.getModuleTablesSQL(bundle),
 									DBResourceUtil.getModuleIndexesSQL(bundle));
@@ -115,11 +109,7 @@ public class IndexUpdaterUtil {
 
 							_processedServletContextNames.clear();
 
-							if (!PropsValues.
-									DATABASE_INDEXES_UPDATE_IN_BACKGROUND) {
-
-								_awaitFuturesTermination();
-							}
+							_awaitFuturesTermination();
 
 							return null;
 						});
@@ -130,18 +120,16 @@ public class IndexUpdaterUtil {
 	}
 
 	public static void updateIndexes(Bundle bundle) throws Exception {
-		_addUpdateIndexesFuture(
+		_addUpdateIndexesFutures(
 			bundle.getSymbolicName(), DBResourceUtil.getModuleTablesSQL(bundle),
 			DBResourceUtil.getModuleIndexesSQL(bundle));
 
-		if (!PropsValues.DATABASE_INDEXES_UPDATE_IN_BACKGROUND) {
-			_awaitFuturesTermination();
-		}
+		_awaitFuturesTermination();
 	}
 
 	public static void updatePortalIndexes() {
 		try {
-			_addUpdateIndexesFuture(
+			_addUpdateIndexesFutures(
 				"portal", DBResourceUtil.getPortalTablesSQL(),
 				DBResourceUtil.getPortalIndexesSQL());
 		}
@@ -151,13 +139,11 @@ public class IndexUpdaterUtil {
 			}
 		}
 		finally {
-			if (!PropsValues.DATABASE_INDEXES_UPDATE_IN_BACKGROUND) {
-				_awaitFuturesTermination();
-			}
+			_awaitFuturesTermination();
 		}
 	}
 
-	private static void _addUpdateIndexesFuture(
+	private static void _addUpdateIndexesFutures(
 		String servletContextName, String tablesSQL, String indexesSQL) {
 
 		_processedServletContextNames.add(servletContextName);
@@ -168,17 +154,21 @@ public class IndexUpdaterUtil {
 
 		ExecutorService executorService = _getExecutorService();
 
-		_futures.add(
-			executorService.submit(
-				() -> {
-					try {
-						_updateIndexes(
-							servletContextName, tablesSQL, indexesSQL);
-					}
-					catch (Exception exception) {
-						throw new RuntimeException(exception);
-					}
-				}));
+		Map<String, String> indexesSQLMap = _getIndexesSQLMap(indexesSQL);
+
+		for (Map.Entry<String, String> entry : indexesSQLMap.entrySet()) {
+			_futures.add(
+				executorService.submit(
+					() -> {
+						try {
+							_updateIndexes(
+								entry.getKey(), tablesSQL, entry.getValue());
+						}
+						catch (Exception exception) {
+							throw new RuntimeException(exception);
+						}
+					}));
+		}
 	}
 
 	private static void _awaitFuturesTermination() {
@@ -199,8 +189,38 @@ public class IndexUpdaterUtil {
 			Executors::newWorkStealingPool);
 	}
 
+	private static Map<String, String> _getIndexesSQLMap(String indexesSQL) {
+		String[] lines = StringUtil.splitLines(indexesSQL);
+
+		Map<String, String> indexesSQLMap = new HashMap<>();
+
+		for (String line : lines) {
+			if (Validator.isNull(line)) {
+				continue;
+			}
+
+			String tableName = line.substring(
+				line.indexOf("on ") + 3, line.indexOf(" ("));
+
+			if (indexesSQLMap.get(tableName) == null) {
+				indexesSQLMap.put(tableName, line);
+			}
+			else {
+				StringBundler sb = new StringBundler(
+					indexesSQLMap.get(tableName));
+
+				sb.append(StringPool.NEW_LINE);
+				sb.append(line);
+
+				indexesSQLMap.put(tableName, sb.toString());
+			}
+		}
+
+		return indexesSQLMap;
+	}
+
 	private static void _updateIndexes(
-			String servletContextName, String tablesSQL, String indexesSQL)
+			String tableName, String tablesSQL, String indexesSQL)
 		throws Exception {
 
 		DB db = DBManagerUtil.getDB();
@@ -209,13 +229,7 @@ public class IndexUpdaterUtil {
 			companyId -> {
 				try {
 					String message = new String(
-						"Updating portal database indexes");
-
-					if (!servletContextName.equals("portal")) {
-						message = new String(
-							"Updating database indexes for " +
-								servletContextName);
-					}
+						"Updating database indexes for " + tableName);
 
 					if (Validator.isNotNull(companyId)) {
 						message += " and company " + companyId;
@@ -231,9 +245,8 @@ public class IndexUpdaterUtil {
 				catch (Exception exception) {
 					_log.error(
 						StringBundler.concat(
-							"Unable to update database indexes for ",
-							servletContextName, " due to ",
-							exception.getMessage()));
+							"Unable to update database indexes for ", tableName,
+							" due to ", exception.getMessage()));
 				}
 			});
 	}
