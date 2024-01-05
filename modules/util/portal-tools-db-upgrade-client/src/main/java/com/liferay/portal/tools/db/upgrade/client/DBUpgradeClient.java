@@ -393,6 +393,14 @@ public class DBUpgradeClient {
 		return sb.toString();
 	}
 
+	private void _initAppServers() {
+		_appServers.put("jboss", AppServer.getJBossEAPAppServer());
+		_appServers.put("tomcat", AppServer.getTomcatAppServer());
+		_appServers.put("weblogic", AppServer.getWebLogicAppServer());
+		_appServers.put("websphere", AppServer.getWebSphereAppServer());
+		_appServers.put("wildfly", AppServer.getWildFlyAppServer());
+	}
+
 	private GogoShellClient _initGogoShellClient() throws IOException {
 		String value = _portalUpgradeExtProperties.getProperty(
 			"module.framework.properties.osgi.console");
@@ -492,6 +500,8 @@ public class DBUpgradeClient {
 	}
 
 	private void _verifyAppServerProperties() throws IOException {
+		_initAppServers();
+
 		String value = _appServerProperties.getProperty(
 			"server.detector.server.id");
 
@@ -752,14 +762,6 @@ public class DBUpgradeClient {
 
 	private static final Map<String, AppServer> _appServers =
 		new LinkedHashMap<String, AppServer>() {
-			{
-				put("jboss", AppServer.getJBossEAPAppServer());
-				put("tcserver", AppServer.getTCServerAppServer());
-				put("tomcat", AppServer.getTomcatAppServer());
-				put("weblogic", AppServer.getWebLogicAppServer());
-				put("websphere", AppServer.getWebSphereAppServer());
-				put("wildfly", AppServer.getWildFlyAppServer());
-			}
 		};
 	private static final Map<String, Database> _databases =
 		new LinkedHashMap<String, Database>() {
