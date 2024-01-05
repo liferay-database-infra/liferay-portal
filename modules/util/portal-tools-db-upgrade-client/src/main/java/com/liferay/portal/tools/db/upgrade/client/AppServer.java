@@ -156,15 +156,48 @@ public class AppServer {
 	}
 
 	private void _setDirName(String dirName) {
-		try {
-			_dir = new File(dirName);
+		if (DBUpgradeClient.getAppServerDir(
+			).isEmpty()) {
 
-			if (!_dir.isAbsolute()) {
-				_dir = _dir.getCanonicalFile();
+			File liferayHome = new File(DBUpgradeClient.getLiferayHome());
+
+			if (liferayHome.isDirectory()) {
+				File[] folders = liferayHome.listFiles();
+
+				if (folders != null) {
+					for (File file : folders) {
+						if (file.isDirectory() &&
+							file.getName(
+							).contains(
+								dirName
+							)) {
+
+							try {
+								_dir = file;
+
+								if (!_dir.isAbsolute()) {
+									_dir = _dir.getCanonicalFile();
+								}
+							}
+							catch (IOException ioException) {
+								ioException.printStackTrace();
+							}
+						}
+					}
+				}
 			}
 		}
-		catch (IOException ioException) {
-			ioException.printStackTrace();
+		else {
+			try {
+				_dir = new File(dirName);
+
+				if (!_dir.isAbsolute()) {
+					_dir = _dir.getCanonicalFile();
+				}
+			}
+			catch (IOException ioException) {
+				ioException.printStackTrace();
+			}
 		}
 	}
 
