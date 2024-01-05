@@ -49,6 +49,27 @@ import org.apache.commons.cli.ParseException;
  */
 public class DBUpgradeClient {
 
+	public static String getAppServerDir() {
+		String dir = _appServerProperties.getProperty("dir");
+
+		if (dir != null) {
+			return dir;
+		}
+
+		return "";
+	}
+
+	public static String getLiferayHome() {
+		String liferayHome = _portalUpgradeExtProperties.getProperty(
+			"liferay.home");
+
+		if (liferayHome != null) {
+			return liferayHome;
+		}
+
+		return "";
+	}
+
 	public static void main(String[] args) {
 		Options options = _getOptions();
 
@@ -760,6 +781,7 @@ public class DBUpgradeClient {
 
 	private static final String _JAVA_HOME = System.getenv("JAVA_HOME");
 
+	private static Properties _appServerProperties = new Properties();
 	private static final Map<String, AppServer> _appServers =
 		new LinkedHashMap<String, AppServer>() {
 		};
@@ -778,6 +800,7 @@ public class DBUpgradeClient {
 	private static final Pattern _gogoShellAddressPattern = Pattern.compile(
 		"^([^\\:]+):([0-9]{1,5})$");
 	private static File _jarDir;
+	private static Properties _portalUpgradeExtProperties = new Properties();
 
 	static {
 		ProtectionDomain protectionDomain =
@@ -800,7 +823,6 @@ public class DBUpgradeClient {
 	}
 
 	private AppServer _appServer;
-	private final Properties _appServerProperties;
 	private final File _appServerPropertiesFile;
 	private final ConsoleReader _consoleReader = new ConsoleReader();
 	private final FileOutputStream _fileOutputStream;
@@ -808,7 +830,6 @@ public class DBUpgradeClient {
 	private final File _logFile;
 	private final Properties _portalUpgradeDatabaseProperties;
 	private final File _portalUpgradeDatabasePropertiesFile;
-	private final Properties _portalUpgradeExtProperties;
 	private final File _portalUpgradeExtPropertiesFile;
 	private final boolean _shell;
 
