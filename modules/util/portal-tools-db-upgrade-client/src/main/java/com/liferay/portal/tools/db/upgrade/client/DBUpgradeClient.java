@@ -297,10 +297,9 @@ public class DBUpgradeClient {
 		}
 
 		try {
+			_verifyPortalUpgradeExtProperties();
 			_verifyAppServerProperties();
 			_verifyPortalUpgradeDatabaseProperties();
-			_verifyPortalUpgradeExtProperties();
-
 			_saveProperties();
 		}
 		catch (IOException ioException) {
