@@ -734,6 +734,12 @@ public class DBPartitionUtil {
 
 							companyIdControlTableNames.add(tableName);
 						}
+						else if (_isQuartzTable(tableName)) {
+							_copyData(
+								tableName, _getSchemaName(companyId),
+								_defaultSchemaName, statement,
+								StringPool.BLANK);
+						}
 
 						statement.executeUpdate(
 							_getDropTableSQL(companyId, tableName));
@@ -773,6 +779,10 @@ public class DBPartitionUtil {
 		}
 
 		_companyIds.add(companyId);
+	}
+
+	private static boolean _isQuartzTable(String tableName) {
+		return StringUtil.startsWith(tableName, _QUARTZ_TABLE_NAME_PREFIX);
 	}
 
 	private static boolean _isSkip(Connection connection, String tableName)
@@ -890,6 +900,10 @@ public class DBPartitionUtil {
 	private static final boolean _DATABASE_PARTITION_THREAD_POOL_ENABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get("database.partition.thread.pool.enabled"), true);
+
+	private static final String _QUARTZ_TABLE_NAME_PREFIX = GetterUtil.get(
+		PropsUtil.get("persisted.scheduler.org.quartz.jobStore.tablePrefix"),
+		"QUARTZ_");
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		DBPartitionUtil.class);
