@@ -295,11 +295,35 @@ public class DBPartitionUtil {
 			Statement statement, String whereClause)
 		throws Exception {
 
-		statement.executeUpdate(
-			StringBundler.concat(
-				"insert ", toSchemaName, StringPool.PERIOD, tableName,
-				" select * from ", fromSchemaName, StringPool.PERIOD, tableName,
-				whereClause));
+		_copyData(
+			tableName, fromSchemaName, toSchemaName, statement, whereClause,
+			false);
+	}
+
+	private static void _copyData(
+			String tableName, String fromSchemaName, String toSchemaName,
+			Statement statement, String whereClause,
+			boolean ignoreDuplicateRows)
+		throws Exception {
+
+		StringBundler sb = new StringBundler(10);
+
+		sb.append("insert ");
+
+		if (ignoreDuplicateRows) {
+			sb.append("ignore ");
+		}
+
+		sb.append(toSchemaName);
+		sb.append(StringPool.PERIOD);
+		sb.append(tableName);
+		sb.append(" select * from ");
+		sb.append(fromSchemaName);
+		sb.append(StringPool.PERIOD);
+		sb.append(tableName);
+		sb.append(whereClause);
+
+		statement.executeUpdate(sb.toString());
 	}
 
 	private static void _deleteCompanyData(
@@ -737,8 +761,8 @@ public class DBPartitionUtil {
 						else if (_isQuartzTable(tableName)) {
 							_copyData(
 								tableName, _getSchemaName(companyId),
-								_defaultSchemaName, statement,
-								StringPool.BLANK);
+								_defaultSchemaName, statement, StringPool.BLANK,
+								true);
 						}
 
 						statement.executeUpdate(
