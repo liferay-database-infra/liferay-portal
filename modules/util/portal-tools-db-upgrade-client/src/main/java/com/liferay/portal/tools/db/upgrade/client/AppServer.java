@@ -161,7 +161,7 @@ public class AppServer {
 					for (File file : folders) {
 						if (file.isDirectory() &&
 							file.getName(
-							).contains(
+							).startsWith(
 								dirName
 							)) {
 
