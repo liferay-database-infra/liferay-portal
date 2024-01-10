@@ -6,7 +6,6 @@
 package com.liferay.portal.tools.db.upgrade.client;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import java.util.ArrayList;
@@ -171,14 +170,9 @@ public class AppServer {
 								if (!_dir.isAbsolute()) {
 									_dir = _dir.getCanonicalFile();
 								}
-								if(!_dir.exists()){
-									throw new FileNotFoundException(
-										"No directory found at " + _dir.getCanonicalPath());
-								}
 							}
 							catch (IOException ioException) {
 								ioException.printStackTrace();
-								System.exit(0);
 							}
 						}
 					}
@@ -192,15 +186,9 @@ public class AppServer {
 				if (!_dir.isAbsolute()) {
 					_dir = _dir.getCanonicalFile();
 				}
-
-				if(!_dir.exists()){
-					throw new FileNotFoundException(
-						"No directory found at " + _dir.getCanonicalPath());
-				}
 			}
 			catch (IOException ioException) {
 				ioException.printStackTrace();
-				System.exit(0);
 			}
 		}
 	}
