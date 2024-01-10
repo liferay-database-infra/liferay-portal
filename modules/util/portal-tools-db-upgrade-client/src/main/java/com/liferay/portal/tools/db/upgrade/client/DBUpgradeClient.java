@@ -561,6 +561,8 @@ public class DBUpgradeClient {
 			response = _consoleReader.readLine();
 
 			if (!response.isEmpty()) {
+				_appServerProperties.setProperty("dir", response);
+
 				_appServer.setDirName(response);
 			}
 
