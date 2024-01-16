@@ -336,11 +336,9 @@ public class DBPartitionUtil {
 							_getCompanyIds(), tableName) &&
 						dbInspector.hasColumn(tableName, "companyId")) {
 
-						statement.executeUpdate(
-							StringBundler.concat(
-								"delete from ", _defaultSchemaName,
-								StringPool.PERIOD, tableName,
-								" where companyId = ", companyId));
+						_deleteCompanyData(
+							companyId, tableName, _defaultSchemaName,
+							statement);
 					}
 				}
 
