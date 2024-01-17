@@ -307,10 +307,20 @@ public class DBPartitionUtil {
 			Statement statement)
 		throws Exception {
 
+		_deleteData(
+			tableName, schemaName, statement,
+			" where companyId = " + companyId);
+	}
+
+	private static void _deleteData(
+			String tableName, String schemaName, Statement statement,
+			String whereClause)
+		throws Exception {
+
 		statement.executeUpdate(
 			StringBundler.concat(
 				"delete from ", schemaName, StringPool.PERIOD, tableName,
-				" where companyId = ", companyId));
+				whereClause));
 	}
 
 	private static void _dropDBPartition(long companyId)
@@ -332,13 +342,21 @@ public class DBPartitionUtil {
 				while (resultSet.next()) {
 					String tableName = resultSet.getString("TABLE_NAME");
 
-					if (dbInspector.isControlTable(
-							_getCompanyIds(), tableName) &&
-						dbInspector.hasColumn(tableName, "companyId")) {
+					if (!dbInspector.isControlTable(
+							_getCompanyIds(), tableName)) {
 
+						continue;
+					}
+
+					if (dbInspector.hasColumn(tableName, "companyId")) {
 						_deleteCompanyData(
 							companyId, tableName, _defaultSchemaName,
 							statement);
+					}
+					else if (_isQuartzTable(tableName)) {
+						_deleteData(
+							tableName, _defaultSchemaName, statement,
+							_getQuartzWhereClauseSQL(companyId, tableName));
 					}
 				}
 
@@ -428,6 +446,12 @@ public class DBPartitionUtil {
 			_moveCompanyData(
 				companyId, tableName, _defaultSchemaName,
 				_getSchemaName(companyId), statement);
+		}
+
+		if (_isQuartzTable(tableName)) {
+			_moveData(
+				tableName, _defaultSchemaName, _getSchemaName(companyId),
+				statement, _getQuartzWhereClauseSQL(companyId, tableName));
 		}
 		else {
 			_copyData(
@@ -659,6 +683,16 @@ public class DBPartitionUtil {
 			StringPool.PERIOD, viewName);
 	}
 
+	private static String _getQuartzWhereClauseSQL(
+		long companyId, String tableName) {
+
+		if (StringUtil.endsWith(tableName, "JOB_DETAILS")) {
+			return " where job_name like '%@" + companyId + "'";
+		}
+
+		return " where trigger_name like '%@" + companyId + "'";
+	}
+
 	private static String _getSchemaName(long companyId) {
 		if ((companyId == CompanyConstants.SYSTEM) ||
 			(companyId == _defaultCompanyId)) {
@@ -704,7 +738,7 @@ public class DBPartitionUtil {
 	private static void _insertDBPartition(long companyId)
 		throws PortalException {
 
-		List<String> companyIdControlTableNames = new ArrayList<>();
+		List<String> copiedTableNames = new ArrayList<>();
 
 		Connection connection = CurrentConnectionUtil.getConnection(
 			InfrastructureUtil.getDataSource());
@@ -721,44 +755,59 @@ public class DBPartitionUtil {
 				while (resultSet.next()) {
 					String tableName = resultSet.getString("TABLE_NAME");
 
-					if (dbInspector.isControlTable(
+					if (!dbInspector.isControlTable(
 							_getCompanyIds(), tableName)) {
 
-						if (dbInspector.hasColumn(tableName, "companyId")) {
-							_copyData(
-								tableName, _getSchemaName(companyId),
-								_defaultSchemaName, statement,
-								" where companyId = " + companyId);
-
-							companyIdControlTableNames.add(tableName);
-						}
-
-						statement.executeUpdate(
-							_getDropTableSQL(companyId, tableName));
-
-						statement.executeUpdate(
-							_getCreateViewSQL(companyId, tableName));
+						continue;
 					}
+
+					if (dbInspector.hasColumn(tableName, "companyId")) {
+						_copyData(
+							tableName, _getSchemaName(companyId),
+							_defaultSchemaName, statement,
+							" where companyId = " + companyId);
+
+						copiedTableNames.add(tableName);
+					}
+					else if (_isQuartzTable(tableName)) {
+						_copyData(
+							tableName, _getSchemaName(companyId),
+							_defaultSchemaName, statement,
+							_getQuartzWhereClauseSQL(companyId, tableName));
+
+						copiedTableNames.add(tableName);
+					}
+
+					statement.executeUpdate(
+						_getDropTableSQL(companyId, tableName));
+
+					statement.executeUpdate(
+						_getCreateViewSQL(companyId, tableName));
 				}
 			}
 		}
 		catch (Exception exception1) {
 			try (Statement statement = connection.createStatement()) {
-				for (String companyIdControlTable :
-						companyIdControlTableNames) {
-
-					_deleteCompanyData(
-						companyId, companyIdControlTable, _defaultSchemaName,
-						statement);
+				for (String copiedTableName : copiedTableNames) {
+					if (_isQuartzTable(copiedTableName)) {
+						_deleteData(
+							copiedTableName, _defaultSchemaName, statement,
+							_getQuartzWhereClauseSQL(
+								companyId, copiedTableName));
+					}
+					else {
+						_deleteCompanyData(
+							companyId, copiedTableName, _defaultSchemaName,
+							statement);
+					}
 				}
 			}
 			catch (Exception exception2) {
 				throw new PortalException(
 					StringBundler.concat(
 						"Unable to roll back the data inserted into the ",
-						"default schema for tables ",
-						companyIdControlTableNames, " and company ID ",
-						companyId),
+						"default schema for tables ", copiedTableNames,
+						" and company ID ", companyId),
 					exception2);
 			}
 
@@ -771,6 +820,17 @@ public class DBPartitionUtil {
 		}
 
 		_companyIds.add(companyId);
+	}
+
+	private static boolean _isQuartzTable(String tableName) {
+		if (StringUtil.startsWith(tableName, _QUARTZ_TABLE_PREFIX) &&
+			(StringUtil.endsWith(tableName, "JOB_DETAILS") ||
+			 StringUtil.endsWith(tableName, "TRIGGERS"))) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	private static boolean _isSkip(Connection connection, String tableName)
@@ -800,11 +860,20 @@ public class DBPartitionUtil {
 			String toSchemaName, Statement statement)
 		throws Exception {
 
-		_copyData(
+		_moveData(
 			tableName, fromSchemaName, toSchemaName, statement,
 			" where companyId = " + companyId);
+	}
 
-		_deleteCompanyData(companyId, tableName, fromSchemaName, statement);
+	private static void _moveData(
+			String tableName, String fromSchemaName, String toSchemaName,
+			Statement statement, String whereClause)
+		throws Exception {
+
+		_copyData(
+			tableName, fromSchemaName, toSchemaName, statement, whereClause);
+
+		_deleteData(tableName, fromSchemaName, statement, whereClause);
 	}
 
 	private static void _restoreTable(
@@ -816,6 +885,11 @@ public class DBPartitionUtil {
 			_moveCompanyData(
 				companyId, tableName, _getSchemaName(companyId),
 				_defaultSchemaName, statement);
+		}
+		else if (_isQuartzTable(tableName)) {
+			_moveData(
+				tableName, _getSchemaName(companyId), _defaultSchemaName,
+				statement, _getQuartzWhereClauseSQL(companyId, tableName));
 		}
 
 		statement.executeUpdate(_getDropTableSQL(companyId, tableName));
@@ -888,6 +962,10 @@ public class DBPartitionUtil {
 	private static final boolean _DATABASE_PARTITION_THREAD_POOL_ENABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get("database.partition.thread.pool.enabled"), true);
+
+	private static final String _QUARTZ_TABLE_PREFIX = GetterUtil.get(
+		PropsUtil.get("persisted.scheduler.org.quartz.jobStore.tablePrefix"),
+		"QUARTZ_");
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		DBPartitionUtil.class);
