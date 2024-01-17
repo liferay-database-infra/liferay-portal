@@ -353,7 +353,7 @@ public class DBPartitionUtil {
 							companyId, tableName, _defaultSchemaName,
 							statement);
 					}
-					else if (_isQuartzTable(tableName)) {
+					else if (_isQuartzTableToCopy(tableName)) {
 						_deleteData(
 							tableName, _defaultSchemaName, statement,
 							_getQuartzWhereClauseSQL(companyId, tableName));
@@ -448,7 +448,7 @@ public class DBPartitionUtil {
 				_getSchemaName(companyId), statement);
 		}
 
-		if (_isQuartzTable(tableName)) {
+		if (_isQuartzTableToCopy(tableName)) {
 			_moveData(
 				tableName, _defaultSchemaName, _getSchemaName(companyId),
 				statement, _getQuartzWhereClauseSQL(companyId, tableName));
@@ -769,7 +769,7 @@ public class DBPartitionUtil {
 
 						copiedTableNames.add(tableName);
 					}
-					else if (_isQuartzTable(tableName)) {
+					else if (_isQuartzTableToCopy(tableName)) {
 						_copyData(
 							tableName, _getSchemaName(companyId),
 							_defaultSchemaName, statement,
@@ -789,7 +789,7 @@ public class DBPartitionUtil {
 		catch (Exception exception1) {
 			try (Statement statement = connection.createStatement()) {
 				for (String copiedTableName : copiedTableNames) {
-					if (_isQuartzTable(copiedTableName)) {
+					if (_isQuartzTableToCopy(copiedTableName)) {
 						_deleteData(
 							copiedTableName, _defaultSchemaName, statement,
 							_getQuartzWhereClauseSQL(
@@ -822,7 +822,7 @@ public class DBPartitionUtil {
 		_companyIds.add(companyId);
 	}
 
-	private static boolean _isQuartzTable(String tableName) {
+	private static boolean _isQuartzTableToCopy(String tableName) {
 		if (StringUtil.startsWith(tableName, _QUARTZ_TABLE_PREFIX) &&
 			(StringUtil.endsWith(tableName, "JOB_DETAILS") ||
 			 StringUtil.endsWith(tableName, "TRIGGERS"))) {
@@ -886,7 +886,7 @@ public class DBPartitionUtil {
 				companyId, tableName, _getSchemaName(companyId),
 				_defaultSchemaName, statement);
 		}
-		else if (_isQuartzTable(tableName)) {
+		else if (_isQuartzTableToCopy(tableName)) {
 			_moveData(
 				tableName, _getSchemaName(companyId), _defaultSchemaName,
 				statement, _getQuartzWhereClauseSQL(companyId, tableName));
