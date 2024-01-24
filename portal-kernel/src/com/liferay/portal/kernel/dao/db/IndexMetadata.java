@@ -96,23 +96,27 @@ public class IndexMetadata extends Index implements Comparable<IndexMetadata> {
 			sb.append("create ");
 		}
 
+		String[] fullColumnNames = new String[_columnNames.length];
+
+		for (int i = 0; i < _columnNames.length; i++) {
+			fullColumnNames[i] = _columnNames[i];
+
+			if ((lengths != null) && (lengths[i] > 0)) {
+				fullColumnNames[i] = StringBundler.concat(
+					fullColumnNames[i], "[$COLUMN_LENGTH:", lengths[i], "$]");
+			}
+		}
+
 		sb.append("index ");
-		sb.append(getIndexName());
+		sb.append(regenerateIndexName(fullColumnNames));
 		sb.append(" on ");
 		sb.append(getTableName());
 
 		sb.append(StringPool.SPACE);
 		sb.append(StringPool.OPEN_PARENTHESIS);
 
-		for (int i = 0; i < _columnNames.length; i++) {
-			sb.append(_columnNames[i]);
-
-			if ((lengths != null) && (lengths[i] > 0)) {
-				sb.append("[$COLUMN_LENGTH:");
-				sb.append(lengths[i]);
-				sb.append("$]");
-			}
-
+		for (String fullColumnName : fullColumnNames) {
+			sb.append(fullColumnName);
 			sb.append(StringPool.COMMA_AND_SPACE);
 		}
 
