@@ -10,6 +10,7 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -51,7 +52,7 @@ public class UpgradeProcessTest {
 		_db = DBManagerUtil.getDB();
 
 		_tempIndexCounter = ReflectionTestUtil.getFieldValue(
-			UpgradeProcess.class, "_tempIndexCounter");
+			IndexMetadataFactoryUtil.class, "_tempIndexCounter");
 	}
 
 	@AfterClass

@@ -10,6 +10,8 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * @author James Lefeu
  * @author Peter Shin
@@ -113,14 +115,15 @@ public class IndexMetadataFactoryUtil {
 	}
 
 	public static IndexMetadata createTempIndexMetadata(
-		String indexName, boolean unique, String tableName,
-		String... columnNames) {
+		boolean unique, String tableName, String... columnNames) {
 
 		if (columnNames == null) {
 			throw new NullPointerException("Column names are missing");
 		}
 
-		return new IndexMetadata(indexName, tableName, unique, columnNames) {
+		return new IndexMetadata(
+			_TEMP_INDEX_NAME_PREFIX + _tempIndexCounter.incrementAndGet(),
+			tableName, unique, columnNames) {
 
 			@Override
 			protected String regenerateIndexName(String[] columnNames) {
@@ -131,5 +134,9 @@ public class IndexMetadataFactoryUtil {
 	}
 
 	private static final String _INDEX_NAME_PREFIX = "IX_";
+
+	private static final String _TEMP_INDEX_NAME_PREFIX = "IX_TEMP_";
+
+	private static final AtomicLong _tempIndexCounter = new AtomicLong(0);
 
 }
