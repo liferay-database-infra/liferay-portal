@@ -178,8 +178,10 @@ public abstract class UpgradeProcess
 
 		String indexName = "IX_TEMP_" + _tempIndexCounter.incrementAndGet();
 
-		IndexMetadata indexMetadata = new IndexMetadata(
-			indexName, tableName, unique, columnNames);
+		IndexMetadata indexMetadata =
+			IndexMetadataFactoryUtil.createTempIndexMetadata(
+				"IX_TEMP_" + _tempIndexCounter.incrementAndGet(), unique,
+				tableName, columnNames);
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(tableName)) {
 			addIndexes(

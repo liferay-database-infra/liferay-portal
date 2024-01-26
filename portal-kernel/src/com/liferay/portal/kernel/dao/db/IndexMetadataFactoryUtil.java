@@ -112,6 +112,24 @@ public class IndexMetadataFactoryUtil {
 		return _INDEX_NAME_PREFIX.concat(specificationHash);
 	}
 
+	public static IndexMetadata createTempIndexMetadata(
+		String indexName, boolean unique, String tableName,
+		String... columnNames) {
+
+		if (columnNames == null) {
+			throw new NullPointerException("Column names are missing");
+		}
+
+		return new IndexMetadata(indexName, tableName, unique, columnNames) {
+
+			@Override
+			protected String regenerateIndexName(String[] columnNames) {
+				return indexName;
+			}
+
+		};
+	}
+
 	private static final String _INDEX_NAME_PREFIX = "IX_";
 
 }
