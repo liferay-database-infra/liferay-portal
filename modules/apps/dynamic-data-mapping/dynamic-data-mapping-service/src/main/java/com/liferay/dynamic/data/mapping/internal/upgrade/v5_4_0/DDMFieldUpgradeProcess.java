@@ -16,7 +16,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 
 /**
  * @author Eudaldo Alonso
@@ -25,40 +24,40 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement =
+		try (PreparedStatement updatePreparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMField set fieldName = ? where fieldId = ?");
-			Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
-				"select fieldId, fieldName from DDMField")) {
+			PreparedStatement selectPreparedStatement =
+				connection.prepareStatement(
+					"select fieldId, fieldName from DDMField where " +
+						"length(fieldName) > ?")) {
+
+			selectPreparedStatement.setInt(1, _MAX_LENGTH_FIELD_NAME);
+
+			ResultSet resultSet = selectPreparedStatement.executeQuery();
 
 			while (resultSet.next()) {
 				String fieldName = resultSet.getString("fieldName");
 
-				if ((fieldName == null) ||
-					(fieldName.length() <= _MAX_LENGTH_FIELD_NAME)) {
-
-					continue;
-				}
-
-				long fieldId = resultSet.getLong("fieldId");
-
-				preparedStatement.setString(
+				updatePreparedStatement.setString(
 					1, StringUtil.shorten(fieldName, _MAX_LENGTH_FIELD_NAME));
-				preparedStatement.setLong(2, fieldId);
 
-				preparedStatement.addBatch();
+				updatePreparedStatement.setLong(
+					2, resultSet.getLong("fieldId"));
+
+				updatePreparedStatement.addBatch();
 
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						StringBundler.concat(
 							"Truncated the ", fieldName, " value for field ID ",
-							fieldId, " because it is too long"));
+							resultSet.getLong("fieldId"),
+							" because it is too long"));
 				}
 			}
 
-			preparedStatement.executeBatch();
+			updatePreparedStatement.executeBatch();
 		}
 	}
 
