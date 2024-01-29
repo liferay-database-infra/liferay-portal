@@ -51,6 +51,10 @@ public class UpgradeStepRegistry implements UpgradeStepRegistrator.Registry {
 		return _upgradeInfosDCLSingleton.getSingleton(this::_getUpgradeInfos);
 	}
 
+	public boolean isInitialization() {
+		return _initialization;
+	}
+
 	@Override
 	public void register(
 		String fromSchemaVersionString, String toSchemaVersionString,

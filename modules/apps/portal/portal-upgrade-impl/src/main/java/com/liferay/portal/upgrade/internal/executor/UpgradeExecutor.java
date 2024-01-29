@@ -55,6 +55,12 @@ import org.osgi.service.component.annotations.Reference;
 public class UpgradeExecutor {
 
 	public void execute(Bundle bundle, List<UpgradeInfo> upgradeInfos) {
+		execute(bundle, upgradeInfos, false);
+	}
+
+	public void execute(
+		Bundle bundle, List<UpgradeInfo> upgradeInfos, boolean initialization) {
+
 		ReleaseGraphManager releaseGraphManager = new ReleaseGraphManager(
 			upgradeInfos);
 
@@ -63,10 +69,19 @@ public class UpgradeExecutor {
 		Release release = _releaseLocalService.fetchRelease(
 			bundle.getSymbolicName());
 
-		if ((release != null) &&
-			Validator.isNotNull(release.getSchemaVersion())) {
+		if (release != null) {
+			String releaseSchemaVersion = release.getSchemaVersion();
 
-			schemaVersionString = release.getSchemaVersion();
+			if (Validator.isNotNull(releaseSchemaVersion)) {
+				schemaVersionString = releaseSchemaVersion;
+			}
+			else if (initialization) {
+				schemaVersionString = "0.0.1";
+
+				release.setSchemaVersion(schemaVersionString);
+
+				release = _releaseLocalService.updateRelease(release);
+			}
 		}
 
 		List<List<UpgradeInfo>> upgradeInfosList =
@@ -327,7 +342,9 @@ public class UpgradeExecutor {
 				(release == null)) {
 
 				try {
-					execute(bundle, upgradeStepRegistry.getUpgradeInfos());
+					execute(
+						bundle, upgradeStepRegistry.getUpgradeInfos(),
+						upgradeStepRegistry.isInitialization());
 				}
 				catch (Throwable throwable) {
 					_log.error(
