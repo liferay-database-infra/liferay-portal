@@ -106,6 +106,10 @@ public class TemplateHandlerRegistryImpl implements TemplateHandlerRegistry {
 		try {
 			DBPartitionUtil.forEachCompanyId(
 				company -> {
+					if (company == null) {
+						company = CompanyThreadLocal.getCompanyId();
+					}
+
 					_classNameIdTemplateHandlersServiceTrackerMaps.put(
 						company,
 						ServiceTrackerMapFactory.openSingleValueMap(
