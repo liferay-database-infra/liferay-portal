@@ -5,23 +5,15 @@
 
 package com.liferay.portal.kernel.dao.db;
 
-import com.liferay.petra.lang.HashUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.IntegerWrapper;
-import com.liferay.portal.kernel.util.StringUtil;
-
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author James Lefeu
  * @author Peter Shin
  * @author Shuyang Zhou
  */
-public class IndexMetadata extends Index implements Comparable<IndexMetadata> {
+public class IndexMetadata extends Index {
 
 	public IndexMetadata(
 		String indexName, String tableName, boolean unique,
@@ -39,45 +31,8 @@ public class IndexMetadata extends Index implements Comparable<IndexMetadata> {
 			"drop index ", indexName, " on ", tableName, StringPool.SEMICOLON);
 	}
 
-	@Override
-	public int compareTo(IndexMetadata indexMetadata) {
-		String columnNames = StringUtil.merge(getColumnNames());
-
-		String indexMetadataColumnNames = StringUtil.merge(
-			indexMetadata.getColumnNames());
-
-		return columnNames.compareTo(indexMetadataColumnNames);
-	}
-
-	@Override
-	public boolean equals(Object object) {
-		if (this == object) {
-			return true;
-		}
-
-		if (!(object instanceof IndexMetadata)) {
-			return false;
-		}
-
-		IndexMetadata indexMetadata = (IndexMetadata)object;
-
-		if (Objects.equals(getTableName(), indexMetadata.getTableName()) &&
-			Arrays.equals(_columnNames, indexMetadata._columnNames)) {
-
-			return true;
-		}
-
-		return false;
-	}
-
 	public String[] getColumnNames() {
-		String[] columnNames = _columnNames.clone();
-
-		for (int i = 0; i < columnNames.length; i++) {
-			columnNames[i] = _trimColumnName(columnNames[i]);
-		}
-
-		return columnNames;
+		return _columnNames;
 	}
 
 	public String getCreateSQL(int[] lengths) {
@@ -126,89 +81,6 @@ public class IndexMetadata extends Index implements Comparable<IndexMetadata> {
 
 	public String getDropSQL() {
 		return _dropSQL;
-	}
-
-	@Override
-	public int hashCode() {
-		int hashCode = HashUtil.hash(0, getTableName());
-
-		for (String columnName : _columnNames) {
-			hashCode = HashUtil.hash(hashCode, columnName);
-		}
-
-		return hashCode;
-	}
-
-	public void optimizeColumns(Map<String, IntegerWrapper> frequencyMap) {
-		Arrays.sort(
-			_columnNames,
-			(columnName1, columnName2) -> {
-				IntegerWrapper count1 = frequencyMap.get(
-					_trimColumnName(columnName1));
-
-				IntegerWrapper count2 = frequencyMap.get(
-					_trimColumnName(columnName2));
-
-				return count2.compareTo(count1);
-			});
-
-		indexName = IndexMetadataFactoryUtil.createIndexName(
-			getTableName(), _columnNames);
-	}
-
-	public Boolean redundantTo(IndexMetadata indexMetadata) {
-		String[] indexMetadataColumnNames = indexMetadata._columnNames;
-
-		if (indexMetadata.isUnique() && isUnique()) {
-			if ((_columnNames.length <= indexMetadataColumnNames.length) &&
-				ArrayUtil.containsAll(indexMetadataColumnNames, _columnNames)) {
-
-				return Boolean.FALSE;
-			}
-
-			if ((_columnNames.length > indexMetadataColumnNames.length) &&
-				ArrayUtil.containsAll(_columnNames, indexMetadataColumnNames)) {
-
-				return Boolean.TRUE;
-			}
-		}
-
-		if (_columnNames.length <= indexMetadataColumnNames.length) {
-			for (int i = 0; i < _columnNames.length; i++) {
-				if (!_columnNames[i].equals(indexMetadataColumnNames[i])) {
-					return null;
-				}
-			}
-
-			if (isUnique()) {
-				return Boolean.FALSE;
-			}
-
-			return Boolean.TRUE;
-		}
-
-		Boolean redundant = indexMetadata.redundantTo(this);
-
-		if (redundant == null) {
-			return null;
-		}
-
-		return !redundant;
-	}
-
-	@Override
-	public String toString() {
-		return getCreateSQL(null);
-	}
-
-	private String _trimColumnName(String columnName) {
-		int index = columnName.indexOf("[$COLUMN_LENGTH:");
-
-		if (index > 0) {
-			columnName = columnName.substring(0, index);
-		}
-
-		return columnName;
 	}
 
 	private final String[] _columnNames;
