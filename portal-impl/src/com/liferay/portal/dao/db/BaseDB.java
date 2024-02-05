@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.db.Index;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
+import com.liferay.portal.kernel.dao.db.IndexSQLUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
@@ -119,7 +120,12 @@ public abstract class BaseDB implements DB {
 
 			runSQL(
 				_applyMaxStringIndexLengthLimitation(
-					indexMetadata.getCreateSQL(columnSizes)));
+					IndexSQLUtil.getCreateSQL(
+						indexMetadata.getTableName(), indexMetadata.isUnique(),
+						indexMetadata.getColumnNames(),
+						names -> IndexMetadataFactoryUtil.createIndexName(
+							indexMetadata.getTableName(), names),
+						columnSizes)));
 		}
 	}
 
