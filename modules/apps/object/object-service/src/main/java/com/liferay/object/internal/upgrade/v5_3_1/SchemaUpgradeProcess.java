@@ -6,11 +6,9 @@
 package com.liferay.object.internal.upgrade.v5_3_1;
 
 import com.liferay.object.constants.ObjectFieldConstants;
+import com.liferay.object.internal.dao.db.ObjectDBManagerUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
-import com.liferay.portal.kernel.dao.db.DBInspector;
-import com.liferay.portal.kernel.dao.db.IndexMetadata;
-import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
 /**
@@ -33,23 +31,10 @@ public class SchemaUpgradeProcess extends UpgradeProcess {
 			resultSet -> new Object[] {
 				resultSet.getString(1), resultSet.getString(2)
 			},
-			values -> _createIndex(
-				String.valueOf(values[0]), new DBInspector(connection),
-				String.valueOf(values[1])),
+			values -> ObjectDBManagerUtil.createIndexMetadata(
+				connection, String.valueOf(values[1]), false,
+				String.valueOf(values[0])),
 			null);
-	}
-
-	private void _createIndex(
-			String columnName, DBInspector dbInspector, String tableName)
-		throws Exception {
-
-		IndexMetadata indexMetadata =
-			IndexMetadataFactoryUtil.createIndexMetadata(
-				false, tableName, columnName);
-
-		if (!dbInspector.hasIndex(tableName, indexMetadata.getIndexName())) {
-			runSQL(indexMetadata.getCreateSQL(null));
-		}
 	}
 
 }

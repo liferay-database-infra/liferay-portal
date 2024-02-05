@@ -6,11 +6,9 @@
 package com.liferay.object.internal.upgrade.v5_2_0;
 
 import com.liferay.object.constants.ObjectRelationshipConstants;
+import com.liferay.object.internal.dao.db.ObjectDBManagerUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
-import com.liferay.portal.kernel.dao.db.DBInspector;
-import com.liferay.portal.kernel.dao.db.IndexMetadata;
-import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
 /**
@@ -20,8 +18,6 @@ public class ObjectRelationshipUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		DBInspector dbInspector = new DBInspector(connection);
-
 		processConcurrently(
 			SQLTransformer.transform(
 				StringBundler.concat(
@@ -41,35 +37,25 @@ public class ObjectRelationshipUpgradeProcess extends UpgradeProcess {
 				resultSet.getLong(3), resultSet.getLong(4)
 			},
 			values -> _createIndex(
-				String.valueOf(values[0]), dbInspector,
-				String.valueOf(values[1]), (long)values[2], (long)values[3]),
+				String.valueOf(values[0]), String.valueOf(values[1]),
+				(long)values[2], (long)values[3]),
 			null);
 	}
 
 	private void _createIndex(
-			String columnName, DBInspector dbInspector, String tableName)
-		throws Exception {
-
-		IndexMetadata indexMetadata =
-			IndexMetadataFactoryUtil.createIndexMetadata(
-				false, tableName, columnName);
-
-		if (!dbInspector.hasIndex(tableName, indexMetadata.getIndexName())) {
-			runSQL(indexMetadata.getCreateSQL(null));
-		}
-	}
-
-	private void _createIndex(
-			String columnName, DBInspector dbInspector, String tableName,
-			long objectDefinitionId1, long objectDefinitionId2)
+			String columnName, String tableName, long objectDefinitionId1,
+			long objectDefinitionId2)
 		throws Exception {
 
 		if (objectDefinitionId1 != objectDefinitionId2) {
-			_createIndex(columnName, dbInspector, tableName);
+			ObjectDBManagerUtil.createIndexMetadata(
+				connection, tableName, false, columnName);
 		}
 		else {
-			_createIndex(columnName.concat("1"), dbInspector, tableName);
-			_createIndex(columnName.concat("2"), dbInspector, tableName);
+			ObjectDBManagerUtil.createIndexMetadata(
+				connection, tableName, false, columnName.concat("1"));
+			ObjectDBManagerUtil.createIndexMetadata(
+				connection, tableName, false, columnName.concat("2"));
 		}
 	}
 
