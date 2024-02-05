@@ -13,6 +13,7 @@ import com.liferay.commerce.product.service.CPInstanceLocalService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
+import com.liferay.portal.kernel.dao.db.IndexSQLUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
@@ -106,7 +107,7 @@ public class CommercePriceEntryUpgradeProcess extends UpgradeProcess {
 			}
 
 			if (!_tableHasIndex(tableName, indexMetadata.getIndexName())) {
-				runSQL(indexMetadata.getCreateSQL(null));
+				runSQL(IndexSQLUtil.getCreateSQL(indexMetadata));
 			}
 			else if (_log.isInfoEnabled()) {
 				_log.info(
