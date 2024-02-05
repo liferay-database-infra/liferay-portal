@@ -8,15 +8,23 @@ package com.liferay.portal.kernel.dao.db;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 
+import java.util.function.Function;
+
 /**
  * @author Mariano Álvaro Sáiz
  */
 public class IndexSQLUtil {
 
-	public static String getCreateSQL(
-		IndexMetadata indexMetadata, int[] lengths) {
+	public static String getCreateSQL(IndexMetadata indexMetadata) {
+		return getCreateSQL(
+			indexMetadata.getTableName(), indexMetadata.isUnique(),
+			indexMetadata.getColumnNames(),
+			columnNames -> indexMetadata.getIndexName(), null);
+	}
 
-		String[] columnNames = indexMetadata.getColumnNames();
+	public static String getCreateSQL(
+		String tableName, boolean unique, String[] columnNames,
+		Function<String[], String> nameGenerator, int[] lengths) {
 
 		int sbSize = 8 + (columnNames.length * 2);
 
@@ -26,30 +34,34 @@ public class IndexSQLUtil {
 
 		StringBundler sb = new StringBundler(sbSize);
 
-		if (indexMetadata.isUnique()) {
+		if (unique) {
 			sb.append("create unique ");
 		}
 		else {
 			sb.append("create ");
 		}
 
+		String[] fullColumnNames = new String[columnNames.length];
+
+		for (int i = 0; i < columnNames.length; i++) {
+			fullColumnNames[i] = columnNames[i];
+
+			if ((lengths != null) && (lengths[i] > 0)) {
+				fullColumnNames[i] = StringBundler.concat(
+					fullColumnNames[i], "[$COLUMN_LENGTH:", lengths[i], "$]");
+			}
+		}
+
 		sb.append("index ");
-		sb.append(indexMetadata.getIndexName());
+		sb.append(nameGenerator.apply(fullColumnNames));
 		sb.append(" on ");
-		sb.append(indexMetadata.getTableName());
+		sb.append(tableName);
 
 		sb.append(StringPool.SPACE);
 		sb.append(StringPool.OPEN_PARENTHESIS);
 
-		for (int i = 0; i < columnNames.length; i++) {
-			sb.append(columnNames[i]);
-
-			if ((lengths != null) && (lengths[i] > 0)) {
-				sb.append("[$COLUMN_LENGTH:");
-				sb.append(lengths[i]);
-				sb.append("$]");
-			}
-
+		for (String fullColumnName : fullColumnNames) {
+			sb.append(fullColumnName);
 			sb.append(StringPool.COMMA_AND_SPACE);
 		}
 
