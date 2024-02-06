@@ -123,8 +123,7 @@ public abstract class BaseDB implements DB {
 					IndexSQLUtil.getCreateSQL(
 						indexMetadata.getTableName(), indexMetadata.isUnique(),
 						indexMetadata.getColumnNames(),
-						names -> IndexMetadataFactoryUtil.createIndexName(
-							indexMetadata.getTableName(), names),
+						indexMetadata.getIndexNameRebuildFunction(),
 						columnSizes)));
 		}
 	}

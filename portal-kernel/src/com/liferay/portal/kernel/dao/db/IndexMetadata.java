@@ -7,6 +7,9 @@ package com.liferay.portal.kernel.dao.db;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.util.StringUtil;
+
+import java.util.function.Function;
 
 /**
  * @author James Lefeu
@@ -37,6 +40,19 @@ public class IndexMetadata extends Index {
 
 	public String getDropSQL() {
 		return _dropSQL;
+	}
+
+	public Function<String[], String> getIndexNameRebuildFunction() {
+		if (_isTempIndex()) {
+			return columnNames -> getIndexName();
+		}
+
+		return columnNames -> IndexMetadataFactoryUtil.createIndexName(
+			getTableName(), columnNames);
+	}
+
+	private boolean _isTempIndex() {
+		return StringUtil.startsWith(getIndexName(), "IX_TEMP_");
 	}
 
 	private final String[] _columnNames;
