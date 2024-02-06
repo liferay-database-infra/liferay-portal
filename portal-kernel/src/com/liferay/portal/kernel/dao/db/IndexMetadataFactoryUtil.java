@@ -38,7 +38,7 @@ public class IndexMetadataFactoryUtil {
 	public static IndexMetadata createIndexMetadata(String createSQL) {
 		boolean unique = createSQL.contains("unique");
 
-		int start = createSQL.indexOf("IX_");
+		int start = createSQL.indexOf(_INDEX_NAME_PREFIX);
 
 		if (start < 0) {
 			throw new IllegalArgumentException(
