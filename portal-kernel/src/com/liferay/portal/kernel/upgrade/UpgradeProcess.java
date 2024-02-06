@@ -45,7 +45,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Brian Wing Shun Chan
@@ -176,10 +175,9 @@ public abstract class UpgradeProcess
 			String tableName, boolean unique, String... columnNames)
 		throws Exception {
 
-		String indexName = "IX_TEMP_" + _tempIndexCounter.incrementAndGet();
-
-		IndexMetadata indexMetadata = new IndexMetadata(
-			indexName, tableName, unique, columnNames);
+		IndexMetadata indexMetadata =
+			IndexMetadataFactoryUtil.createTempIndexMetadata(
+				unique, tableName, columnNames);
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(tableName)) {
 			addIndexes(
@@ -194,8 +192,8 @@ public abstract class UpgradeProcess
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						StringBundler.concat(
-							"Unable to drop temporary index ", indexName,
-							" on ", tableName));
+							"Unable to drop temporary index ",
+							indexMetadata.getIndexName(), " on ", tableName));
 				}
 			}
 		};
@@ -410,7 +408,6 @@ public abstract class UpgradeProcess
 	private static final Map
 		<String, List<ObjectValuePair<String, IndexMetadata>>>
 			_portalIndexesSQL = new HashMap<>();
-	private static final AtomicLong _tempIndexCounter = new AtomicLong(0);
 
 	private String _upgradeInfo;
 
