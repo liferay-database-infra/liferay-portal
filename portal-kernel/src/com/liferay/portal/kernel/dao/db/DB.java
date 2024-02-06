@@ -132,6 +132,8 @@ public interface DB {
 
 	public boolean isSupportsUpdateWithInnerJoin();
 
+	public boolean isVarchar(int sqlType);
+
 	public void process(UnsafeConsumer<Long, Exception> unsafeConsumer)
 		throws Exception;
 

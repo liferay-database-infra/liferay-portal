@@ -51,10 +51,7 @@ public class MySQLDB extends BaseDB {
 
 		Matcher matcher = columnTypePattern.matcher(newColumnType);
 
-		if (matcher.lookingAt() &&
-			ArrayUtil.contains(
-				SQL_VARCHAR_TYPES, getSQLType(matcher.group(1)))) {
-
+		if (matcher.lookingAt() && isVarchar(getSQLType(matcher.group(1)))) {
 			indexMetadatas = dropIndexes(connection, tableName, columnName);
 		}
 
