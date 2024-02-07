@@ -1278,8 +1278,8 @@ public abstract class BaseDB implements DB {
 
 								indexMetadatas.add(
 									IndexMetadataFactoryUtil.
-										createIndexMetadata(
-											connection, unique,
+										createIndexMetadataFromDB(
+											previousIndexName, unique,
 											normalizedTableName, columnNames));
 							}
 
@@ -1303,8 +1303,8 @@ public abstract class BaseDB implements DB {
 							 columnNames, normalizedColumnName))) {
 
 						indexMetadatas.add(
-							IndexMetadataFactoryUtil.createIndexMetadata(
-								connection, unique, normalizedTableName,
+							IndexMetadataFactoryUtil.createIndexMetadataFromDB(
+								previousIndexName, unique, normalizedTableName,
 								columnNames));
 					}
 				}
