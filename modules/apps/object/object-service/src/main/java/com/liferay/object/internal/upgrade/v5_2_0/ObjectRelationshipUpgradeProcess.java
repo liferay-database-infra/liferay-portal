@@ -49,13 +49,13 @@ public class ObjectRelationshipUpgradeProcess extends UpgradeProcess {
 
 		if (objectDefinitionId1 != objectDefinitionId2) {
 			ObjectDBManagerUtil.createIndexMetadata(
-				connection, tableName, false, columnName);
+				connection, false, tableName, columnName);
 		}
 		else {
 			ObjectDBManagerUtil.createIndexMetadata(
-				connection, tableName, false, columnName.concat("1"));
+				connection, false, tableName, columnName.concat("1"));
 			ObjectDBManagerUtil.createIndexMetadata(
-				connection, tableName, false, columnName.concat("2"));
+				connection, false, tableName, columnName.concat("2"));
 		}
 	}
 

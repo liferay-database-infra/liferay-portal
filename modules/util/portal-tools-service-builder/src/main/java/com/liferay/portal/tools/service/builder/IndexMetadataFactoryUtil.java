@@ -17,7 +17,7 @@ public class IndexMetadataFactoryUtil {
 			throw new NullPointerException("Column names are missing");
 		}
 
-		return new IndexMetadata(tableName, unique, columnNames);
+		return new IndexMetadata(unique, tableName, columnNames);
 	}
 
 	public static IndexMetadata createIndexMetadata(String sql) {
@@ -26,7 +26,7 @@ public class IndexMetadataFactoryUtil {
 				createIndexMetadata(sql);
 
 		return new IndexMetadata(
-			indexMetadata.getTableName(), indexMetadata.isUnique(),
+			indexMetadata.isUnique(), indexMetadata.getTableName(),
 			indexMetadata.getColumnNames());
 	}
 

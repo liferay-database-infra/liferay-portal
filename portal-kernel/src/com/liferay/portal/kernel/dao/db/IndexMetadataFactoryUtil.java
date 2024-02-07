@@ -80,7 +80,7 @@ public class IndexMetadataFactoryUtil {
 			createSQL.substring(start, end), StringPool.COMMA_AND_SPACE);
 
 		return new IndexMetadata(
-			indexName, tableName, unique, columnNames, createSQL);
+			indexName, unique, tableName, columnNames, createSQL);
 	}
 
 	public static IndexMetadata createTempIndexMetadata(
@@ -102,13 +102,13 @@ public class IndexMetadataFactoryUtil {
 		}
 
 		String sqlCreate = IndexSQLUtil.getCreateSQL(
-			connection, tableName, unique, columnNames, indexPrefix);
+			connection, unique, tableName, columnNames, indexPrefix);
 
 		String substring = sqlCreate.substring(sqlCreate.indexOf(indexPrefix));
 
 		return new IndexMetadata(
-			substring.substring(0, substring.indexOf(StringPool.SPACE)),
-			tableName, unique, columnNames, sqlCreate);
+			substring.substring(0, substring.indexOf(StringPool.SPACE)), unique,
+			tableName, columnNames, sqlCreate);
 	}
 
 	private static final String _INDEX_NAME_PREFIX = "IX_";

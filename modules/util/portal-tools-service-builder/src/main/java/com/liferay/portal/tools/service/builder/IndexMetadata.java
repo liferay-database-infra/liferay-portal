@@ -20,14 +20,14 @@ import java.util.Objects;
 public class IndexMetadata implements Comparable<IndexMetadata> {
 
 	public IndexMetadata(
-		String tableName, boolean unique, String... columnNames) {
+		boolean unique, String tableName, String... columnNames) {
 
 		if (columnNames == null) {
 			throw new NullPointerException("Column names are missing");
 		}
 
-		_tableName = tableName;
 		_unique = unique;
+		_tableName = tableName;
 		_columnNames = columnNames;
 	}
 
@@ -68,7 +68,7 @@ public class IndexMetadata implements Comparable<IndexMetadata> {
 
 	public String getCreateSQL(int[] columnSizes) {
 		return IndexSQLUtil.getCreateSQL(
-			_tableName, _unique, _columnNames, columnSizes, "IX_");
+			_unique, _tableName, _columnNames, columnSizes, "IX_");
 	}
 
 	public String getTableName() {

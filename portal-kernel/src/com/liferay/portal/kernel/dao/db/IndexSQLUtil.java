@@ -24,17 +24,7 @@ import java.util.Map;
 public class IndexSQLUtil {
 
 	public static String getCreateSQL(
-			Connection connection, String tableName, boolean unique,
-			String[] columnNames, String indexPrefix)
-		throws SQLException {
-
-		return getCreateSQL(
-			tableName, unique, columnNames,
-			_getColumnSizes(connection, tableName, columnNames), indexPrefix);
-	}
-
-	public static String getCreateSQL(
-		String tableName, boolean unique, String[] columnNames,
+		boolean unique, String tableName, String[] columnNames,
 		int[] columnSizes, String indexPrefix) {
 
 		int sbSize = 8 + (columnNames.length * 2);
@@ -83,6 +73,16 @@ public class IndexSQLUtil {
 		sb.append(StringPool.SEMICOLON);
 
 		return sb.toString();
+	}
+
+	public static String getCreateSQL(
+			Connection connection, boolean unique, String tableName,
+			String[] columnNames, String indexPrefix)
+		throws SQLException {
+
+		return getCreateSQL(
+			unique, tableName, columnNames,
+			_getColumnSizes(connection, tableName, columnNames), indexPrefix);
 	}
 
 	private static String _createIndexName(

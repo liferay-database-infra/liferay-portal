@@ -32,7 +32,7 @@ public class SchemaUpgradeProcess extends UpgradeProcess {
 				resultSet.getString(1), resultSet.getString(2)
 			},
 			values -> ObjectDBManagerUtil.createIndexMetadata(
-				connection, String.valueOf(values[1]), false,
+				connection, false, String.valueOf(values[1]),
 				String.valueOf(values[0])),
 			null);
 	}

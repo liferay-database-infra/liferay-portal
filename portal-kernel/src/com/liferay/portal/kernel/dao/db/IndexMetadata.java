@@ -16,7 +16,7 @@ import com.liferay.petra.string.StringPool;
 public class IndexMetadata extends Index {
 
 	public IndexMetadata(
-		String indexName, String tableName, boolean unique,
+		String indexName, boolean unique, String tableName,
 		String[] columnNames, String createSQL) {
 
 		super(indexName, tableName, unique);

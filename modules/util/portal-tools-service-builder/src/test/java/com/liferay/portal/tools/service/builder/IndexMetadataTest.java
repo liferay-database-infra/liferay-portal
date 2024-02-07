@@ -22,7 +22,7 @@ public class IndexMetadataTest {
 	@Test
 	public void testIndexNameCanChangeAfterOptimization() throws Exception {
 		IndexMetadata indexMetadata = new IndexMetadata(
-			"Table1", false, "column1", "column2");
+			false, "Table1", "column1", "column2");
 
 		indexMetadata.optimizeColumns(
 			HashMapBuilder.<String, IntegerWrapper>put(
@@ -34,7 +34,7 @@ public class IndexMetadataTest {
 		String indexName = (String)ArrayUtil.getValue(
 			StringUtil.split(
 				IndexSQLUtil.getCreateSQL(
-					indexMetadata.getTableName(), indexMetadata.isUnique(),
+					indexMetadata.isUnique(), indexMetadata.getTableName(),
 					indexMetadata.getColumnNames(), new int[] {10, 20}, "IX_"),
 				" "),
 			2);
@@ -51,7 +51,7 @@ public class IndexMetadataTest {
 			(String)ArrayUtil.getValue(
 				StringUtil.split(
 					IndexSQLUtil.getCreateSQL(
-						indexMetadata.getTableName(), indexMetadata.isUnique(),
+						indexMetadata.isUnique(), indexMetadata.getTableName(),
 						indexMetadata.getColumnNames(), new int[] {10, 20},
 						"IX_"),
 					" "),
@@ -63,14 +63,14 @@ public class IndexMetadataTest {
 		throws Exception {
 
 		IndexMetadata indexMetadata = new IndexMetadata(
-			"Company", true, "webId");
+			true, "Company", "webId");
 
 		Assert.assertEquals(
 			"IX_EC00543C",
 			(String)ArrayUtil.getValue(
 				StringUtil.split(
 					IndexSQLUtil.getCreateSQL(
-						indexMetadata.getTableName(), indexMetadata.isUnique(),
+						indexMetadata.isUnique(), indexMetadata.getTableName(),
 						indexMetadata.getColumnNames(), null, "IX_"),
 					" "),
 				3));
@@ -80,7 +80,7 @@ public class IndexMetadataTest {
 			(String)ArrayUtil.getValue(
 				StringUtil.split(
 					IndexSQLUtil.getCreateSQL(
-						indexMetadata.getTableName(), indexMetadata.isUnique(),
+						indexMetadata.isUnique(), indexMetadata.getTableName(),
 						indexMetadata.getColumnNames(), new int[] {75}, "IX_"),
 					" "),
 				3));

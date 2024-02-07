@@ -273,10 +273,10 @@ public class ObjectRelationshipLocalServiceImpl
 			objectRelationshipPersistence.getDataSource());
 
 		ObjectDBManagerUtil.createIndexMetadata(
-			connection, objectRelationship.getDBTableName(), false,
+			connection, false, objectRelationship.getDBTableName(),
 			pkObjectFieldDBColumnName1);
 		ObjectDBManagerUtil.createIndexMetadata(
-			connection, objectRelationship.getDBTableName(), false,
+			connection, false, objectRelationship.getDBTableName(),
 			pkObjectFieldDBColumnName2);
 
 		return objectRelationship;
@@ -979,7 +979,7 @@ public class ObjectRelationshipLocalServiceImpl
 		ObjectDBManagerUtil.createIndexMetadata(
 			_currentConnection.getConnection(
 				objectRelationshipPersistence.getDataSource()),
-			dbTableName, false, objectField.getDBColumnName());
+			false, dbTableName, objectField.getDBColumnName());
 
 		ObjectDefinitionLocalService objectDefinitionLocalService =
 			_objectDefinitionLocalServiceSnapshot.get();

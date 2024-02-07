@@ -22,7 +22,7 @@ import java.util.Arrays;
 public class ObjectDBManagerUtil {
 
 	public static void createIndexMetadata(
-			Connection connection, String tableName, boolean unique,
+			Connection connection, boolean unique, String tableName,
 			String... columnNames)
 		throws PortalException {
 
