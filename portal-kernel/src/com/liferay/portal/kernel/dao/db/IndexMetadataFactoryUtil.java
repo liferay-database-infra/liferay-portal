@@ -84,6 +84,14 @@ public class IndexMetadataFactoryUtil {
 			indexName, unique, tableName, columnNames, createSQL);
 	}
 
+	public static IndexMetadata createIndexMetadataFromDB(
+		String indexName, boolean unique, String tableName,
+		String... columnNames) {
+
+		return new IndexMetadata(
+			indexName, unique, tableName, columnNames, null);
+	}
+
 	public static IndexMetadata createTempIndexMetadata(
 			Connection connection, boolean unique, String tableName,
 			String... columnNames)
