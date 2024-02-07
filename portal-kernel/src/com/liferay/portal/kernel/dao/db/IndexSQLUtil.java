@@ -7,8 +7,16 @@ package com.liferay.portal.kernel.dao.db;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
-import java.util.function.Function;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Mariano Álvaro Sáiz
@@ -16,12 +24,22 @@ import java.util.function.Function;
 public class IndexSQLUtil {
 
 	public static String getCreateSQL(
+			Connection connection, String tableName, boolean unique,
+			String[] columnNames, String indexPrefix)
+		throws SQLException {
+
+		return getCreateSQL(
+			tableName, unique, columnNames,
+			_getColumnSizes(connection, tableName, columnNames), indexPrefix);
+	}
+
+	public static String getCreateSQL(
 		String tableName, boolean unique, String[] columnNames,
-		Function<String[], String> nameGenerator, int[] lengths) {
+		int[] columnSizes, String indexPrefix) {
 
 		int sbSize = 8 + (columnNames.length * 2);
 
-		if (lengths != null) {
+		if (columnSizes != null) {
 			sbSize += columnNames.length * 3;
 		}
 
@@ -39,14 +57,15 @@ public class IndexSQLUtil {
 		for (int i = 0; i < columnNames.length; i++) {
 			fullColumnNames[i] = columnNames[i];
 
-			if ((lengths != null) && (lengths[i] > 0)) {
+			if ((columnSizes != null) && (columnSizes[i] > 0)) {
 				fullColumnNames[i] = StringBundler.concat(
-					fullColumnNames[i], "[$COLUMN_LENGTH:", lengths[i], "$]");
+					fullColumnNames[i], "[$COLUMN_LENGTH:", columnSizes[i],
+					"$]");
 			}
 		}
 
 		sb.append("index ");
-		sb.append(nameGenerator.apply(fullColumnNames));
+		sb.append(_createIndexName(tableName, fullColumnNames, indexPrefix));
 		sb.append(" on ");
 		sb.append(tableName);
 
@@ -64,6 +83,75 @@ public class IndexSQLUtil {
 		sb.append(StringPool.SEMICOLON);
 
 		return sb.toString();
+	}
+
+	private static String _createIndexName(
+		String tableName, String[] fullColumnNames, String indexPrefix) {
+
+		StringBundler sb = new StringBundler(4 + (fullColumnNames.length * 2));
+
+		sb.append(tableName);
+		sb.append(StringPool.SPACE);
+		sb.append(StringPool.OPEN_PARENTHESIS);
+
+		for (String columnName : fullColumnNames) {
+			sb.append(columnName);
+			sb.append(StringPool.COMMA_AND_SPACE);
+		}
+
+		sb.setIndex(sb.index() - 1);
+
+		sb.append(StringPool.CLOSE_PARENTHESIS);
+		sb.append(StringPool.SEMICOLON);
+
+		String specification = sb.toString();
+
+		String specificationHash = StringUtil.toHexString(
+			specification.hashCode());
+
+		specificationHash = StringUtil.toUpperCase(specificationHash);
+
+		return indexPrefix.concat(specificationHash);
+	}
+
+	private static int[] _getColumnSizes(
+			Connection connection, String tableName, String[] columnNames)
+		throws SQLException {
+
+		DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+		DB db = DBManagerUtil.getDB();
+
+		DBInspector dbInspector = new DBInspector(connection);
+
+		int[] columnSizes = new int[columnNames.length];
+
+		try (ResultSet resultSet = databaseMetaData.getColumns(
+				dbInspector.getCatalog(), dbInspector.getSchema(),
+				dbInspector.normalizeName(tableName), null)) {
+
+			Map<String, Integer> columnSizeMap = new HashMap<>();
+
+			while (resultSet.next()) {
+				int columnType = resultSet.getInt("DATA_TYPE");
+
+				if (!db.isVarchar(columnType)) {
+					continue;
+				}
+
+				columnSizeMap.put(
+					dbInspector.normalizeName(
+						resultSet.getString("COLUMN_NAME"), databaseMetaData),
+					resultSet.getInt("COLUMN_SIZE"));
+			}
+
+			for (int i = 0; i < columnNames.length; i++) {
+				columnSizes[i] = MapUtil.getInteger(
+					columnSizeMap, columnNames[i], 0);
+			}
+		}
+
+		return columnSizes;
 	}
 
 }
