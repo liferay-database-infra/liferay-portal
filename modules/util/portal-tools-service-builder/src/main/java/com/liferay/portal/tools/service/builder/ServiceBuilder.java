@@ -4089,7 +4089,7 @@ public class ServiceBuilder {
 					indexMetadata.getTableName());
 
 				if (entity != null) {
-					for (String columnName : indexMetadata.getColumnNames()) {
+					for (String columnName : indexMetadata.getDBColumnNames()) {
 						EntityColumn entityColumn =
 							_fetchEntityColumnByColumnDBName(
 								entity, columnName);
@@ -4101,7 +4101,7 @@ public class ServiceBuilder {
 									indexMetadata.getTableName(),
 									" with columns ",
 									Arrays.toString(
-										indexMetadata.getColumnNames()),
+										indexMetadata.getDBColumnNames()),
 									" because column \"", columnName,
 									"\" does not exist"));
 
@@ -4895,7 +4895,7 @@ public class ServiceBuilder {
 			return null;
 		}
 
-		String[] columnNames = indexMetadata.getColumnNames();
+		String[] columnNames = indexMetadata.getDBColumnNames();
 
 		int[] columnLengths = new int[columnNames.length];
 
