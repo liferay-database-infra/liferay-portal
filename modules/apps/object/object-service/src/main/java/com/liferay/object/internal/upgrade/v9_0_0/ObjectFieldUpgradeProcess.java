@@ -10,6 +10,7 @@ import com.liferay.object.constants.ObjectFieldSettingConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
+import com.liferay.portal.kernel.dao.db.IndexSQLUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 
@@ -93,7 +94,7 @@ public class ObjectFieldUpgradeProcess extends UpgradeProcess {
 
 		specificationHash = StringUtil.toUpperCase(specificationHash);
 
-		return "IX_".concat(specificationHash);
+		return IndexSQLUtil.INDEX_NAME_PREFIX.concat(specificationHash);
 	}
 
 }

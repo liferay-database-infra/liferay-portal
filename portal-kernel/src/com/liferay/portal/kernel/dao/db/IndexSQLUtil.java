@@ -23,6 +23,8 @@ import java.util.Map;
  */
 public class IndexSQLUtil {
 
+	public static final String INDEX_NAME_PREFIX = "IX_";
+
 	public static String getCreateSQL(
 		boolean unique, String tableName, String[] columnNames,
 		int[] columnSizes, String indexPrefix) {

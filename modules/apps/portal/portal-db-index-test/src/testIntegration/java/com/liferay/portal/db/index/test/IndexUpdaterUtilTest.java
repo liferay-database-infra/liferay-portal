@@ -12,6 +12,7 @@ import com.liferay.portal.db.index.IndexUpdaterUtil;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.IndexSQLUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -171,7 +172,8 @@ public class IndexUpdaterUtilTest {
 
 	private static String _getIndexName(String indexesSQL) {
 		return indexesSQL.substring(
-			indexesSQL.indexOf("IX_"), indexesSQL.indexOf(" on"));
+			indexesSQL.indexOf(IndexSQLUtil.INDEX_NAME_PREFIX),
+			indexesSQL.indexOf(" on"));
 	}
 
 	private static String _getTableIndexName(String indexesSQL) {

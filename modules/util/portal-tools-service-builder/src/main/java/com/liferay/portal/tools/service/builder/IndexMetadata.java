@@ -68,7 +68,8 @@ public class IndexMetadata implements Comparable<IndexMetadata> {
 
 	public String getCreateSQL(int[] columnSizes) {
 		return IndexSQLUtil.getCreateSQL(
-			_unique, _tableName, _columnNames, columnSizes, "IX_");
+			_unique, _tableName, _columnNames, columnSizes,
+			IndexSQLUtil.INDEX_NAME_PREFIX);
 	}
 
 	public String getTableName() {

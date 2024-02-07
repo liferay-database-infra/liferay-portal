@@ -25,13 +25,14 @@ public class IndexMetadataFactoryUtil {
 		throws SQLException {
 
 		return _createIndexMetadata(
-			connection, unique, tableName, columnNames, _INDEX_NAME_PREFIX);
+			connection, unique, tableName, columnNames,
+			IndexSQLUtil.INDEX_NAME_PREFIX);
 	}
 
 	public static IndexMetadata createIndexMetadata(String createSQL) {
 		boolean unique = createSQL.contains("unique");
 
-		int start = createSQL.indexOf(_INDEX_NAME_PREFIX);
+		int start = createSQL.indexOf(IndexSQLUtil.INDEX_NAME_PREFIX);
 
 		if (start < 0) {
 			throw new IllegalArgumentException(
@@ -115,7 +116,5 @@ public class IndexMetadataFactoryUtil {
 		return new IndexMetadata(
 			indexName, unique, tableName, columnNames, sqlCreate);
 	}
-
-	private static final String _INDEX_NAME_PREFIX = "IX_";
 
 }
