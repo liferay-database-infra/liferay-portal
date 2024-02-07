@@ -10,15 +10,14 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.IndexMetadata;
+import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
-import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
 import java.sql.Connection;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -49,9 +48,6 @@ public class UpgradeProcessTest {
 		_connection = DataAccess.getConnection();
 
 		_db = DBManagerUtil.getDB();
-
-		_tempIndexCounter = ReflectionTestUtil.getFieldValue(
-			UpgradeProcess.class, "_tempIndexCounter");
 	}
 
 	@AfterClass
@@ -74,8 +70,13 @@ public class UpgradeProcessTest {
 
 	@Test
 	public void testAddMultipleTemporaryIndex() throws Exception {
-		String tempIndexName1 = "IX_TEMP_" + (_tempIndexCounter.get() + 1);
-		String tempIndexName2 = "IX_TEMP_" + (_tempIndexCounter.get() + 2);
+		IndexMetadata indexMetadata1 =
+			IndexMetadataFactoryUtil.createTempIndexMetadata(
+				_connection, false, TABLE_NAME, "typeVarchar");
+
+		IndexMetadata indexMetadata2 =
+			IndexMetadataFactoryUtil.createTempIndexMetadata(
+				_connection, false, TABLE_NAME, "id", "typeVarchar");
 
 		UpgradeProcess upgradeProcess = new UpgradeProcess() {
 
@@ -86,12 +87,16 @@ public class UpgradeProcessTest {
 					SafeCloseable safeCloseable2 = addTemporaryIndex(
 						TABLE_NAME, false, "id", "typeVarchar")) {
 
-					Assert.assertTrue(hasIndex(TABLE_NAME, tempIndexName1));
-					Assert.assertTrue(hasIndex(TABLE_NAME, tempIndexName2));
+					Assert.assertTrue(
+						hasIndex(TABLE_NAME, indexMetadata1.getIndexName()));
+					Assert.assertTrue(
+						hasIndex(TABLE_NAME, indexMetadata2.getIndexName()));
 				}
 
-				Assert.assertFalse(hasIndex(TABLE_NAME, tempIndexName1));
-				Assert.assertFalse(hasIndex(TABLE_NAME, tempIndexName2));
+				Assert.assertFalse(
+					hasIndex(TABLE_NAME, indexMetadata1.getIndexName()));
+				Assert.assertFalse(
+					hasIndex(TABLE_NAME, indexMetadata2.getIndexName()));
 			}
 
 		};
@@ -101,7 +106,9 @@ public class UpgradeProcessTest {
 
 	@Test
 	public void testAddTemporaryIndex() throws Exception {
-		String tempIndexName = "IX_TEMP_" + (_tempIndexCounter.get() + 1);
+		IndexMetadata indexMetadata =
+			IndexMetadataFactoryUtil.createTempIndexMetadata(
+				_connection, false, TABLE_NAME, "typeVarchar");
 
 		UpgradeProcess upgradeProcess = new UpgradeProcess() {
 
@@ -110,10 +117,12 @@ public class UpgradeProcessTest {
 				try (SafeCloseable safeCloseable = addTemporaryIndex(
 						TABLE_NAME, false, "typeVarchar")) {
 
-					Assert.assertTrue(hasIndex(TABLE_NAME, tempIndexName));
+					Assert.assertTrue(
+						hasIndex(TABLE_NAME, indexMetadata.getIndexName()));
 				}
 
-				Assert.assertFalse(hasIndex(TABLE_NAME, tempIndexName));
+				Assert.assertFalse(
+					hasIndex(TABLE_NAME, indexMetadata.getIndexName()));
 			}
 
 		};
@@ -123,6 +132,5 @@ public class UpgradeProcessTest {
 
 	private static Connection _connection;
 	private static DB _db;
-	private static AtomicLong _tempIndexCounter;
 
 }

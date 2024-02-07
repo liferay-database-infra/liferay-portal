@@ -5,7 +5,6 @@
 
 package com.liferay.portal.tools.service.builder;
 
-import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.dao.db.IndexSQLUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -36,10 +35,7 @@ public class IndexMetadataTest {
 			StringUtil.split(
 				IndexSQLUtil.getCreateSQL(
 					indexMetadata.getTableName(), indexMetadata.isUnique(),
-					indexMetadata.getColumnNames(),
-					columnNames -> IndexMetadataFactoryUtil.createIndexName(
-						"Table1", columnNames),
-					new int[] {10, 20}),
+					indexMetadata.getColumnNames(), new int[] {10, 20}, "IX_"),
 				" "),
 			2);
 
@@ -56,10 +52,8 @@ public class IndexMetadataTest {
 				StringUtil.split(
 					IndexSQLUtil.getCreateSQL(
 						indexMetadata.getTableName(), indexMetadata.isUnique(),
-						indexMetadata.getColumnNames(),
-						columnNames -> IndexMetadataFactoryUtil.createIndexName(
-							"Table1", columnNames),
-						new int[] {10, 20}),
+						indexMetadata.getColumnNames(), new int[] {10, 20},
+						"IX_"),
 					" "),
 				2));
 	}
@@ -77,10 +71,7 @@ public class IndexMetadataTest {
 				StringUtil.split(
 					IndexSQLUtil.getCreateSQL(
 						indexMetadata.getTableName(), indexMetadata.isUnique(),
-						indexMetadata.getColumnNames(),
-						columnNames -> IndexMetadataFactoryUtil.createIndexName(
-							"Company", columnNames),
-						null),
+						indexMetadata.getColumnNames(), null, "IX_"),
 					" "),
 				3));
 
@@ -90,10 +81,7 @@ public class IndexMetadataTest {
 				StringUtil.split(
 					IndexSQLUtil.getCreateSQL(
 						indexMetadata.getTableName(), indexMetadata.isUnique(),
-						indexMetadata.getColumnNames(),
-						columnNames -> IndexMetadataFactoryUtil.createIndexName(
-							"Company", columnNames),
-						new int[] {75}),
+						indexMetadata.getColumnNames(), new int[] {75}, "IX_"),
 					" "),
 				3));
 	}

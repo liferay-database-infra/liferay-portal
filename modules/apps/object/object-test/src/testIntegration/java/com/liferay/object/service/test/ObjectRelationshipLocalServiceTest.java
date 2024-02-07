@@ -833,11 +833,11 @@ public class ObjectRelationshipLocalServiceTest {
 	private boolean _hasIndex(String tableName, String columnName)
 		throws Exception {
 
-		IndexMetadata indexMetadata =
-			IndexMetadataFactoryUtil.createIndexMetadata(
-				false, tableName, columnName);
-
 		try (Connection connection = DataAccess.getConnection()) {
+			IndexMetadata indexMetadata =
+					IndexMetadataFactoryUtil.createIndexMetadata(
+							connection, false, tableName, columnName);
+
 			DBInspector dbInspector = new DBInspector(connection);
 
 			return dbInspector.hasIndex(

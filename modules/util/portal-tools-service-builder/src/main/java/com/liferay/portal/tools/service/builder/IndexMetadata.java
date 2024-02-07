@@ -5,7 +5,6 @@
 
 package com.liferay.portal.tools.service.builder;
 
-import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.dao.db.IndexSQLUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.IntegerWrapper;
