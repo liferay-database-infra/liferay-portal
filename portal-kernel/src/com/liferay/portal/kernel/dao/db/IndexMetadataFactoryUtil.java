@@ -113,6 +113,10 @@ public class IndexMetadataFactoryUtil {
 			indexName = parts[3];
 		}
 
+		DBInspector dbInspector = new DBInspector(connection);
+
+		indexName = dbInspector.normalizeName(indexName);
+
 		return new IndexMetadata(
 			indexName, unique, tableName, columnNames, sqlCreate);
 	}
