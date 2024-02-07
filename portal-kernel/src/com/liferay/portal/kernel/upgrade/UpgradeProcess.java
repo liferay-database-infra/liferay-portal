@@ -177,7 +177,7 @@ public abstract class UpgradeProcess
 
 		IndexMetadata indexMetadata =
 			IndexMetadataFactoryUtil.createTempIndexMetadata(
-				unique, tableName, columnNames);
+				connection, unique, tableName, columnNames);
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(tableName)) {
 			addIndexes(

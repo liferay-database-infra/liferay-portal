@@ -15,13 +15,6 @@ import java.util.function.Function;
  */
 public class IndexSQLUtil {
 
-	public static String getCreateSQL(IndexMetadata indexMetadata) {
-		return getCreateSQL(
-			indexMetadata.getTableName(), indexMetadata.isUnique(),
-			indexMetadata.getColumnNames(),
-			columnNames -> indexMetadata.getIndexName(), null);
-	}
-
 	public static String getCreateSQL(
 		String tableName, boolean unique, String[] columnNames,
 		Function<String[], String> nameGenerator, int[] lengths) {

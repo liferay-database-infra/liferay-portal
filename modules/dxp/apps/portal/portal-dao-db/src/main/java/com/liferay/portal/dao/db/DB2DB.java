@@ -11,6 +11,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
+import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.log.Log;
@@ -94,9 +95,9 @@ public class DB2DB extends BaseDB {
 				columnNames, normalizedOldColumnName, normalizedNewColumnName);
 
 			newIndexMetadatas.add(
-				new IndexMetadata(
-					indexMetadata.getIndexName(), indexMetadata.getTableName(),
-					indexMetadata.isUnique(), columnNames));
+				IndexMetadataFactoryUtil.createIndexMetadata(
+					connection, indexMetadata.isUnique(),
+					indexMetadata.getTableName(), columnNames));
 		}
 
 		if (!newIndexMetadatas.isEmpty()) {

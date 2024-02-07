@@ -20,7 +20,6 @@ import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.db.Index;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
-import com.liferay.portal.kernel.dao.db.IndexSQLUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
@@ -29,7 +28,6 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
@@ -71,58 +69,10 @@ public abstract class BaseDB implements DB {
 			Connection connection, List<IndexMetadata> indexMetadatas)
 		throws IOException, SQLException {
 
-		DatabaseMetaData databaseMetaData = connection.getMetaData();
-
-		DBInspector dbInspector = new DBInspector(connection);
-
-		Map<String, Map<String, Integer>> columnTableSizes = new HashMap<>();
-
 		for (IndexMetadata indexMetadata : indexMetadatas) {
-			String normalizedTabledName = dbInspector.normalizeName(
-				indexMetadata.getTableName(), databaseMetaData);
-
-			if (columnTableSizes.get(normalizedTabledName) == null) {
-				try (ResultSet resultSet = databaseMetaData.getColumns(
-						dbInspector.getCatalog(), dbInspector.getSchema(),
-						normalizedTabledName, null)) {
-
-					Map<String, Integer> columnSizes = new HashMap<>();
-
-					while (resultSet.next()) {
-						int columnType = resultSet.getInt("DATA_TYPE");
-
-						if (!isVarchar(columnType)) {
-							continue;
-						}
-
-						columnSizes.put(
-							dbInspector.normalizeName(
-								resultSet.getString("COLUMN_NAME"),
-								databaseMetaData),
-							resultSet.getInt("COLUMN_SIZE"));
-					}
-
-					columnTableSizes.put(normalizedTabledName, columnSizes);
-				}
-			}
-
-			String[] columnNames = indexMetadata.getColumnNames();
-
-			int[] columnSizes = new int[columnNames.length];
-
-			for (int i = 0; i < columnNames.length; i++) {
-				columnSizes[i] = MapUtil.getInteger(
-					columnTableSizes.get(normalizedTabledName), columnNames[i],
-					0);
-			}
-
 			runSQL(
 				_applyMaxStringIndexLengthLimitation(
-					IndexSQLUtil.getCreateSQL(
-						indexMetadata.getTableName(), indexMetadata.isUnique(),
-						indexMetadata.getColumnNames(),
-						indexMetadata.getIndexNameRebuildFunction(),
-						columnSizes)));
+					indexMetadata.getCreateSQL()));
 		}
 	}
 
@@ -287,19 +237,12 @@ public abstract class BaseDB implements DB {
 
 		List<IndexMetadata> indexMetadatas = new ArrayList<>();
 
-		String indexNamePrefix = StringPool.BLANK;
-
-		if (!isSupportsDuplicatedIndexName()) {
-			indexNamePrefix = "TMP_";
-		}
-
 		for (IndexMetadata indexMetadata :
 				getIndexes(connection, tableName, null, false)) {
 
 			indexMetadatas.add(
-				new IndexMetadata(
-					indexNamePrefix.concat(indexMetadata.getIndexName()),
-					newTableName, indexMetadata.isUnique(),
+				IndexMetadataFactoryUtil.createIndexMetadata(
+					connection, indexMetadata.isUnique(), newTableName,
 					indexMetadata.getColumnNames()));
 		}
 
@@ -1331,9 +1274,10 @@ public abstract class BaseDB implements DB {
 									columnNames, normalizedColumnName)) {
 
 								indexMetadatas.add(
-									new IndexMetadata(
-										previousIndexName, normalizedTableName,
-										unique, columnNames));
+									IndexMetadataFactoryUtil.
+										createIndexMetadata(
+											connection, unique,
+											normalizedTableName, columnNames));
 							}
 
 							columnNames = new String[0];
@@ -1356,8 +1300,8 @@ public abstract class BaseDB implements DB {
 							 columnNames, normalizedColumnName))) {
 
 						indexMetadatas.add(
-							new IndexMetadata(
-								previousIndexName, normalizedTableName, unique,
+							IndexMetadataFactoryUtil.createIndexMetadata(
+								connection, unique, normalizedTableName,
 								columnNames));
 					}
 				}

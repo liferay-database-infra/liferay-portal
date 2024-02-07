@@ -39,7 +39,8 @@ public class OracleDBTest extends DBTest {
 
 	@Test
 	public void testGetIndexesWithLockedStatisticsTable() throws Exception {
-		addIndex(new String[] {"typeVarchar", "typeBoolean"});
+		String indexName = addIndex(
+			new String[] {"typeVarchar", "typeBoolean"});
 
 		try (Statement statement = connection.createStatement()) {
 			statement.execute(
@@ -59,7 +60,7 @@ public class OracleDBTest extends DBTest {
 
 				for (IndexMetadata indexMetadata : indexMetadatas) {
 					Assert.assertEquals(
-						dbInspector.normalizeName(INDEX_NAME),
+						dbInspector.normalizeName(indexName),
 						indexMetadata.getIndexName());
 				}
 			}

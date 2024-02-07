@@ -8,9 +8,10 @@ package com.liferay.object.internal.upgrade.v9_0_0;
 import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.constants.ObjectFieldSettingConstants;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
-import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,8 +58,7 @@ public class ObjectFieldUpgradeProcess extends UpgradeProcess {
 					columnNames = new String[] {dbColumnName, "languageId"};
 				}
 
-				String indexName = IndexMetadataFactoryUtil.createIndexName(
-					dbTableName, columnNames);
+				String indexName = _getIndexName(dbTableName, columnNames);
 
 				if (hasIndex(dbTableName, indexName)) {
 					runSQL(
@@ -67,6 +67,33 @@ public class ObjectFieldUpgradeProcess extends UpgradeProcess {
 				}
 			}
 		}
+	}
+
+	private String _getIndexName(String tableName, String[] columnNames) {
+		StringBundler sb = new StringBundler(4 + (columnNames.length * 2));
+
+		sb.append(tableName);
+		sb.append(StringPool.SPACE);
+		sb.append(StringPool.OPEN_PARENTHESIS);
+
+		for (String columnName : columnNames) {
+			sb.append(columnName);
+			sb.append(StringPool.COMMA_AND_SPACE);
+		}
+
+		sb.setIndex(sb.index() - 1);
+
+		sb.append(StringPool.CLOSE_PARENTHESIS);
+		sb.append(StringPool.SEMICOLON);
+
+		String specification = sb.toString();
+
+		String specificationHash = StringUtil.toHexString(
+			specification.hashCode());
+
+		specificationHash = StringUtil.toUpperCase(specificationHash);
+
+		return "IX_".concat(specificationHash);
 	}
 
 }

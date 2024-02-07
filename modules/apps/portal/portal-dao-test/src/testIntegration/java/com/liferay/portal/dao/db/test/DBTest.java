@@ -13,6 +13,7 @@ import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
+import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -27,6 +28,7 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -290,7 +292,8 @@ public class DBTest {
 
 	@Test
 	public void testAlterIndexedColumnName() throws Exception {
-		addIndex(new String[] {"typeVarchar", "typeBoolean"});
+		String indexName = addIndex(
+			new String[] {"typeVarchar", "typeBoolean"});
 
 		db.alterColumnName(
 			connection, TABLE_NAME_1, "typeVarchar",
@@ -300,6 +303,7 @@ public class DBTest {
 			dbInspector.hasColumn(TABLE_NAME_1, "typeVarcharTest"));
 
 		_validateIndex(
+			indexName,
 			new String[] {
 				dbInspector.normalizeName("typeVarcharTest"),
 				dbInspector.normalizeName("typeBoolean")
@@ -308,7 +312,8 @@ public class DBTest {
 
 	@Test
 	public void testAlterIndexedColumnType() throws Exception {
-		addIndex(new String[] {"typeVarchar", "typeBoolean"});
+		String indexName = addIndex(
+			new String[] {"typeVarchar", "typeBoolean"});
 
 		db.alterColumnType(
 			connection, TABLE_NAME_1, "typeVarchar", "VARCHAR(50) null");
@@ -318,6 +323,7 @@ public class DBTest {
 				TABLE_NAME_1, "typeVarchar", "VARCHAR(50) null"));
 
 		_validateIndex(
+			indexName,
 			new String[] {
 				dbInspector.normalizeName("typeVarchar"),
 				dbInspector.normalizeName("typeBoolean")
@@ -576,7 +582,7 @@ public class DBTest {
 	public void testCopyTableStructure() throws Exception {
 		String[] indexColumnNames = {"typeVarchar", "typeBoolean"};
 
-		addIndex(indexColumnNames);
+		String indexName = addIndex(indexColumnNames);
 
 		db.copyTableStructure(connection, TABLE_NAME_1, _TABLE_NAME_2);
 
@@ -589,14 +595,15 @@ public class DBTest {
 		Assert.assertFalse(
 			dbInspector.isNullable(_TABLE_NAME_2, "notNilColumn"));
 
-		String indexNamePrefix = StringPool.BLANK;
-
 		if (!supportsDuplicatedIndexName) {
-			indexNamePrefix = "TMP_";
+			IndexMetadata indexMetadata =
+				IndexMetadataFactoryUtil.createIndexMetadata(
+					connection, false, _TABLE_NAME_2, indexColumnNames);
+
+			indexName = indexMetadata.getIndexName();
 		}
 
-		Assert.assertTrue(
-			dbInspector.hasIndex(_TABLE_NAME_2, indexNamePrefix + INDEX_NAME));
+		Assert.assertTrue(dbInspector.hasIndex(_TABLE_NAME_2, indexName));
 
 		Assert.assertArrayEquals(
 			new String[] {dbInspector.normalizeName("id")},
@@ -605,7 +612,8 @@ public class DBTest {
 
 	@Test
 	public void testGetIndexes() throws Exception {
-		addIndex(new String[] {"typeVarchar", "typeBoolean"});
+		String indexName = addIndex(
+			new String[] {"typeVarchar", "typeBoolean"});
 
 		List<IndexMetadata> indexMetadatas = ReflectionTestUtil.invoke(
 			db, "getIndexes",
@@ -616,7 +624,7 @@ public class DBTest {
 
 		for (IndexMetadata indexMetadata : indexMetadatas) {
 			Assert.assertEquals(
-				dbInspector.normalizeName(INDEX_NAME),
+				dbInspector.normalizeName(indexName),
 				indexMetadata.getIndexName());
 		}
 	}
@@ -818,16 +826,17 @@ public class DBTest {
 		}
 	}
 
-	protected void addIndex(String[] columnNames) {
-		List<IndexMetadata> indexMetadatas = Arrays.asList(
-			new IndexMetadata(INDEX_NAME, TABLE_NAME_1, false, columnNames));
+	protected String addIndex(String[] columnNames) throws SQLException {
+		IndexMetadata indexMetadata =
+			IndexMetadataFactoryUtil.createIndexMetadata(
+				connection, false, TABLE_NAME_1, columnNames);
 
 		ReflectionTestUtil.invoke(
 			db, "addIndexes", new Class<?>[] {Connection.class, List.class},
-			connection, indexMetadatas);
-	}
+			connection, Arrays.asList(indexMetadata));
 
-	protected static final String INDEX_NAME = "IX_TEMP";
+		return indexMetadata.getIndexName();
+	}
 
 	protected static final String TABLE_NAME_1 = "DBTest1";
 
@@ -859,7 +868,9 @@ public class DBTest {
 			connection, tableName, columnNames[0], false);
 	}
 
-	private void _validateIndex(String[] columnNames) throws Exception {
+	private void _validateIndex(String indexName, String[] columnNames)
+		throws Exception {
+
 		List<IndexMetadata> indexMetadatas = _getIndexes(
 			TABLE_NAME_1, columnNames);
 
@@ -869,8 +880,7 @@ public class DBTest {
 		IndexMetadata indexMetadata = indexMetadatas.get(0);
 
 		Assert.assertEquals(
-			dbInspector.normalizeName(INDEX_NAME),
-			indexMetadata.getIndexName());
+			dbInspector.normalizeName(indexName), indexMetadata.getIndexName());
 
 		Assert.assertArrayEquals(
 			ArrayUtil.sortedUnique(columnNames),

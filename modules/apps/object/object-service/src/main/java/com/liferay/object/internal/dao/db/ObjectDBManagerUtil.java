@@ -8,11 +8,13 @@ package com.liferay.object.internal.dao.db;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
-import com.liferay.portal.kernel.dao.db.IndexSQLUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 
 import java.sql.Connection;
+
+import java.util.Arrays;
 
 /**
  * @author Murilo Stodolni
@@ -27,21 +29,17 @@ public class ObjectDBManagerUtil {
 		try {
 			DBInspector dbInspector = new DBInspector(connection);
 
-			if (dbInspector.hasIndex(
-					tableName,
-					IndexMetadataFactoryUtil.createIndexName(
-						tableName, columnNames))) {
+			IndexMetadata indexMetadata =
+				IndexMetadataFactoryUtil.createIndexMetadata(
+					connection, unique, tableName, columnNames);
 
+			if (dbInspector.hasIndex(tableName, indexMetadata.getIndexName())) {
 				return;
 			}
 
 			DB db = DBManagerUtil.getDB();
 
-			db.runSQL(
-				connection,
-				IndexSQLUtil.getCreateSQL(
-					IndexMetadataFactoryUtil.createIndexMetadata(
-						unique, tableName, columnNames)));
+			db.addIndexes(connection, Arrays.asList(indexMetadata));
 		}
 		catch (Exception exception) {
 			throw new PortalException(exception);

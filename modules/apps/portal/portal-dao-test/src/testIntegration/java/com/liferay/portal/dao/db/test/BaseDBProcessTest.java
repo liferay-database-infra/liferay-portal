@@ -13,6 +13,7 @@ import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
+import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -352,7 +353,8 @@ public class BaseDBProcessTest extends BaseDBProcess {
 
 	@Test
 	public void testAlterIndexedColumnName() throws Exception {
-		_addIndex(new String[] {"typeVarchar", "typeBoolean"});
+		String indexName = _addIndex(
+			new String[] {"typeVarchar", "typeBoolean"});
 
 		alterColumnName(
 			_TABLE_NAME, "typeVarchar", "typeVarcharTest VARCHAR(75) null");
@@ -361,6 +363,7 @@ public class BaseDBProcessTest extends BaseDBProcess {
 			_dbInspector.hasColumn(_TABLE_NAME, "typeVarcharTest"));
 
 		_validateIndex(
+			indexName,
 			new String[] {
 				_dbInspector.normalizeName("typeVarcharTest"),
 				_dbInspector.normalizeName("typeBoolean")
@@ -369,7 +372,8 @@ public class BaseDBProcessTest extends BaseDBProcess {
 
 	@Test
 	public void testAlterIndexedColumnType() throws Exception {
-		_addIndex(new String[] {"typeVarchar", "typeBoolean"});
+		String indexName = _addIndex(
+			new String[] {"typeVarchar", "typeBoolean"});
 
 		alterColumnType(_TABLE_NAME, "typeVarchar", "VARCHAR(50) null");
 
@@ -378,6 +382,7 @@ public class BaseDBProcessTest extends BaseDBProcess {
 				_TABLE_NAME, "typeVarchar", "VARCHAR(50) null"));
 
 		_validateIndex(
+			indexName,
 			new String[] {
 				_dbInspector.normalizeName("typeVarchar"),
 				_dbInspector.normalizeName("typeBoolean")
@@ -537,13 +542,16 @@ public class BaseDBProcessTest extends BaseDBProcess {
 				null));
 	}
 
-	private void _addIndex(String[] columnNames) {
-		List<IndexMetadata> indexMetadatas = Arrays.asList(
-			new IndexMetadata(_INDEX_NAME, _TABLE_NAME, false, columnNames));
+	private String _addIndex(String[] columnNames) throws Exception {
+		IndexMetadata indexMetadata =
+			IndexMetadataFactoryUtil.createIndexMetadata(
+				connection, false, _TABLE_NAME, columnNames);
 
 		ReflectionTestUtil.invoke(
 			_db, "addIndexes", new Class<?>[] {Connection.class, List.class},
-			_connection, indexMetadatas);
+			connection, Arrays.asList(indexMetadata));
+
+		return indexMetadata.getIndexName();
 	}
 
 	private void _populateTable() throws Exception {
@@ -555,7 +563,9 @@ public class BaseDBProcessTest extends BaseDBProcess {
 		}
 	}
 
-	private void _validateIndex(String[] columnNames) throws Exception {
+	private void _validateIndex(String indexName, String[] columnNames)
+		throws Exception {
+
 		List<IndexMetadata> indexMetadatas = ReflectionTestUtil.invoke(
 			_db, "getIndexes",
 			new Class<?>[] {
@@ -569,7 +579,7 @@ public class BaseDBProcessTest extends BaseDBProcess {
 		IndexMetadata indexMetadata = indexMetadatas.get(0);
 
 		Assert.assertEquals(
-			_dbInspector.normalizeName(_INDEX_NAME),
+			_dbInspector.normalizeName(indexName),
 			indexMetadata.getIndexName());
 
 		Assert.assertArrayEquals(
@@ -606,8 +616,6 @@ public class BaseDBProcessTest extends BaseDBProcess {
 				_PROCESS_CONCURRENTLY_COUNT, resultSet.getInt(1));
 		}
 	}
-
-	private static final String _INDEX_NAME = "IX_TEMP";
 
 	private static final int _PROCESS_CONCURRENTLY_COUNT = 100;
 
