@@ -5,6 +5,7 @@
 
 package com.liferay.portal.tools.service.builder;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.IndexSQLUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -36,7 +37,7 @@ public class IndexMetadataTest {
 				IndexSQLUtil.getCreateSQL(
 					indexMetadata.isUnique(), indexMetadata.getTableName(),
 					indexMetadata.getColumnNames(), new int[] {10, 20}, "IX_"),
-				" "),
+				StringPool.SPACE),
 			2);
 
 		indexMetadata.optimizeColumns(
@@ -54,7 +55,7 @@ public class IndexMetadataTest {
 						indexMetadata.isUnique(), indexMetadata.getTableName(),
 						indexMetadata.getColumnNames(), new int[] {10, 20},
 						"IX_"),
-					" "),
+					StringPool.SPACE),
 				2));
 	}
 
@@ -72,7 +73,7 @@ public class IndexMetadataTest {
 					IndexSQLUtil.getCreateSQL(
 						indexMetadata.isUnique(), indexMetadata.getTableName(),
 						indexMetadata.getColumnNames(), null, "IX_"),
-					" "),
+					StringPool.SPACE),
 				3));
 
 		Assert.assertEquals(
@@ -82,7 +83,7 @@ public class IndexMetadataTest {
 					IndexSQLUtil.getCreateSQL(
 						indexMetadata.isUnique(), indexMetadata.getTableName(),
 						indexMetadata.getColumnNames(), new int[] {75}, "IX_"),
-					" "),
+					StringPool.SPACE),
 				3));
 	}
 

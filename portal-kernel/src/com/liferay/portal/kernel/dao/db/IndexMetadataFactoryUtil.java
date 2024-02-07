@@ -104,11 +104,16 @@ public class IndexMetadataFactoryUtil {
 		String sqlCreate = IndexSQLUtil.getCreateSQL(
 			connection, unique, tableName, columnNames, indexPrefix);
 
-		String substring = sqlCreate.substring(sqlCreate.indexOf(indexPrefix));
+		String[] parts = StringUtil.split(sqlCreate, StringPool.SPACE);
+
+		String indexName = parts[2];
+
+		if (unique) {
+			indexName = parts[3];
+		}
 
 		return new IndexMetadata(
-			substring.substring(0, substring.indexOf(StringPool.SPACE)), unique,
-			tableName, columnNames, sqlCreate);
+			indexName, unique, tableName, columnNames, sqlCreate);
 	}
 
 	private static final String _INDEX_NAME_PREFIX = "IX_";
