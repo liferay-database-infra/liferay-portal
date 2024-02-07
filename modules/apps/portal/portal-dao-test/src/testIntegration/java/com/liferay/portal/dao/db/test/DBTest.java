@@ -580,14 +580,7 @@ public class DBTest {
 
 	@Test
 	public void testCopyTableStructure() throws Exception {
-		String[] indexColumnNames = {"typeVarchar", "typeBoolean"};
-
-		String indexName = addIndex(indexColumnNames);
-
 		db.copyTableStructure(connection, TABLE_NAME_1, _TABLE_NAME_2);
-
-		boolean supportsDuplicatedIndexName = ReflectionTestUtil.invoke(
-			db, "isSupportsDuplicatedIndexName", new Class<?>[0]);
 
 		Assert.assertTrue(dbInspector.hasTable(_TABLE_NAME_2));
 		Assert.assertFalse(dbInspector.hasRows(_TABLE_NAME_2));
@@ -595,15 +588,16 @@ public class DBTest {
 		Assert.assertFalse(
 			dbInspector.isNullable(_TABLE_NAME_2, "notNilColumn"));
 
-		if (!supportsDuplicatedIndexName) {
-			IndexMetadata indexMetadata =
-				IndexMetadataFactoryUtil.createIndexMetadata(
-					connection, false, _TABLE_NAME_2, indexColumnNames);
+		IndexMetadata indexMetadata =
+			IndexMetadataFactoryUtil.createIndexMetadata(
+				connection, false, _TABLE_NAME_2,
+				new String[] {
+					dbInspector.normalizeName("typeVarchar"),
+					dbInspector.normalizeName("typeBoolean")
+				});
 
-			indexName = indexMetadata.getIndexName();
-		}
-
-		Assert.assertTrue(dbInspector.hasIndex(_TABLE_NAME_2, indexName));
+		Assert.assertTrue(
+			dbInspector.hasIndex(_TABLE_NAME_2, indexMetadata.getIndexName()));
 
 		Assert.assertArrayEquals(
 			new String[] {dbInspector.normalizeName("id")},
