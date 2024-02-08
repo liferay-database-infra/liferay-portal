@@ -6,53 +6,37 @@
 package com.liferay.portal.kernel.instance;
 
 import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
-
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import com.liferay.portal.kernel.util.PortalInstances;
 
 /**
  * @author Tina Tian
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link PortalInstances}
  */
+@Deprecated
 public class PortalInstancePool {
 
 	public static void add(Company company) {
-		_portalInstances.put(company.getCompanyId(), company.getWebId());
+		PortalInstances.add(company);
 	}
 
 	public static long[] getCompanyIds() {
-		return ArrayUtil.toLongArray(_portalInstances.keySet());
+		return PortalInstances.getCompanyIds();
 	}
 
 	public static long getDefaultCompanyId() {
-		for (Map.Entry<Long, String> entry : _portalInstances.entrySet()) {
-			if (Objects.equals(
-					PropsUtil.get(PropsKeys.COMPANY_DEFAULT_WEB_ID),
-					entry.getValue())) {
-
-				return entry.getKey();
-			}
-		}
-
-		throw new IllegalStateException("Unable to get default company ID");
+		return PortalInstances.getDefaultCompanyId();
 	}
 
 	public static String getWebId(long companyId) {
-		return _portalInstances.get(companyId);
+		return PortalInstances.getWebId(companyId);
 	}
 
 	public static String[] getWebIds() {
-		return ArrayUtil.toStringArray(_portalInstances.values());
+		return PortalInstances.getWebIds();
 	}
 
 	public static void remove(long companyId) {
-		_portalInstances.remove(companyId);
+		PortalInstances.remove(companyId);
 	}
-
-	private static final Map<Long, String> _portalInstances =
-		new ConcurrentHashMap<>();
 
 }
