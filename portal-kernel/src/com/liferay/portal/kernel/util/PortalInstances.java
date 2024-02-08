@@ -38,9 +38,11 @@ import java.sql.SQLException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.servlet.http.HttpServletRequest;
@@ -52,6 +54,10 @@ import javax.servlet.http.HttpServletRequest;
  * @author Mika Koivisto
  */
 public class PortalInstances {
+
+	public static void add(Company company) {
+		_portalInstances.put(company.getCompanyId(), company.getWebId());
+	}
 
 	public static long getCompanyId(HttpServletRequest httpServletRequest) {
 		try {
@@ -173,7 +179,7 @@ public class PortalInstances {
 	}
 
 	public static long[] getCompanyIds() {
-		return PortalInstancePool.getCompanyIds();
+		return ArrayUtil.toLongArray(_portalInstances.keySet());
 	}
 
 	public static long[] getCompanyIdsBySQL() throws SQLException {
@@ -203,22 +209,28 @@ public class PortalInstances {
 	}
 
 	public static long getDefaultCompanyId() {
-		long[] companyIds = PortalInstancePool.getCompanyIds();
+		if (_portalInstances != null) {
+			for (Map.Entry<Long, String> entry : _portalInstances.entrySet()) {
+				if (Objects.equals(
+						PropsUtil.get(PropsKeys.COMPANY_DEFAULT_WEB_ID),
+						entry.getValue())) {
 
-		if (companyIds.length == 0) {
-			try {
-				return getDefaultCompanyIdBySQL();
+					return entry.getKey();
+				}
 			}
-			catch (SQLException sqlException) {
-				_log.error(
-					"Unable to get the default company ID by SQL",
-					sqlException);
 
-				throw new RuntimeException(sqlException);
-			}
+			throw new IllegalStateException("Unable to get default company ID");
 		}
 
-		return PortalInstancePool.getDefaultCompanyId();
+		try {
+			return getDefaultCompanyIdBySQL();
+		}
+		catch (SQLException sqlException) {
+			_log.error(
+				"Unable to get the default company ID by SQL", sqlException);
+
+			throw new RuntimeException(sqlException);
+		}
 	}
 
 	public static long getDefaultCompanyIdBySQL() throws SQLException {
@@ -236,8 +248,12 @@ public class PortalInstances {
 		return 0;
 	}
 
+	public static String getWebId(long companyId) {
+		return _portalInstances.get(companyId);
+	}
+
 	public static String[] getWebIds() {
-		return PortalInstancePool.getWebIds();
+		return ArrayUtil.toStringArray(_portalInstances.values());
 	}
 
 	public static long initCompany(Company company) {
@@ -398,6 +414,10 @@ public class PortalInstances {
 		return _virtualHostsIgnorePaths.contains(path);
 	}
 
+	public static void remove(long companyId) {
+		_portalInstances.remove(companyId);
+	}
+
 	public static void removeCompany(long companyId) {
 		try {
 			EventsProcessorUtil.process(
@@ -546,6 +566,8 @@ public class PortalInstances {
 	private static final Set<String> _autoLoginIgnorePaths;
 	private static final List<Long> _companyIdsInDeletionProcess =
 		new CopyOnWriteArrayList<>();
+	private static final Map<Long, String> _portalInstances =
+		new ConcurrentHashMap<>();
 	private static final Set<String> _virtualHostsIgnoreHosts;
 	private static final Set<String> _virtualHostsIgnorePaths;
 
