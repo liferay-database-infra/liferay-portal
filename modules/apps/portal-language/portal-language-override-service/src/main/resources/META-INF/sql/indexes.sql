@@ -1,1 +1,1 @@
-create unique index IX_C1C6BABE on PLOEntry (companyId, languageId[$COLUMN_LENGTH:75$], key_[$COLUMN_LENGTH:1000$]);
+create unique index IX_27666D15 on PLOEntry (companyId, languageId[$COLUMN_LENGTH:75$], key_[$COLUMN_LENGTH:1000$]);

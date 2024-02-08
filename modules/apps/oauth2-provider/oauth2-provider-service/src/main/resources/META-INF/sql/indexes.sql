@@ -1,16 +1,16 @@
 create index IX_87DAF9C3 on OA2Auths_OA2ScopeGrants (companyId);
 create index IX_2F541817 on OA2Auths_OA2ScopeGrants (oAuth2ScopeGrantId);
 
-create index IX_523E5C67 on OAuth2Application (companyId, clientId[$COLUMN_LENGTH:75$]);
+create index IX_75AE88D2 on OAuth2Application (companyId, clientId[$COLUMN_LENGTH:75$]);
 create index IX_949C9C01 on OAuth2Application (companyId, clientProfile);
-create index IX_E7D7F282 on OAuth2Application (externalReferenceCode[$COLUMN_LENGTH:75$]);
-create index IX_361558F9 on OAuth2Application (uuid_[$COLUMN_LENGTH:75$]);
+create index IX_38C3036D on OAuth2Application (externalReferenceCode[$COLUMN_LENGTH:75$]);
+create index IX_D36B8864 on OAuth2Application (uuid_[$COLUMN_LENGTH:75$]);
 
 create index IX_282ECE83 on OAuth2ApplicationScopeAliases (companyId);
 create index IX_2F9EBCBB on OAuth2ApplicationScopeAliases (oAuth2ApplicationId);
 
 create index IX_FB9F7B8A on OAuth2Authorization (companyId, accessTokenContentHash);
 create index IX_673EE35 on OAuth2Authorization (companyId, refreshTokenContentHash);
-create index IX_FDBBF950 on OAuth2Authorization (oAuth2ApplicationId, userId, rememberDeviceContent[$COLUMN_LENGTH:75$]);
+create index IX_2D7D973B on OAuth2Authorization (oAuth2ApplicationId, userId, rememberDeviceContent[$COLUMN_LENGTH:75$]);
 
-create index IX_8E6F6B4B on OAuth2ScopeGrant (oA2AScopeAliasesId, companyId, applicationName[$COLUMN_LENGTH:255$], bundleSymbolicName[$COLUMN_LENGTH:255$], scope[$COLUMN_LENGTH:240$]);
+create index IX_2B606EA6 on OAuth2ScopeGrant (oA2AScopeAliasesId, companyId, applicationName[$COLUMN_LENGTH:255$], bundleSymbolicName[$COLUMN_LENGTH:255$], scope[$COLUMN_LENGTH:240$]);

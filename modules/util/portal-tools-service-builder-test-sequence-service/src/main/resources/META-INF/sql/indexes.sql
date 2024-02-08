@@ -1,1 +1,1 @@
-create index IX_153C9D3D on SequenceEntry (uuid_[$COLUMN_LENGTH:75$]);
+create index IX_92EA02A8 on SequenceEntry (uuid_[$COLUMN_LENGTH:75$]);

@@ -5,4 +5,4 @@ create index IX_1E35B88D on SharingEntry (expirationDate);
 create index IX_F066C0CE on SharingEntry (groupId);
 create index IX_C024CFB1 on SharingEntry (toUserId);
 create index IX_EA2FF796 on SharingEntry (userId);
-create index IX_2C322ED8 on SharingEntry (uuid_[$COLUMN_LENGTH:75$]);
+create index IX_E109B8C3 on SharingEntry (uuid_[$COLUMN_LENGTH:75$]);

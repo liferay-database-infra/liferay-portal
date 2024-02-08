@@ -1,2 +1,2 @@
-create unique index IX_2F3EDC9F on PushNotificationsDevice (token[$COLUMN_LENGTH:4000$]);
-create index IX_2FBF066B on PushNotificationsDevice (userId, platform[$COLUMN_LENGTH:75$]);
+create unique index IX_BA853868 on PushNotificationsDevice (token[$COLUMN_LENGTH:4000$]);
+create index IX_589A08D6 on PushNotificationsDevice (userId, platform[$COLUMN_LENGTH:75$]);
