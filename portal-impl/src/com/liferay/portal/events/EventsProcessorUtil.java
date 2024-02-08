@@ -5,18 +5,9 @@
 
 package com.liferay.portal.events;
 
-import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
-import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.events.LifecycleAction;
 import com.liferay.portal.kernel.events.LifecycleEvent;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.module.util.SystemBundleUtil;
-import com.liferay.portal.kernel.util.InstancePool;
-import com.liferay.portal.kernel.util.Validator;
-
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,13 +17,17 @@ import javax.servlet.http.HttpSession;
  * @author Brian Wing Shun Chan
  * @author Michael Young
  * @author Raymond Augé
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             com.liferay.portal.kernel.events.EventsProcessorUtil}
  */
+@Deprecated
 public class EventsProcessorUtil {
 
 	public static void process(String key, String[] classes)
 		throws ActionException {
 
-		process(key, classes, new LifecycleEvent());
+		com.liferay.portal.kernel.events.EventsProcessorUtil.process(
+			key, classes);
 	}
 
 	public static void process(
@@ -40,72 +35,42 @@ public class EventsProcessorUtil {
 			HttpServletResponse httpServletResponse)
 		throws ActionException {
 
-		process(
-			key, classes,
-			new LifecycleEvent(httpServletRequest, httpServletResponse));
+		com.liferay.portal.kernel.events.EventsProcessorUtil.process(
+			key, classes, httpServletRequest, httpServletResponse);
 	}
 
 	public static void process(
 			String key, String[] classes, HttpSession httpSession)
 		throws ActionException {
 
-		process(key, classes, new LifecycleEvent(httpSession));
+		com.liferay.portal.kernel.events.EventsProcessorUtil.process(
+			key, classes, httpSession);
 	}
 
 	public static void process(
 			String key, String[] classes, LifecycleEvent lifecycleEvent)
 		throws ActionException {
 
-		for (String className : classes) {
-			if (Validator.isNull(className)) {
-				return;
-			}
-
-			if (_log.isDebugEnabled()) {
-				_log.debug("Process event " + className);
-			}
-
-			LifecycleAction lifecycleAction = (LifecycleAction)InstancePool.get(
-				className);
-
-			lifecycleAction.processLifecycleEvent(lifecycleEvent);
-		}
-
-		if (Validator.isNull(key)) {
-			return;
-		}
-
-		List<LifecycleAction> lifecycleActions = _lifecycleActions.getService(
-			key);
-
-		if (lifecycleActions != null) {
-			for (LifecycleAction lifecycleAction : lifecycleActions) {
-				lifecycleAction.processLifecycleEvent(lifecycleEvent);
-			}
-		}
+		com.liferay.portal.kernel.events.EventsProcessorUtil.process(
+			key, classes, lifecycleEvent);
 	}
 
 	public static void process(String key, String[] classes, String[] ids)
 		throws ActionException {
 
-		process(key, classes, new LifecycleEvent(ids));
+		com.liferay.portal.kernel.events.EventsProcessorUtil.process(
+			key, classes, ids);
 	}
 
 	public static void processEvent(
 			LifecycleAction lifecycleAction, LifecycleEvent lifecycleEvent)
 		throws ActionException {
 
-		lifecycleAction.processLifecycleEvent(lifecycleEvent);
+		com.liferay.portal.kernel.events.EventsProcessorUtil.processEvent(
+			lifecycleAction, lifecycleEvent);
 	}
 
 	protected EventsProcessorUtil() {
 	}
-
-	private static final Log _log = LogFactoryUtil.getLog(
-		EventsProcessorUtil.class);
-
-	private static final ServiceTrackerMap<String, List<LifecycleAction>>
-		_lifecycleActions = ServiceTrackerMapFactory.openMultiValueMap(
-			SystemBundleUtil.getBundleContext(), LifecycleAction.class, "key");
 
 }

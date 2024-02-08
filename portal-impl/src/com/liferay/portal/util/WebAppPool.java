@@ -5,57 +5,28 @@
 
 package com.liferay.portal.util;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * @author Brian Wing Shun Chan
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *      com.liferay.portal.kernel.util.WebAppPool}
  */
+@Deprecated
 public class WebAppPool {
 
 	public static void clear() {
-		_webAppPool.clear();
+		com.liferay.portal.kernel.util.WebAppPool.clear();
 	}
 
 	public static Object get(Long webAppId, String key) {
-		Map<String, Object> map = _webAppPool.get(webAppId);
-
-		if (map == null) {
-			return null;
-		}
-
-		return map.get(key);
+		return com.liferay.portal.kernel.util.WebAppPool.get(webAppId, key);
 	}
 
 	public static void put(Long webAppId, String key, Object object) {
-		Map<String, Object> map = _webAppPool.get(webAppId);
-
-		if (map == null) {
-			map = new ConcurrentHashMap<>();
-
-			Map<String, Object> previousMap = _webAppPool.putIfAbsent(
-				webAppId, map);
-
-			if (previousMap != null) {
-				map = previousMap;
-			}
-		}
-
-		map.put(key, object);
+		com.liferay.portal.kernel.util.WebAppPool.put(webAppId, key, object);
 	}
 
 	public static Object remove(Long webAppId, String key) {
-		Map<String, Object> map = _webAppPool.get(webAppId);
-
-		if (map == null) {
-			return null;
-		}
-
-		return map.remove(key);
+		return com.liferay.portal.kernel.util.WebAppPool.remove(webAppId, key);
 	}
-
-	private static final ConcurrentMap<Long, Map<String, Object>> _webAppPool =
-		new ConcurrentHashMap<>();
 
 }
