@@ -204,7 +204,7 @@ public class PortalInstances {
 	}
 
 	public static long getDefaultCompanyId() {
-		if (_portalInstances != null) {
+		if (!MapUtil.isEmpty(_portalInstances)) {
 			for (Map.Entry<Long, String> entry : _portalInstances.entrySet()) {
 				if (Objects.equals(
 						PropsUtil.get(PropsKeys.COMPANY_DEFAULT_WEB_ID),
