@@ -21,8 +21,8 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropertiesUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebAppPool;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.util.WebAppPool;
 
 import java.util.ArrayList;
 import java.util.Comparator;
