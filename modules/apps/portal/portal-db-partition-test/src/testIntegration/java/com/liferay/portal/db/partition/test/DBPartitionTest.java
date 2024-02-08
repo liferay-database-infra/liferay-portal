@@ -22,13 +22,13 @@ import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
+import com.liferay.portal.kernel.util.PortalInstances;
 import com.liferay.portal.model.DefaultModelHintsImpl;
 import com.liferay.portal.model.impl.ClassNameImpl;
 import com.liferay.portal.model.impl.ResourceActionImpl;
 import com.liferay.portal.service.impl.ClassNameLocalServiceImpl;
 import com.liferay.portal.service.impl.ResourceActionLocalServiceImpl;
 import com.liferay.portal.test.rule.Inject;
-import com.liferay.portal.util.PortalInstances;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

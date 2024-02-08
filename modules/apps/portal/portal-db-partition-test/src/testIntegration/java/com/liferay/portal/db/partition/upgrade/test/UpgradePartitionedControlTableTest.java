@@ -12,8 +12,8 @@ import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
+import com.liferay.portal.kernel.util.PortalInstances;
 import com.liferay.portal.upgrade.util.UpgradePartitionedControlTable;
-import com.liferay.portal.util.PortalInstances;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

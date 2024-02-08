@@ -26,8 +26,8 @@ import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.PortalInstances;
 import com.liferay.portal.test.rule.Inject;
-import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsUtil;
 
 import java.util.ArrayList;

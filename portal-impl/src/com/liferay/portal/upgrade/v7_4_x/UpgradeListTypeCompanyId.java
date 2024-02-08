@@ -13,8 +13,8 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeProcessFactory;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.PortalInstances;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.util.PortalInstances;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

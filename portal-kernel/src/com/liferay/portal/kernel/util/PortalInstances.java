@@ -13,7 +13,6 @@ import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.events.EventsProcessorUtil;
 import com.liferay.portal.kernel.exception.NoSuchVirtualHostException;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -316,9 +315,7 @@ public class PortalInstances {
 					portletCategory = new PortletCategory();
 				}
 
-				for (long currentCompanyId :
-						PortalInstancePool.getCompanyIds()) {
-
+				for (long currentCompanyId : getCompanyIds()) {
 					PortletCategory currentPortletCategory =
 						(PortletCategory)WebAppPool.get(
 							currentCompanyId, WebKeys.PORTLET_CATEGORY);
@@ -362,7 +359,7 @@ public class PortalInstances {
 						company.getCompanyId()));
 			}
 
-			PortalInstancePool.add(company);
+			add(company);
 		}
 		finally {
 			CompanyThreadLocal.setCompanyId(currentThreadCompanyId);
@@ -429,7 +426,7 @@ public class PortalInstances {
 			_log.error(exception);
 		}
 
-		PortalInstancePool.remove(companyId);
+		remove(companyId);
 
 		WebAppPool.remove(companyId, WebKeys.PORTLET_CATEGORY);
 	}

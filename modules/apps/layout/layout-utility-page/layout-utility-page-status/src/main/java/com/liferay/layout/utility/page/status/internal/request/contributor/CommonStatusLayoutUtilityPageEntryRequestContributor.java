@@ -28,11 +28,11 @@ import com.liferay.portal.kernel.service.VirtualHostLocalService;
 import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PortalInstances;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.servlet.I18nServlet;
-import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.Set;

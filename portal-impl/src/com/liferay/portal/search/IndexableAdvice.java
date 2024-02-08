@@ -20,7 +20,7 @@ import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.util.PortalInstances;
+import com.liferay.portal.kernel.util.PortalInstances;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;

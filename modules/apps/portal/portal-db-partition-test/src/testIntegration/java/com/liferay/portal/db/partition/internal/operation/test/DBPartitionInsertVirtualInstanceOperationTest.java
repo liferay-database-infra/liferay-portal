@@ -6,7 +6,7 @@
 package com.liferay.portal.db.partition.internal.operation.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-import com.liferay.portal.util.PortalInstances;
+import com.liferay.portal.kernel.util.PortalInstances;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

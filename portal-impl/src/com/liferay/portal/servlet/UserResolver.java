@@ -11,7 +11,7 @@ import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.util.PortalInstances;
+import com.liferay.portal.kernel.util.PortalInstances;
 
 import javax.servlet.http.HttpServletRequest;
 

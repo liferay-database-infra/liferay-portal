@@ -7,9 +7,9 @@ package com.liferay.object.definition.util;
 
 import com.liferay.batch.engine.unit.BatchEngineUnitThreadLocal;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.PortalInstances;
 import com.liferay.portal.kernel.util.PortalRunMode;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.util.PortalInstances;
 
 import java.util.Map;
 import java.util.Objects;
