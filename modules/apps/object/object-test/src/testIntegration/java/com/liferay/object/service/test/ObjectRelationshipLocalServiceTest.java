@@ -835,8 +835,8 @@ public class ObjectRelationshipLocalServiceTest {
 
 		try (Connection connection = DataAccess.getConnection()) {
 			IndexMetadata indexMetadata =
-					IndexMetadataFactoryUtil.createIndexMetadata(
-							connection, false, tableName, columnName);
+				IndexMetadataFactoryUtil.createIndexMetadata(
+					connection, false, tableName, columnName);
 
 			DBInspector dbInspector = new DBInspector(connection);
 
