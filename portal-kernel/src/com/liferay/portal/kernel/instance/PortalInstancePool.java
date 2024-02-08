@@ -5,7 +5,6 @@
 
 package com.liferay.portal.kernel.instance;
 
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.util.PortalInstances;
 
 /**
@@ -14,10 +13,6 @@ import com.liferay.portal.kernel.util.PortalInstances;
  */
 @Deprecated
 public class PortalInstancePool {
-
-	public static void add(Company company) {
-		PortalInstances.add(company);
-	}
 
 	public static long[] getCompanyIds() {
 		return PortalInstances.getCompanyIds();
@@ -33,10 +28,6 @@ public class PortalInstancePool {
 
 	public static String[] getWebIds() {
 		return PortalInstances.getWebIds();
-	}
-
-	public static void remove(long companyId) {
-		PortalInstances.remove(companyId);
 	}
 
 }

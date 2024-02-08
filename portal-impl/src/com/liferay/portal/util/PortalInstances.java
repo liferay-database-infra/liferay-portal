@@ -105,7 +105,7 @@ public class PortalInstances {
 	}
 
 	public static void removeCompany(long companyId) {
-		com.liferay.portal.kernel.util.PortalInstances.remove(companyId);
+		com.liferay.portal.kernel.util.PortalInstances.removeCompany(companyId);
 	}
 
 	public static SafeCloseable setCompanyInDeletionProcess(long companyId) {
