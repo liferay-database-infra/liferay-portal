@@ -178,6 +178,8 @@ public abstract class BaseDB implements DB {
 			Connection connection, String tableName, String columnName)
 		throws Exception {
 
+		dropIndexes(connection, tableName, columnName);
+
 		StringBundler sb = new StringBundler(4);
 
 		sb.append("alter table ");
