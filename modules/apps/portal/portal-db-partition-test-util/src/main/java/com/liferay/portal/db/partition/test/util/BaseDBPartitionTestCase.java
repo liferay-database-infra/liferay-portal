@@ -365,6 +365,9 @@ public abstract class BaseDBPartitionTestCase {
 
 	protected static final String TEST_TABLE_NAME = "TestTable";
 
+	@Inject
+	protected static CompanyLocalService companyLocalService;
+
 	protected static Connection connection;
 	protected static DB db;
 	protected static DBInspector dbInspector;
