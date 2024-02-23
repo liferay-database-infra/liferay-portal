@@ -98,10 +98,11 @@ public abstract class BaseCompanyIdUpgradeProcess extends UpgradeProcess {
 			}
 
 			return StringBundler.concat(
-				"select max(companyId) from ", foreignTableName, " where ",
-				foreignTableName, ".", foreignColumnName, " > 0 and ",
-				foreignTableName, ".", foreignColumnName, " = ", _tableName,
-				".", _columnName);
+				"select ", foreignTableName, ".companyId from ",
+				foreignTableName, " where ", foreignTableName, ".",
+				foreignColumnName, " > 0 and ", foreignTableName, ".",
+				foreignColumnName, " = ", _tableName, ".", _columnName,
+				" ORDER BY ", foreignTableName, ".companyId DESC LIMIT 1");
 		}
 
 		protected String getUpdateSQL(
