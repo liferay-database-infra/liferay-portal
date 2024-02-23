@@ -149,6 +149,10 @@ public class ClassNameLocalServiceImpl
 	public long getClassNameId(String value) {
 		ClassName className = getClassName(value);
 
+		if (className == null) {
+			className = fetchClassName(value);
+		}
+
 		return className.getClassNameId();
 	}
 
