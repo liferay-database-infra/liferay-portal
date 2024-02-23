@@ -20,6 +20,7 @@ import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.change.tracking.sql.CTSQLModeThreadLocal;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -62,8 +63,18 @@ public class CTDisplayRendererRegistryImpl
 		long ctCollectionId, CTSQLModeThreadLocal.CTSQLMode ctSQLMode,
 		long modelClassNameId, long modelClassPK) {
 
-		CTService<?> ctService = _ctServiceServiceTrackerMap.getService(
-			modelClassNameId);
+		CTService<?> ctService = null;
+
+		try {
+			ClassName className = _classNameLocalService.getClassName(
+				modelClassNameId);
+
+			ctService = _ctServiceServiceTrackerMap.getService(
+				className.getClassName());
+		}
+		catch (PortalException portalException) {
+			throw new SystemException(portalException);
+		}
 
 		if (ctService == null) {
 			return null;
@@ -95,8 +106,18 @@ public class CTDisplayRendererRegistryImpl
 		long ctCollectionId, CTSQLModeThreadLocal.CTSQLMode ctSQLMode,
 		long modelClassNameId, Set<Long> primaryKeys) {
 
-		CTService<?> ctService = _ctServiceServiceTrackerMap.getService(
-			modelClassNameId);
+		CTService<?> ctService = null;
+
+		try {
+			ClassName className = _classNameLocalService.getClassName(
+				modelClassNameId);
+
+			ctService = _ctServiceServiceTrackerMap.getService(
+				className.getClassName());
+		}
+		catch (PortalException portalException) {
+			throw new SystemException(portalException);
+		}
 
 		if (ctService == null) {
 			return null;
@@ -207,7 +228,8 @@ public class CTDisplayRendererRegistryImpl
 	@Override
 	public CTService<?> getCTService(CTModel<?> ctModel) {
 		return _ctServiceServiceTrackerMap.getService(
-			_classNameLocalService.getClassNameId(ctModel.getModelClass()));
+			ctModel.getModelClass(
+			).getName());
 	}
 
 	@Override
@@ -485,8 +507,8 @@ public class CTDisplayRendererRegistryImpl
 						serviceReference);
 
 					emitter.emit(
-						_classNameLocalService.getClassNameId(
-							ctService.getModelClass()));
+						ctService.getModelClass(
+						).getName());
 
 					bundleContext.ungetService(serviceReference);
 				});
@@ -512,7 +534,7 @@ public class CTDisplayRendererRegistryImpl
 	@Reference
 	private CTEntryLocalService _ctEntryLocalService;
 
-	private ServiceTrackerMap<Long, CTService<?>> _ctServiceServiceTrackerMap;
+	private ServiceTrackerMap<String, CTService<?>> _ctServiceServiceTrackerMap;
 	private CTDisplayRenderer<?> _defaultCTDisplayRenderer;
 
 	@Reference
