@@ -60,9 +60,9 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	@AfterClass
 	public static void tearDownClass() throws Exception {
-		dropControlTable(TEST_CONTROL_TABLE_NAME);
-
 		tearDownDBPartitions();
+
+		dropControlTable(TEST_CONTROL_TABLE_NAME);
 	}
 
 	@After
