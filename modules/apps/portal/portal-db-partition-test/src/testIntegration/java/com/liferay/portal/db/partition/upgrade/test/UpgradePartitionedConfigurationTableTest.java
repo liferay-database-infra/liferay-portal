@@ -62,8 +62,6 @@ public class UpgradePartitionedConfigurationTableTest
 		_companyId = TestPropsValues.getCompanyId();
 
 		_dataSource = InfrastructureUtil.getDataSource();
-
-		_defaultSchemaName = connection.getCatalog();
 	}
 
 	@AfterClass
@@ -80,7 +78,8 @@ public class UpgradePartitionedConfigurationTableTest
 					db.runSQL(
 						StringBundler.concat(
 							"create or replace view Configuration_ as select ",
-							"* from ", _defaultSchemaName, ".Configuration_"));
+							"* from ", defaultPartitionName,
+							".Configuration_"));
 				}
 			});
 
@@ -270,7 +269,6 @@ public class UpgradePartitionedConfigurationTableTest
 
 	private static long _companyId;
 	private static DataSource _dataSource;
-	private static String _defaultSchemaName;
 
 	@DeleteAfterTestRun
 	private User _omniAdminUser;
