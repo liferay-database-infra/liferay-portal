@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.model.DefaultModelHintsImpl;
+import com.liferay.portal.model.impl.ClassNameImpl;
 import com.liferay.portal.model.impl.ResourceActionImpl;
 import com.liferay.portal.service.impl.ClassNameLocalServiceImpl;
 import com.liferay.portal.service.impl.ResourceActionLocalServiceImpl;
@@ -81,6 +82,40 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 
 		dropTable(TEST_TABLE_NAME);
+	}
+
+	@Test
+	public void testAddCollidingClassNameId() throws Exception {
+		long commonClassNameId = 10000L;
+
+		try {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					ClassName className = new ClassNameImpl();
+
+					className.setClassNameId(commonClassNameId);
+					className.setValue("class.name." + companyId);
+
+					_classNameLocalService.addClassName(className);
+				});
+
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					ClassName className =
+						_classNameLocalService.fetchByClassNameId(
+							commonClassNameId);
+
+					Assert.assertEquals(
+						"class.name." + companyId, className.getValue());
+					Assert.assertEquals(
+						commonClassNameId, className.getClassNameId());
+				});
+		}
+		finally {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> _classNameLocalService.deleteClassName(
+					commonClassNameId));
+		}
 	}
 
 	@Test
