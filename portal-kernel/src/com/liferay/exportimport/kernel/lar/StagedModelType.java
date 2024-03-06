@@ -11,6 +11,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -63,29 +64,41 @@ public class StagedModelType {
 
 	public StagedModelType(Class<?> clazz) {
 		setClassName(clazz.getName());
+
+		_setCompanyId();
 	}
 
 	public StagedModelType(Class<?> clazz, Class<?> referrerClass) {
 		setClassName(clazz.getName());
 		setReferrerClassName(referrerClass.getName());
+
+		_setCompanyId();
 	}
 
 	public StagedModelType(long classNameId) {
 		setClassNameId(classNameId);
+
+		_setCompanyId();
 	}
 
 	public StagedModelType(long classNameId, long referrerClassNameId) {
 		setClassNameId(classNameId);
 		setReferrerClassNameId(referrerClassNameId);
+
+		_setCompanyId();
 	}
 
 	public StagedModelType(String className) {
 		setClassName(className);
+
+		_setCompanyId();
 	}
 
 	public StagedModelType(String className, String referrerClassName) {
 		setClassName(className);
 		setReferrerClassName(referrerClassName);
+
+		_setCompanyId();
 	}
 
 	@Override
@@ -114,7 +127,13 @@ public class StagedModelType {
 	}
 
 	public long getClassNameId() {
-		return _classNameId;
+		if ((CompanyThreadLocal.getCompanyId() == _companyId) ||
+			(_classNameId == 0)) {
+
+			return _classNameId;
+		}
+
+		return PortalUtil.getClassNameId(_className);
 	}
 
 	public String getClassSimpleName() {
@@ -126,7 +145,13 @@ public class StagedModelType {
 	}
 
 	public long getReferrerClassNameId() {
-		return _referrerClassNameId;
+		if ((CompanyThreadLocal.getCompanyId() == _companyId) ||
+			(_referrerClassNameId <= 0)) {
+
+			return _referrerClassNameId;
+		}
+
+		return PortalUtil.getClassNameId(_referrerClassName);
 	}
 
 	@Override
@@ -225,12 +250,17 @@ public class StagedModelType {
 		}
 	}
 
+	private void _setCompanyId() {
+		_companyId = CompanyThreadLocal.getCompanyId();
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		StagedModelType.class);
 
 	private String _className;
 	private long _classNameId;
 	private String _classSimpleName;
+	private long _companyId;
 	private String _referrerClassName;
 	private long _referrerClassNameId;
 
