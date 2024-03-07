@@ -63,9 +63,9 @@ public class ResourceActionLocalServiceImpl
 			resourceAction.setBitwiseValue(bitwiseValue);
 
 			resourceAction = resourceActionPersistence.update(resourceAction);
-		}
 
-		_resourceActions.put(encodeKey(name, actionId), resourceAction);
+			_resourceActions.put(encodeKey(name, actionId), resourceAction);
+		}
 
 		return resourceAction;
 	}
