@@ -6,6 +6,7 @@
 package com.liferay.portal.db.partition.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
@@ -37,6 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -407,6 +409,48 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 								TEST_CONTROL_TABLE_NEW_COLUMN));
 					}
 				});
+		}
+	}
+
+	@Test
+	public void testStagedModelTypeIsCoherentCompanyContext() throws Exception {
+		String commonClassNameValue = "class.name.test";
+
+		Map<Long, ClassName> classNames = new ConcurrentHashMap<>();
+
+		try {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					ClassName className = new ClassNameImpl();
+
+					className.setClassNameId(companyId);
+					className.setValue(commonClassNameValue);
+
+					classNames.put(
+						companyId,
+						_classNameLocalService.addClassName(className));
+				});
+
+			ClassName defaultCompanyclassName = classNames.get(
+				PortalInstancePool.getDefaultCompanyId());
+
+			StagedModelType stagedModelType = new StagedModelType(
+				defaultCompanyclassName.getClassNameId());
+
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					ClassName className =
+						_classNameLocalService.fetchByClassNameId(
+							stagedModelType.getClassNameId());
+
+					Assert.assertEquals(
+						commonClassNameValue, className.getValue());
+				});
+		}
+		finally {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> _classNameLocalService.deleteClassName(
+					classNames.get(companyId)));
 		}
 	}
 
