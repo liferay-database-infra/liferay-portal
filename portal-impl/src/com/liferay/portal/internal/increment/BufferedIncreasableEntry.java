@@ -5,10 +5,12 @@
 
 package com.liferay.portal.internal.increment;
 
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.aop.AopMethodInvocation;
 import com.liferay.portal.kernel.increment.Increment;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 
 import java.util.Arrays;
 
@@ -26,6 +28,8 @@ public class BufferedIncreasableEntry<K, T>
 
 		_aopMethodInvocation = aopMethodInvocation;
 		_arguments = arguments;
+
+		_companyId = CompanyThreadLocal.getCompanyId();
 	}
 
 	@Override
@@ -38,7 +42,11 @@ public class BufferedIncreasableEntry<K, T>
 	public void proceed() throws Throwable {
 		_arguments[_arguments.length - 1] = getValue().getValue();
 
-		_aopMethodInvocation.proceed(_arguments);
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setWithSafeCloseable(_companyId)) {
+
+			_aopMethodInvocation.proceed(_arguments);
+		}
 	}
 
 	@Override
@@ -50,5 +58,6 @@ public class BufferedIncreasableEntry<K, T>
 
 	private final AopMethodInvocation _aopMethodInvocation;
 	private final Object[] _arguments;
+	private final long _companyId;
 
 }
