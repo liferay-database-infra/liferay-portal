@@ -191,7 +191,8 @@ public abstract class BaseSQLTransformerLogicTestCase {
 	}
 
 	protected String getCastTextOriginalSQL() {
-		return "select CAST_TEXT(foo) from Foo";
+		return "select CAST_TEXT(foo || (CAST_TEXT(foo) || (bar || foo))), " +
+			"CAST_TEXT(foo || (bar || foo)) from Foo";
 	}
 
 	protected String getCrossJoinOriginalSQL() {

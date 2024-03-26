@@ -5,6 +5,7 @@
 
 package com.liferay.portal.dao.sql.transformer;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
@@ -36,7 +37,10 @@ public class SQLServerSQLTransformerLogicTest
 	@Test
 	public void testReplaceCastText() {
 		Assert.assertEquals(
-			"select CAST(foo AS NVARCHAR(MAX)) from Foo",
+			StringBundler.concat(
+				"select CAST(foo || (CAST(foo AS NVARCHAR(MAX)) || (bar || ",
+				"foo)) AS NVARCHAR(MAX)), CAST(foo || (bar || foo) AS ",
+				"NVARCHAR(MAX)) from Foo"),
 			sqlTransformer.transform(getCastTextOriginalSQL()));
 	}
 

@@ -39,7 +39,10 @@ public class SybaseSQLTransformerLogicTest
 	@Test
 	public void testReplaceCastText() {
 		Assert.assertEquals(
-			"select CAST(foo AS NVARCHAR(5461)) from Foo",
+			StringBundler.concat(
+				"select CAST(foo || (CAST(foo AS NVARCHAR(5461)) || (bar || ",
+				"foo)) AS NVARCHAR(5461)), CAST(foo || (bar || foo) AS ",
+				"NVARCHAR(5461)) from Foo"),
 			sqlTransformer.transform(getCastTextOriginalSQL()));
 	}
 

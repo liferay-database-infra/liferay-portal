@@ -48,7 +48,10 @@ public class OracleSQLTransformerLogicTest
 	@Test
 	public void testReplaceCastText() {
 		Assert.assertEquals(
-			"select CAST(foo AS VARCHAR(4000)) from Foo",
+			StringBundler.concat(
+				"select CAST(foo || (CAST(foo AS VARCHAR(4000)) || (bar || ",
+				"foo)) AS VARCHAR(4000)), CAST(foo || (bar || foo) AS ",
+				"VARCHAR(4000)) from Foo"),
 			sqlTransformer.transform(getCastTextOriginalSQL()));
 	}
 
