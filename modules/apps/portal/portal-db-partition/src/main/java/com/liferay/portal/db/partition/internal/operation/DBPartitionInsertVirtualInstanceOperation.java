@@ -8,6 +8,8 @@ package com.liferay.portal.db.partition.internal.operation;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.db.partition.internal.configuration.DBPartitionInsertVirtualInstanceConfiguration;
 import com.liferay.portal.instances.service.PortalInstancesLocalService;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 
@@ -33,6 +35,8 @@ public class DBPartitionInsertVirtualInstanceOperation
 	protected void activate(Map<String, Object> properties) {
 		onVirtualInstance(
 			() -> {
+				_log.info("DBPartitionInsertVirtualInstanceOperation activate");
+
 				DBPartitionInsertVirtualInstanceConfiguration
 					dBPartitionInsertVirtualInstanceConfiguration =
 						ConfigurableUtil.createConfigurable(
@@ -43,7 +47,11 @@ public class DBPartitionInsertVirtualInstanceOperation
 					dBPartitionInsertVirtualInstanceConfiguration.
 						partitionCompanyId();
 
+				_log.info("DBPartitionInsertVirtualInstanceOperation companyId " + companyId);
+
 				if (_companyLocalService.fetchCompany(companyId) != null) {
+
+					_log.info("DBPartitionInsertVirtualInstanceOperation null ");
 					return null;
 				}
 
@@ -54,7 +62,11 @@ public class DBPartitionInsertVirtualInstanceOperation
 						newVirtualHostname(),
 					dBPartitionInsertVirtualInstanceConfiguration.newWebId());
 
+				_log.info("DBPartitionInsertVirtualInstanceOperation added ");
+
 				_portalInstancesLocalService.synchronizePortalInstances();
+
+				_log.info("DBPartitionInsertVirtualInstanceOperation sync ");
 
 				return company;
 			},
@@ -66,5 +78,8 @@ public class DBPartitionInsertVirtualInstanceOperation
 
 	@Reference
 	private PortalInstancesLocalService _portalInstancesLocalService;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+			DBPartitionInsertVirtualInstanceOperation.class);
 
 }

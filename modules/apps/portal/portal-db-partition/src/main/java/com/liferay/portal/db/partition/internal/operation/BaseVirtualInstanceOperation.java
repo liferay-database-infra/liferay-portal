@@ -31,12 +31,20 @@ public abstract class BaseVirtualInstanceOperation {
 		try {
 			Company company = callable.call();
 
+			_log.info("onVirtualInstance called ");
+
 			if (company != null) {
+				_log.info("onVirtualInstance not null ");
+
 				_deleteConfiguration(
 					"com.liferay.portal.instances.internal.configuration." +
 						"PortalInstancesConfiguration~" + company.getWebId());
 
+				_log.info("onVirtualInstance deleted ");
+
 				if (servicePid.contains("Extract")) {
+					_log.info("onVirtualInstance extract ");
+
 					if (_log.isInfoEnabled()) {
 						_log.info(
 							"Virtual Instance with company ID " +
@@ -56,7 +64,11 @@ public abstract class BaseVirtualInstanceOperation {
 				"Unable to perform operation on virtual instance", exception);
 		}
 		finally {
+			_log.info("onVirtualInstance finally");
+
 			_deleteConfiguration(servicePid);
+
+			_log.info("onVirtualInstance deleted 2");
 		}
 	}
 
