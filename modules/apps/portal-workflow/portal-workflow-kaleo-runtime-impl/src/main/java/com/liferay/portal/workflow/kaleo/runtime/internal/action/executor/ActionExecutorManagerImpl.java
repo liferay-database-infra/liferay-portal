@@ -6,11 +6,15 @@
 package com.liferay.portal.workflow.kaleo.runtime.internal.action.executor;
 
 import com.liferay.osgi.service.tracker.collections.map.ServiceReferenceMapperFactory;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerCustomizerFactory;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerCustomizerFactory.ServiceWrapper;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.ClassUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.workflow.kaleo.definition.ActionType;
 import com.liferay.portal.workflow.kaleo.definition.ScriptLanguage;
 import com.liferay.portal.workflow.kaleo.model.KaleoAction;
@@ -41,17 +45,25 @@ public class ActionExecutorManagerImpl implements ActionExecutorManager {
 
 		ActionExecutor actionExecutor = null;
 
-		List<ActionExecutor> actionExecutors = _serviceTrackerMap.getService(
-			actionExecutorKey);
+		List<ServiceWrapper<ActionExecutor>> actionExecutorServiceWrappers =
+			_serviceTrackerMap.getService(actionExecutorKey);
 
-		if (actionExecutors != null) {
+		if (actionExecutorServiceWrappers != null) {
 			if (Objects.equals(
 					String.valueOf(ScriptLanguage.JAVA),
 					kaleoAction.getScriptLanguage())) {
 
+				ActionExecutor innerActionExecutor = null;
+
 				String className = kaleoAction.getScript();
 
-				for (ActionExecutor innerActionExecutor : actionExecutors) {
+				for (ServiceWrapper<ActionExecutor>
+						innerActionExecutorServiceWrapper :
+							actionExecutorServiceWrappers) {
+
+					innerActionExecutor =
+						innerActionExecutorServiceWrapper.getService();
+
 					if (Objects.equals(
 							ClassUtil.getClassName(innerActionExecutor),
 							className)) {
@@ -63,7 +75,9 @@ public class ActionExecutorManagerImpl implements ActionExecutorManager {
 				}
 			}
 			else {
-				actionExecutor = actionExecutors.get(0);
+				actionExecutor = actionExecutorServiceWrappers.get(
+					0
+				).getService();
 			}
 		}
 
@@ -81,7 +95,25 @@ public class ActionExecutorManagerImpl implements ActionExecutorManager {
 			_serviceTrackerMap.keySet(),
 			key -> {
 				if (key.startsWith("function")) {
-					return key;
+					List<ServiceWrapper<ActionExecutor>>
+						actionExecutorServiceWrappers =
+							_serviceTrackerMap.getService(key);
+
+					if (!actionExecutorServiceWrappers.isEmpty()) {
+						ServiceWrapper<ActionExecutor>
+							actionExecutorServiceWrapper =
+								actionExecutorServiceWrappers.get(0);
+
+						long companyId = GetterUtil.getLong(
+							actionExecutorServiceWrapper.getProperties(
+							).get(
+								"companyId"
+							));
+
+						if (companyId == CompanyThreadLocal.getCompanyId()) {
+							return key;
+						}
+					}
 				}
 
 				return null;
@@ -96,7 +128,9 @@ public class ActionExecutorManagerImpl implements ActionExecutorManager {
 			ServiceReferenceMapperFactory.create(
 				bundleContext,
 				(actionExecutor, emitter) -> emitter.emit(
-					actionExecutor.getActionExecutorKey())));
+					actionExecutor.getActionExecutorKey())),
+			ServiceTrackerCustomizerFactory.<ActionExecutor>serviceWrapper(
+				bundleContext));
 	}
 
 	@Deactivate
@@ -114,6 +148,7 @@ public class ActionExecutorManagerImpl implements ActionExecutorManager {
 		return kaleoAction.getScriptLanguage();
 	}
 
-	private ServiceTrackerMap<String, List<ActionExecutor>> _serviceTrackerMap;
+	private ServiceTrackerMap<String, List<ServiceWrapper<ActionExecutor>>>
+		_serviceTrackerMap;
 
 }
