@@ -1,0 +1,19 @@
+name: Scheduled Empty Commit Branch
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Sync with Master']
+    types: [completed]
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Creating Empty PR
+        run: |
+          git config user.name 'liferay-database-infra'
+          git config user.email 'liferay.upgrades@liferay.com'
+          git switch -c upgrade-test-suite-branch
+          git push origin upgrade-test-suite-branch --force
+          git commit -m "Automated Empty PR" --allow-empty
+          git push origin upgrade-test-suite-branch
