@@ -15,19 +15,12 @@ import Jethr0Card from '../../components/Jethr0Card/Jethr0Card';
 import Jethr0ContainerFluid from '../../components/Jethr0ContainerFluid/Jethr0ContainerFluid';
 import Jethr0NavigationBar from '../../components/Jethr0NavigationBar/Jethr0NavigationBar';
 import Jethr0Table from '../../components/Jethr0Table/Jethr0Table';
-import {getBuildsByJob} from '../../objects/builds/BuildUtil';
 import {deleteJobById, getJobById} from '../../objects/jobs/JobUtil';
 import {toLocaleString} from '../../services/DateUtil';
 import {toDurationString} from '../../services/DurationUtil';
 
-function JobBuilds({jobId}) {
-	const [jobBuilds, setJobBuilds] = useState(null);
-
-	if (!jobBuilds) {
-		getBuildsByJob({jobId, setBuilds: setJobBuilds});
-	}
-
-	if (!jobBuilds) {
+function JobBuilds({job}) {
+	if (!job?.builds) {
 		return <div>Loading...</div>;
 	}
 
@@ -53,49 +46,44 @@ function JobBuilds({jobId}) {
 						</tr>
 					</thead>
 					<tbody>
-						{jobBuilds &&
-							jobBuilds.map((jobBuild) => {
-								return (
-									<tr key={jobBuild.id}>
-										<th className="font-weight-semi-bold">
-											<Link
-												title={jobBuild.id}
-												to={'/builds/' + jobBuild.id}
+						{job.builds?.map((jobBuild) => {
+							return (
+								<tr key={jobBuild.id}>
+									<th className="font-weight-semi-bold">
+										<Link
+											title={jobBuild.id}
+											to={'/builds/' + jobBuild.id}
+										>
+											{jobBuild.id}
+										</Link>
+									</th>
+									<td>{jobBuild.name}</td>
+									<td>
+										{toLocaleString(jobBuild.dateCreated)}
+									</td>
+									<td>{jobBuild.state.name}</td>
+									<td>{jobBuild.initialBuild.toString()}</td>
+									<td>
+										{toDurationString(
+											jobBuild.latestDuration
+										)}
+									</td>
+									<td>
+										{jobBuild.latestJenkinsBuildURL ? (
+											<a
+												href={
+													jobBuild.latestJenkinsBuildURL
+												}
 											>
-												{jobBuild.id}
-											</Link>
-										</th>
-										<td>{jobBuild.name}</td>
-										<td>
-											{toLocaleString(
-												jobBuild.dateCreated
-											)}
-										</td>
-										<td>{jobBuild.state.name}</td>
-										<td>
-											{jobBuild.initialBuild.toString()}
-										</td>
-										<td>
-											{toDurationString(
-												jobBuild.latestDuration
-											)}
-										</td>
-										<td>
-											{jobBuild.latestJenkinsBuildURL ? (
-												<a
-													href={
-														jobBuild.latestJenkinsBuildURL
-													}
-												>
-													Latest Jenkins Build
-												</a>
-											) : (
-												<div>-</div>
-											)}
-										</td>
-									</tr>
-								);
-							})}
+												Latest Jenkins Build
+											</a>
+										) : (
+											<div>-</div>
+										)}
+									</td>
+								</tr>
+							);
+						})}
 					</tbody>
 				</Jethr0Table>
 			</ClayPanel.Body>
@@ -173,8 +161,7 @@ function JobInformation({job}) {
 					fieldValue={job.startDate}
 				/>
 				{jobParameters &&
-					jobParameterDefinitions &&
-					jobParameterDefinitions.map((jobParameterDefinition) => {
+					jobParameterDefinitions?.map((jobParameterDefinition) => {
 						return (
 							<JobInformationField
 								fieldLabel={jobParameterDefinition.label}
@@ -233,6 +220,24 @@ function JobPage() {
 		getJobById({id, setJob});
 	}
 
+	if (!job) {
+		return (
+			<ClayLayout.Container>
+				<Jethr0Card>
+					<Jethr0NavigationBar active="Jobs" />
+					<Jethr0Breadcrumbs breadcrumbs={breadcrumbs} />
+					<Jethr0ContainerFluid>
+						<ClayLayout.Row justify="between">
+							<Heading level={3} weight="lighter">
+								{'Job #' + id}
+							</Heading>
+						</ClayLayout.Row>
+					</Jethr0ContainerFluid>
+				</Jethr0Card>
+			</ClayLayout.Container>
+		);
+	}
+
 	function redirectToJobsPage() {
 		window.location.replace('/#/jobs');
 	}
@@ -275,7 +280,7 @@ function JobPage() {
 					</ClayLayout.Row>
 				</Jethr0ContainerFluid>
 				<JobInformation job={job} />
-				<JobBuilds jobId={id} />
+				<JobBuilds job={job} />
 			</Jethr0Card>
 		</ClayLayout.Container>
 	);

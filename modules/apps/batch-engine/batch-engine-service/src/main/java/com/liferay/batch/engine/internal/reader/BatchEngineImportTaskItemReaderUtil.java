@@ -19,6 +19,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.io.IOException;
@@ -26,11 +27,14 @@ import java.io.Serializable;
 
 import java.lang.reflect.Field;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Ivica Cardic
@@ -136,6 +140,41 @@ public class BatchEngineImportTaskItemReaderUtil {
 						targetFieldName, entry.getValue());
 				}
 			}
+			else {
+				String[] fieldNameParts = StringUtil.split(
+					entry.getKey(), StringPool.PERIOD);
+
+				targetFieldName = (String)fieldNameMappingMap.get(
+					fieldNameParts[0]);
+
+				if (Validator.isNotNull(targetFieldName)) {
+					if (Objects.equals(fieldNameParts[1], "key") ||
+						Objects.equals(fieldNameParts[1], "name")) {
+
+						Map<String, Object> map =
+							(Map<String, Object>)
+								targetFieldNameValueMap.computeIfAbsent(
+									targetFieldName, key -> new HashMap<>());
+
+						map.put(fieldNameParts[1], entry.getValue());
+
+						continue;
+					}
+
+					Matcher multiselectPicklistKeyMatcher =
+						_multiselectPicklistKeyPattern.matcher(
+							fieldNameParts[1]);
+
+					if (multiselectPicklistKeyMatcher.matches()) {
+						List<Object> list =
+							(List<Object>)
+								targetFieldNameValueMap.computeIfAbsent(
+									targetFieldName, key -> new ArrayList<>());
+
+						list.add(entry.getValue());
+					}
+				}
+			}
 		}
 
 		return targetFieldNameValueMap;
@@ -169,6 +208,9 @@ public class BatchEngineImportTaskItemReaderUtil {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		BatchEngineImportTaskItemReaderUtil.class);
+
+	private static final Pattern _multiselectPicklistKeyPattern =
+		Pattern.compile("key_\\d+");
 
 	private static final ObjectMapper _objectMapper = new ObjectMapper() {
 		{

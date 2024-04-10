@@ -5,16 +5,14 @@
 
 import {Locator, Page} from '@playwright/test';
 
-import {ApplicationsMenuPage} from '../../../pages/product-navigation-applications-menu/ApplicationsMenuPage';
+import {liferayConfig} from '../../../liferay.config';
 
 export class ClientExtensionsPage {
-	readonly applicationsMenuPage: ApplicationsMenuPage;
 	readonly deleteMenuItem: Locator;
 	readonly editMenuItem: Locator;
 	readonly page: Page;
 
 	constructor(page: Page) {
-		this.applicationsMenuPage = new ApplicationsMenuPage(page);
 		this.deleteMenuItem = page.getByRole('menuitem', {
 			name: 'Delete',
 		});
@@ -39,7 +37,10 @@ export class ClientExtensionsPage {
 	}
 
 	async goto() {
-		await this.applicationsMenuPage.goToClientExtensions();
+		await this.page.goto(
+			`${liferayConfig.environment.baseUrl}/group/guest/~/control_panel/manage` +
+				'?p_p_id=com_liferay_client_extension_web_internal_portlet_ClientExtensionAdminPortlet'
+		);
 	}
 
 	async openItemActionsDropdown(clientExtensionName: string) {

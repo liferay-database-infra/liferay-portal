@@ -12,51 +12,24 @@ import Jethr0Breadcrumbs from '../../components/Jethr0Breadcrumbs/Jethr0Breadcru
 import Jethr0ButtonsRow from '../../components/Jethr0ButtonsRow/Jethr0ButtonsRow';
 import Jethr0Card from '../../components/Jethr0Card/Jethr0Card';
 import Jethr0NavigationBar from '../../components/Jethr0NavigationBar/Jethr0NavigationBar';
-import {getJobDefinitionParametersByJobDefinition} from '../../objects/jobdefinitionparameters/JobDefinitionParameterUtil';
-import {
-	getJobDefinitionByKey,
-	getJobDefinitions,
-} from '../../objects/jobdefinitions/JobDefintionUtil';
+import {getJobDefinitions} from '../../objects/jobdefinitions/JobDefinitionUtil';
 import {createJob} from '../../objects/jobs/JobUtil';
 
 function CreateJobPage() {
-	const [jobDefinition, setJobDefinition] = useState(null);
+	const [jobDefinitionKey, setJobDefinitionKey] = useState('default');
 	const [jobDefinitions, setJobDefinitions] = useState(null);
-	const [jobDefinitionParameters, setJobDefinitionParameters] = useState(
-		null
-	);
 	const [jobName, setJobName] = useState(null);
 	const [jobParameters, setJobParameters] = useState(null);
 	const [jobPriority, setJobPriority] = useState(4);
 
 	function redirectToJobPage(data) {
-		const json = JSON.parse(data);
-
-		if (json !== null && json.id !== null) {
-			window.location.replace('/#/jobs/' + json.id);
+		if (data !== null && data.id !== null) {
+			window.location.replace('/#/jobs/' + data.id);
 		}
-	}
-
-	if (!jobDefinition) {
-		getJobDefinitionByKey({
-			key: 'default',
-			setJobDefinition,
-		});
-
-		return;
 	}
 
 	if (!jobDefinitions) {
 		getJobDefinitions({setJobDefinitions});
-
-		return;
-	}
-
-	if (jobDefinition && !jobDefinitionParameters) {
-		getJobDefinitionParametersByJobDefinition({
-			jobDefintionId: jobDefinition.id,
-			setJobDefinitionParameters,
-		});
 
 		return;
 	}
@@ -78,13 +51,25 @@ function CreateJobPage() {
 		});
 	}
 
-	if (!jobParameters && jobDefinitionParameters) {
+	let jobDefinition = null;
+
+	for (const candidateJobDefinition of jobDefinitions) {
+		if (candidateJobDefinition.key === jobDefinitionKey) {
+			jobDefinition = candidateJobDefinition;
+		}
+	}
+
+	if (!jobParameters && jobDefinition?.jobDefinitionParameters) {
 		const defaultJobParameters = {};
 
-		jobDefinitionParameters.forEach((jobDefinitionParameter) => {
-			defaultJobParameters[jobDefinitionParameter.key] =
-				jobDefinitionParameter.valueDefault;
-		});
+		jobDefinition.jobDefinitionParameters.forEach(
+			(jobDefinitionParameter) => {
+				if (jobDefinitionParameter.valueDefault) {
+					defaultJobParameters[jobDefinitionParameter.key] =
+						jobDefinitionParameter.valueDefault;
+				}
+			}
+		);
 
 		setJobParameters(defaultJobParameters);
 
@@ -130,13 +115,7 @@ function CreateJobPage() {
 						aria-label="Job Types"
 						id="jobType"
 						onChange={(event) => {
-							setJobDefinitionParameters(null);
-							setJobParameters(null);
-
-							getJobDefinitionByKey({
-								key: event.target.value,
-								setJobDefinition,
-							});
+							setJobDefinitionKey(event.target.value);
 						}}
 						options={jobTypeOptions}
 						value={jobDefinition.key}
@@ -158,35 +137,39 @@ function CreateJobPage() {
 				</ClayForm.Group>
 
 				{jobParameters &&
-					jobDefinitionParameters?.map((jobParameterDefinition) => {
-						return (
-							<ClayForm.Group key={jobParameterDefinition.key}>
-								<label htmlFor={jobParameterDefinition.key}>
-									{jobParameterDefinition.label}
-								</label>
+					jobDefinition.jobDefinitionParameters?.map(
+						(jobParameterDefinition) => {
+							return (
+								<ClayForm.Group
+									key={jobParameterDefinition.key}
+								>
+									<label htmlFor={jobParameterDefinition.key}>
+										{jobParameterDefinition.label}
+									</label>
 
-								<ClayInput
-									id={jobParameterDefinition.key}
-									onChange={(event) => {
-										setJobParameters({
-											...jobParameters,
-											[jobParameterDefinition.key]:
-												event.target.value,
-										});
-									}}
-									placeholder={
-										jobParameterDefinition.valueDescription
-									}
-									type="text"
-									value={
-										jobParameters[
-											jobParameterDefinition.key
-										] || ''
-									}
-								/>
-							</ClayForm.Group>
-						);
-					})}
+									<ClayInput
+										id={jobParameterDefinition.key}
+										onChange={(event) => {
+											setJobParameters({
+												...jobParameters,
+												[jobParameterDefinition.key]:
+													event.target.value,
+											});
+										}}
+										placeholder={
+											jobParameterDefinition.valueDescription
+										}
+										type="text"
+										value={
+											jobParameters[
+												jobParameterDefinition.key
+											] || ''
+										}
+									/>
+								</ClayForm.Group>
+							);
+						}
+					)}
 
 				<Jethr0ButtonsRow
 					buttons={[

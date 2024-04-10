@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Page, expect, mergeTests} from '@playwright/test';
+import {expect, mergeTests} from '@playwright/test';
 
 import {pagesAdminPageTest} from '../../fixtures/PagesAdminPageTest';
 import {styleBookPageTest} from '../../fixtures/StyleBookPageTest';
@@ -12,7 +12,8 @@ import {loginTest} from '../../fixtures/loginTest';
 import getRandomString from '../../utils/getRandomString';
 import {clientExtensionsPageTest} from './fixtures/clientExtensionsPageTest';
 import {editThemeCSSClientExtensionsPageTest} from './fixtures/editThemeCSSClientExtensionsPageTest';
-import {EditThemeCSSClientExtensionsPage} from './pages/EditThemeCSSClientExtensionsPage';
+import {ViewClientExtensionPage} from './pages/ViewClientExtensionPage';
+import uploadAndValidateFile from './utils/uploadAndValidateFile';
 
 export const test = mergeTests(
 	clientExtensionsPageTest,
@@ -25,19 +26,40 @@ export const test = mergeTests(
 	editThemeCSSClientExtensionsPageTest
 );
 
-const uploadAndValidateFile = async (
-	fileName: string,
-	message: string,
-	page: Page,
-	editThemeCSSClientExtensionsPage: EditThemeCSSClientExtensionsPage
-) => {
-	await editThemeCSSClientExtensionsPage.uploadFrontendTokenDefinitionFile(
-		__dirname,
-		fileName
-	);
+const SAMPLES = [
+	{
+		erc: 'LXC:liferay-sample-theme-css-1',
+		mainURL: '/o/liferay-sample-theme-css-1/css/main.css',
+		name: 'Liferay Sample Theme CSS 1',
+	},
+	{
+		erc: 'LXC:liferay-sample-theme-css-2',
+		mainURL: '/o/liferay-sample-theme-css-2/css/main.css',
+		name: 'Liferay Sample Theme CSS 2',
+	},
+];
 
-	await expect(page.getByText(message)).toBeVisible();
-};
+for (const sample of SAMPLES) {
+	test(`${sample.name} is registered`, async ({page}) => {
+		const viewClientExtensionPage = new ViewClientExtensionPage(
+			page,
+			sample.erc
+		);
+
+		await viewClientExtensionPage.goto();
+
+		expect(viewClientExtensionPage.nameLocator).toHaveValue(sample.name);
+		expect(viewClientExtensionPage.fieldLocator('Main URL')).toHaveValue(
+			sample.mainURL
+		);
+	});
+
+	test(`${sample.name}'s .css file can be downloaded`, async ({page}) => {
+		const response = await page.goto(sample.mainURL);
+
+		expect(response.status()).toBe(200);
+	});
+}
 
 test('ThemeCSS client extension supports frontend token definition JSON file upload', async ({
 	editThemeCSSClientExtensionsPage,

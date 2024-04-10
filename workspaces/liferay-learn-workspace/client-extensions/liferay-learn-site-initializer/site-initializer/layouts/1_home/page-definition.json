@@ -1,12 +1,13 @@
 {
 	"pageElement": {
-		"id": "1bf9b454-9671-aaee-2638-8111b5a256ff",
+		"id": "e80d27fd-f68e-d1a0-50c7-98fcb27a8867",
 		"pageElements": [
 			{
 				"definition": {
 					"cssClasses": [
 						"learn-banner"
 					],
+					"customCSS": ".[$FRAGMENT_CLASS$] {\n}",
 					"fragmentStyle": {
 						"paddingBottom": "3"
 					},
@@ -149,10 +150,7 @@
 				"pageElements": [
 					{
 						"definition": {
-							"cssClasses": [
-								"tab"
-							],
-							"customCSS": ".[$FRAGMENT_CLASS$] {\n.navbar-collapse{\njustify-content: center;\n}\n}",
+							"customCSS": ".[$FRAGMENT_CLASS$] {\n.navbar-collapse{\njustify-content: center;\n}\n.show {\nz-index: 2 !important;\n}\n}",
 							"fragment": {
 								"key": "dialect-tabs",
 								"siteKey": "Liferay Learn"
@@ -169,6 +167,32 @@
 							},
 							"fragmentFields": [
 								{
+									"id": "mobile-title",
+									"value": {
+										"fragmentLink": {
+										},
+										"text": {
+											"value_i18n": {
+												"en_US": "Browse By"
+											}
+										}
+									}
+								},
+								{
+									"id": "mobile-title-afcw",
+									"value": {
+										"fragmentLink": {
+										}
+									}
+								},
+								{
+									"id": "mobile-text",
+									"value": {
+										"fragmentLink": {
+										}
+									}
+								},
+								{
 									"id": "title1",
 									"value": {
 										"fragmentLink": {
@@ -176,6 +200,18 @@
 										"text": {
 											"value_i18n": {
 												"en_US": "Browse By Capability"
+											}
+										}
+									}
+								},
+								{
+									"id": "mobile-tab",
+									"value": {
+										"fragmentLink": {
+										},
+										"text": {
+											"value_i18n": {
+												"en_US": "Browse By"
 											}
 										}
 									}
@@ -1946,6 +1982,13 @@
 													{
 														"definition": {
 															"customCSS": ".[$FRAGMENT_CLASS$] {\nborder: 1px solid rgba(9, 16, 24, 0.12);\nbox-shadow: 0 6px 15px -6px rgba(9, 16, 29, 0.06);\n}\n\n.[$FRAGMENT_CLASS$]:hover{\nbackground-color: var(--color-action-primary-hover-10, #EDF3FE) !important; \nborder-color: var(--color-brand-primary-darken-1, #0053F0) !important;\nborder-radius: 10px !important;\nborder-width: 1px !important;\n}",
+															"fragmentLink": {
+																"href": {
+																	"value_i18n": {
+																		"en_US": "/w/analytics-cloud/index"
+																	}
+																}
+															},
 															"fragmentStyle": {
 																"backgroundColor": "colorNeutral0",
 																"borderRadius": "borderRadiusLg",
@@ -2085,6 +2128,13 @@
 													{
 														"definition": {
 															"customCSS": ".[$FRAGMENT_CLASS$] {\nborder: 1px solid rgba(9, 16, 24, 0.12);\nbox-shadow: 0 6px 15px -6px rgba(9, 16, 29, 0.06);\n}\n\n.[$FRAGMENT_CLASS$]:hover{\nbackground-color: var(--color-action-primary-hover-10, #EDF3FE) !important; \nborder-color: var(--color-brand-primary-darken-1, #0053F0) !important;\nborder-radius: 10px !important;\nborder-width: 1px !important;\n}",
+															"fragmentLink": {
+																"href": {
+																	"value_i18n": {
+																		"en_US": "/w/commerce/index"
+																	}
+																}
+															},
 															"fragmentStyle": {
 																"backgroundColor": "colorNeutral0",
 																"borderRadius": "borderRadiusLg",
@@ -2224,6 +2274,13 @@
 													{
 														"definition": {
 															"customCSS": ".[$FRAGMENT_CLASS$] {\nborder: 1px solid rgba(9, 16, 24, 0.12);\nbox-shadow: 0 6px 15px -6px rgba(9, 16, 29, 0.06);\n}\n\n.[$FRAGMENT_CLASS$]:hover{\nbackground-color: var(--color-action-primary-hover-10, #EDF3FE) !important; \nborder-color: var(--color-brand-primary-darken-1, #0053F0) !important;\nborder-radius: 10px !important;\nborder-width: 1px !important;\n}",
+															"fragmentLink": {
+																"href": {
+																	"value_i18n": {
+																		"en_US": "/w/dxp/index"
+																	}
+																}
+															},
 															"fragmentStyle": {
 																"backgroundColor": "colorNeutral0",
 																"borderRadius": "borderRadiusLg",
@@ -2363,6 +2420,13 @@
 													{
 														"definition": {
 															"customCSS": ".[$FRAGMENT_CLASS$] {\nborder: 1px solid rgba(9, 16, 24, 0.12);\nbox-shadow: 0 6px 15px -6px rgba(9, 16, 29, 0.06);\n}\n\n.[$FRAGMENT_CLASS$]:hover{\nbackground-color: var(--color-action-primary-hover-10, #EDF3FE) !important; \nborder-color: var(--color-brand-primary-darken-1, #0053F0) !important;\nborder-radius: 10px !important;\nborder-width: 1px !important;\n}",
+															"fragmentLink": {
+																"href": {
+																	"value_i18n": {
+																		"en_US": "/w/liferay-cloud/index"
+																	}
+																}
+															},
 															"fragmentStyle": {
 																"backgroundColor": "colorNeutral0",
 																"borderRadius": "borderRadiusLg",
@@ -2502,6 +2566,13 @@
 													{
 														"definition": {
 															"customCSS": ".[$FRAGMENT_CLASS$] {\nborder: 1px solid rgba(9, 16, 24, 0.12);\nbox-shadow: 0 6px 15px -6px rgba(9, 16, 29, 0.06);\n}\n\n.[$FRAGMENT_CLASS$]:hover{\nbackground-color: var(--color-action-primary-hover-10, #EDF3FE) !important; \nborder-color: var(--color-brand-primary-darken-1, #0053F0) !important;\nborder-radius: 10px !important;\nborder-width: 1px !important;\n}",
+															"fragmentLink": {
+																"href": {
+																	"value_i18n": {
+																		"en_US": "/w/reference/index"
+																	}
+																}
+															},
 															"fragmentStyle": {
 																"backgroundColor": "colorNeutral0",
 																"borderRadius": "borderRadiusLg",

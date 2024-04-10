@@ -272,7 +272,7 @@ public class KoroneikiRestController extends BaseRestController {
 		}
 	}
 
-	@PostMapping("product-purchase")
+	@PostMapping("product/purchase")
 	public void postProductPurchase(
 			@AuthenticationPrincipal Jwt jwt, @RequestBody String json)
 		throws Exception {

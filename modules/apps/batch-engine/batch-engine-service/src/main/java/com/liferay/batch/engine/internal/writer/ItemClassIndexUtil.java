@@ -5,8 +5,6 @@
 
 package com.liferay.batch.engine.internal.writer;
 
-import com.liferay.object.rest.dto.v1_0.ListEntry;
-import com.liferay.object.rest.dto.v1_0.ObjectEntry;
 import com.liferay.petra.concurrent.ConcurrentReferenceKeyHashMap;
 import com.liferay.petra.concurrent.ConcurrentReferenceValueHashMap;
 import com.liferay.petra.memory.FinalizeManager;
@@ -54,18 +52,18 @@ public class ItemClassIndexUtil {
 		return fieldNameObjectValuePairs;
 	}
 
-	public static boolean isIterable(Class<?> valueClass) {
-		if (valueClass.isArray() ||
-			Collection.class.isAssignableFrom(valueClass)) {
-
+	public static boolean isDate(Class<?> clazz) {
+		if (Objects.equals(clazz, Date.class)) {
 			return true;
 		}
 
 		return false;
 	}
 
-	public static boolean isListEntry(Object object) {
-		if (object instanceof ListEntry) {
+	public static boolean isIterable(Class<?> valueClass) {
+		if (valueClass.isArray() ||
+			Collection.class.isAssignableFrom(valueClass)) {
+
 			return true;
 		}
 
@@ -88,25 +86,6 @@ public class ItemClassIndexUtil {
 		Class<?> componentTypeClass = clazz.getComponentType();
 
 		if (!componentTypeClass.isArray()) {
-			return false;
-		}
-
-		return true;
-	}
-
-	public static boolean isObjectEntryProperties(
-		ObjectValuePair<Field, Method> objectValuePair) {
-
-		if (objectValuePair == null) {
-			return false;
-		}
-
-		Field field = objectValuePair.getKey();
-
-		if ((field == null) ||
-			!Objects.equals(field.getDeclaringClass(), ObjectEntry.class) ||
-			!Objects.equals(field.getType(), Map.class)) {
-
 			return false;
 		}
 

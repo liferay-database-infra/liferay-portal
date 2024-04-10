@@ -228,8 +228,8 @@ public class XLSBatchEngineExportTaskItemWriterImplTest
 		try (XLSBatchEngineExportTaskItemWriterImpl
 				xlsBatchEngineExportTaskItemWriterImpl =
 					new XLSBatchEngineExportTaskItemWriterImpl(
-						fieldNameObjectValuePairs, fieldNames,
-						unsyncByteArrayOutputStream)) {
+						null, 0, fieldNameObjectValuePairs, fieldNames,
+						unsyncByteArrayOutputStream, null)) {
 
 			for (Item[] items : getItemGroups()) {
 				xlsBatchEngineExportTaskItemWriterImpl.write(

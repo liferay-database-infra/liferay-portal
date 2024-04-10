@@ -45,39 +45,57 @@ function JobQueue() {
 				</tr>
 			</thead>
 			<tbody>
-				{jobs &&
-					jobs.map((job, index) => {
-						return (
-							<tr key={job.id}>
-								<td>{index + 1}</td>
-								<th className="font-weight-semi-bold">
-									<Link title={job.id} to={'/jobs/' + job.id}>
-										{job.id}
-									</Link>
-								</th>
-								<td>{job.name}</td>
-								<td>{job.priority}</td>
-								<td>{toLocaleString(job.dateCreated)}</td>
-								<td>{toLocaleString(job.startDate)}</td>
-								<td>{job.state.name}</td>
-								<td>
-									<span className="text-muted">
-										{job.queuedBuilds || 0}
-									</span>
-									<span> / </span>
-									<span className="text-warning">
-										{job.runningBuilds || 0}
-									</span>
-									<span> / </span>
-									<span className="text-success">
-										{job.completedBuilds || 0}
-									</span>
-									<span> / </span>
-									<span>{job.totalBuilds || 0}</span>
-								</td>
-							</tr>
-						);
-					})}
+				{jobs?.map((job, index) => {
+					let completedBuilds = 0;
+					let openedBuilds = 0;
+					let runningBuilds = 0;
+					let totalBuilds = 0;
+
+					for (const build of job.builds) {
+						if (build.state.key === 'completed') {
+							completedBuilds++;
+						}
+						else if (build.state.key === 'opened') {
+							openedBuilds++;
+						}
+						else if (build.state.key === 'running') {
+							runningBuilds++;
+						}
+
+						totalBuilds++;
+					}
+
+					return (
+						<tr key={job.id}>
+							<td>{index + 1}</td>
+							<th className="font-weight-semi-bold">
+								<Link title={job.id} to={'/jobs/' + job.id}>
+									{job.id}
+								</Link>
+							</th>
+							<td>{job.name}</td>
+							<td>{job.priority}</td>
+							<td>{toLocaleString(job.dateCreated)}</td>
+							<td>{toLocaleString(job.startDate)}</td>
+							<td>{job.state.name}</td>
+							<td>
+								<span className="text-muted">
+									{openedBuilds}
+								</span>
+								<span> / </span>
+								<span className="text-warning">
+									{runningBuilds}
+								</span>
+								<span> / </span>
+								<span className="text-success">
+									{completedBuilds}
+								</span>
+								<span> / </span>
+								<span>{totalBuilds}</span>
+							</td>
+						</tr>
+					);
+				})}
 			</tbody>
 		</Jethr0Table>
 	);

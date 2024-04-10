@@ -10,6 +10,7 @@ import {
 	copyFileSync,
 	existsSync,
 	readFileSync,
+	realpathSync,
 	unlinkSync,
 	writeFileSync,
 } from 'fs';
@@ -49,37 +50,40 @@ function deployClientExtension(
 	setup: boolean,
 	portalSourceDir: string,
 	bundlesDir: string,
-	projectName: string
+	projectPath: string
 ) {
+	const projectParts = projectPath.split('/');
+	const workspacePath = projectParts.slice(0, 2).join('/');
+	const projectName = projectParts[projectParts.length - 1];
+
 	if (setup) {
 		process.stdout.write(
 			`      Deploying client extension: ${projectName}`
 		);
 
 		runCommand(
-			join(
-				portalSourceDir,
-				'workspace',
-				'liferay-sample-workspace',
-				'client-extensions',
-				projectName
-			),
-			'gradlew',
+			join(portalSourceDir, projectPath),
+			join(portalSourceDir, workspacePath, 'gradlew'),
 			['deploy', '-a']
 		);
 
-		copyFileSync(
-			join(
-				portalSourceDir,
-				'workspaces',
-				'liferay-sample-workspace',
-				'bundles',
-				'osgi',
-				'client-extensions',
-				`${projectName}.zip`
-			),
-			join(bundlesDir, 'deploy')
+		const portalDeployPath = join(bundlesDir, 'deploy');
+		const workspaceDeployPath = join(
+			portalSourceDir,
+			workspacePath,
+			'bundles',
+			'osgi',
+			'client-extensions'
 		);
+
+		if (
+			realpathSync(portalDeployPath) !== realpathSync(workspaceDeployPath)
+		) {
+			copyFileSync(
+				join(workspaceDeployPath, `${projectName}.zip`),
+				portalDeployPath
+			);
+		}
 	}
 	else {
 		process.stdout.write(
@@ -102,12 +106,20 @@ function deployOSGiModule(
 	if (setup) {
 		process.stdout.write(`      Deploying module: ${projectDir}`);
 
-		runCommand(join(portalSourceDir, projectDir), 'gradlew', ['deploy']);
+		runCommand(
+			join(portalSourceDir, projectDir),
+			join(portalSourceDir, 'gradlew'),
+			['deploy']
+		);
 	}
 	else {
 		process.stdout.write(`      Undeploying module: ${projectDir}`);
 
-		runCommand(join(portalSourceDir, projectDir), 'gradlew', ['clean']);
+		runCommand(
+			join(portalSourceDir, projectDir),
+			join(portalSourceDir, 'gradlew'),
+			['clean']
+		);
 	}
 
 	console.log(' ✅');

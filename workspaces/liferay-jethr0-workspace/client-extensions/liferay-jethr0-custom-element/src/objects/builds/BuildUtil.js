@@ -4,48 +4,74 @@
  */
 
 import liferayRequest from '../../services/liferayRequest';
+import Job from '../jobs/Job';
 import Build from './Build';
 
-export function getBuildById({id, setBuild}) {
-	liferayRequest({urlPath: '/o/c/builds/' + id})
-		.then((request) => request.text())
-		.then((result) => {
-			const resultJSON = JSON.parse(result);
-
-			const build = new Build(resultJSON);
-
-			if (build && setBuild) {
-				setBuild(build);
+export async function getBuildById({id, setBuild}) {
+	const response = await liferayRequest({
+		graphqlQuery: `{
+			c {
+				builds(filter: \\"id eq '${id}'\\") {
+					items {
+						dateCreated
+						dateModified
+						id
+						initialBuild
+						jenkinsJobName
+						jobToBuilds
+						name
+						parameters
+						state {
+							key
+							name
+						}
+					}
+				}
 			}
-		})
-		.catch((error) => {
-			// eslint-disable-next-line no-console
-			console.log(error);
-		});
-}
-
-export function getBuildsByJob({jobId, setBuilds}) {
-	const urlSearchParams = new URLSearchParams({
-		filter: "r_jobToBuilds_c_jobId eq '" + jobId + "'",
+		}`,
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		method: 'POST',
+		urlPath: '/o/graphql',
 	});
 
-	liferayRequest({urlPath: '/o/c/builds', urlSearchParams})
-		.then((request) => request.text())
-		.then((result) => {
-			const resultJSON = JSON.parse(result);
+	const result = JSON.parse(await response.text());
 
-			const builds = [];
+	for (const buildJSON of result.data.c.builds.items) {
+		const build = new Build(buildJSON);
 
-			resultJSON.items.forEach((item) => {
-				builds.push(new Build(item));
-			});
+		build.job = new Job(buildJSON.jobToBuilds);
 
-			if (builds && setBuilds) {
-				setBuilds(builds);
+		if (build) {
+			if (setBuild) {
+				setBuild(build);
 			}
-		})
-		.catch((error) => {
-			// eslint-disable-next-line no-console
-			console.log(error);
-		});
+
+			return build;
+		}
+	}
+}
+
+export async function getBuildsByJob({job, setBuilds}) {
+	const urlSearchParams = new URLSearchParams({
+		filter: "r_jobToBuilds_c_jobId eq '" + job.id + "'",
+	});
+
+	const response = await liferayRequest({
+		urlPath: '/o/c/builds',
+		urlSearchParams,
+	});
+
+	const result = JSON.parse(await response.text());
+
+	const builds = [];
+
+	result.items.forEach((item) => {
+		builds.push(new Build(item));
+	});
+
+	if (builds && setBuilds) {
+		setBuilds(builds);
+	}
 }

@@ -1,1 +1,17 @@
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-custom-element-1
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-custom-element-2
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-custom-element-3
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-custom-element-4
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-custom-element-5
 workspaces/liferay-sample-workspace/client-extensions/liferay-sample-editor-config-contributor
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-etc-frontend-3
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-global-css
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-global-js
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-iframe-1
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-iframe-2
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-js-import-maps-entry-1
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-theme-css-1
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-theme-css-2
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-theme-favicon
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-theme-spritemap-1
+workspaces/liferay-sample-workspace/client-extensions/liferay-sample-theme-spritemap-2

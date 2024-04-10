@@ -5,10 +5,9 @@
 
 package com.liferay.batch.engine.internal.writer;
 
-import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
-
-import com.liferay.petra.string.StringBundler;
+import com.liferay.batch.engine.csv.ColumnDescriptorProvider;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 
@@ -21,10 +20,7 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import java.text.DateFormat;
-
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -40,12 +36,13 @@ public class CSVBatchEngineExportTaskItemWriterImpl
 	implements BatchEngineExportTaskItemWriter {
 
 	public CSVBatchEngineExportTaskItemWriterImpl(
+			ColumnDescriptorProvider columnDescriptorProvider, long companyId,
 			String delimiter,
 			Map<String, ObjectValuePair<Field, Method>>
 				fieldNameObjectValuePairs,
 			List<String> fieldNames, OutputStream outputStream,
-			Map<String, Serializable> parameters)
-		throws IOException {
+			Map<String, Serializable> parameters, String taskItemDelegateName)
+		throws IOException, PortalException {
 
 		if (fieldNames.isEmpty()) {
 			throw new IllegalArgumentException("Field names are not set");
@@ -59,7 +56,8 @@ public class CSVBatchEngineExportTaskItemWriterImpl
 			fieldNames, (value1, value2) -> value1.compareToIgnoreCase(value2));
 
 		_columnValuesExtractor = new ColumnValuesExtractor(
-			fieldNameObjectValuePairs, fieldNames);
+			columnDescriptorProvider, companyId, fieldNameObjectValuePairs,
+			fieldNames, taskItemDelegateName);
 
 		if (Boolean.valueOf(
 				(String)parameters.getOrDefault(
@@ -76,11 +74,9 @@ public class CSVBatchEngineExportTaskItemWriterImpl
 
 	@Override
 	public void write(Collection<?> items) throws Exception {
-		DateFormat dateFormat = new ISO8601DateFormat();
-
 		for (Object item : items) {
 			for (Object[] values : _columnValuesExtractor.extractValues(item)) {
-				_write(dateFormat, values);
+				_csvPrinter.printRecord(values);
 			}
 		}
 	}
@@ -91,34 +87,6 @@ public class CSVBatchEngineExportTaskItemWriterImpl
 		builder.setDelimiter(delimiter);
 
 		return builder.build();
-	}
-
-	private void _write(DateFormat dateFormat, Object[] values)
-		throws Exception {
-
-		for (Object value : values) {
-			if (value instanceof Date) {
-				value = dateFormat.format((Date)value);
-			}
-			else if (value instanceof Map) {
-				Map<String, Object> map = (Map<String, Object>)value;
-
-				StringBundler sb = new StringBundler();
-
-				for (Map.Entry<String, Object> entry : map.entrySet()) {
-					sb.append(entry.getKey());
-					sb.append(StringPool.COLON);
-					sb.append(entry.getValue());
-					sb.append(StringPool.RETURN_NEW_LINE);
-				}
-
-				value = sb.toString();
-			}
-
-			_csvPrinter.print(value);
-		}
-
-		_csvPrinter.println();
 	}
 
 	private final ColumnValuesExtractor _columnValuesExtractor;

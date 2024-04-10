@@ -6,6 +6,7 @@
 package com.liferay.batch.engine.internal.writer;
 
 import com.liferay.batch.engine.BatchEngineTaskContentType;
+import com.liferay.batch.engine.csv.ColumnDescriptorProvider;
 import com.liferay.batch.engine.unit.BatchEngineUnitConfiguration;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 
@@ -39,8 +40,9 @@ public class BatchEngineExportTaskItemWriterBuilder {
 
 		if (_batchEngineTaskContentType == BatchEngineTaskContentType.CSV) {
 			return new CSVBatchEngineExportTaskItemWriterImpl(
-				_csvFileColumnDelimiter, fieldNameObjectValuePairs, _fieldNames,
-				_outputStream, _parameters);
+				_columnDescriptorProvider, _companyId, _csvFileColumnDelimiter,
+				fieldNameObjectValuePairs, _fieldNames, _outputStream,
+				_parameters, _taskItemDelegateName);
 		}
 
 		if (_batchEngineTaskContentType == BatchEngineTaskContentType.JSON) {
@@ -57,7 +59,9 @@ public class BatchEngineExportTaskItemWriterBuilder {
 			(_batchEngineTaskContentType == BatchEngineTaskContentType.XLSX)) {
 
 			return new XLSBatchEngineExportTaskItemWriterImpl(
-				fieldNameObjectValuePairs, _fieldNames, _outputStream);
+				_columnDescriptorProvider, _companyId,
+				fieldNameObjectValuePairs, _fieldNames, _outputStream,
+				_taskItemDelegateName);
 		}
 
 		if (_batchEngineTaskContentType == BatchEngineTaskContentType.JSONT) {
@@ -89,6 +93,14 @@ public class BatchEngineExportTaskItemWriterBuilder {
 		throw new IllegalArgumentException(
 			"Unknown batch engine task content type " +
 				_batchEngineTaskContentType);
+	}
+
+	public BatchEngineExportTaskItemWriterBuilder columnDescriptorProvider(
+		ColumnDescriptorProvider columnDescriptorProvider) {
+
+		_columnDescriptorProvider = columnDescriptorProvider;
+
+		return this;
 	}
 
 	public BatchEngineExportTaskItemWriterBuilder companyId(long companyId) {
@@ -152,6 +164,7 @@ public class BatchEngineExportTaskItemWriterBuilder {
 	}
 
 	private BatchEngineTaskContentType _batchEngineTaskContentType;
+	private ColumnDescriptorProvider _columnDescriptorProvider;
 	private long _companyId;
 	private String _csvFileColumnDelimiter;
 	private List<String> _fieldNames;

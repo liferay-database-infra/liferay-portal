@@ -3,11 +3,27 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {expect} from '@playwright/test';
+
 import {liferayConfig} from '../../liferay.config';
 import {ApiHelpers} from '../ApiHelpers';
 
-type Layout = {
+export type Layout = {
+	companyId: string;
 	friendlyURL: string;
+	groupId: string;
+	hidden: boolean;
+	layoutId: string;
+	nameCurrentValue: string;
+	parentPlid: string;
+	plid: string;
+	privateLayout: boolean;
+	status: number;
+	system: boolean;
+	themeId: string;
+	titleCurrentValue: string;
+	type: string;
+	uuid: string;
 };
 
 export class JSONWebServicesLayoutApiHelper {
@@ -19,21 +35,78 @@ export class JSONWebServicesLayoutApiHelper {
 		this.basePath = '/api/jsonws/layout';
 	}
 
-	async addLayout(siteId: string, title: string): Promise<Layout> {
+	/**
+	 * Creates a visible, public, root level layout in the given group with the given name.
+	 *
+	 * @param title
+	 * Used to set the title, name and friendlyURL
+	 *
+	 * @param options.publish
+	 * Whether to publish the layout or leave it as draft. It can only be used with 'content' type
+	 * layouts: if you provide a value other than `undefined` for any other type of layout the
+	 * method will fail with an exception.
+	 *
+	 * @param options.type
+	 * The layout type (eg: 'portlet' or 'content')
+	 */
+	async addLayout(
+		groupId: string,
+		title: string,
+		options: {publish?: boolean; type: string} = {type: 'portlet'}
+	): Promise<Layout> {
+		if (options.publish && options.type !== 'content') {
+			throw new TypeError(
+				`Publish parameter can only be 'undefined' for non content layouts`
+			);
+		}
+
+		const name = title;
+
 		const urlSearchParams = new URLSearchParams();
 
-		urlSearchParams.append('groupId', siteId);
+		urlSearchParams.append('groupId', groupId);
 		urlSearchParams.append('privateLayout', 'false');
 		urlSearchParams.append('parentLayoutId', '0');
-		urlSearchParams.append('name', title);
+		urlSearchParams.append('name', name);
 		urlSearchParams.append('title', title);
 		urlSearchParams.append('description', '');
-		urlSearchParams.append('type', 'portlet');
+		urlSearchParams.append('type', options.type);
 		urlSearchParams.append('hidden', 'false');
 		urlSearchParams.append('friendlyURL', `/${title}`);
 
-		return this.apiHelpers.post(
+		const layout = await this.apiHelpers.post(
 			`${liferayConfig.environment.baseUrl}${this.basePath}/add-layout`,
+			urlSearchParams.toString(),
+			true,
+			await this.apiHelpers.getJSONWebServicesHeaders()
+		);
+
+		// Publish content layouts using UI (since there's no headless method available yet)
+
+		if (options.publish && options.type === 'content') {
+			const page = this.apiHelpers.page;
+
+			await page.goto(
+				`${liferayConfig.environment.baseUrl}/group/guest/~/control_panel/manage` +
+					'?p_p_id=com_liferay_layout_admin_web_portlet_GroupPagesPortlet'
+			);
+
+			await page.getByLabel(name, {exact: true}).click();
+			await page.getByLabel('Publish').click();
+
+			expect(page.getByRole('heading', {name: 'Pages'})).toBeAttached();
+		}
+
+		return layout;
+	}
+
+	async deleteLayout(plid: string): Promise<void> {
+		const urlSearchParams = new URLSearchParams();
+
+		urlSearchParams.append('plid', plid);
+
+		return this.apiHelpers.post(
+			`${liferayConfig.environment.baseUrl}${this.basePath}/delete-layout`,
 			urlSearchParams.toString(),
 			true,
 			await this.apiHelpers.getJSONWebServicesHeaders()

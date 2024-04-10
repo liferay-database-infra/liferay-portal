@@ -5,6 +5,8 @@
 
 package com.liferay.batch.engine.internal.writer;
 
+import com.liferay.batch.engine.csv.ColumnDescriptorProvider;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 
 import java.io.IOException;
@@ -34,8 +36,12 @@ public class XLSBatchEngineExportTaskItemWriterImpl
 	implements BatchEngineExportTaskItemWriter {
 
 	public XLSBatchEngineExportTaskItemWriterImpl(
-		Map<String, ObjectValuePair<Field, Method>> fieldNameObjectValuePairs,
-		List<String> fieldNames, OutputStream outputStream) {
+			ColumnDescriptorProvider columnDescriptorProvider, long companyId,
+			Map<String, ObjectValuePair<Field, Method>>
+				fieldNameObjectValuePairs,
+			List<String> fieldNames, OutputStream outputStream,
+			String taskItemDelegateName)
+		throws PortalException {
 
 		if (fieldNames.isEmpty()) {
 			throw new IllegalArgumentException("Field names are not set");
@@ -44,7 +50,8 @@ public class XLSBatchEngineExportTaskItemWriterImpl
 		_outputStream = outputStream;
 
 		_columnValuesExtractor = new ColumnValuesExtractor(
-			fieldNameObjectValuePairs, fieldNames);
+			columnDescriptorProvider, companyId, fieldNameObjectValuePairs,
+			fieldNames, taskItemDelegateName);
 
 		_sheet = _workbook.createSheet();
 
