@@ -30,7 +30,14 @@ name = AUIUtil.getNamespace(liferayPortletRequest, liferayPortletResponse) + nam
 		HashMapBuilder.<String, Object>put(
 			"boundingBox", "#" + HtmlUtil.escapeJS(name) + "Map"
 		).put(
-			"data", points
+			"data",
+			() -> {
+				if (Validator.isNull(points)) {
+					return null;
+				}
+
+				return JSONFactoryUtil.createJSONObject(points);
+			}
 		).put(
 			"geolocation", geolocation
 		).put(

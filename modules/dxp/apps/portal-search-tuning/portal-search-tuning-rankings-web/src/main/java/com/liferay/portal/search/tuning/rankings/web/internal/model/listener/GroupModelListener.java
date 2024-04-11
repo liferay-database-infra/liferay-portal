@@ -6,6 +6,7 @@
 package com.liferay.portal.search.tuning.rankings.web.internal.model.listener;
 
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.model.BaseModelListener;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.ModelListener;
@@ -30,6 +31,12 @@ public class GroupModelListener extends BaseModelListener<Group> {
 
 	@Override
 	public void onBeforeRemove(Group group) {
+		if (!FeatureFlagManagerUtil.isEnabled(
+				group.getCompanyId(), "LPD-6368")) {
+
+			return;
+		}
+
 		try {
 			RankingIndexName rankingIndexName =
 				_rankingIndexNameBuilder.getRankingIndexName(

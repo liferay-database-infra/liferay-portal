@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.Objects;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
@@ -108,6 +109,8 @@ public class UpdateFaroProjectSubscriptionsMessageListener
 			OSBAccountEntry osbAccountEntry = null;
 
 			if (Validator.isNull(faroProject.getCorpProjectUuid())) {
+				Date createDate = new Date(faroProject.getCreateTime());
+
 				osbAccountEntry = new OSBAccountEntry() {
 					{
 						OSBOfferingEntry osbOfferingEntry =
@@ -116,8 +119,7 @@ public class UpdateFaroProjectSubscriptionsMessageListener
 						osbOfferingEntry.setProductEntryId(
 							ProductConstants.BASIC_PRODUCT_ENTRY_ID);
 						osbOfferingEntry.setQuantity(1);
-						osbOfferingEntry.setStartDate(
-							new Date(faroProject.getCreateTime()));
+						osbOfferingEntry.setStartDate(createDate);
 
 						setOfferingEntries(
 							Collections.singletonList(osbOfferingEntry));
@@ -133,6 +135,15 @@ public class UpdateFaroProjectSubscriptionsMessageListener
 				new FaroSubscriptionDisplay(osbAccountEntry);
 
 			try {
+				if (Objects.equals(
+						faroProject.getState(),
+						FaroProjectConstants.STATE_UNAVAILABLE)) {
+
+					faroProject = _faroProjectLocalService.updateState(
+						faroProject.getFaroProjectId(),
+						FaroProjectConstants.STATE_READY);
+				}
+
 				faroSubscriptionDisplay.setCounts(
 					faroProject, _cerebroEngineClient, _contactsEngineClient);
 

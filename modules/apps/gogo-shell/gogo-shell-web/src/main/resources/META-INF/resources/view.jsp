@@ -7,9 +7,9 @@
 
 <%@ include file="/init.jsp" %>
 
-<liferay-ui:error exception="<%= CaptchaConfigurationException.class %>" message="a-captcha-error-occurred-please-contact-an-administrator" />
-<liferay-ui:error exception="<%= CaptchaException.class %>" message="captcha-verification-failed" />
-<liferay-ui:error exception="<%= CaptchaTextException.class %>" message="text-verification-failed" />
+<%
+String commandOutput = (String)SessionMessages.get(renderRequest, "commandOutput");
+%>
 
 <portlet:actionURL name="executeCommand" var="executeCommandURL" />
 
@@ -35,8 +35,6 @@
 					/>
 
 					<aui:input name="command" prefix='<%= (String)SessionMessages.get(renderRequest, "prompt") %>' value='<%= (String)SessionMessages.get(renderRequest, "command") %>' />
-
-					<liferay-captcha:captcha />
 				</aui:fieldset>
 			</div>
 		</div>
@@ -51,10 +49,6 @@
 				/>
 			</div>
 		</aui:button-row>
-
-		<%
-		String commandOutput = (String)SessionMessages.get(renderRequest, "commandOutput");
-		%>
 
 		<c:if test="<%= Validator.isNotNull(commandOutput) %>">
 			<b><liferay-ui:message key="output" /></b>
