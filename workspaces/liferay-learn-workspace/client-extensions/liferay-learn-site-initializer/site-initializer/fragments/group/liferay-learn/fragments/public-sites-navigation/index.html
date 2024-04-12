@@ -91,9 +91,14 @@
 
 			<div class="align-items-center d-flex search-account-container">
 				[#if configuration.showSearch]
-					<div class="mr-2 search-icon-container">
-						<span class="search-icon mr-2 opacity-50" id="searchIcon" tabindex="8"> [@clay["icon"] symbol="search"/] </span>
-					</div>
+					<a class="search-icon-container" href="javascript">
+						<span class="search-icon opacity-50" id="searchIcon" tabindex="8">[@clay["icon"] symbol="search"/]</span>
+					</a>
+				[/#if]
+				[#if configuration.showHelp]
+					<a class="question-icon-container" href="https://help.liferay.com">
+						<span class="question-icon opacity-50" id="questionIcon" tabindex="9">[@clay["icon"] symbol="question-circle"/]</span>
+					</a>
 				[/#if]
 				[#if configuration.showAccountMenu]
 					<div class="account position-relative" tabindex="9">

@@ -557,6 +557,201 @@ AUI.add(
 			},
 		});
 
+		const JournalArticleCellEditor = A.Component.create({
+			EXTENDS: A.BaseCellEditor,
+
+			NAME: 'journal-article-cell-editor',
+
+			prototype: {
+				_defInitToolbarFn() {
+					const instance = this;
+
+					JournalArticleCellEditor.superclass._defInitToolbarFn.apply(
+						instance,
+						arguments
+					);
+
+					instance.toolbar.add(
+						{
+							label: Liferay.Language.get('select'),
+							on: {
+								click: A.bind('_onClickChoose', instance),
+							},
+						},
+						1
+					);
+
+					instance.toolbar.add(
+						{
+							label: Liferay.Language.get('clear'),
+							on: {
+								click: A.bind('_onClickClear', instance),
+							},
+						},
+						2
+					);
+				},
+
+				_getWebContentSelectorURL() {
+					const instance = this;
+
+					const portletNamespace = instance.get('portletNamespace');
+
+					const criterionJSON = {
+						desiredItemSelectorReturnTypes:
+							'com.liferay.item.selector.criteria.JournalArticleItemSelectorReturnType',
+					};
+
+					const webContentSelectorParameters = {
+						'0_json': JSON.stringify(criterionJSON),
+						'criteria':
+							'com.liferay.item.selector.criteria.info.item.criterion.InfoItemItemSelectorCriterion',
+						'itemSelectedEventName':
+							portletNamespace + 'selectDocumentLibrary',
+						'p_auth': Liferay.authToken,
+						'p_p_id': Liferay.PortletKeys.ITEM_SELECTOR,
+						'p_p_mode': 'view',
+						'p_p_state': 'pop_up',
+					};
+
+					const webContentSelectorURL = Liferay.Util.PortletURL.createRenderURL(
+						themeDisplay.getLayoutRelativeControlPanelURL(),
+						webContentSelectorParameters
+					);
+
+					return webContentSelectorURL.toString();
+				},
+
+				_handleCancelEvent() {
+					const instance = this;
+
+					instance.get('boundingBox').hide();
+				},
+
+				_handleSaveEvent() {
+					const instance = this;
+
+					JournalArticleCellEditor.superclass._handleSaveEvent.apply(
+						instance,
+						arguments
+					);
+
+					instance.get('boundingBox').hide();
+				},
+
+				_onClickChoose() {
+					const instance = this;
+
+					const portletNamespace = instance.get('portletNamespace');
+
+					Liferay.Util.openSelectionModal({
+						onSelect: (selectedItem) => {
+							if (selectedItem) {
+								const itemValue = JSON.parse(
+									selectedItem.value
+								);
+
+								instance.setValue({
+									className: itemValue.className,
+									classPK: itemValue.classPK,
+									title: itemValue.title,
+								});
+							}
+						},
+						selectEventName:
+							portletNamespace + 'selectDocumentLibrary',
+						title: Liferay.Language.get('journal-article'),
+						url: instance._getWebContentSelectorURL(),
+					});
+				},
+
+				_onClickClear() {
+					const instance = this;
+
+					instance.set('value', STR_BLANK);
+				},
+
+				_onDocMouseDownExt(event) {
+					const instance = this;
+
+					const boundingBox = instance.get('boundingBox');
+
+					if (!boundingBox.contains(event.target)) {
+						instance._handleCancelEvent(event);
+					}
+				},
+
+				_syncJournalArticleLabel(title) {
+					const instance = this;
+
+					const contentBox = instance.get('contentBox');
+
+					let linkNode = contentBox.one('span');
+
+					if (!linkNode) {
+						linkNode = A.Node.create('<span></span>');
+
+						contentBox.prepend(linkNode);
+					}
+
+					linkNode.setContent(Liferay.Util.escapeHTML(title));
+				},
+
+				_uiSetValue(val) {
+					const instance = this;
+
+					if (val) {
+						val = JSON.parse(val);
+						const title =
+							Liferay.Language.get('journal-article') +
+							': ' +
+							val.classPK;
+
+						instance._syncJournalArticleLabel(title);
+					}
+					else {
+						instance._syncJournalArticleLabel(STR_BLANK);
+					}
+				},
+
+				ELEMENT_TEMPLATE: '<input type="hidden" />',
+
+				getElementsValue() {
+					const instance = this;
+
+					return instance.get('value');
+				},
+
+				getParsedValue(value) {
+					if (Lang.isString(value)) {
+						if (value !== '') {
+							value = JSON.parse(value);
+						}
+						else {
+							value = {};
+						}
+					}
+
+					return value;
+				},
+
+				setValue(value) {
+					const instance = this;
+
+					const parsedValue = instance.getParsedValue(value);
+
+					if (!parsedValue.className && !parsedValue.classPK) {
+						value = '';
+					}
+					else {
+						value = JSON.stringify(parsedValue);
+					}
+
+					instance.set('value', value);
+				},
+			},
+		});
+
 		const NumberCellEditor = A.Component.create({
 			EXTENDS: A.TextCellEditor,
 
@@ -599,6 +794,7 @@ AUI.add(
 			ColorCellEditor,
 			DLFileEntryCellEditor,
 			IntegerCellEditor,
+			JournalArticleCellEditor,
 			NumberCellEditor,
 		];
 
@@ -2018,6 +2214,76 @@ AUI.add(
 			},
 		});
 
+		const DDMJournalArticleField = A.Component.create({
+			ATTRS: {
+				dataType: {
+					value: 'journal-article',
+				},
+
+				fieldNamespace: {
+					value: 'ddm',
+				},
+			},
+
+			EXTENDS: A.FormBuilderField,
+
+			NAME: 'ddm-journal-article',
+
+			prototype: {
+				getHTML() {
+					return TPL_INPUT_BUTTON;
+				},
+
+				getPropertyModel() {
+					const instance = this;
+
+					const model = DDMJournalArticleField.superclass.getPropertyModel.apply(
+						instance,
+						arguments
+					);
+
+					model.push({
+						attributeName: 'style',
+						editor: new A.TextAreaCellEditor({
+							strings: editorLocalizedStrings,
+						}),
+						name: Liferay.Language.get('style'),
+					});
+
+					model.forEach((item) => {
+						const attributeName = item.attributeName;
+
+						if (attributeName === 'predefinedValue') {
+							item.editor = new JournalArticleCellEditor({
+								strings: editorLocalizedStrings,
+							});
+
+							item.formatter = function (object) {
+								const data = object.data;
+
+								let label = STR_BLANK;
+
+								const value = data.value;
+
+								if (value !== STR_BLANK) {
+									label =
+										'(' +
+										Liferay.Language.get(
+											'journal-article'
+										) +
+										')';
+								}
+
+								return label;
+							};
+						}
+					});
+
+					return model;
+				},
+			},
+		});
+
 		const DDMLinkToPageField = A.Component.create({
 			ATTRS: {
 				dataType: {
@@ -2062,6 +2328,7 @@ AUI.add(
 			DDMGeolocationField,
 			DDMImageField,
 			DDMIntegerField,
+			DDMJournalArticleField,
 			DDMLinkToPageField,
 			DDMNumberField,
 			DDMParagraphField,

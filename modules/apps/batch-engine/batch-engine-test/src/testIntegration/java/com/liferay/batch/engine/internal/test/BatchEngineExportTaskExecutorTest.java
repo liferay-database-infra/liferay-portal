@@ -17,6 +17,7 @@ import com.liferay.batch.engine.service.BatchEngineExportTaskLocalService;
 import com.liferay.blogs.model.BlogsEntry;
 import com.liferay.petra.io.unsync.UnsyncBufferedReader;
 import com.liferay.petra.string.CharPool;
+import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -39,7 +40,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.zip.ZipInputStream;
@@ -51,7 +51,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -61,6 +60,7 @@ import org.junit.runner.RunWith;
 /**
  * @author Ivica Cardic
  */
+@DataGuard(scope = DataGuard.Scope.METHOD)
 @RunWith(Arquillian.class)
 public class BatchEngineExportTaskExecutorTest
 	extends BaseBatchEngineTaskExecutorTest {
@@ -80,17 +80,6 @@ public class BatchEngineExportTaskExecutorTest
 		).build();
 	}
 
-	@After
-	@Override
-	public void tearDown() throws Exception {
-		super.tearDown();
-
-		if (_batchEngineExportTask != null) {
-			_batchEngineExportTaskLocalService.deleteBatchEngineExportTask(
-				_batchEngineExportTask.getBatchEngineExportTaskId());
-		}
-	}
-
 	@Test
 	public void testExportBlogPostingsToCSVFileWithEmptyFieldNames()
 		throws Exception {
@@ -100,7 +89,8 @@ public class BatchEngineExportTaskExecutorTest
 				LoggerTestUtil.ERROR)) {
 
 			_testExportBlogPostingsToCSVFile(
-				Collections.emptyList(), line -> new Object[0], _parameters);
+				Collections.emptyList(), line -> new Object[0], _parameters,
+				false);
 
 			_assertEmptyFieldNames(logCapture);
 		}
@@ -112,7 +102,7 @@ public class BatchEngineExportTaskExecutorTest
 
 		_testExportBlogPostingsToCSVFile(
 			Arrays.asList("articleBody", "datePublished", "headline", "id"),
-			_csvFilterFunction, _parameters);
+			_csvFilterFunction, _parameters, true);
 	}
 
 	@Test
@@ -130,12 +120,15 @@ public class BatchEngineExportTaskExecutorTest
 
 		_exportBlogPostings("CSV", fieldNames, _parameters);
 
+		List<Object[]> rowValuesList = _readRowValuesList(
+			_csvFilterFunction,
+			_batchEngineExportTaskLocalService.getBatchEngineExportTask(
+				_batchEngineExportTask.getBatchEngineExportTaskId()));
+
+		Assert.assertEquals(rowValuesList.toString(), 1, rowValuesList.size());
+
 		_assertExportedValues(
-			Collections.singletonList(blogsEntries.get(1)), fieldNames,
-			_readRowValuesList(
-				_csvFilterFunction,
-				_batchEngineExportTaskLocalService.getBatchEngineExportTask(
-					_batchEngineExportTask.getBatchEngineExportTaskId())));
+			blogsEntries.get(1), fieldNames, rowValuesList.get(0));
 	}
 
 	@Test
@@ -241,7 +234,8 @@ public class BatchEngineExportTaskExecutorTest
 				Collections.emptyList(), rowValues -> new Object[0],
 				HashMapBuilder.<String, Serializable>put(
 					"siteId", TestPropsValues.getGroupId()
-				).build());
+				).build(),
+				false);
 		}
 	}
 
@@ -256,7 +250,8 @@ public class BatchEngineExportTaskExecutorTest
 			},
 			HashMapBuilder.<String, Serializable>put(
 				"siteId", TestPropsValues.getGroupId()
-			).build());
+			).build(),
+			true);
 	}
 
 	public abstract class BlogPostingMixin {
@@ -288,105 +283,116 @@ public class BatchEngineExportTaskExecutorTest
 	}
 
 	private void _assertExportedValues(
+			BlogsEntry blogsEntry, List<String> fieldNames, Object[] rowValues)
+		throws Exception {
+
+		Set<String> fieldNamesSet = new HashSet<>(fieldNames);
+
+		int index = 0;
+
+		if (fieldNamesSet.isEmpty() || fieldNamesSet.contains(FIELD_NAMES[0])) {
+			Assert.assertEquals(blogsEntry.getSubtitle(), rowValues[index++]);
+		}
+
+		if (fieldNamesSet.isEmpty() || fieldNamesSet.contains(FIELD_NAMES[1])) {
+			Assert.assertEquals(blogsEntry.getContent(), rowValues[index++]);
+		}
+
+		if (fieldNamesSet.isEmpty() || fieldNamesSet.contains(FIELD_NAMES[2])) {
+			Object value = rowValues[index++];
+
+			if (value instanceof String) {
+				value = dateFormat.parse((String)value);
+			}
+
+			Assert.assertEquals(blogsEntry.getDisplayDate(), value);
+		}
+
+		if (fieldNamesSet.isEmpty() || fieldNamesSet.contains(FIELD_NAMES[3])) {
+			Assert.assertEquals(blogsEntry.getTitle(), rowValues[index++]);
+		}
+
+		if (fieldNamesSet.isEmpty() || fieldNamesSet.contains("id")) {
+			Object value = rowValues[index++];
+
+			if (value instanceof String) {
+				value = GetterUtil.getLong(value);
+			}
+
+			if (value instanceof Double) {
+				Double doubleValue = (Double)value;
+
+				value = doubleValue.longValue();
+			}
+
+			Assert.assertEquals(blogsEntry.getEntryId(), value);
+		}
+
+		if (fieldNamesSet.isEmpty() || fieldNamesSet.contains("siteId")) {
+			Object value = rowValues[index];
+
+			if (value instanceof String) {
+				value = GetterUtil.getLong(value);
+			}
+
+			if (value instanceof Double) {
+				Double doubleValue = (Double)value;
+
+				value = doubleValue.longValue();
+			}
+
+			Assert.assertEquals(blogsEntry.getGroupId(), value);
+		}
+	}
+
+	private void _assertExportedValues(
 			List<BlogsEntry> blogsEntries, List<String> fieldNames,
 			List<Object[]> rowValuesList)
 		throws Exception {
 
-		blogsEntries.sort(Comparator.comparing(BlogsEntry::getSubtitle));
-		rowValuesList.sort(
-			Comparator.comparing(rowValues -> (String)rowValues[0]));
+		blogsEntries.sort(Comparator.comparing(BlogsEntry::getEntryId));
 
-		Set<String> fieldNamesSet = new HashSet<>(fieldNames);
+		if (fieldNames.contains("id")) {
+			rowValuesList.sort(
+				Comparator.comparing(
+					rowValues -> GetterUtil.getLong(
+						rowValues[fieldNames.indexOf("id")])));
+		}
+		else {
+			rowValuesList.sort(
+				Comparator.comparing(rowValues -> (Long)rowValues[4]));
+		}
 
 		for (int i = 0; i < blogsEntries.size(); i++) {
-			BlogsEntry blogsEntry = blogsEntries.get(i);
-			Object[] rowValues = rowValuesList.get(i);
-
-			int index = 0;
-
-			if (fieldNamesSet.isEmpty() ||
-				fieldNamesSet.contains(FIELD_NAMES[0])) {
-
-				Assert.assertEquals(
-					blogsEntry.getSubtitle(), rowValues[index++]);
-			}
-
-			if (fieldNamesSet.isEmpty() ||
-				fieldNamesSet.contains(FIELD_NAMES[1])) {
-
-				Assert.assertEquals(
-					blogsEntry.getContent(), rowValues[index++]);
-			}
-
-			if (fieldNamesSet.isEmpty() ||
-				fieldNamesSet.contains(FIELD_NAMES[2])) {
-
-				Object value = rowValues[index++];
-
-				if (value instanceof String) {
-					value = dateFormat.parse((String)value);
-				}
-
-				Assert.assertEquals(blogsEntry.getDisplayDate(), value);
-			}
-
-			if (fieldNamesSet.isEmpty() ||
-				fieldNamesSet.contains(FIELD_NAMES[3])) {
-
-				Assert.assertEquals(blogsEntry.getTitle(), rowValues[index++]);
-			}
-
-			if (fieldNamesSet.isEmpty() || fieldNamesSet.contains("id")) {
-				Object value = rowValues[index++];
-
-				if (value instanceof String) {
-					value = GetterUtil.getLong(value);
-				}
-
-				if (value instanceof Double) {
-					Double doubleValue = (Double)value;
-
-					value = doubleValue.longValue();
-				}
-
-				Assert.assertEquals(blogsEntry.getEntryId(), value);
-			}
-
-			if (fieldNamesSet.isEmpty() || fieldNamesSet.contains("siteId")) {
-				Object value = rowValues[index];
-
-				if (value instanceof String) {
-					value = GetterUtil.getLong(value);
-				}
-
-				if (value instanceof Double) {
-					Double doubleValue = (Double)value;
-
-					value = doubleValue.longValue();
-				}
-
-				Assert.assertEquals(blogsEntry.getGroupId(), value);
-			}
+			_assertExportedValues(
+				blogsEntries.get(i), fieldNames,
+				rowValuesList.get(i + initialCount));
 		}
 	}
 
-	private void _assertItemsCount(
+	private void _assertFailedTask(
 		BatchEngineExportTask batchEngineExportTask) {
 
-		if (Objects.equals(
-				batchEngineExportTask.getExecuteStatus(),
-				BatchEngineTaskExecuteStatus.FAILED.toString())) {
+		Assert.assertEquals(
+			BatchEngineTaskExecuteStatus.FAILED.toString(),
+			batchEngineExportTask.getExecuteStatus());
+		Assert.assertEquals(0, batchEngineExportTask.getProcessedItemsCount());
+		Assert.assertEquals(0, batchEngineExportTask.getTotalItemsCount());
+	}
 
-			Assert.assertEquals(
-				0, batchEngineExportTask.getProcessedItemsCount());
-			Assert.assertEquals(0, batchEngineExportTask.getTotalItemsCount());
-		}
-		else {
-			Assert.assertEquals(
-				ROWS_COUNT, batchEngineExportTask.getProcessedItemsCount());
-			Assert.assertEquals(
-				ROWS_COUNT, batchEngineExportTask.getTotalItemsCount());
-		}
+	private void _assertSuccessTask(
+		BatchEngineExportTask batchEngineExportTask) {
+
+		Assert.assertEquals(
+			BatchEngineTaskExecuteStatus.COMPLETED.toString(),
+			batchEngineExportTask.getExecuteStatus());
+
+		Assert.assertEquals(
+			initialCount + ROWS_COUNT,
+			batchEngineExportTask.getProcessedItemsCount());
+		Assert.assertEquals(
+			initialCount + ROWS_COUNT,
+			batchEngineExportTask.getTotalItemsCount());
 	}
 
 	private void _exportBlogPostings(
@@ -441,7 +447,7 @@ public class BatchEngineExportTaskExecutorTest
 
 	private void _testExportBlogPostingsToCSVFile(
 			List<String> fieldNames, Function<String, Object[]> filterFunction,
-			Map<String, Serializable> parameters)
+			Map<String, Serializable> parameters, boolean success)
 		throws Exception {
 
 		List<BlogsEntry> blogsEntries = addBlogsEntries();
@@ -454,15 +460,13 @@ public class BatchEngineExportTaskExecutorTest
 			_batchEngineExportTaskLocalService.getBatchEngineExportTask(
 				_batchEngineExportTask.getBatchEngineExportTaskId());
 
-		_assertItemsCount(batchEngineExportTask);
-
-		if (fieldNames.isEmpty()) {
-			Assert.assertEquals(
-				BatchEngineTaskExecuteStatus.FAILED.toString(),
-				batchEngineExportTask.getExecuteStatus());
+		if (!success) {
+			_assertFailedTask(batchEngineExportTask);
 
 			return;
 		}
+
+		_assertSuccessTask(batchEngineExportTask);
 
 		_assertExportedValues(
 			blogsEntries, fieldNames,
@@ -485,7 +489,7 @@ public class BatchEngineExportTaskExecutorTest
 			_batchEngineExportTaskLocalService.getBatchEngineExportTask(
 				_batchEngineExportTask.getBatchEngineExportTaskId());
 
-		_assertItemsCount(batchEngineExportTask);
+		_assertSuccessTask(batchEngineExportTask);
 
 		List<BlogPosting> blogPostings = _objectMapper.readValue(
 			_getZipInputStream(
@@ -519,7 +523,7 @@ public class BatchEngineExportTaskExecutorTest
 			_batchEngineExportTaskLocalService.getBatchEngineExportTask(
 				_batchEngineExportTask.getBatchEngineExportTaskId());
 
-		_assertItemsCount(batchEngineExportTask);
+		_assertSuccessTask(batchEngineExportTask);
 
 		UnsyncBufferedReader unsyncBufferedReader = new UnsyncBufferedReader(
 			new InputStreamReader(
@@ -550,7 +554,7 @@ public class BatchEngineExportTaskExecutorTest
 	private void _testExportBlogPostingsToXLSFile(
 			List<String> fieldNames,
 			Function<Object[], Object[]> filterFunction,
-			Map<String, Serializable> parameters)
+			Map<String, Serializable> parameters, boolean success)
 		throws Exception {
 
 		List<BlogsEntry> blogsEntries = addBlogsEntries();
@@ -563,15 +567,13 @@ public class BatchEngineExportTaskExecutorTest
 			_batchEngineExportTaskLocalService.getBatchEngineExportTask(
 				_batchEngineExportTask.getBatchEngineExportTaskId());
 
-		_assertItemsCount(batchEngineExportTask);
-
-		if (fieldNames.isEmpty()) {
-			Assert.assertEquals(
-				BatchEngineTaskExecuteStatus.FAILED.toString(),
-				batchEngineExportTask.getExecuteStatus());
+		if (!success) {
+			_assertFailedTask(batchEngineExportTask);
 
 			return;
 		}
+
+		_assertSuccessTask(batchEngineExportTask);
 
 		XSSFWorkbook xssfWorkbook = new XSSFWorkbook(
 			_getZipInputStream(

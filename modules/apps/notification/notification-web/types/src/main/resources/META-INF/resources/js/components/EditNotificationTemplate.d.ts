@@ -5,6 +5,7 @@
 
 /// <reference types="react" />
 
+import {ILearnResourceContext} from 'frontend-js-components-web';
 import './EditNotificationTemplate.scss';
 export declare type NotificationTemplateError = {
 	bcc?: string;
@@ -23,8 +24,9 @@ interface EditNotificationTemplateProps {
 	baseResourceURL: string;
 	editorConfig: object;
 	externalReferenceCode: string;
+	learnResources: ILearnResourceContext;
 	notificationTemplateId: number;
-	notificationTemplateType: string;
+	notificationTemplateType: 'email' | 'userNotification' | '';
 	portletNamespace: string;
 }
 export default function EditNotificationTemplate({
@@ -32,6 +34,7 @@ export default function EditNotificationTemplate({
 	baseResourceURL,
 	editorConfig,
 	externalReferenceCode,
+	learnResources,
 	notificationTemplateId,
 	notificationTemplateType,
 	portletNamespace,

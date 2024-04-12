@@ -13,29 +13,23 @@ import React, {useEffect, useState} from 'react';
 import {FDSViewType} from './FDSViews';
 import Actions from './fds_view/Actions';
 import Details from './fds_view/Details';
-import Filters from './fds_view/Filters';
 import Pagination from './fds_view/Pagination';
 import Settings from './fds_view/Settings';
 import Sorting from './fds_view/Sorting';
+import Filters from './fds_view/filters/Filters';
 import VisualizationModes from './fds_view/visualization_modes/VisualizationModes';
-import {Fields} from './fds_view/visualization_modes/table/Table';
 import {API_URL, OBJECT_RELATIONSHIP} from './utils/constants';
 import openDefaultFailureToast from './utils/openDefaultFailureToast';
 
-let NAVIGATION_BAR_ITEMS = [
+const NAVIGATION_BAR_ITEMS = [
 	{
 		Component: Details,
 		label: Liferay.Language.get('details'),
 	},
-	Liferay.FeatureFlags['LPD-10735']
-		? {
-				Component: VisualizationModes,
-				label: Liferay.Language.get('visualization-modes'),
-		  }
-		: {
-				Component: Fields,
-				label: Liferay.Language.get('fields'),
-		  },
+	{
+		Component: VisualizationModes,
+		label: Liferay.Language.get('visualization-modes'),
+	},
 	{
 		Component: Filters,
 		label: Liferay.Language.get('filters'),
@@ -52,17 +46,11 @@ let NAVIGATION_BAR_ITEMS = [
 		Component: Pagination,
 		label: Liferay.Language.get('pagination'),
 	},
+	{
+		Component: Settings,
+		label: Liferay.Language.get('settings'),
+	},
 ];
-
-if (Liferay.FeatureFlags['LPD-10735']) {
-	NAVIGATION_BAR_ITEMS = [
-		...NAVIGATION_BAR_ITEMS,
-		{
-			Component: Settings,
-			label: Liferay.Language.get('settings'),
-		},
-	];
-}
 
 interface IFDSViewSectionProps {
 	fdsClientExtensionCellRenderers: IClientExtensionRenderer[];

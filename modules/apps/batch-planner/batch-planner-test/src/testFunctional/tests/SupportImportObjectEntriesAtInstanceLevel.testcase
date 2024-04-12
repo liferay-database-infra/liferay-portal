@@ -144,7 +144,7 @@ definition {
 			var actualValueList = ListUtil.newList();
 
 			for (var fieldNameList : list "name,r_subjectStudents_c_subjectERC,diploma.name") {
-				var actualValue = JSONUtil.getWithJSONPath(${response}, "$..items..[0]${fieldNameList}");
+				var actualValue = JSONUtil.getWithJSONPath(${response}, "$.items[*].${fieldNameList}");
 
 				ListUtil.add(${actualValueList}, ${actualValue});
 			}
@@ -176,7 +176,7 @@ definition {
 		task ("Then one new Student item is created") {
 			var response = ObjectDefinitionAPI.getObjectEntries(en_US_plural_label = "students");
 
-			var actualValue = JSONUtil.getWithJSONPath(${response}, "$.items..[0]name");
+			var actualValue = JSONUtil.getWithJSONPath(${response}, "$.items[*].name");
 
 			TestUtils.assertEquals(
 				actual = ${actualValue},

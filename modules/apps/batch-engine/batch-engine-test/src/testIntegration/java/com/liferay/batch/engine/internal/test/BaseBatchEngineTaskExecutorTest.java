@@ -61,6 +61,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -94,7 +95,13 @@ public class BaseBatchEngineTaskExecutorTest {
 	public void setUp() throws Exception {
 		user = TestPropsValues.getUser();
 
-		baseDate = dateFormat.parse(dateFormat.format(new Date()));
+		Date date = new Date();
+
+		Instant instant = date.toInstant();
+
+		instant = instant.truncatedTo(ChronoUnit.MINUTES);
+
+		baseDate = Date.from(instant);
 
 		Bundle bundle = FrameworkUtil.getBundle(
 			BatchEngineImportTaskExecutorTest.class);
@@ -106,12 +113,12 @@ public class BaseBatchEngineTaskExecutorTest {
 				BatchEngineTaskItemDelegate.class.getName(),
 				new TestBlogPostingBatchEngineTaskItemDelegate(),
 				new HashMapDictionary<String, String>());
+
+		initialCount = getBlogEntriesCount();
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		blogsEntryLocalService.deleteEntries(TestPropsValues.getGroupId());
-
 		_batchEngineTaskItemDelegateServiceRegistration.unregister();
 	}
 
@@ -212,7 +219,7 @@ public class BaseBatchEngineTaskExecutorTest {
 					Field.ENTRY_CLASS_PK),
 				searchContext -> {
 					searchContext.setAttribute(
-						Field.STATUS, WorkflowConstants.STATUS_APPROVED);
+						Field.STATUS, WorkflowConstants.STATUS_ANY);
 					searchContext.setCompanyId(contextCompany.getCompanyId());
 					searchContext.setGroupIds(new long[] {siteId});
 				},
@@ -409,11 +416,13 @@ public class BaseBatchEngineTaskExecutorTest {
 	}
 
 	protected void assertBlogsEntriesCount() throws Exception {
-		Assert.assertEquals(
-			ROWS_COUNT,
-			blogsEntryLocalService.getGroupEntriesCount(
-				TestPropsValues.getGroupId(),
-				new QueryDefinition<>(WorkflowConstants.STATUS_APPROVED)));
+		Assert.assertEquals(initialCount + ROWS_COUNT, getBlogEntriesCount());
+	}
+
+	protected int getBlogEntriesCount() throws Exception {
+		return blogsEntryLocalService.getGroupEntriesCount(
+			TestPropsValues.getGroupId(),
+			new QueryDefinition<>(WorkflowConstants.STATUS_ANY));
 	}
 
 	protected static final String[] FIELD_NAMES = {
@@ -430,6 +439,7 @@ public class BaseBatchEngineTaskExecutorTest {
 
 	protected final DateFormat dateFormat = new SimpleDateFormat(
 		"yyyy-MM-dd'T'HH:mm:ssX");
+	protected int initialCount;
 	protected User user;
 
 	private ServiceRegistration<?>

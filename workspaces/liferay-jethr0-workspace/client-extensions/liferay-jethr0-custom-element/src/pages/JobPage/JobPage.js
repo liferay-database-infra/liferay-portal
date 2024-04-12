@@ -13,8 +13,10 @@ import Jethr0Breadcrumbs from '../../components/Jethr0Breadcrumbs/Jethr0Breadcru
 import Jethr0ButtonsRow from '../../components/Jethr0ButtonsRow/Jethr0ButtonsRow';
 import Jethr0Card from '../../components/Jethr0Card/Jethr0Card';
 import Jethr0ContainerFluid from '../../components/Jethr0ContainerFluid/Jethr0ContainerFluid';
+import Jethr0InformationField from '../../components/Jethr0InformationField/Jethr0InformationField';
 import Jethr0NavigationBar from '../../components/Jethr0NavigationBar/Jethr0NavigationBar';
 import Jethr0Table from '../../components/Jethr0Table/Jethr0Table';
+import {getJobDefinitionByKey} from '../../objects/jobdefinitions/JobDefinitionUtil';
 import {deleteJobById, getJobById} from '../../objects/jobs/JobUtil';
 import {toLocaleString} from '../../services/DateUtil';
 import {toDurationString} from '../../services/DurationUtil';
@@ -92,6 +94,14 @@ function JobBuilds({job}) {
 }
 
 function JobInformation({job}) {
+	const [jobDefinition, setJobDefinition] = useState(null);
+
+	if (!jobDefinition) {
+		getJobDefinitionByKey({key: job.type.key, setJobDefinition});
+
+		return;
+	}
+
 	if (!job) {
 		return (
 			<ClayPanel
@@ -103,12 +113,6 @@ function JobInformation({job}) {
 				<ClayPanel.Body>Loading...</ClayPanel.Body>
 			</ClayPanel>
 		);
-	}
-
-	let jobParameterDefinitions = [];
-
-	if (job.definition) {
-		jobParameterDefinitions = job.definition.parameterDefinitions;
 	}
 
 	let jobParameters = '';
@@ -125,90 +129,72 @@ function JobInformation({job}) {
 			displayType="secondary"
 		>
 			<ClayPanel.Body>
-				<JobInformationField
+				<Jethr0InformationField
 					fieldLabel="Job Name"
 					fieldType="STRING"
 					fieldValue={job.name}
 				/>
-				<JobInformationField
+				<Jethr0InformationField
 					fieldLabel="Job ID"
 					fieldType="STRING"
 					fieldValue={job.id}
 				/>
-				<JobInformationField
+				<Jethr0InformationField
 					fieldLabel="Job State"
 					fieldType="STRING"
 					fieldValue={job.state.name}
 				/>
-				<JobInformationField
+				<Jethr0InformationField
 					fieldLabel="Job Type"
 					fieldType="STRING"
 					fieldValue={job.type.name}
 				/>
-				<JobInformationField
+				{job.routine && (
+					<Jethr0InformationField
+						fieldLabel="Routine"
+						fieldType="URL"
+						fieldURLValue={'/#/routines/' + job.routine.id}
+						fieldValue={job.routine.name}
+					/>
+				)}
+				<Jethr0InformationField
 					fieldLabel="Create Date"
 					fieldType="DATE"
 					fieldValue={job.dateCreated}
 				/>
-				<JobInformationField
+				<Jethr0InformationField
 					fieldLabel="Modified Date"
 					fieldType="DATE"
 					fieldValue={job.dateModified}
 				/>
-				<JobInformationField
+				<Jethr0InformationField
 					fieldLabel="Start Date"
 					fieldType="DATE"
 					fieldValue={job.startDate}
 				/>
-				{jobParameters &&
-					jobParameterDefinitions?.map((jobParameterDefinition) => {
+				{jobDefinition.jobDefinitionParameters &&
+					Object.entries(jobParameters).map(([key, value]) => {
+						let parameter;
+
+						for (const jobDefinitionParameter of jobDefinition.jobDefinitionParameters) {
+							if (jobDefinitionParameter.key === key) {
+								parameter = jobDefinitionParameter;
+
+								break;
+							}
+						}
+
 						return (
-							<JobInformationField
-								fieldLabel={jobParameterDefinition.label}
-								fieldType={jobParameterDefinition.type}
-								fieldValue={
-									jobParameters[jobParameterDefinition.key]
-								}
-								key={jobParameterDefinition.key}
+							<Jethr0InformationField
+								fieldLabel={parameter.label}
+								fieldType={parameter.type.name}
+								fieldValue={value}
+								key={key}
 							/>
 						);
 					})}
 			</ClayPanel.Body>
 		</ClayPanel>
-	);
-}
-
-function JobInformationField({fieldLabel, fieldType, fieldValue}) {
-	if (fieldValue === undefined || fieldValue === '') {
-		return <></>;
-	}
-
-	if (fieldType === 'DATE') {
-		return (
-			<>
-				<strong>{fieldLabel + ': '}</strong>
-				{toLocaleString(fieldValue)}
-				<br />
-			</>
-		);
-	}
-
-	if (fieldType === 'URL') {
-		return (
-			<>
-				<strong>{fieldLabel + ': '}</strong>
-				<a href={fieldValue}>{fieldValue}</a>
-				<br />
-			</>
-		);
-	}
-
-	return (
-		<>
-			<strong>{fieldLabel + ': '}</strong>
-			{fieldValue}
-			<br />
-		</>
 	);
 }
 

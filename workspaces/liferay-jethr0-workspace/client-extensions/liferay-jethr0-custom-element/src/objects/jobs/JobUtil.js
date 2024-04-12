@@ -5,6 +5,7 @@
 
 import liferayRequest from '../../services/liferayRequest';
 import Build from '../builds/Build';
+import Routine from '../routines/Routine';
 import Job from './Job';
 
 export async function createJob({data, redirect}) {
@@ -52,6 +53,8 @@ export async function getJobById({id, setJob}) {
 			c {
 				builds(filter: \\"r_jobToBuilds_c_jobId eq '${id}'\\") {
 					items {
+						dateCreated
+						dateModified
 						id
 						initialBuild
 						name
@@ -64,10 +67,13 @@ export async function getJobById({id, setJob}) {
 				}
 				jobs(filter: \\"id eq '${id}'\\") {
 					items {
+						dateCreated
+						dateModified
 						id
 						name
 						parameters
 						priority
+						routineToJobs
 						startDate
 						state {
 							key
@@ -101,6 +107,10 @@ export async function getJobById({id, setJob}) {
 
 		job.builds = builds;
 
+		if (jobJSON.routineToJobs) {
+			job.routine = new Routine(jobJSON.routineToJobs);
+		}
+
 		if (job) {
 			if (setJob) {
 				setJob(job);
@@ -124,10 +134,14 @@ export async function getJobQueueOrderedJobs({setJobs}) {
 
 	const jobs = [];
 
-	for (const id of JSON.parse(result.items[0].prioritizedJobIds)) {
-		const job = await getJobById({id});
+	const jobPrioritizer = result.items[0];
 
-		jobs.push(job);
+	if (jobPrioritizer?.prioritizedJobIds) {
+		for (const id of JSON.parse(jobPrioritizer.prioritizedJobIds)) {
+			const job = await getJobById({id});
+
+			jobs.push(job);
+		}
 	}
 
 	setJobs(jobs);

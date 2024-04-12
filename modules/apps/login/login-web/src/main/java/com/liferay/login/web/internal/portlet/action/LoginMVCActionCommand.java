@@ -5,6 +5,8 @@
 
 package com.liferay.login.web.internal.portlet.action;
 
+import com.liferay.layout.utility.page.kernel.constants.LayoutUtilityPageEntryConstants;
+import com.liferay.layout.utility.page.kernel.provider.LayoutUtilityPageEntryLayoutProvider;
 import com.liferay.login.web.constants.LoginPortletKeys;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
@@ -248,9 +250,18 @@ public class LoginMVCActionCommand extends BaseMVCActionCommand {
 		LiferayPortletRequest liferayPortletRequest =
 			_portal.getLiferayPortletRequest(actionRequest);
 
-		String portletName = liferayPortletRequest.getPortletName();
+		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
 
-		Layout layout = (Layout)actionRequest.getAttribute(WebKeys.LAYOUT);
+		Layout layout =
+			_layoutUtilityPageEntryLayoutProvider.
+				getDefaultLayoutUtilityPageEntryLayout(
+					themeDisplay.getScopeGroupId(),
+					LayoutUtilityPageEntryConstants.TYPE_LOGIN);
+
+		if (layout == null) {
+			layout = (Layout)actionRequest.getAttribute(WebKeys.LAYOUT);
+		}
 
 		PortletURL portletURL = PortletURLBuilder.create(
 			PortletURLFactoryUtil.create(
@@ -277,6 +288,8 @@ public class LoginMVCActionCommand extends BaseMVCActionCommand {
 			SessionErrors.add(actionRequest, "login", login);
 		}
 
+		String portletName = liferayPortletRequest.getPortletName();
+
 		if (portletName.equals(LoginPortletKeys.LOGIN)) {
 			portletURL.setWindowState(WindowState.MAXIMIZED);
 		}
@@ -289,6 +302,10 @@ public class LoginMVCActionCommand extends BaseMVCActionCommand {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		LoginMVCActionCommand.class);
+
+	@Reference
+	private LayoutUtilityPageEntryLayoutProvider
+		_layoutUtilityPageEntryLayoutProvider;
 
 	@Reference
 	private Portal _portal;

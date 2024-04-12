@@ -12,6 +12,7 @@ import com.liferay.oauth2.provider.model.OAuth2Application;
 import com.liferay.oauth2.provider.redirect.OAuth2RedirectURIInterpolator;
 import com.liferay.oauth2.provider.util.OAuth2SecureRandomGenerator;
 import com.liferay.osgi.util.configuration.ConfigurationFactoryUtil;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.petra.string.StringUtil;
@@ -21,18 +22,19 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.VirtualHostLocalService;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.ListUtil;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Raymond Augé
@@ -67,20 +69,20 @@ public class OAuth2ProviderApplicationUserAgentConfigurationFactory
 
 				Company company = companyLocalService.getCompanyById(companyId);
 
-				List<String> redirectURIsList = Collections.singletonList(
-					StringBundler.concat(
-						OAuth2RedirectURIInterpolator.TOKEN_PROTOCOL,
-						Http.PROTOCOL_DELIMITER, company.getVirtualHostname(),
-						OAuth2RedirectURIInterpolator.TOKEN_PORT_WITH_COLON,
-						"/o/oauth2/redirect"));
-
 				List<String> scopeAliasesList = ListUtil.fromArray(
 					oAuth2ProviderApplicationUserAgentConfiguration.scopes());
 
 				oAuth2Application = _addOrUpdateOAuth2Application(
 					companyId, externalReferenceCode,
 					oAuth2ProviderApplicationUserAgentConfiguration,
-					redirectURIsList, scopeAliasesList);
+					TransformUtil.transform(
+						_virtualHostLocalService.getVirtualHosts(companyId),
+						virtualHost -> StringBundler.concat(
+							OAuth2RedirectURIInterpolator.TOKEN_PROTOCOL,
+							Http.PROTOCOL_DELIMITER, virtualHost.getHostname(),
+							OAuth2RedirectURIInterpolator.TOKEN_PORT_WITH_COLON,
+							"/o/oauth2/redirect")),
+					scopeAliasesList);
 
 				if (_log.isDebugEnabled()) {
 					_log.debug("OAuth 2 application " + oAuth2Application);
@@ -180,5 +182,8 @@ public class OAuth2ProviderApplicationUserAgentConfigurationFactory
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		OAuth2ProviderApplicationUserAgentConfigurationFactory.class);
+
+	@Reference
+	private VirtualHostLocalService _virtualHostLocalService;
 
 }
