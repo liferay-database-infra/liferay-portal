@@ -13,14 +13,14 @@
 			HashMapBuilder.<String, Object>put(
 				"dataSetId", COREntryFDSNames.COR_ENTRY_QUALIFIER_COMMERCE_ORDER_TYPES
 			).put(
-				"orderRuleExternalReferenceCode", HtmlUtil.escapeJS(corEntry.getExternalReferenceCode())
+				"orderRuleExternalReferenceCode", corEntry.getExternalReferenceCode()
 			).put(
 				"orderRuleId", corEntryId
 			).put(
 				"rootPortletId", portletDisplay.getRootPortletId()
 			).build()
 		%>'
-		module="js/commerce_order_types"
+		module="{commerceOrderTypes} from commerce-order-rule-web"
 	/>
 
 	<commerce-ui:panel

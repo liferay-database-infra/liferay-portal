@@ -1,0 +1,72 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+import {
+	CommerceServiceProvider,
+	ItemFinder,
+	commerceEvents,
+} from 'commerce-frontend-js';
+import {openToast} from 'frontend-js-web';
+
+export default function ({
+	dataSetId,
+	rootPortletId,
+	termExternalReferenceCode,
+	termId,
+}) {
+	const termOrderTypesResource = CommerceServiceProvider.AdminOrderAPI('v1');
+
+	function selectItem(orderType) {
+		const orderTypeData = {
+			orderTypeExternalReferenceCode: orderType.externalReferenceCode,
+			orderTypeId: orderType.id,
+			termExternalReferenceCode,
+			termId,
+		};
+
+		return termOrderTypesResource
+			.addTermOrderType(termId, orderTypeData)
+			.then(() => {
+				Liferay.fire(commerceEvents.FDS_UPDATE_DISPLAY, {
+					id: dataSetId,
+				});
+			})
+			.catch((error) => {
+				const errorsMap = {
+					'the-qualifier-is-already-linked': Liferay.Language.get(
+						'the-qualifier-is-already-linked'
+					),
+				};
+
+				openToast({
+					message:
+						errorsMap[error.message] ||
+						Liferay.Language.get('an-unexpected-error-occurred'),
+					title: Liferay.Language.get('error'),
+					type: 'danger',
+				});
+			});
+	}
+
+	ItemFinder('itemFinder', 'item-finder-root-order-types', {
+		apiUrl: '/o/headless-commerce-admin-order/v1.0/order-types/',
+		getSelectedItems: () => Promise.resolve([]),
+		inputPlaceholder: Liferay.Language.get('find-an-order-type'),
+		itemCreation: false,
+		itemSelectedMessage: Liferay.Language.get('order-type-selected'),
+		itemsKey: 'id',
+		linkedDataSetsId: [dataSetId],
+		onItemSelected: selectItem,
+		pageSize: 10,
+		panelHeaderLabel: Liferay.Language.get('add-order-types'),
+		portletId: rootPortletId,
+		schema: [
+			{
+				fieldName: ['name', 'LANG'],
+			},
+		],
+		titleLabel: Liferay.Language.get('add-existing-order-type'),
+	});
+}
