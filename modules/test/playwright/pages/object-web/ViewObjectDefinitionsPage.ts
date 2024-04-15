@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-FileCopyrightText: (c) 2024 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
@@ -7,9 +7,10 @@ import {Locator, Page} from '@playwright/test';
 
 import {ApplicationsMenuPage} from '../product-navigation-applications-menu/ApplicationsMenuPage';
 
-export class ObjectDefinitionsPage {
+export class ViewObjectDefinitionsPage {
 	readonly addObjectFolderButton: Locator;
 	readonly applicationsMenuPage: ApplicationsMenuPage;
+	readonly createObjectDefinitionButton: Locator;
 	readonly createObjectFolderButton: Locator;
 	readonly defaultObjectFolderLink: Locator;
 	readonly objectFolderActionsLink: Locator;
@@ -22,6 +23,9 @@ export class ObjectDefinitionsPage {
 	constructor(page: Page) {
 		this.addObjectFolderButton = page.getByLabel('Add Object Folder');
 		this.applicationsMenuPage = new ApplicationsMenuPage(page);
+		this.createObjectDefinitionButton = page.getByTestId(
+			'fdsCreationActionButton'
+		);
 		this.createObjectFolderButton = page.getByRole('button', {
 			name: 'Create Folder',
 		});
@@ -68,10 +72,10 @@ export class ObjectDefinitionsPage {
 		await this.objectFolderActionsLink.click();
 	}
 
-	async openObjectFolder(objectFolderExternalReferenceCode: string) {
+	async openObjectFolder(objectFolderLabel: string) {
 		await this.page
 			.locator('li')
-			.filter({hasText: objectFolderExternalReferenceCode})
+			.filter({hasText: objectFolderLabel})
 			.click();
 	}
 

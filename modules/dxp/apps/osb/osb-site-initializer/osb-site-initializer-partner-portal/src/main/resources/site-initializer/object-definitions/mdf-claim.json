@@ -7,6 +7,28 @@
 		"en_US": "MDF Claim"
 	},
 	"name": "MDFClaim",
+	"objectActions": [
+		{
+			"active": true,
+			"errorMessage": {
+			},
+			"externalReferenceCode": "MDF-CLAIM-STATUS-MANAGEMENT-ACTION",
+			"label": {
+				"en_US": "MDF Claim Status Management"
+			},
+			"name": "mdfClaimStatusManagement",
+			"objectActionExecutorKey": "function#liferay-partner-etc-spring-boot-object-action-mdf-claim-status-management",
+			"objectActionTriggerKey": "onAfterUpdate",
+			"parameters": {
+			},
+			"status": {
+				"code": 1,
+				"label": "success",
+				"label_i18n": "Success"
+			},
+			"system": false
+		}
+	],
 	"objectFields": [
 		{
 			"DBType": "String",

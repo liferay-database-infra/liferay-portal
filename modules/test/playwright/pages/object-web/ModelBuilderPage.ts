@@ -1,14 +1,15 @@
 /**
- * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-FileCopyrightText: (c) 2024 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import {Locator, Page, expect} from '@playwright/test';
 
-import {ObjectDefinitionsPage} from './ObjectDefinitionsPage';
+import {ViewObjectDefinitionsPage} from './ViewObjectDefinitionsPage';
 
 export class ModelBuilderPage {
 	readonly addObjectFieldButton: Locator;
+	readonly createNewObjectDefinitionButton: Locator;
 	readonly deleteObjectRelationshipButton: Locator;
 	readonly fitViewButton: Locator;
 	readonly leftSidebarItems: Locator;
@@ -23,17 +24,19 @@ export class ModelBuilderPage {
 	readonly newObjectRelationshipTitle: Locator;
 	readonly newObjectRelationshipType: Locator;
 	readonly newObjectRelationshipSaveButton: Locator;
-	readonly objectDefinitionsPage: ObjectDefinitionsPage;
 	readonly objectDefinitionNodes: Locator;
 	readonly objectRelationshipEdges: Locator;
 	readonly page: Page;
 	readonly toggleSidebarsButton: Locator;
+	readonly viewObjectDefinitionsPage: ViewObjectDefinitionsPage;
 
 	constructor(page: Page) {
 		this.addObjectFieldButton = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Add Field',
 		});
+		this.createNewObjectDefinitionButton =
+			page.getByText('Create New Object');
 		this.deleteObjectRelationshipButton = page.getByLabel(
 			'Delete Relationship'
 		);
@@ -80,7 +83,7 @@ export class ModelBuilderPage {
 			.getByRole('button', {
 				name: 'Save',
 			});
-		this.objectDefinitionsPage = new ObjectDefinitionsPage(page);
+		this.viewObjectDefinitionsPage = new ViewObjectDefinitionsPage(page);
 		this.objectDefinitionNodes = page.locator('.react-flow__node');
 		this.objectRelationshipEdges = page.locator('.react-flow__edge');
 		this.page = page;
@@ -211,7 +214,7 @@ export class ModelBuilderPage {
 	}
 
 	async goto() {
-		await this.objectDefinitionsPage.goto();
-		await this.objectDefinitionsPage.viewInModelBuilder();
+		await this.viewObjectDefinitionsPage.goto();
+		await this.viewObjectDefinitionsPage.viewInModelBuilder();
 	}
 }

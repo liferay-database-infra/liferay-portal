@@ -161,6 +161,31 @@ public class GenerateReportsBuildRunner extends BaseBuildRunner<BuildData> {
 		}
 	}
 
+	private void _copyArchivedNodeData(
+			long durationDays, String startDateString)
+		throws IOException {
+
+		String[] dateStrings = JenkinsResultsParserUtil.getDateStrings(
+			durationDays, LocalDate.parse(startDateString, _dateTimeFormatter));
+
+		File dataArchiveDir = new File(
+			_buildProperties.getProperty("archive.ci.build.data.archive.dir"));
+
+		File baseArchiveDir = dataArchiveDir.getParentFile();
+
+		for (String dateString : dateStrings) {
+			File nodeDataArchiveFile = new File(
+				baseArchiveDir, "reports/" + dateString + "/node.json");
+
+			File nodeDataFile = new File(
+				_TMP_BASE_DIR_PATH + "/nodes/" + dateString, "node.json");
+
+			if (nodeDataArchiveFile.exists()) {
+				FileUtils.copyFile(nodeDataArchiveFile, nodeDataFile);
+			}
+		}
+	}
+
 	private void _generateBuildHistoryReport(String reportName)
 		throws IOException {
 
@@ -205,6 +230,12 @@ public class GenerateReportsBuildRunner extends BaseBuildRunner<BuildData> {
 
 		Files.deleteIfExists(Paths.get(filePath, "js/testray-data.js"));
 
+		long reportDurationDays = _getReportDurationDays(reportName);
+
+		_copyArchivedNodeData(
+			_getReportDurationDays(reportName),
+			_getStartDateString(reportDurationDays - 1));
+
 		CISystemStatusReportUtil.writeJenkinsDataJavaScriptFile(
 			filePath + "/js/jenkins-data.js");
 
@@ -239,6 +270,8 @@ public class GenerateReportsBuildRunner extends BaseBuildRunner<BuildData> {
 		_updateReport(filePath);
 
 		_updateNodeDataFile(filePath);
+
+		_archiveReport(filePath);
 	}
 
 	private void _generatePullRequestReport(String reportName)
@@ -432,13 +465,17 @@ public class GenerateReportsBuildRunner extends BaseBuildRunner<BuildData> {
 		return buildParameter.split("\\s*,\\s*");
 	}
 
-	private String _getStartDateString(String reportName) {
+	private String _getStartDateString(long daysAgo) {
 		LocalDate localDate = LocalDate.parse(
 			_CURRENT_DATE_STRING, _dateTimeFormatter);
 
-		localDate = localDate.minusDays(_getReportDurationDays(reportName));
+		localDate = localDate.minusDays(daysAgo);
 
 		return localDate.format(_dateTimeFormatter);
+	}
+
+	private String _getStartDateString(String reportName) {
+		return _getStartDateString(_getReportDurationDays(reportName));
 	}
 
 	private void _updateNodeDataFile(String filePath) throws IOException {
@@ -491,14 +528,11 @@ public class GenerateReportsBuildRunner extends BaseBuildRunner<BuildData> {
 	private static final String _REPORT_RSYNC_DESTINATION_DIR_PATH =
 		"/opt/java/jenkins/userContent/reports/";
 
-	private static final String _TMP_ARCHIVE_DIR_PATH =
-		GenerateReportsBuildRunner._TMP_BASE_DIR_PATH + "jenkins/";
+	private static final String _TMP_ARCHIVE_DIR_PATH;
 
-	private static final String _TMP_BASE_DIR_PATH =
-		"/opt/dev/projects/github/liferay-jenkins-ee/tmp/";
+	private static final String _TMP_BASE_DIR_PATH;
 
-	private static final String _TMP_REPORT_DIR_PATH =
-		_TMP_BASE_DIR_PATH + "reports/";
+	private static final String _TMP_REPORT_DIR_PATH;
 
 	private static final Properties _buildProperties;
 	private static final DateTimeFormatter _dateTimeFormatter =
@@ -541,6 +575,12 @@ public class GenerateReportsBuildRunner extends BaseBuildRunner<BuildData> {
 		ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
 
 		_CURRENT_DATE_STRING = zonedDateTime.format(_dateTimeFormatter);
+
+		_TMP_BASE_DIR_PATH = _buildProperties.getProperty(
+			"archive.ci.build.data.tmp.dir");
+
+		_TMP_ARCHIVE_DIR_PATH = _TMP_BASE_DIR_PATH + "/builds/";
+		_TMP_REPORT_DIR_PATH = _TMP_BASE_DIR_PATH + "/reports/";
 	}
 
 	private Workspace _workspace;

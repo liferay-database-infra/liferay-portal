@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-FileCopyrightText: (c) 2024 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
@@ -14,18 +14,18 @@ export const test = mergeTests(apiHelpersTest, loginTest(), objectPagesTest);
 
 test('created object folders are on the left side bar', async ({
 	apiHelpers,
-	objectDefinitionsPage,
+	viewObjectDefinitionsPage,
 }) => {
-	await objectDefinitionsPage.goto();
+	await viewObjectDefinitionsPage.goto();
 
 	const objectFolderExternalReferenceCode = 'objectFolder' + getRandomInt();
 
-	const objectFolder = await objectDefinitionsPage.createObjectFolder(
+	const objectFolder = await viewObjectDefinitionsPage.createObjectFolder(
 		objectFolderExternalReferenceCode
 	);
 
 	await expect(
-		objectDefinitionsPage.page
+		viewObjectDefinitionsPage.page
 			.locator('li')
 			.filter({hasText: objectFolderExternalReferenceCode})
 	).toBeVisible();
@@ -36,19 +36,19 @@ test('created object folders are on the left side bar', async ({
 });
 
 test('default folder does not contains delete and edit options', async ({
-	objectDefinitionsPage,
+	viewObjectDefinitionsPage,
 }) => {
-	await objectDefinitionsPage.goto();
+	await viewObjectDefinitionsPage.goto();
 
-	await objectDefinitionsPage.clickDefaultObjectFolder();
+	await viewObjectDefinitionsPage.clickDefaultObjectFolder();
 
-	await objectDefinitionsPage.openObjectFolderActions();
+	await viewObjectDefinitionsPage.openObjectFolderActions();
 
 	await expect(
-		objectDefinitionsPage.objectFolderDeleteFolderOption
+		viewObjectDefinitionsPage.objectFolderDeleteFolderOption
 	).toBeHidden();
 
 	await expect(
-		objectDefinitionsPage.objectFolderEditLabelAndERCOption
+		viewObjectDefinitionsPage.objectFolderEditLabelAndERCOption
 	).toBeHidden();
 });

@@ -1346,6 +1346,15 @@
 			<property name="enabled" value="false" />
 		</check>
 	</source-processor>
+	<source-processor name="ListSourceProcessor">
+
+		<!-- Liferay Source Checks -->
+
+		<check name="ListClientExtensionsFileCheck">
+			<category name="Styling" />
+			<description name="Sorts paths in `client-extensions.list` file." />
+		</check>
+	</source-processor>
 	<source-processor name="MarkdownSourceProcessor">
 		<check name="MarkdownEmptyLinesCheck">
 			<category name="Styling" />
