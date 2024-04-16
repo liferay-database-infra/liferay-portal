@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.cache.MultiVMPool;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
@@ -37,6 +38,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -50,6 +52,9 @@ import com.liferay.portal.upgrade.test.util.UpgradeTestUtil;
 import com.liferay.segments.service.SegmentsExperienceLocalService;
 
 import java.sql.Connection;
+
+import java.util.Collections;
+import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -109,7 +114,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 
 		_runUpgrade();
 
-		_updateClassPKColumn(layoutPageTemplateEntry.getPlid());
+		_updatePlidColumn(layoutPageTemplateEntry.getPlid());
 
 		LayoutPageTemplateStructure layoutPageTemplateStructure =
 			_layoutPageTemplateStructureLocalService.
@@ -156,7 +161,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 
 		_runUpgrade();
 
-		_updateClassPKColumn(layoutPageTemplateEntry.getPlid());
+		_updatePlidColumn(layoutPageTemplateEntry.getPlid());
 
 		LayoutPageTemplateStructure layoutPageTemplateStructure =
 			_layoutPageTemplateStructureLocalService.
@@ -194,7 +199,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 
 		_runUpgrade();
 
-		_updateClassPKColumn(layout.getPlid());
+		_updatePlidColumn(layout.getPlid());
 
 		LayoutPageTemplateStructure layoutPageTemplateStructure =
 			_layoutPageTemplateStructureLocalService.
@@ -230,7 +235,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 
 		_runUpgrade();
 
-		_updateClassPKColumn(layout.getPlid());
+		_updatePlidColumn(layout.getPlid());
 
 		LayoutPageTemplateStructure layoutPageTemplateStructure =
 			_layoutPageTemplateStructureLocalService.
@@ -258,6 +263,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 
 	private static void _addClassPKColumn() throws Exception {
 		_classPKColumnsAdded = false;
+		_indexMetadataList = Collections.emptyList();
 
 		try (Connection connection = DataAccess.getConnection()) {
 			DBInspector dbInspector = new DBInspector(connection);
@@ -274,8 +280,14 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 				_db.runSQLTemplateString(
 					"alter table LayoutPageTemplateStructure add classPK LONG;",
 					true);
+				_db.runSQLTemplateString(
+					"update LayoutPageTemplateStructure set classPK = plid;",
+					true);
 
 				_classPKColumnsAdded = true;
+
+				_indexMetadataList = _db.dropIndexes(
+					connection, "LayoutPageTemplateStructure", "plid");
 			}
 		}
 	}
@@ -294,11 +306,17 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 					"LayoutPageTemplateStructure", "classPK")) {
 
 				_db.runSQLTemplateString(
-					"alter table LayoutPageTemplateStructure drop classNameId;",
+					"alter table LayoutPageTemplateStructure drop column " +
+						"classNameId;",
 					true);
 				_db.runSQLTemplateString(
-					"alter table LayoutPageTemplateStructure drop classPK;",
+					"alter table LayoutPageTemplateStructure drop column " +
+						"classPK;",
 					true);
+			}
+
+			if (ListUtil.isNotEmpty(_indexMetadataList)) {
+				_db.addIndexes(connection, _indexMetadataList);
 			}
 		}
 	}
@@ -347,7 +365,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 		}
 	}
 
-	private void _updateClassPKColumn(long plid) throws Exception {
+	private void _updatePlidColumn(long plid) throws Exception {
 		_db.runSQL(
 			StringBundler.concat(
 				"update LayoutPageTemplateStructure set plid = ", plid,
@@ -362,6 +380,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 
 	private static boolean _classPKColumnsAdded;
 	private static DB _db;
+	private static List<IndexMetadata> _indexMetadataList;
 
 	@Inject(
 		filter = "(&(component.name=com.liferay.layout.page.template.internal.upgrade.registry.LayoutPageTemplateServiceUpgradeStepRegistrator))"

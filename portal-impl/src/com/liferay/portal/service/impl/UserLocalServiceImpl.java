@@ -143,6 +143,7 @@ import com.liferay.portal.kernel.service.persistence.UserGroupRolePersistence;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.Digester;
 import com.liferay.portal.kernel.util.DigesterUtil;
 import com.liferay.portal.kernel.util.EscapableObject;
@@ -156,6 +157,7 @@ import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
@@ -192,6 +194,8 @@ import com.liferay.users.admin.kernel.file.uploads.UserFileUploadsSettings;
 
 import java.io.IOException;
 import java.io.Serializable;
+
+import java.text.DateFormat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -4011,22 +4015,6 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 		return false;
 	}
 
-	/**
-	 * Sends the password email to the user with the email address. The content
-	 * of this email can be specified in <code>portal.properties</code> with the
-	 * <code>admin.email.password</code> keys.
-	 *
-	 * @param companyId the primary key of the user's company
-	 * @param emailAddress the user's email address
-	 * @param fromName the name of the individual that the email should be from
-	 * @param fromAddress the address of the individual that the email should be
-	 *        from
-	 * @param subject the email subject. If <code>null</code>, the subject
-	 *        specified in <code>portal.properties</code> will be used.
-	 * @param body the email body. If <code>null</code>, the body specified in
-	 *        <code>portal.properties</code> will be used.
-	 * @param serviceContext the service context to be applied
-	 */
 	@Override
 	public boolean sendPassword(
 			long companyId, String emailAddress, String fromName,
@@ -4173,6 +4161,111 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 		return sendPassword(
 			user.getCompanyId(), user.getEmailAddress(), null, null, null, null,
 			ServiceContextThreadLocal.getServiceContext());
+	}
+
+	@Override
+	public boolean sendPasswordLockout(
+			long companyId, String emailAddress, String fromName,
+			String fromAddress, String subject, String body,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		emailAddress = StringUtil.toLowerCase(StringUtil.trim(emailAddress));
+
+		if (Validator.isNull(emailAddress)) {
+			throw new UserEmailAddressException.MustNotBeNull();
+		}
+
+		User user = userPersistence.findByC_EA(companyId, emailAddress);
+
+		PasswordPolicy passwordPolicy = user.getPasswordPolicy();
+
+		if (Validator.isNull(fromName)) {
+			fromName = PrefsPropsUtil.getString(
+				companyId, PropsKeys.ADMIN_EMAIL_FROM_NAME);
+		}
+
+		if (Validator.isNull(fromAddress)) {
+			fromAddress = PrefsPropsUtil.getString(
+				companyId, PropsKeys.ADMIN_EMAIL_FROM_ADDRESS);
+		}
+
+		String toName = user.getFullName();
+		String toAddress = user.getEmailAddress();
+
+		if (Validator.isNull(body)) {
+			try {
+				body = StringUtil.read(
+					PortalClassLoaderUtil.getClassLoader(),
+					PropsValues.ADMIN_EMAIL_PASSWORD_LOCKOUT_BODY);
+
+				if (passwordPolicy.getLockoutDuration() > 0) {
+					body = StringUtil.read(
+						PortalClassLoaderUtil.getClassLoader(),
+						PropsValues.ADMIN_EMAIL_PASSWORD_LOCKOUT_UNTIL_BODY);
+				}
+			}
+			catch (IOException ioException) {
+				_log.error("Unable to read the content", ioException);
+			}
+		}
+
+		if (Validator.isNull(subject)) {
+			try {
+				subject = StringUtil.read(
+					PortalClassLoaderUtil.getClassLoader(),
+					PropsValues.ADMIN_EMAIL_PASSWORD_LOCKOUT_SUBJECT);
+			}
+			catch (IOException ioException) {
+				_log.error("Unable to read the content", ioException);
+			}
+		}
+
+		MailTemplateContextBuilder mailTemplateContextBuilder =
+			MailTemplateFactoryUtil.createMailTemplateContextBuilder();
+
+		mailTemplateContextBuilder.put("[$FROM_ADDRESS$]", fromAddress);
+		mailTemplateContextBuilder.put(
+			"[$FROM_NAME$]", new EscapableObject<>(fromName));
+		mailTemplateContextBuilder.put(
+			"[$PORTAL_URL$]", serviceContext.getPortalURL());
+		mailTemplateContextBuilder.put(
+			"[$REMOTE_ADDRESS$]", serviceContext.getRemoteAddr());
+		mailTemplateContextBuilder.put(
+			"[$REMOTE_HOST$]",
+			new EscapableObject<>(serviceContext.getRemoteHost()));
+		mailTemplateContextBuilder.put("[$TO_ADDRESS$]", toAddress);
+		mailTemplateContextBuilder.put(
+			"[$TO_FIRST_NAME$]", new EscapableObject<>(user.getFirstName()));
+		mailTemplateContextBuilder.put(
+			"[$TO_NAME$]", new EscapableObject<>(toName));
+		mailTemplateContextBuilder.put(
+			"[$USER_ID$]", String.valueOf(user.getUserId()));
+		mailTemplateContextBuilder.put(
+			"[$USER_SCREENNAME$]", new EscapableObject<>(user.getScreenName()));
+
+		if (passwordPolicy.getLockoutDuration() > 0) {
+			DateFormat dateFormat = DateFormatFactoryUtil.getDateTime(
+				user.getLocale());
+
+			mailTemplateContextBuilder.put(
+				"[$TIME_TO_UNLOCK]",
+				new EscapableObject<>(dateFormat.format(user.getUnlockDate())));
+		}
+
+		MailTemplateContext mailTemplateContext =
+			mailTemplateContextBuilder.build();
+
+		try {
+			_sendNotificationEmail(
+				fromAddress, fromName, toAddress, user, subject, body,
+				mailTemplateContext);
+		}
+		catch (PortalException portalException) {
+			ReflectionUtil.throwException(portalException);
+		}
+
+		return false;
 	}
 
 	/**

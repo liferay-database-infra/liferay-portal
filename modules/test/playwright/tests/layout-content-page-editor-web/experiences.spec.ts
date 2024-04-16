@@ -8,6 +8,7 @@ import {expect, mergeTests} from '@playwright/test';
 import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
 import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
+import {loginTest} from '../../fixtures/loginTest';
 import getRandomString from '../../utils/getRandomString';
 import {pageEditorPagesTest} from './fixtures/pageEditorPagesTest';
 import getFragmentDefinition from './utils/getFragmentDefinition';
@@ -19,6 +20,7 @@ export const test = mergeTests(
 		'LPS-178052': true,
 	}),
 	isolatedSiteTest,
+	loginTest(),
 	pageEditorPagesTest
 );
 
@@ -49,7 +51,7 @@ test('allows renaming an experience', async ({
 	await expect(page.getByLabel('Experience: E1 edited')).toBeVisible();
 });
 
-test('allows changing the segment of an existing experience', async ({
+test.skip('allows changing the segment of an existing experience', async ({
 	apiHelpers,
 	page,
 	pageEditorPage,
@@ -133,7 +135,7 @@ test('creates new experiences as expected', async ({
 	await expect(page.getByText('Heading Example')).toBeVisible();
 });
 
-test('keeps modal open when canceling segment creation', async ({
+test.skip('keeps modal open when canceling segment creation', async ({
 	apiHelpers,
 	page,
 	pageEditorPage,

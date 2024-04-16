@@ -81,23 +81,6 @@ public class ObjectFieldUtil {
 					userId, objectField.getSystem());
 		}
 
-		ObjectFieldSetting[] objectFieldSettings = ArrayUtil.filter(
-			objectField.getObjectFieldSettings(),
-			objectFieldSetting -> StringUtil.equals(
-				objectFieldSetting.getName(),
-				ObjectFieldSettingConstants.NAME_STATE_FLOW));
-
-		if (ArrayUtil.isEmpty(objectFieldSettings)) {
-			return listTypeDefinition.getListTypeDefinitionId();
-		}
-
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-			JSONFactoryUtil.looseSerializeDeep(
-				objectFieldSettings[0].getValue()));
-
-		JSONArray objectStatesJSONArray = jsonObject.getJSONArray(
-			"objectStates");
-
 		Map<String, ListTypeEntry> listTypeEntries = new HashMap<>();
 
 		ListUtil.isNotEmptyForEach(
@@ -106,22 +89,65 @@ public class ObjectFieldUtil {
 			listTypeEntry -> listTypeEntries.put(
 				listTypeEntry.getKey(), listTypeEntry));
 
-		for (int i = 0; i < objectStatesJSONArray.length(); i++) {
-			JSONObject objectStateJSONObject =
-				objectStatesJSONArray.getJSONObject(i);
+		ObjectFieldSetting[] stateFlowObjectFieldSettings = ArrayUtil.filter(
+			objectField.getObjectFieldSettings(),
+			objectFieldSetting -> StringUtil.equals(
+				objectFieldSetting.getName(),
+				ObjectFieldSettingConstants.NAME_STATE_FLOW));
 
-			String key = objectStateJSONObject.getString("key");
+		if (!ArrayUtil.isEmpty(stateFlowObjectFieldSettings)) {
+			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
+				JSONFactoryUtil.looseSerializeDeep(
+					stateFlowObjectFieldSettings[0].getValue()));
 
-			if (listTypeEntries.containsKey(key)) {
-				listTypeEntries.remove(key);
+			JSONArray objectStatesJSONArray = jsonObject.getJSONArray(
+				"objectStates");
 
-				continue;
+			for (int i = 0; i < objectStatesJSONArray.length(); i++) {
+				JSONObject objectStateJSONObject =
+					objectStatesJSONArray.getJSONObject(i);
+
+				String key = objectStateJSONObject.getString("key");
+
+				if (listTypeEntries.containsKey(key)) {
+					listTypeEntries.remove(key);
+
+					continue;
+				}
+
+				listTypeEntryLocalService.addListTypeEntry(
+					null, userId, listTypeDefinition.getListTypeDefinitionId(),
+					key,
+					Collections.singletonMap(LocaleUtil.getDefault(), key));
 			}
-
-			listTypeEntryLocalService.addListTypeEntry(
-				null, userId, listTypeDefinition.getListTypeDefinitionId(), key,
-				Collections.singletonMap(LocaleUtil.getDefault(), key));
 		}
+
+		ObjectFieldSetting[] defaultObjectFieldSettings = null;
+
+		if (!objectField.getState()) {
+			defaultObjectFieldSettings = ArrayUtil.filter(
+				objectField.getObjectFieldSettings(),
+				objectFieldSetting -> StringUtil.equals(
+					objectFieldSetting.getName(),
+					ObjectFieldSettingConstants.NAME_DEFAULT_VALUE));
+		}
+
+		if (ArrayUtil.isEmpty(defaultObjectFieldSettings)) {
+			return listTypeDefinition.getListTypeDefinitionId();
+		}
+
+		String defaultObjectFieldSettingValue = GetterUtil.getString(
+			defaultObjectFieldSettings[0].getValue());
+
+		if (listTypeEntries.containsKey(defaultObjectFieldSettingValue)) {
+			listTypeEntries.remove(defaultObjectFieldSettingValue);
+		}
+
+		listTypeEntryLocalService.addListTypeEntry(
+			null, userId, listTypeDefinition.getListTypeDefinitionId(),
+			defaultObjectFieldSettingValue,
+			Collections.singletonMap(
+				LocaleUtil.getDefault(), defaultObjectFieldSettingValue));
 
 		for (ListTypeEntry listTypeEntry : listTypeEntries.values()) {
 			listTypeEntryLocalService.deleteListTypeEntry(listTypeEntry);

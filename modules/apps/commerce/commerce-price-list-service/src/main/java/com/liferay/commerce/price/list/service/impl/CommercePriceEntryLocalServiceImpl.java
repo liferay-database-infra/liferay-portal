@@ -190,7 +190,6 @@ public class CommercePriceEntryLocalServiceImpl
 			_getQuantity(cpInstanceId, unitOfMeasureKey));
 		commercePriceEntry.setUnitOfMeasureKey(
 			_getUnitOfMeasureKey(cpInstanceId, unitOfMeasureKey));
-		commercePriceEntry.setExpandoBridgeAttributes(serviceContext);
 
 		if ((expirationDate == null) || expirationDate.after(date)) {
 			commercePriceEntry.setStatus(WorkflowConstants.STATUS_DRAFT);
@@ -201,6 +200,7 @@ public class CommercePriceEntryLocalServiceImpl
 
 		commercePriceEntry.setStatusByUserId(user.getUserId());
 		commercePriceEntry.setStatusDate(serviceContext.getModifiedDate(date));
+		commercePriceEntry.setExpandoBridgeAttributes(serviceContext);
 
 		commercePriceEntry = commercePriceEntryPersistence.update(
 			commercePriceEntry);

@@ -43,7 +43,7 @@ test('LPD-19748 Add workflow info to the View Change screen', async ({
 
 	await changeTrackingPage.reviewChange(journalName);
 
-	await expect(page.getByText(`Workflow status: Pending`)).toBeVisible();
+	await expect(page.getByText(`Pending`)).toBeVisible();
 
 	await changeTrackingPage.viewDisplayTab('Workflow');
 });
@@ -59,6 +59,7 @@ test('LPD-19748 Workflow data is displayed in tab', async ({
 		'Task Name',
 		'Create Date',
 		'Due Date',
+		'Usages',
 	];
 
 	await changeTrackingPage.goToReviewChanges(ctCollection.name);
@@ -88,6 +89,23 @@ test('LPD-19748 Only workflow status is displayed when workflow is disabled', as
 
 	await changeTrackingPage.reviewChange(journalName);
 
-	await expect(page.getByText(`Workflow status: Pending`)).toBeVisible();
+	await expect(page.getByText(`Pending`)).toBeVisible();
+
 	await changeTrackingPage.viewDisplayTab('Workflow', {isHidden: true});
+});
+
+test('LPD-22673 View Usages link is added to workflow info display', async ({
+	changeTrackingPage,
+	ctCollection,
+	page,
+}) => {
+	await changeTrackingPage.goToReviewChanges(ctCollection.name);
+
+	await changeTrackingPage.reviewChange(journalName);
+
+	await changeTrackingPage.selectTab('Workflow');
+
+	await page.getByRole('link', {exact: true, name: 'View Usages'}).click();
+
+	await expect(page.getByText(`Usages: ${journalName}`)).toBeVisible();
 });

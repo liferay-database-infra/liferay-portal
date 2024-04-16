@@ -5581,6 +5581,50 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
+	public void testPatchObjectEntryWithRequiredObjectFields()
+		throws Exception {
+
+		ObjectField objectField1 = _objectFieldLocalService.getObjectField(
+			_objectDefinition1.getObjectDefinitionId(), _OBJECT_FIELD_NAME_1);
+
+		_objectFieldLocalService.updateRequired(
+			objectField1.getObjectFieldId(), true);
+
+		ObjectField objectField2 = _objectFieldLocalService.getObjectField(
+			_objectDefinition1.getObjectDefinitionId(),
+			_OBJECT_FIELD_NAME_TEXT);
+
+		_objectFieldLocalService.updateRequired(
+			objectField2.getObjectFieldId(), true);
+
+		String objectFieldValue1 = RandomTestUtil.randomString();
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, objectFieldValue1
+			).put(
+				_OBJECT_FIELD_NAME_TEXT, RandomTestUtil.randomString()
+			).toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+
+		String objectFieldValue2 = RandomTestUtil.randomString();
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_TEXT, objectFieldValue2
+			).toString(),
+			StringBundler.concat(
+				_objectDefinition1.getRESTContextPath(), StringPool.SLASH,
+				jsonObject.get("id")),
+			Http.Method.PATCH);
+
+		Assert.assertEquals(
+			objectFieldValue1, jsonObject.getString(_OBJECT_FIELD_NAME_1));
+		Assert.assertEquals(
+			objectFieldValue2, jsonObject.getString(_OBJECT_FIELD_NAME_TEXT));
+	}
+
+	@Test
 	public void testPatchObjectEntryWithTaxonomyCategories() throws Exception {
 		TaxonomyCategory taxonomyCategory1 = _addTaxonomyCategory();
 		TaxonomyCategory taxonomyCategory2 = _addTaxonomyCategory();
@@ -7258,65 +7302,6 @@ public class ObjectEntryResourceTest {
 
 	@FeatureFlags("LPD-18730")
 	@Test
-	public void testSortByNotSupportedRelationshipObjectFields()
-		throws Exception {
-
-		_objectRelationship1 = ObjectRelationshipTestUtil.addObjectRelationship(
-			_objectDefinition1, _objectDefinition2, TestPropsValues.getUserId(),
-			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
-
-		_objectRelationship2 = ObjectRelationshipTestUtil.addObjectRelationship(
-			_objectDefinition2, _objectDefinition1, TestPropsValues.getUserId(),
-			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
-
-		String endpoint = _getEndpoint(
-			TestPropsValues.getGroupId(), _objectDefinition1);
-
-		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
-				"com.liferay.portal.vulcan.internal.jaxrs.exception.mapper." +
-					"WebApplicationExceptionMapper",
-				LoggerTestUtil.ERROR)) {
-
-			JSONAssert.assertEquals(
-				JSONUtil.put(
-					"status", "BAD_REQUEST"
-				).put(
-					"title",
-					"Unable to sort by a many to many related object field"
-				).toString(),
-				HTTPTestUtil.invokeToString(
-					null,
-					StringBundler.concat(
-						endpoint, "?sort=",
-						URLCodec.encodeURL(
-							String.format(
-								"%s/%s:asc", _objectRelationship1.getName(),
-								_OBJECT_FIELD_NAME_TEXT))),
-					Http.Method.GET),
-				JSONCompareMode.STRICT);
-
-			JSONAssert.assertEquals(
-				JSONUtil.put(
-					"status", "BAD_REQUEST"
-				).put(
-					"title",
-					"Unable to sort by a many to one related object field"
-				).toString(),
-				HTTPTestUtil.invokeToString(
-					null,
-					StringBundler.concat(
-						endpoint, "?sort=",
-						URLCodec.encodeURL(
-							String.format(
-								"%s/%s:asc", _objectRelationship2.getName(),
-								_OBJECT_FIELD_NAME_TEXT))),
-					Http.Method.GET),
-				JSONCompareMode.STRICT);
-		}
-	}
-
-	@FeatureFlags("LPD-18730")
-	@Test
 	public void testSortByOneToManyRelationshipCustomObjectFields()
 		throws Exception {
 
@@ -8298,6 +8283,9 @@ public class ObjectEntryResourceTest {
 					"%s/%s/creator", _objectRelationship1.getName(),
 					_objectRelationship2.getName()));
 			_testSortByFieldName(
+				endpoint1, jsonObject2, jsonObject1,
+				String.format("%s/creatorId", _objectRelationship1.getName()));
+			_testSortByFieldName(
 				endpoint1, jsonObject1, jsonObject2,
 				String.format(
 					"%s/%s/dateCreated", _objectRelationship1.getName(),
@@ -8318,6 +8306,9 @@ public class ObjectEntryResourceTest {
 				String.format(
 					"%s/%s/id", _objectRelationship1.getName(),
 					_objectRelationship2.getName()));
+			_testSortByFieldName(
+				endpoint1, jsonObject2, jsonObject1,
+				String.format("%s/userId", _objectRelationship1.getName()));
 
 			// Sort by several fields
 
@@ -8334,12 +8325,17 @@ public class ObjectEntryResourceTest {
 			_testSortByFieldName(
 				endpoint1, jsonObject2, jsonObject1,
 				String.format("%s/creator", _objectRelationship1.getName()),
+				String.format("%s/creatorId", _objectRelationship1.getName()),
 				String.format(
 					"%s/dateModified", _objectRelationship1.getName()),
 				String.format(
 					"%s/externalReferenceCode", _objectRelationship1.getName()),
+				String.format("%s/userId", _objectRelationship1.getName()),
 				String.format(
 					"%s/%s/creator", _objectRelationship1.getName(),
+					_objectRelationship2.getName()),
+				String.format(
+					"%s/%s/creatorId", _objectRelationship1.getName(),
 					_objectRelationship2.getName()),
 				String.format(
 					"%s/%s/dateModified", _objectRelationship1.getName(),
@@ -8347,64 +8343,10 @@ public class ObjectEntryResourceTest {
 				String.format(
 					"%s/%s/externalReferenceCode",
 					_objectRelationship1.getName(),
+					_objectRelationship2.getName()),
+				String.format(
+					"%s/%s/userId", _objectRelationship1.getName(),
 					_objectRelationship2.getName()));
-
-			// TODO LPD-20288
-
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint1, jsonObject2, jsonObject1,
-					String.format(
-						"%s/creatorId", _objectRelationship1.getName())));
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint1, jsonObject1, jsonObject2,
-					String.format(
-						"%s/objectDefinitionId",
-						_objectRelationship1.getName())));
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint1, jsonObject1, jsonObject2,
-					String.format(
-						"%s/siteId", _objectRelationship1.getName())));
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint1, jsonObject2, jsonObject1,
-					String.format(
-						"%s/userId", _objectRelationship1.getName())));
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint1, jsonObject2, jsonObject1,
-					String.format(
-						"%s/%s/creatorId", _objectRelationship1.getName(),
-						_objectRelationship2.getName())));
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint1, jsonObject1, jsonObject2,
-					String.format(
-						"%s/%s/objectDefinitionId",
-						_objectRelationship1.getName(),
-						_objectRelationship2.getName())));
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint1, jsonObject1, jsonObject2,
-					String.format(
-						"%s/%s/siteId", _objectRelationship1.getName(),
-						_objectRelationship2.getName())));
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint1, jsonObject2, jsonObject1,
-					String.format(
-						"%s/%s/userId", _objectRelationship1.getName(),
-						_objectRelationship2.getName())));
 
 			// TODO LPD-20530
 
@@ -8562,6 +8504,8 @@ public class ObjectEntryResourceTest {
 			_testSortByFieldName(
 				endpoint, jsonObjects[1], jsonObjects[0], "creator");
 			_testSortByFieldName(
+				endpoint, jsonObjects[1], jsonObjects[0], "creatorId");
+			_testSortByFieldName(
 				endpoint, jsonObjects[0], jsonObjects[1], "dateCreated");
 			_testSortByFieldName(
 				endpoint, jsonObjects[1], jsonObjects[0], "dateModified");
@@ -8572,6 +8516,8 @@ public class ObjectEntryResourceTest {
 				endpoint, jsonObjects[0], jsonObjects[1], "id");
 			_testSortByFieldName(
 				endpoint, jsonObjects[1], jsonObjects[0], "status");
+			_testSortByFieldName(
+				endpoint, jsonObjects[1], jsonObjects[0], "userId");
 
 			// Sort by several fields
 
@@ -8580,26 +8526,6 @@ public class ObjectEntryResourceTest {
 			_testSortByFieldName(
 				endpoint, jsonObjects[1], jsonObjects[0], "creator",
 				"dateModified", "externalReferenceCode");
-
-			// TODO LPD-20288
-
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint, jsonObjects[1], jsonObjects[0], "creatorId"));
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint, jsonObjects[0], jsonObjects[1],
-					"objectDefinitionId"));
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint, jsonObjects[0], jsonObjects[1], "siteId"));
-			_assertFailure(
-				ComparisonFailure.class,
-				() -> _testSortByFieldName(
-					endpoint, jsonObjects[1], jsonObjects[0], "userId"));
 		}
 		finally {
 			for (JSONObject jsonObject : jsonObjects) {
@@ -8611,6 +8537,39 @@ public class ObjectEntryResourceTest {
 					jsonObject.getLong("id"));
 			}
 		}
+	}
+
+	@FeatureFlags("LPD-18730")
+	@Test
+	public void testSortByUnsupportedObjectFields() throws Exception {
+		_objectRelationship1 = ObjectRelationshipTestUtil.addObjectRelationship(
+			_objectDefinition1, _objectDefinition2, TestPropsValues.getUserId(),
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		_testSortByUnsupportedObjectField(
+			"Unable to sort by a many to many related object field",
+			_objectDefinition1,
+			String.format(
+				"%s/%s:asc", _objectRelationship1.getName(),
+				_OBJECT_FIELD_NAME_TEXT));
+
+		_objectRelationship2 = ObjectRelationshipTestUtil.addObjectRelationship(
+			_objectDefinition2, _objectDefinition1, TestPropsValues.getUserId(),
+			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		_testSortByUnsupportedObjectField(
+			"Unable to sort by a many to one related object field",
+			_objectDefinition1,
+			String.format(
+				"%s/%s:asc", _objectRelationship2.getName(),
+				_OBJECT_FIELD_NAME_TEXT));
+
+		_testSortByUnsupportedObjectField(
+			"Unable to sort by property: objectDefinitionId",
+			_objectDefinition1, "objectDefinitionId");
+		_testSortByUnsupportedObjectField(
+			"Unable to sort by property: siteId", _siteScopedObjectDefinition1,
+			"siteId");
 	}
 
 	private void _addModelResourcePermissions(
@@ -10948,6 +10907,32 @@ public class ObjectEntryResourceTest {
 				valuesJSONObject4.toString(),
 				endpoint2 + "/" + relatedJSONObject4.getLong("id"),
 				Http.Method.PATCH);
+		}
+	}
+
+	private void _testSortByUnsupportedObjectField(
+			String expectedTitle, ObjectDefinition objectDefinition,
+			String sortString)
+		throws Exception {
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.vulcan.internal.jaxrs.exception.mapper." +
+					"WebApplicationExceptionMapper",
+				LoggerTestUtil.ERROR)) {
+
+			String endpoint = _getEndpoint(
+				TestPropsValues.getGroupId(), objectDefinition);
+
+			JSONAssert.assertEquals(
+				JSONUtil.put(
+					"status", "BAD_REQUEST"
+				).put(
+					"title", expectedTitle
+				).toString(),
+				HTTPTestUtil.invokeToString(
+					null, endpoint + "?sort=" + URLCodec.encodeURL(sortString),
+					Http.Method.GET),
+				JSONCompareMode.STRICT);
 		}
 	}
 

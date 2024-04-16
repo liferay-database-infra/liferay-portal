@@ -151,6 +151,43 @@ public class NotificationTemplateResourceTest
 		JSONAssert.assertEquals(
 			jsonArray.toString(), jsonObject.getString("recipients"),
 			JSONCompareMode.NON_EXTENSIBLE);
+
+		HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				"editorType",
+				NotificationTemplateConstants.EDITOR_TYPE_RICH_TEXT
+			).put(
+				"name", RandomTestUtil.randomString()
+			).put(
+				"recipients",
+				JSONUtil.putAll(
+					JSONUtil.put(
+						"from", RandomTestUtil.randomString()
+					).put(
+						"fromName",
+						JSONUtil.put("en_US", RandomTestUtil.randomString())
+					).put(
+						"singleRecipient", false
+					).put(
+						"to",
+						JSONUtil.put("en_US", RandomTestUtil.randomString())
+					))
+			).put(
+				"recipientType", NotificationRecipientConstants.TYPE_EMAIL
+			).put(
+				"subject", JSONUtil.put("en_US", RandomTestUtil.randomString())
+			).put(
+				"system", false
+			).put(
+				"type", NotificationConstants.TYPE_EMAIL
+			).toString(),
+			"notification/v1.0/notification-templates", Http.Method.POST);
+
+		HTTPTestUtil.invokeToJSONObject(
+			null,
+			"headless-batch-engine/v1.0/export-task/com.liferay.notification." +
+				"rest.dto.v1_0.NotificationTemplate/json",
+			Http.Method.POST);
 	}
 
 	@Override

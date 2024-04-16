@@ -19,7 +19,7 @@ import Jethr0Table from '../../components/Jethr0Table/Jethr0Table';
 import {getJobDefinitionByKey} from '../../objects/jobdefinitions/JobDefinitionUtil';
 import {
 	deleteRoutineById,
-	getRoutineByType,
+	getRoutineById,
 } from '../../objects/routines/RoutineUtil';
 import {toLocaleString} from '../../services/DateUtil';
 
@@ -97,9 +97,9 @@ function RoutineInformation({routine}) {
 		return;
 	}
 
-	let jobParameters = '';
+	let jobParameters = [];
 
-	if (routine.jobParameters) {
+	if (routine?.jobParameters) {
 		jobParameters = JSON.parse(routine.jobParameters);
 	}
 
@@ -147,11 +147,13 @@ function RoutineInformation({routine}) {
 					fieldValue={routine.dateModified}
 				/>
 				{jobDefinition.jobDefinitionParameters &&
-					Object.entries(jobParameters).map(([key, value]) => {
+					jobParameters?.map((jobParameter) => {
 						let parameter;
 
 						for (const jobDefinitionParameter of jobDefinition.jobDefinitionParameters) {
-							if (jobDefinitionParameter.key === key) {
+							if (
+								jobDefinitionParameter.key === jobParameter.key
+							) {
 								parameter = jobDefinitionParameter;
 
 								break;
@@ -162,8 +164,8 @@ function RoutineInformation({routine}) {
 							<Jethr0InformationField
 								fieldLabel={parameter.label}
 								fieldType={parameter.type.name}
-								fieldValue={value}
-								key={key}
+								fieldValue={jobParameter.value}
+								key={jobParameter.key}
 							/>
 						);
 					})}
@@ -177,7 +179,7 @@ function RoutinePage() {
 	const [routine, setRoutine] = useState(null);
 
 	if (!routine) {
-		getRoutineByType({id, setRoutine});
+		getRoutineById({id, setRoutine});
 	}
 
 	if (!routine) {
@@ -226,6 +228,10 @@ function RoutinePage() {
 						</Heading>
 						<Jethr0ButtonsRow
 							buttons={[
+								{
+									link: `/routines/${id}/create-job`,
+									title: 'Create Job',
+								},
 								{
 									onClick: () => {
 										deleteRoutineById({

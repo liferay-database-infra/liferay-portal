@@ -8,7 +8,7 @@ task jarPatched(type: Zip)
 task patch(type: PatchTask)
 
 dependencies {
-	api group: "org.springframework", name: "spring-tx", version: "5.2.24.RELEASE"
+	api group: "org.springframework", name: "spring-tx", version: "5.3.33"
 }
 
 deploy {
@@ -41,14 +41,15 @@ jarManifest {
 }
 
 jarPatched {
-	mustRunAfter compileJava
-	mustRunAfter processResources
-
 	archiveFileName = jar.archiveFileName
 	destinationDirectory = jar.destinationDirectory
 	duplicatesStrategy = "exclude"
 
 	from copyPatchOriginalLibClasses
+
+	mustRunAfter compileJava
+	mustRunAfter generatePomFileForMavenPublication
+	mustRunAfter processResources
 }
 
 jarSources {

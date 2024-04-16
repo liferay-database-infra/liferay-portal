@@ -116,6 +116,7 @@ import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
@@ -131,6 +132,7 @@ import com.liferay.portal.kernel.service.TicketLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserServiceUtil;
 import com.liferay.portal.kernel.service.VirtualHostLocalServiceUtil;
+import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
 import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
 import com.liferay.portal.kernel.service.permission.UserPermissionUtil;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
@@ -1040,7 +1042,10 @@ public class PortalImpl implements Portal {
 		Layout layout = null;
 
 		if (Validator.isNull(friendlyURL)) {
-			layout = _getLayout(groupId, privateLayout);
+			layout = _getLayout(
+				groupId, privateLayout,
+				_getPermissionChecker(
+					(HttpServletRequest)requestContext.get("request")));
 
 			if (layout == null) {
 				throw new NoSuchLayoutException(
@@ -7453,7 +7458,8 @@ public class PortalImpl implements Portal {
 	}
 
 	private Layout _getFirstPublishedLayout(
-		long groupId, boolean privateLayout) {
+		long groupId, boolean privateLayout,
+		PermissionChecker permissionChecker) {
 
 		boolean hasNext = true;
 
@@ -7469,7 +7475,9 @@ public class PortalImpl implements Portal {
 				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID, true, start, end);
 
 			for (Layout layout : layouts) {
-				if (layout.isPublished()) {
+				if (layout.isPublished() &&
+					_hasViewPermission(layout, permissionChecker)) {
+
 					return layout;
 				}
 			}
@@ -7665,7 +7673,9 @@ public class PortalImpl implements Portal {
 		return sb.toString();
 	}
 
-	private Layout _getLayout(long groupId, boolean privateLayout) {
+	private Layout _getLayout(
+		long groupId, boolean privateLayout,
+		PermissionChecker permissionChecker) {
 
 		// We need to ensure that virtual layouts are merged
 
@@ -7679,16 +7689,55 @@ public class PortalImpl implements Portal {
 
 		Layout layout = layouts.get(0);
 
-		if (!layout.isPublished()) {
-			Layout firstPublishedLayout = _getFirstPublishedLayout(
-				groupId, privateLayout);
+		boolean viewPermission = _hasViewPermission(layout, permissionChecker);
 
-			if (firstPublishedLayout != null) {
-				return firstPublishedLayout;
+		if (layout.isPublished() && viewPermission) {
+			return layout;
+		}
+
+		Layout firstPublishedLayout = _getFirstPublishedLayout(
+			groupId, privateLayout, permissionChecker);
+
+		if (firstPublishedLayout != null) {
+			return firstPublishedLayout;
+		}
+
+		if (viewPermission) {
+			return layout;
+		}
+
+		return null;
+	}
+
+	private PermissionChecker _getPermissionChecker(
+			HttpServletRequest httpServletRequest)
+		throws PortalException {
+
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		if (permissionChecker != null) {
+			return permissionChecker;
+		}
+
+		User user = null;
+
+		try {
+			user = getUser(httpServletRequest);
+		}
+		catch (PortalException portalException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(portalException);
 			}
 		}
 
-		return layout;
+		if (user == null) {
+			Company company = getCompany(httpServletRequest);
+
+			user = company.getGuestUser();
+		}
+
+		return PermissionCheckerFactoryUtil.create(user);
 	}
 
 	private String _getPortalURL(
@@ -8043,6 +8092,25 @@ public class PortalImpl implements Portal {
 		}
 
 		return virtualHostnames.firstKey();
+	}
+
+	private boolean _hasViewPermission(
+		Layout layout, PermissionChecker permissionChecker) {
+
+		try {
+			if (LayoutPermissionUtil.contains(
+					permissionChecker, layout, ActionKeys.VIEW)) {
+
+				return true;
+			}
+		}
+		catch (PortalException portalException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(portalException);
+			}
+		}
+
+		return false;
 	}
 
 	private boolean _layoutContainsPortletId(Layout layout, String portletId) {

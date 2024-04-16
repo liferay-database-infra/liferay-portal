@@ -115,7 +115,7 @@ function JobInformation({job}) {
 		);
 	}
 
-	let jobParameters = '';
+	let jobParameters = [];
 
 	if (job.parameters) {
 		jobParameters = JSON.parse(job.parameters);
@@ -173,25 +173,29 @@ function JobInformation({job}) {
 					fieldValue={job.startDate}
 				/>
 				{jobDefinition.jobDefinitionParameters &&
-					Object.entries(jobParameters).map(([key, value]) => {
+					jobParameters?.map((jobParameter) => {
 						let parameter;
 
 						for (const jobDefinitionParameter of jobDefinition.jobDefinitionParameters) {
-							if (jobDefinitionParameter.key === key) {
+							if (
+								jobDefinitionParameter.key === jobParameter.key
+							) {
 								parameter = jobDefinitionParameter;
 
 								break;
 							}
 						}
 
-						return (
-							<Jethr0InformationField
-								fieldLabel={parameter.label}
-								fieldType={parameter.type.name}
-								fieldValue={value}
-								key={key}
-							/>
-						);
+						if (parameter) {
+							return (
+								<Jethr0InformationField
+									fieldLabel={parameter.label}
+									fieldType={parameter.type.name}
+									fieldValue={jobParameter.value}
+									key={jobParameter.key}
+								/>
+							);
+						}
 					})}
 			</ClayPanel.Body>
 		</ClayPanel>
@@ -225,7 +229,12 @@ function JobPage() {
 	}
 
 	function redirectToJobsPage() {
-		window.location.replace('/#/jobs');
+		if (job.routine) {
+			window.location.replace('/#/routines/' + job.routine.id);
+		}
+		else {
+			window.location.replace('/#/jobs');
+		}
 	}
 
 	let jobName = 'Job #' + id;
@@ -234,16 +243,31 @@ function JobPage() {
 		jobName = job.name;
 	}
 
-	const breadcrumbs = [
+	let breadcrumbs = [
 		{active: false, link: '/', name: 'Home'},
 		{active: false, link: '/jobs', name: 'Jobs'},
 		{active: true, link: '/jobs/' + id, name: jobName},
 	];
 
+	if (job.routine) {
+		breadcrumbs = [
+			{active: false, link: '/', name: 'Home'},
+			{active: false, link: '/routines', name: 'Routines'},
+			{
+				active: false,
+				link: '/routines/' + job.routine.id,
+				name: job.routine.name,
+			},
+			{active: true, link: '/jobs/' + id, name: jobName},
+		];
+	}
+
 	return (
 		<ClayLayout.Container>
 			<Jethr0Card>
-				<Jethr0NavigationBar active="Jobs" />
+				<Jethr0NavigationBar
+					active={job.routine ? 'Routines' : 'Jobs'}
+				/>
 				<Jethr0Breadcrumbs breadcrumbs={breadcrumbs} />
 				<Jethr0ContainerFluid>
 					<ClayLayout.Row justify="between">

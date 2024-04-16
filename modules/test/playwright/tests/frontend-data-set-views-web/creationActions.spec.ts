@@ -28,7 +28,6 @@ export const test = mergeTests(
 	featureFlagsTest({
 		'LPS-164563': true,
 		'LPS-178052': true,
-		'LPS-186871': true,
 	}),
 	loginTest(),
 	dataSetManagerSetupTest
@@ -214,7 +213,8 @@ export const fragmentTest = mergeTests(
 		'LPS-178052': true,
 	}),
 	fdsFragmentPageTest,
-	isolatedSiteTest
+	isolatedSiteTest,
+	loginTest()
 );
 
 fragmentTest.describe('Creation Actions in the fragment', () => {

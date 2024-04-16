@@ -42,39 +42,35 @@ const DEFAULT_PROPS = {
 	selectedLanguageId: 'en_US',
 };
 
-const TRANSLATED_PROPS = {
-	...DEFAULT_PROPS,
-	selectedLanguageId: 'ar_SA',
-	translationProgress: {
-		totalItems: 4,
-		translatedItems: {
-			ar_SA: 1,
-		},
-	},
-};
-
 const renderDefaultComponent = () =>
 	render(<TranslationOptions {...DEFAULT_PROPS} />);
-
-const renderTranslatedComponent = () =>
-	render(<TranslationOptions {...TRANSLATED_PROPS} />);
-
-describe('ResetTranslationsButton', () => {
+describe('TranslationOptions', () => {
 	Liferay.FeatureFlags['LPD-11253'] = true;
 
-	it('reset translations button is disabled with default language', () => {
+	it('translations options ellipsis not rendered when default language is selected', () => {
 		renderDefaultComponent();
 
-		const resetTranslationsButton = screen.getByText('reset-translation');
+		const resetTranslationsButton = screen.queryByTitle(
+			'translation-options'
+		);
 
-		expect(resetTranslationsButton).toBeDisabled();
+		expect(resetTranslationsButton).not.toBeInTheDocument();
 	});
 
-	it('reset translations button is enabled when there is a translation in progress', () => {
-		renderTranslatedComponent();
+	describe('Reset Translations Button', () => {
+		it('reset translations button is disabled when default language is selected', () => {
+			render(
+				<TranslationOptions
+					{...DEFAULT_PROPS}
+					selectedLanguageId="ca_ES"
+				/>
+			);
 
-		const resetTranslationsButton = screen.getByText('reset-translation');
+			const resetTranslationsButton = screen.getByText(
+				'reset-translation'
+			);
 
-		expect(resetTranslationsButton).not.toBeDisabled();
+			expect(resetTranslationsButton).toBeDisabled();
+		});
 	});
 });

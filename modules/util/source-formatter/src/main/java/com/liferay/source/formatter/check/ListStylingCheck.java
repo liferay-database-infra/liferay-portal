@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * @author Alan Huang
  */
-public class ListClientExtensionsFileCheck extends BaseFileCheck {
+public class ListStylingCheck extends BaseFileCheck {
 
 	@Override
 	public boolean isLiferaySourceCheck() {
@@ -31,13 +31,6 @@ public class ListClientExtensionsFileCheck extends BaseFileCheck {
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
 		throws IOException {
-
-		if (!absolutePath.endsWith(
-				"modules/test/playwright/tests/client-extension-web/env" +
-					"/client-extensions.list")) {
-
-			return content;
-		}
 
 		List<String> lines = new ArrayList<>();
 
