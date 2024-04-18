@@ -25,6 +25,7 @@ import useIsChannel from '../../common/hooks/useIsChannel';
 import useLiferayNavigate from '../../common/hooks/useLiferayNavigate';
 import usePagination from '../../common/hooks/usePagination';
 import usePermissionActions from '../../common/hooks/usePermissionActions';
+import useQueryParams from '../../common/hooks/useQueryParams';
 import {MDFClaimListItem} from '../../common/interfaces/mdfClaimListItem';
 import TableColumn from '../../common/interfaces/tableColumn';
 import {Filters} from '../../common/utils/constants/filters';
@@ -45,20 +46,20 @@ const MAX_ITEMS = -1;
 const MDFClaimList = () => {
 	const {isChannel} = useIsChannel();
 
+	const urlParams = useQueryParams();
 	const [openClaimsFilter, setOpenClaimsFilter] = useState(
-		JSON.parse(sessionStorage.getItem('openClaimsFilter')!) === null
-			? true
-			: JSON.parse(sessionStorage.getItem('openClaimsFilter')!)
+		!urlParams.get('tab') || urlParams.get('tab') === 'open' ? true : false
 	);
 
 	const {companiesEntries} = useDynamicFieldEntries();
 
 	const {filters, filtersTerm, onFilter, setFilters} = useFilters(
 		openClaimsFilter,
+		urlParams,
 		isChannel
 	);
 
-	const pagination = usePagination();
+	const pagination = usePagination(urlParams);
 	const {data, isValidating, mutate} = useGetListItemsFromMDFClaims(
 		pagination.activePage,
 		pagination.activeDelta,
@@ -75,7 +76,7 @@ const MDFClaimList = () => {
 
 	const actions = usePermissionActions(ObjectActionName.MDF_CLAIM);
 
-	const columns = getMDFClaimListColumns(siteURL, actions, mutate);
+	const columns = getMDFClaimListColumns(urlParams, siteURL, actions, mutate);
 
 	const getTable = (
 		totalCount: number,
@@ -122,14 +123,20 @@ const MDFClaimList = () => {
 					<ClayTabs.Item
 						active={openClaimsFilter}
 						className="nav-item"
-						onClick={() => setOpenClaimsFilter(true)}
+						onClick={() => {
+							setOpenClaimsFilter(true);
+							urlParams.set('tab', 'open');
+						}}
 					>
 						Open
 					</ClayTabs.Item>
 					<ClayTabs.Item
 						active={!openClaimsFilter}
 						className="nav-item"
-						onClick={() => setOpenClaimsFilter(false)}
+						onClick={() => {
+							setOpenClaimsFilter(false);
+							urlParams.set('tab', 'completed');
+						}}
 					>
 						Completed
 					</ClayTabs.Item>
@@ -146,6 +153,7 @@ const MDFClaimList = () => {
 									searchTerm,
 								})
 							}
+							urlParams={urlParams}
 						/>
 
 						<div className="bd-highlight flex-shrink-2 mt-1">

@@ -1,4 +1,4 @@
-# Checks for .list
+# Checks for 
 
 Check | Category | Description
 ----- | -------- | -----------

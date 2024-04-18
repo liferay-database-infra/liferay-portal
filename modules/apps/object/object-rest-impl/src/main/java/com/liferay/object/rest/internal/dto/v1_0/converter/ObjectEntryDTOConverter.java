@@ -66,6 +66,7 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.File;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlParserUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -698,15 +699,27 @@ public class ObjectEntryDTOConverter
 				continue;
 			}
 
-			if (objectField.isLocalized()) {
-				map.put(
-					objectField.getI18nObjectFieldName(),
-					values.get(objectField.getI18nObjectFieldName()));
-			}
-
 			String objectFieldName = objectField.getName();
 
 			Serializable serializable = values.get(objectFieldName);
+
+			if (objectField.isLocalized()) {
+				String i18nObjectFieldName =
+					objectField.getI18nObjectFieldName();
+
+				Map<String, Serializable> objectField_i18n =
+					(Map<String, Serializable>)values.get(i18nObjectFieldName);
+
+				map.put(i18nObjectFieldName, objectField_i18n);
+
+				if ((dtoConverterContext.getLocale() != null) &&
+					(objectField_i18n != null)) {
+
+					serializable = GetterUtil.getString(
+						objectField_i18n.get(
+							String.valueOf(dtoConverterContext.getLocale())));
+				}
+			}
 
 			if (objectField.compareBusinessType(
 					ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT)) {
@@ -844,7 +857,8 @@ public class ObjectEntryDTOConverter
 				map.put(objectFieldName, serializable);
 				map.put(
 					objectFieldName + "RawText",
-					ObjectEntryValuesUtil.getValueString(objectField, values));
+					HtmlParserUtil.extractText(
+						GetterUtil.getString(serializable)));
 			}
 			else if (Objects.equals(
 						objectField.getRelationshipType(),

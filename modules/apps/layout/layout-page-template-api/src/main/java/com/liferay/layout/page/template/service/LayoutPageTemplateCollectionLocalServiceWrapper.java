@@ -54,15 +54,31 @@ public class LayoutPageTemplateCollectionLocalServiceWrapper
 
 	@Override
 	public LayoutPageTemplateCollection addLayoutPageTemplateCollection(
-			long userId, long groupId, long parentLayoutPageTemplateCollection,
-			String name, String description, int type,
+			long userId, long groupId,
+			long parentLayoutPageTemplateCollectionId, String name,
+			String description, int type,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _layoutPageTemplateCollectionLocalService.
 			addLayoutPageTemplateCollection(
-				userId, groupId, parentLayoutPageTemplateCollection, name,
+				userId, groupId, parentLayoutPageTemplateCollectionId, name,
 				description, type, serviceContext);
+	}
+
+	@Override
+	public LayoutPageTemplateCollection copyLayoutPageTemplateCollection(
+			long userId, long groupId,
+			long sourceLayoutPageTemplateCollectionId,
+			long layoutParentPageTemplateCollectionId, boolean copyPermissions,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws Exception {
+
+		return _layoutPageTemplateCollectionLocalService.
+			copyLayoutPageTemplateCollection(
+				userId, groupId, sourceLayoutPageTemplateCollectionId,
+				layoutParentPageTemplateCollectionId, copyPermissions,
+				serviceContext);
 	}
 
 	/**
@@ -411,6 +427,16 @@ public class LayoutPageTemplateCollectionLocalServiceWrapper
 	@Override
 	public java.util.List<LayoutPageTemplateCollection>
 		getLayoutPageTemplateCollections(
+			long groupId, long layoutPageTemplateCollectionId, int type) {
+
+		return _layoutPageTemplateCollectionLocalService.
+			getLayoutPageTemplateCollections(
+				groupId, layoutPageTemplateCollectionId, type);
+	}
+
+	@Override
+	public java.util.List<LayoutPageTemplateCollection>
+		getLayoutPageTemplateCollections(
 			long groupId, String name, int type, int start, int end,
 			com.liferay.portal.kernel.util.OrderByComparator
 				<LayoutPageTemplateCollection> orderByComparator) {
@@ -508,10 +534,11 @@ public class LayoutPageTemplateCollectionLocalServiceWrapper
 
 	@Override
 	public String getUniqueLayoutPageTemplateCollectionName(
-		long groupId, String name, int type) {
+		long groupId, String sourceName, int type) {
 
 		return _layoutPageTemplateCollectionLocalService.
-			getUniqueLayoutPageTemplateCollectionName(groupId, name, type);
+			getUniqueLayoutPageTemplateCollectionName(
+				groupId, sourceName, type);
 	}
 
 	@Override

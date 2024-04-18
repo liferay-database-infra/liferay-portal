@@ -14,6 +14,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import FieldBase from '../FieldBase/ReactFieldBase.es';
 import {useSyncValue} from '../hooks/useSyncValue.es';
+import fieldPopoverMap from '../util/fieldPopoverMap';
 import {getTooltipTitle} from '../util/tooltip';
 import withConfirmationField from '../util/withConfirmationField.es';
 
@@ -70,6 +71,7 @@ const Text = ({
 	editingLanguageId,
 	error,
 	fieldName,
+	htmlAutocompleteAttribute,
 	id,
 	invalidCharacters,
 	localizable,
@@ -163,6 +165,9 @@ const Text = ({
 				>
 					<ClayInput
 						{...accessibleProps}
+						{...(htmlAutocompleteAttribute && {
+							autoComplete: htmlAutocompleteAttribute,
+						})}
 						className="ddm-field-text"
 						dir={Liferay.Language.direction[editingLanguageId]}
 						disabled={disabled}
@@ -211,6 +216,7 @@ const Textarea = ({
 	displayErrors,
 	editingLanguageId,
 	error,
+	htmlAutocompleteAttribute,
 	id,
 	maxLength,
 	name,
@@ -235,6 +241,9 @@ const Textarea = ({
 				>
 					<textarea
 						{...accessibleProps}
+						{...(htmlAutocompleteAttribute && {
+							autoComplete: htmlAutocompleteAttribute,
+						})}
 						className="ddm-field-text form-control"
 						dir={Liferay.Language.direction[editingLanguageId]}
 						disabled={disabled}
@@ -271,6 +280,7 @@ const Autocomplete = ({
 	accessibleProps,
 	disabled,
 	editingLanguageId,
+	htmlAutocompleteAttribute,
 	id,
 	name,
 	onBlur,
@@ -350,6 +360,9 @@ const Autocomplete = ({
 		<ClayAutocomplete>
 			<ClayAutocomplete.Input
 				{...accessibleProps}
+				{...(htmlAutocompleteAttribute && {
+					autoComplete: htmlAutocompleteAttribute,
+				})}
 				dir={Liferay.Language.direction[editingLanguageId]}
 				disabled={disabled}
 				id={id}
@@ -452,6 +465,7 @@ const Main = ({
 	displayStyle = 'singleline',
 	showCounter,
 	fieldName,
+	htmlAutocompleteAttribute,
 	id,
 	invalidCharacters = '',
 	locale,
@@ -498,6 +512,7 @@ const Main = ({
 			id={id}
 			localizedValue={localizedValue}
 			name={name}
+			popover={fieldPopoverMap[fieldName]}
 			readOnly={readOnly}
 			repeatable={repeatable}
 			valid={error.valid ?? valid}
@@ -519,6 +534,7 @@ const Main = ({
 				editingLanguageId={locale}
 				error={error}
 				fieldName={fieldName}
+				htmlAutocompleteAttribute={htmlAutocompleteAttribute}
 				id={id ?? name}
 				invalidCharacters={invalidCharacters}
 				localizable={localizable}

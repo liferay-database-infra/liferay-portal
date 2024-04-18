@@ -37,7 +37,7 @@
 							{
 								"definition": {
 									"fragmentStyle": {
-										"maxWidth": "var(--container-max-md)",
+										"maxWidth": "700px",
 										"textAlign": "center",
 										"textColor": "colorNeutral0"
 									},
@@ -108,7 +108,7 @@
 					},
 					{
 						"definition": {
-							"customCSS": ".[$FRAGMENT_CLASS$] {\ngap: var(--spacer-4);\n}",
+							"customCSS": ".[$FRAGMENT_CLASS$] {\ngap: var(--spacer-5);\n}",
 							"fragmentStyle": {
 								"paddingBottom": "24px",
 								"paddingLeft": "24px",
@@ -135,7 +135,8 @@
 									"layout": {
 										"contentDisplay": "FlexColumn",
 										"widthType": "Fixed"
-									}
+									},
+									"name": "Results Menu Container"
 								},
 								"id": "a21130b0-2f84-87ec-5b44-beb3f8eab633",
 								"pageElements": [
@@ -204,19 +205,19 @@
 												"definition": {
 													"widgetInstance": {
 														"widgetConfig": {
-															"displayStyle": "default",
+															"displayStyle": "ddmTemplate_CATEGORY-FACET-VOCABULARY-FTL",
 															"displayStyleGroupId": "20119",
-															"frequenciesVisible": "false",
+															"frequenciesVisible": "true",
 															"frequencyThreshold": "1",
-															"maxTerms": "50",
-															"order": "key:asc",
+															"maxTerms": "12",
+															"order": "count:asc",
 															"parameterName": "capability",
-															"vocabularyIds": "32496,32376"
+															"vocabularyIds": "93597,133267"
 														},
 														"widgetName": "com_liferay_portal_search_web_category_facet_portlet_CategoryFacetPortlet"
 													}
 												},
-												"id": "52ad25f2-dd94-6f37-d173-4312fbc782a1",
+												"id": "d6f8fb87-882d-ef33-097d-112ed3de5705",
 												"type": "Widget"
 											}
 										],
@@ -320,23 +321,25 @@
 									},
 									"indexed": true,
 									"layout": {
-										"align": "Center",
+										"align": "Start",
 										"contentDisplay": "FlexColumn"
-									}
+									},
+									"name": "Results Content Container"
 								},
 								"id": "2befb3f2-edef-2e9a-9504-0972b3fe1478",
 								"pageElements": [
 									{
 										"definition": {
+											"customCSS": ".[$FRAGMENT_CLASS$] {\ntext-align:left;\n}",
 											"fragmentStyle": {
-												"maxWidth": "var(--container-max-md)",
+												"maxWidth": "50rem",
 												"width": "100%"
 											},
 											"widgetInstance": {
 												"widgetConfig": {
 													"displayInDocumentForm": "false",
 													"displayStyle": "ddmTemplate_LEARN_SEARCH_RESULTS",
-													"displayStyleGroupId": "32201",
+													"displayStyleGroupId": "32323",
 													"federatedSearchKey": "",
 													"fieldsToDisplay": "",
 													"highlightEnabled": "false",

@@ -41,6 +41,13 @@ type TDataApiHelpersData = {
 	type: string;
 };
 
+type TPostOptions = {
+	data?: DataObject | any[] | string;
+	failOnStatusCode?: boolean;
+	headers?: {[key: string]: string};
+	multipart?: {[key: string]: any};
+};
+
 export class ApiHelpers {
 	readonly apiBuilder: ApiBuilderHelper;
 	readonly baseUrl: string;
@@ -119,29 +126,18 @@ export class ApiHelpers {
 
 	async postResponse(
 		url: string,
-		data: DataObject | any[] | string,
-		failOnStatusCode?: boolean,
-		headers?: {[key: string]: string}
+		{data, failOnStatusCode, headers, multipart}: TPostOptions = {}
 	) {
 		return await this.page.request.post(url, {
 			data,
 			failOnStatusCode: failOnStatusCode || false,
 			headers: headers || (await this.getHeader()),
+			multipart,
 		});
 	}
 
-	async post(
-		url: string,
-		data?: DataObject | any[] | string,
-		failOnStatusCode?: boolean,
-		headers?: {[key: string]: string}
-	) {
-		const response = await this.postResponse(
-			url,
-			data,
-			failOnStatusCode,
-			headers
-		);
+	async post(url: string, options: TPostOptions = {}) {
+		const response = await this.postResponse(url, options);
 
 		if (response.status() === 204) {
 			return;
@@ -202,18 +198,18 @@ export class ApiHelpers {
 		return {
 			'Authorization': ApiHelpers._authorization,
 			'Content-Type': 'application/x-www-form-urlencoded',
-			...(await this._getCSRFTokenHeader()),
+			...(await this.getCSRFTokenHeader()),
 		};
 	}
 
 	async getHeader() {
 		return {
 			'Content-Type': 'application/json',
-			...(await this._getCSRFTokenHeader()),
+			...(await this.getCSRFTokenHeader()),
 		};
 	}
 
-	async _getCSRFTokenHeader() {
+	async getCSRFTokenHeader() {
 		const authToken = await this.page.evaluate(() => Liferay.authToken);
 
 		return {
@@ -234,6 +230,10 @@ export class DataApiHelpers extends ApiHelpers {
 	async clearData() {
 		for await (const item of this.data.reverse()) {
 			switch (item.type) {
+				case 'account':
+					await this.headlessAdminUser.deleteAccount(item.id);
+
+					break;
 				case 'catalog':
 					await this.headlessCommerceAdminCatalog.deleteCatalog(
 						item.id

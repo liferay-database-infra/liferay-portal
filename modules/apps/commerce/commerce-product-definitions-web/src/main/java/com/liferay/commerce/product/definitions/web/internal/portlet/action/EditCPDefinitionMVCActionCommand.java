@@ -33,6 +33,7 @@ import com.liferay.commerce.product.service.CommerceChannelRelService;
 import com.liferay.commerce.product.servlet.taglib.ui.constants.CPDefinitionScreenNavigationConstants;
 import com.liferay.commerce.service.CPDAvailabilityEstimateService;
 import com.liferay.commerce.service.CPDefinitionInventoryService;
+import com.liferay.commerce.util.CommerceOrderItemQuantityFormatter;
 import com.liferay.friendly.url.exception.FriendlyURLLengthException;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
@@ -605,14 +606,16 @@ public class EditCPDefinitionMVCActionCommand extends BaseMVCActionCommand {
 		boolean displayStockQuantity = ParamUtil.getBoolean(
 			actionRequest, "displayStockQuantity");
 		boolean backOrders = ParamUtil.getBoolean(actionRequest, "backOrders");
-		BigDecimal minStockQuantity = (BigDecimal)ParamUtil.getNumber(
-			actionRequest, "minStockQuantity", BigDecimal.ZERO);
-		BigDecimal minOrderQuantity = (BigDecimal)ParamUtil.getNumber(
-			actionRequest, "minOrderQuantity", BigDecimal.ZERO);
-		BigDecimal maxOrderQuantity = (BigDecimal)ParamUtil.getNumber(
-			actionRequest, "maxOrderQuantity", BigDecimal.ZERO);
-		BigDecimal multipleOrderQuantity = (BigDecimal)ParamUtil.getNumber(
-			actionRequest, "multipleOrderQuantity", BigDecimal.ZERO);
+		BigDecimal minStockQuantity = _commerceOrderItemQuantityFormatter.parse(
+			actionRequest, "minStockQuantity");
+		BigDecimal minOrderQuantity = _commerceOrderItemQuantityFormatter.parse(
+			actionRequest, "minOrderQuantity");
+		BigDecimal maxOrderQuantity = _commerceOrderItemQuantityFormatter.parse(
+			actionRequest, "maxOrderQuantity");
+		BigDecimal multipleOrderQuantity =
+			_commerceOrderItemQuantityFormatter.parse(
+				actionRequest, "multipleOrderQuantity");
+
 		String allowedOrderQuantities = ParamUtil.getString(
 			actionRequest, "allowedOrderQuantities");
 
@@ -719,6 +722,10 @@ public class EditCPDefinitionMVCActionCommand extends BaseMVCActionCommand {
 
 	@Reference
 	private CommerceChannelRelService _commerceChannelRelService;
+
+	@Reference
+	private CommerceOrderItemQuantityFormatter
+		_commerceOrderItemQuantityFormatter;
 
 	@Reference
 	private ConfigurationProvider _configurationProvider;

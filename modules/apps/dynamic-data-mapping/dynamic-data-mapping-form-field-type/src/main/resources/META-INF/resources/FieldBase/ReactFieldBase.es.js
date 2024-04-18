@@ -109,9 +109,9 @@ const RequiredProperty = () => {
 	);
 };
 
-const TooltipProperty = ({showPopover = false, tooltip}) => {
-	return showPopover ? (
-		<Popover tooltip={tooltip} />
+const FieldInformation = ({popover, tooltip}) => {
+	return popover ? (
+		<Popover {...popover} />
 	) : Liferay.FeatureFlags['LPS-114700'] ? (
 		<span
 			className="c-ml-2 text-4 text-secondary"
@@ -127,20 +127,18 @@ const TooltipProperty = ({showPopover = false, tooltip}) => {
 	);
 };
 
-const Popover = ({tooltip}) => {
+const Popover = ({alignPosition, content, header, hideOnTriggerOut, image}) => {
 	const [isPopoverVisible, setIsPopoverVisible] = useState(false);
 
-	const POPOVER_IMAGE_HEIGHT = 170;
-	const POPOVER_IMAGE_WIDTH = 232;
 	const POPOVER_MAX_WIDTH = 256;
 
 	return (
 		<ClayPopover
-			alignPosition="right-bottom"
+			alignPosition={alignPosition}
 			closeOnClickOutside
 			data-testid="clayPopover"
 			disableScroll
-			header={Liferay.Language.get('input-mask-format')}
+			header={header}
 			onShowChange={setIsPopoverVisible}
 			show={isPopoverVisible}
 			style={{maxWidth: POPOVER_MAX_WIDTH}}
@@ -157,7 +155,9 @@ const Popover = ({tooltip}) => {
 				) : (
 					<span
 						className="ddm-tooltip"
-						onMouseOut={() => setIsPopoverVisible(false)}
+						onMouseOut={() =>
+							hideOnTriggerOut && setIsPopoverVisible(false)
+						}
 						onMouseOver={() => setIsPopoverVisible(true)}
 					>
 						<ClayIcon symbol="question-circle-full" />
@@ -165,14 +165,21 @@ const Popover = ({tooltip}) => {
 				)
 			}
 		>
-			<p>{tooltip}</p>
-
-			<img
-				alt={Liferay.Language.get('input-mask-format')}
-				height={POPOVER_IMAGE_HEIGHT}
-				src={`${themeDisplay.getPathThemeImages()}/forms/input_mask_format.png`}
-				width={POPOVER_IMAGE_WIDTH}
+			<p
+				className="mb-4"
+				dangerouslySetInnerHTML={{
+					__html: content,
+				}}
 			/>
+
+			{image && (
+				<img
+					alt={image.alt}
+					height={image.height}
+					src={image.src}
+					width={image.width}
+				/>
+			)}
 		</ClayPopover>
 	);
 };
@@ -199,6 +206,7 @@ export default function FieldBase({
 	nestedFields,
 	onClick,
 	overMaximumRepetitionsLimit,
+	popover,
 	readOnly,
 	repeatable,
 	required,
@@ -271,7 +279,7 @@ export default function FieldBase({
 		type === 'grid' ||
 		type === 'paragraph' ||
 		type === 'radio';
-	const showPopover = fieldName === 'inputMaskFormat';
+	const popoverOrTooltip = !!popover || !!tooltip;
 	const showFor =
 		type === 'date' ||
 		type === 'document_library' ||
@@ -530,15 +538,15 @@ export default function FieldBase({
 								{required && <RequiredProperty />}
 							</label>
 
-							{tooltip && (
-								<TooltipProperty
-									showPopover={showPopover}
+							{popoverOrTooltip && (
+								<FieldInformation
+									popover={popover}
 									tooltip={tooltip}
 								/>
 							)}
 
 							{showDisabledFieldIcon && (
-								<TooltipProperty
+								<FieldInformation
 									tooltip={Liferay.Language.get(
 										'this-field-cannot-be-localized'
 									)}
@@ -571,15 +579,15 @@ export default function FieldBase({
 								{hideField && <HideFieldProperty />}
 							</label>
 
-							{showLabel && tooltip && (
-								<TooltipProperty
-									showPopover={showPopover}
+							{showLabel && popoverOrTooltip && (
+								<FieldInformation
+									popover={popover}
 									tooltip={tooltip}
 								/>
 							)}
 
 							{showDisabledFieldIcon && (
-								<TooltipProperty
+								<FieldInformation
 									tooltip={Liferay.Language.get(
 										'this-field-cannot-be-localized'
 									)}
@@ -588,9 +596,9 @@ export default function FieldBase({
 
 							{children}
 
-							{!showLabel && tooltip && (
-								<TooltipProperty
-									showPopover={showPopover}
+							{!showLabel && popoverOrTooltip && (
+								<FieldInformation
+									popover={popover}
 									tooltip={tooltip}
 								/>
 							)}

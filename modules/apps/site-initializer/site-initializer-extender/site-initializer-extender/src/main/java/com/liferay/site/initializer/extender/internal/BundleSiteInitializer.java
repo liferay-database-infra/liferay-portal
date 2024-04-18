@@ -918,11 +918,42 @@ public class BundleSiteInitializer implements SiteInitializer {
 		for (int i = 0; i < jsonArray.length(); i++) {
 			JSONObject jsonObject = jsonArray.getJSONObject(i);
 
+			Object data = jsonObject.get("data");
+
+			if (data instanceof JSONObject) {
+				Map<Locale, Object> map = new HashMap<>();
+
+				JSONObject dataJSONObject = (JSONObject)data;
+
+				Map<String, Object> dataJSONObjectMap = dataJSONObject.toMap();
+
+				for (Map.Entry<String, Object> entry :
+						dataJSONObjectMap.entrySet()) {
+
+					Object value = entry.getValue();
+
+					if (!(value instanceof List)) {
+						map.put(
+							LocaleUtil.fromLanguageId(entry.getKey()), value);
+
+						continue;
+					}
+
+					List<?> values = (List<?>)value;
+
+					map.put(
+						LocaleUtil.fromLanguageId(entry.getKey()),
+						values.toArray(new String[0]));
+				}
+
+				data = map;
+			}
+
 			_expandoValueLocalService.addValue(
 				serviceContext.getCompanyId(),
 				jsonObject.getString("className"), "CUSTOM_FIELDS",
 				jsonObject.getString("columnName"),
-				jsonObject.getLong("classPk"), jsonObject.get("data"));
+				jsonObject.getLong("classPk"), data);
 		}
 	}
 

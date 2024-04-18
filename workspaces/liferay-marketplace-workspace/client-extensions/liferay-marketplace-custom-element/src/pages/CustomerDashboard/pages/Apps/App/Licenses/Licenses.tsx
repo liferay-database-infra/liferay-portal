@@ -104,6 +104,7 @@ const Licenses = () => {
 		licenseKeyModal,
 		marketplaceSpringBootOAuth2,
 		mutate,
+		product,
 		setModal: setModalData,
 	});
 

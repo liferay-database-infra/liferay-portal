@@ -3,6 +3,27 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+type CollectionConfig = {
+	collectionReference: {
+		className?: string;
+		classPK?: number;
+	};
+	collectionType?: 'Collection' | 'CollectionProvider';
+};
+
+type FragmentField = {
+	value: {
+		text: {
+			mapping: {
+				fieldKey: string;
+				itemReference: {
+					contextSource: string;
+				};
+			};
+		};
+	};
+};
+
 type Layout = {
 	friendlyUrlPath: string;
 };
@@ -13,11 +34,16 @@ type PageDefinition = {
 
 type PageElement = {
 	definition?: {
+		collectionConfig?: CollectionConfig;
 		fragment?: {
 			key: string;
 		};
 		fragmentConfig?: Record<string, string>;
+		fragmentFields?: FragmentField[];
 		layout?: {};
+		listStyle?: string;
+		numberOfColumns?: number;
+		numberOfItems?: number;
 		widgetInstance?: {
 			widgetName: string;
 		};

@@ -79,10 +79,17 @@ public interface LayoutPageTemplateCollectionLocalService
 		LayoutPageTemplateCollection layoutPageTemplateCollection);
 
 	public LayoutPageTemplateCollection addLayoutPageTemplateCollection(
-			long userId, long groupId, long parentLayoutPageTemplateCollection,
-			String name, String description, int type,
-			ServiceContext serviceContext)
+			long userId, long groupId,
+			long parentLayoutPageTemplateCollectionId, String name,
+			String description, int type, ServiceContext serviceContext)
 		throws PortalException;
+
+	public LayoutPageTemplateCollection copyLayoutPageTemplateCollection(
+			long userId, long groupId,
+			long sourceLayoutPageTemplateCollectionId,
+			long layoutParentPageTemplateCollectionId, boolean copyPermissions,
+			ServiceContext serviceContext)
+		throws Exception;
 
 	/**
 	 * Creates a new layout page template collection with the primary key. Does not add the layout page template collection to the database.
@@ -306,6 +313,10 @@ public interface LayoutPageTemplateCollectionLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<LayoutPageTemplateCollection> getLayoutPageTemplateCollections(
+		long groupId, long layoutPageTemplateCollectionId, int type);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<LayoutPageTemplateCollection> getLayoutPageTemplateCollections(
 		long groupId, String name, int type, int start, int end,
 		OrderByComparator<LayoutPageTemplateCollection> orderByComparator);
 
@@ -369,7 +380,7 @@ public interface LayoutPageTemplateCollectionLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public String getUniqueLayoutPageTemplateCollectionName(
-		long groupId, String name, int type);
+		long groupId, String sourceName, int type);
 
 	public LayoutPageTemplateCollection moveLayoutPageTemplateCollection(
 			long layoutPageTemplateCollectionId,

@@ -13,6 +13,7 @@ import {z} from 'zod';
 
 import FooterButtons from '../../../../../../../components/FooterButtons';
 import {useMarketplaceContext} from '../../../../../../../context/MarketplaceContext';
+import {Analytics} from '../../../../../../../core/Analytics';
 import useGetProductByOrderId from '../../../../../../../hooks/useGetProductByOrderId';
 import useMarketplaceSpringBootOAuth2 from '../../../../../../../hooks/useMarketplaceSpringBootOAuth2';
 import {Liferay} from '../../../../../../../liferay/liferay';
@@ -156,9 +157,22 @@ const CreateLicense = () => {
 					type: 'success',
 				});
 
+				Analytics.track('CREATE_LICENSE_KEY', {
+					licenseType: licenseKey.licenseType,
+					productName: product?.name,
+					type: form.subscription?.name,
+				});
+
 				navigate(`/order/${orderId}/licenses`);
 
-				marketplaceSpringBootOAuth2.downloadLicenseKey(licenseKey.id);
+				await marketplaceSpringBootOAuth2.downloadLicenseKey(
+					licenseKey.id
+				);
+
+				Analytics.track('DOWNLOAD_LICENSE_KEY', {
+					licenseType: licenseKey.licenseType,
+					productName: product?.name,
+				});
 			}
 			catch {
 				Liferay.Util.openToast({
@@ -169,7 +183,7 @@ const CreateLicense = () => {
 
 			setLoading(false);
 		},
-		[navigate, orderId, marketplaceSpringBootOAuth2]
+		[marketplaceSpringBootOAuth2, orderId, product?.name, navigate]
 	);
 
 	const buttonsInfo = useMemo(
