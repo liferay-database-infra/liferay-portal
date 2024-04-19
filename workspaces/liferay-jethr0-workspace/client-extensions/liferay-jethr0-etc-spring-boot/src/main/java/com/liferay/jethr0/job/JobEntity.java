@@ -9,6 +9,7 @@ import com.liferay.jethr0.bui1d.BuildEntity;
 import com.liferay.jethr0.entity.Entity;
 import com.liferay.jethr0.git.branch.GitBranchEntity;
 import com.liferay.jethr0.jenkins.cohort.JenkinsCohortEntity;
+import com.liferay.jethr0.routine.RoutineEntity;
 import com.liferay.jethr0.task.TaskEntity;
 import com.liferay.jethr0.testsuite.TestSuiteEntity;
 import com.liferay.jethr0.util.EntityUtil;
@@ -69,6 +70,10 @@ public interface JobEntity extends Entity {
 
 	public int getPriority();
 
+	public RoutineEntity getRoutineEntity();
+
+	public long getRoutineEntityId();
+
 	public Date getStartDate();
 
 	public State getState();
@@ -105,9 +110,13 @@ public interface JobEntity extends Entity {
 
 	public void setName(String name);
 
+	public void setParameters(Map<String, String> parameters);
+
 	public void setParameterValue(String name, String value);
 
 	public void setPriority(int priority);
+
+	public void setRoutineEntity(RoutineEntity routineEntity);
 
 	public void setStartDate(Date startDate);
 

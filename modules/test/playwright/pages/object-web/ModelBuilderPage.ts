@@ -5,6 +5,7 @@
 
 import {Locator, Page, expect} from '@playwright/test';
 
+import {PORTLET_URLS} from '../../utils/portletUrls';
 import {ViewObjectDefinitionsPage} from './ViewObjectDefinitionsPage';
 
 export class ModelBuilderPage {
@@ -26,6 +27,7 @@ export class ModelBuilderPage {
 	readonly newObjectRelationshipSaveButton: Locator;
 	readonly objectDefinitionNodes: Locator;
 	readonly objectRelationshipEdges: Locator;
+	readonly otherObjectFolders: Locator;
 	readonly page: Page;
 	readonly toggleSidebarsButton: Locator;
 	readonly viewObjectDefinitionsPage: ViewObjectDefinitionsPage;
@@ -86,6 +88,9 @@ export class ModelBuilderPage {
 		this.viewObjectDefinitionsPage = new ViewObjectDefinitionsPage(page);
 		this.objectDefinitionNodes = page.locator('.react-flow__node');
 		this.objectRelationshipEdges = page.locator('.react-flow__edge');
+		this.otherObjectFolders = page
+			.getByRole('region')
+			.filter({has: page.getByTitle('Go to Folder')});
 		this.page = page;
 		this.toggleSidebarsButton = page.getByLabel('Toggle Sidebars');
 	}
@@ -123,7 +128,7 @@ export class ModelBuilderPage {
 		objectDefinitionName,
 		objectFieldBusinessType,
 		objectFieldLabel,
-	}: createObjectField) {
+	}: CreateObjectField) {
 		await this.leftSidebarItems
 			.filter({hasText: objectDefinitionName})
 			.click();
@@ -213,8 +218,30 @@ export class ModelBuilderPage {
 		);
 	}
 
-	async goto() {
-		await this.viewObjectDefinitionsPage.goto();
-		await this.viewObjectDefinitionsPage.viewInModelBuilder();
+	getObjectFolderLabelHeaderLocator = (objectFolderLabel: string) => {
+		return this.page.getByTitle(
+			`Object Folder Label: ${objectFolderLabel}`
+		);
+	};
+
+	getOtherObjectFolderLocator = (objectFolderLabel: string) => {
+		return this.otherObjectFolders
+			.getByRole('treeitem')
+			.filter({hasText: objectFolderLabel});
+	};
+
+	async goto({
+		objectFolderName,
+		siteUrl,
+	}: {
+		objectFolderName: string;
+		siteUrl?: Site['friendlyUrlPath'];
+	}) {
+		await this.page.goto(
+			`/group${siteUrl || '/guest'}${
+				PORTLET_URLS.modelBuilder
+			}&objectFolderName=${objectFolderName}`,
+			{waitUntil: 'load'}
+		);
 	}
 }

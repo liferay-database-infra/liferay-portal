@@ -20,6 +20,16 @@ import {AppCreationFlow} from './pages/Apps/AppCreationFlow/AppCreationFlow';
 import Members from './pages/Members';
 import Projects from './pages/Projects';
 import Solutions from './pages/Solutions';
+import PublishSolutionForm from './pages/Solutions/NewSolutionFlow/PublishSolutionForm';
+import {
+	CompanyProfile,
+	ContactUs,
+	Create,
+	Details,
+	Header,
+	Profile,
+	Submit,
+} from './pages/Solutions/NewSolutionFlow/pages';
 
 const PublisherDashboardRouter = () => {
 	const {accountId} = Liferay.CommerceContext.account || {};
@@ -56,6 +66,16 @@ const PublisherDashboardRouter = () => {
 					element={<AppCreationFlow catalogId={String(catalogId)} />}
 					path="app/create"
 				/>
+
+				<Route element={<PublishSolutionForm />} path="solution">
+					<Route element={<Create />} path="publisher" />
+					<Route element={<Header />} path="header" />
+					<Route element={<Details />} path="details" />
+					<Route element={<Profile />} path="profile" />
+					<Route element={<ContactUs />} path="contact" />
+					<Route element={<CompanyProfile />} path="company" />
+					<Route element={<Submit />} path="submit" />
+				</Route>
 
 				<Route
 					element={

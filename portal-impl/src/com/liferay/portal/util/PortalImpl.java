@@ -128,6 +128,8 @@ import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.service.ResourceLocalServiceUtil;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalServiceUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.TicketLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserServiceUtil;
@@ -919,6 +921,17 @@ public class PortalImpl implements Portal {
 				}
 				else if (allowedDomain.equals(domain)) {
 					return url;
+				}
+				else if (allowedDomain.equals("PORTAL_DOMAIN")) {
+					ServiceContext serviceContext =
+						ServiceContextThreadLocal.getServiceContext();
+
+					ThemeDisplay themeDisplay =
+						serviceContext.getThemeDisplay();
+
+					if (domain.equals(themeDisplay.getPortalDomain())) {
+						return url;
+					}
 				}
 			}
 

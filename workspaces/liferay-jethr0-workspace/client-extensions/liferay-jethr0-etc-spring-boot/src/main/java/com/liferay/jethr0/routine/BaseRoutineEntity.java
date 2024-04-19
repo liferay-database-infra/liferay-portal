@@ -51,11 +51,6 @@ public abstract class BaseRoutineEntity
 	}
 
 	@Override
-	public String getCron() {
-		return _cron;
-	}
-
-	@Override
 	public Set<GitBranchEntity> getGitBranchEntities() {
 		return _gitBranchEntities;
 	}
@@ -98,8 +93,6 @@ public abstract class BaseRoutineEntity
 		Type type = getType();
 
 		jsonObject.put(
-			"cron", getCron()
-		).put(
 			"jobName", getJobName()
 		).put(
 			"jobParameters", String.valueOf(_getJobParametersJSONArray())
@@ -149,11 +142,6 @@ public abstract class BaseRoutineEntity
 	}
 
 	@Override
-	public void setCron(String cron) {
-		_cron = cron;
-	}
-
-	@Override
 	public void setJobName(String jobName) {
 		_jobName = jobName;
 	}
@@ -191,10 +179,15 @@ public abstract class BaseRoutineEntity
 		}
 
 		try {
-			JSONObject jobParametersJSONObject = new JSONObject(jobParameters);
+			JSONArray jobParametersJSONArray = new JSONArray(jobParameters);
 
-			for (String key : jobParametersJSONObject.keySet()) {
-				_jobParameters.put(key, jobParametersJSONObject.getString(key));
+			for (int i = 0; i < jobParametersJSONArray.length(); i++) {
+				JSONObject jobParameterJSONObject =
+					jobParametersJSONArray.getJSONObject(i);
+
+				_jobParameters.put(
+					jobParameterJSONObject.getString("key"),
+					jobParameterJSONObject.getString("value"));
 			}
 		}
 		catch (JSONException jsonException) {
@@ -244,7 +237,6 @@ public abstract class BaseRoutineEntity
 
 	private static final Log _log = LogFactory.getLog(BaseRoutineEntity.class);
 
-	private String _cron;
 	private final Set<GitBranchEntity> _gitBranchEntities = new HashSet<>();
 	private final Set<JobEntity> _jobEntities = new HashSet<>();
 	private String _jobName;

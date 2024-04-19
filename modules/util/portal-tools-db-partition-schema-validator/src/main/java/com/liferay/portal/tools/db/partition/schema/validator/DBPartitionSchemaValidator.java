@@ -39,7 +39,8 @@ public class DBPartitionSchemaValidator {
 			HelpFormatter helpFormatter = new HelpFormatter();
 
 			helpFormatter.printHelp(
-				"Liferay Portal Tools DB Partition Schema Validator", options);
+				"Liferay Portal Tools Database Partition Schema Validator",
+				options);
 
 			return;
 		}
@@ -184,14 +185,13 @@ public class DBPartitionSchemaValidator {
 		options.addRequiredOption(
 			"d", "db-name", true, "Set the database name.");
 		options.addOption("h", "help", false, "Print help message.");
-		options.addOption("j", "jdbc-url", true, "Set the JDBC url.");
+		options.addOption("j", "jdbc-url", true, "Set the JDBC URL.");
 		options.addRequiredOption(
-			"p", "password", true, "Set database user password.");
+			"p", "password", true, "Set the database user password.");
 		options.addOption(
-			"s", "schema-prefix", true,
-			"Set the schema prefix for nondefault partitions.");
+			"s", "schema-prefix", true, "Set the schema prefix.");
 		options.addRequiredOption(
-			"t", "db-type", true, "Set database type [mysql, postgresql].");
+			"t", "db-type", true, "Set the database type [mysql, postgresql].");
 		options.addRequiredOption(
 			"u", "user", true, "Set the database user name.");
 
