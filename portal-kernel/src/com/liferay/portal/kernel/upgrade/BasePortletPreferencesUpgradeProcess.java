@@ -340,14 +340,6 @@ public abstract class BasePortletPreferencesUpgradeProcess
 		long portletPreferencesId = (Long)values[0];
 		long companyId = (Long)values[1];
 
-		if (companyId <= 0) {
-			runSQL(
-				"delete from PortletPreferences where portletPreferencesId = " +
-					portletPreferencesId);
-
-			return;
-		}
-
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				"update PortletPreferences set preferences = ? where " +
 					"portletPreferencesId = ?")) {
@@ -410,19 +402,6 @@ public abstract class BasePortletPreferencesUpgradeProcess
 
 		long portletPreferencesId = (Long)values[0];
 		long companyId = (Long)values[1];
-
-		if (companyId <= 0) {
-			runSQL(
-				"delete from PortletPreferences where portletPreferencesId = " +
-					portletPreferencesId);
-
-			runSQL(
-				"delete from PortletPreferenceValue where " +
-					"portletPreferencesId = " + portletPreferencesId);
-
-			return;
-		}
-
 		int ownerType = (Integer)values[2];
 		long plid = (Long)values[3];
 		long ownerId = (Long)values[4];
