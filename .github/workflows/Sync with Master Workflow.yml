@@ -1,0 +1,15 @@
+name: Sync with Master
+on:
+   schedule:
+   - cron: '0 9 * * *'
+   workflow_dispatch:
+jobs:
+  create-pull-request:
+    runs-on: ubuntu-latest
+    env:
+        GITHUB_TOKEN: ${{ secrets.UPGRADETESTSUITETOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Sync with master using gh
+        run: |
+          gh repo sync liferay-database-infra/liferay-portal
