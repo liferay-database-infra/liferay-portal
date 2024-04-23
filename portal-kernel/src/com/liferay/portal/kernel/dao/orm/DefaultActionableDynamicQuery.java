@@ -45,6 +45,10 @@ public class DefaultActionableDynamicQuery implements ActionableDynamicQuery {
 		REQUIRES_NEW_TRANSACTION_CONFIG = builder.build();
 	}
 
+	public DefaultActionableDynamicQuery() {
+		_companyId = CompanyThreadLocal.getCompanyId();
+	}
+
 	@Override
 	public AddCriteriaMethod getAddCriteriaMethod() {
 		return _addCriteriaMethod;
@@ -276,8 +280,6 @@ public class DefaultActionableDynamicQuery implements ActionableDynamicQuery {
 					DefaultActionableDynamicQuery.class.getName());
 
 			if (_parallel && (executorService != null)) {
-				long companyId = CompanyThreadLocal.getCompanyId();
-
 				List<Future<Void>> futures = new ArrayList<>(objects.size());
 
 				for (final Object object : objects) {
@@ -286,7 +288,7 @@ public class DefaultActionableDynamicQuery implements ActionableDynamicQuery {
 							() -> {
 								try (SafeCloseable safeCloseable =
 										CompanyThreadLocal.setWithSafeCloseable(
-											companyId)) {
+											_companyId)) {
 
 									performAction(object);
 
