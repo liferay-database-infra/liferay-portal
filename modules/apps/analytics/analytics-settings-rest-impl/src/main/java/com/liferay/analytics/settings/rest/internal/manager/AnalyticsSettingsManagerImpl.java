@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.module.configuration.ConfigurationException;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.settings.SettingsDescriptor;
 import com.liferay.portal.kernel.settings.SettingsLocatorHelper;
@@ -29,7 +30,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
@@ -45,10 +45,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -105,7 +107,7 @@ public class AnalyticsSettingsManagerImpl implements AnalyticsSettingsManager {
 				analyticsConfiguration.syncedCommerceChannelIds()) {
 
 			Group group = _groupLocalService.fetchGroup(
-				companyId, _portal.getClassNameId(_CLASS_NAME_COMMERCE_CHANNEL),
+				companyId, _lazyCommerceChannelClassNameId.get(),
 				GetterUtil.getLong(commerceChannelId));
 
 			if (group == null) {
@@ -251,9 +253,8 @@ public class AnalyticsSettingsManagerImpl implements AnalyticsSettingsManager {
 		throws Exception {
 
 		_updateTypeSetting(
-			analyticsChannelId,
-			_portal.getClassNameId(_CLASS_NAME_COMMERCE_CHANNEL), companyId,
-			dataSourceCommerceChannelIds, false);
+			analyticsChannelId, _lazyCommerceChannelClassNameId.get(),
+			companyId, dataSourceCommerceChannelIds, false);
 
 		AnalyticsConfiguration analyticsConfiguration =
 			getAnalyticsConfiguration(companyId);
@@ -271,9 +272,8 @@ public class AnalyticsSettingsManagerImpl implements AnalyticsSettingsManager {
 				dataSourceCommerceChannelIds, commerceChannelId));
 
 		_updateTypeSetting(
-			analyticsChannelId,
-			_portal.getClassNameId(_CLASS_NAME_COMMERCE_CHANNEL), companyId,
-			removeCommerceChannelIds, true);
+			analyticsChannelId, _lazyCommerceChannelClassNameId.get(),
+			companyId, removeCommerceChannelIds, true);
 
 		return ArrayUtil.filter(
 			commerceChannelIds.toArray(new String[0]),
@@ -333,7 +333,7 @@ public class AnalyticsSettingsManagerImpl implements AnalyticsSettingsManager {
 		throws Exception {
 
 		_updateTypeSetting(
-			analyticsChannelId, _portal.getClassNameId(Group.class), companyId,
+			analyticsChannelId, _lazyGroupClassNameId.get(), companyId,
 			dataSourceSiteIds, false);
 
 		AnalyticsConfiguration analyticsConfiguration =
@@ -351,13 +351,23 @@ public class AnalyticsSettingsManagerImpl implements AnalyticsSettingsManager {
 			siteId -> !ArrayUtil.contains(dataSourceSiteIds, siteId));
 
 		_updateTypeSetting(
-			analyticsChannelId, _portal.getClassNameId(Group.class), companyId,
+			analyticsChannelId, _lazyGroupClassNameId.get(), companyId,
 			removeSiteIds, true);
 
 		return ArrayUtil.filter(
 			siteIds.toArray(new String[0]),
 			siteId -> !ArrayUtil.contains(
 				removeSiteIds, GetterUtil.getLong(siteId)));
+	}
+
+	@Activate
+	protected void activate(Map<String, Object> properties) {
+		_lazyCommerceChannelClassNameId =
+			_classNameLocalService.getLazyClassNameId(
+				_CLASS_NAME_COMMERCE_CHANNEL);
+
+		_lazyGroupClassNameId = _classNameLocalService.getLazyClassNameId(
+			Group.class.getName());
 	}
 
 	private String _getConfigurationPid() {
@@ -482,6 +492,9 @@ public class AnalyticsSettingsManagerImpl implements AnalyticsSettingsManager {
 	).build();
 
 	@Reference
+	private ClassNameLocalService _classNameLocalService;
+
+	@Reference
 	private ConfigurationAdmin _configurationAdmin;
 
 	@Reference
@@ -490,8 +503,8 @@ public class AnalyticsSettingsManagerImpl implements AnalyticsSettingsManager {
 	@Reference
 	private GroupLocalService _groupLocalService;
 
-	@Reference
-	private Portal _portal;
+	private Supplier<Long> _lazyCommerceChannelClassNameId;
+	private Supplier<Long> _lazyGroupClassNameId;
 
 	@Reference
 	private SettingsLocatorHelper _settingsLocatorHelper;
