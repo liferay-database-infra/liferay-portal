@@ -107,6 +107,7 @@ import java.io.Serializable;
 import java.text.ParseException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -392,6 +393,22 @@ public class DefaultObjectEntryManagerImpl
 			}
 		}
 
+		String[] selectedObjectFieldNames = null;
+
+		UriInfo uriInfo = dtoConverterContext.getUriInfo();
+
+		if (uriInfo != null) {
+			MultivaluedMap<String, String> queryParameters =
+				uriInfo.getQueryParameters();
+
+			String fields = queryParameters.getFirst("fields");
+
+			if (fields != null) {
+				selectedObjectFieldNames = StringUtil.split(
+					fields, StringPool.COMMA);
+			}
+		}
+
 		return Page.of(
 			HashMapBuilder.put(
 				"create",
@@ -439,8 +456,9 @@ public class DefaultObjectEntryManagerImpl
 			TransformUtil.transform(
 				objectEntryLocalService.getValuesList(
 					groupId, companyId, dtoConverterContext.getUserId(),
-					objectDefinition.getObjectDefinitionId(), predicate, search,
-					start, end, sorts),
+					objectDefinition.getObjectDefinitionId(),
+					selectedObjectFieldNames, predicate, search, start, end,
+					sorts),
 				values -> _getObjectEntry(
 					dtoConverterContext, objectDefinition, values)),
 			pagination,

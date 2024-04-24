@@ -269,10 +269,9 @@ paths:
                   schema:
                       type: string
                 - in: query
-                  name: testrayTeamId
+                  name: testrayTeamIds
                   schema:
-                      format: int64
-                      type: integer
+                      type: string
             responses:
                 200:
                     content:
@@ -314,10 +313,9 @@ paths:
                   schema:
                       type: string
                 - in: query
-                  name: testrayTeamId
+                  name: testrayTeamIds
                   schema:
-                      format: int64
-                      type: integer
+                      type: string
             responses:
                 200:
                     content:
@@ -359,10 +357,9 @@ paths:
                   schema:
                       type: string
                 - in: query
-                  name: testrayTeamId
+                  name: testrayTeamIds
                   schema:
-                      format: int64
-                      type: integer
+                      type: string
             responses:
                 200:
                     content:
@@ -409,10 +406,9 @@ paths:
                       format: int64
                       type: integer
                 - in: query
-                  name: testrayTeamId
+                  name: testrayTeamIds
                   schema:
-                      format: int64
-                      type: integer
+                      type: string
             responses:
                 200:
                     content:
