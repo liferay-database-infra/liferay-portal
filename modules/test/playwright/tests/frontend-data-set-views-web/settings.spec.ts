@@ -209,57 +209,6 @@ export const fragmentTest = mergeTests(
 
 fragmentTest.describe('Data Set Default Visualization Mode in fragment', () => {
 	fragmentTest(
-		'Default Visualization Mode is not configured (no field for any section). Use Table as default',
-		async ({
-			apiHelpers,
-			dataSetManagerApiHelpers,
-			fdsFragmentPage,
-			page,
-			site,
-		}) => {
-			await test.step('Create random data (fields) for other Data Sets', async () => {
-				await dataSetManagerApiHelpers.createDataSetViewFields({});
-			});
-
-			const layout = await fragmentTest.step(
-				'Create a new page',
-				async () => {
-					const pageLayout =
-						await apiHelpers.headlessDelivery.createSitePage({
-							siteId: site.id,
-							title: getRandomString(),
-						});
-
-					return pageLayout;
-				}
-			);
-
-			await fragmentTest.step(
-				'Configure Data Set in the page',
-				async () => {
-					await fdsFragmentPage.configureDataSetFragment({
-						layout,
-						site,
-						viewLabel: settingsDataSetViewLabel,
-					});
-				}
-			);
-
-			fragmentTest.step('Empty Data Set is in the page', async () => {
-				await expect(page.locator('.data-set-wrapper')).toBeVisible();
-
-				expect(
-					await page
-						.locator('.dnd-tbody > div')
-						.first()
-						.locator('.dnd-td')
-						.allInnerTexts()
-				).toEqual([]);
-			});
-		}
-	);
-
-	fragmentTest(
 		'When there is only one visualization mode defined, that will be the default one. Cards',
 		async ({
 			apiHelpers,

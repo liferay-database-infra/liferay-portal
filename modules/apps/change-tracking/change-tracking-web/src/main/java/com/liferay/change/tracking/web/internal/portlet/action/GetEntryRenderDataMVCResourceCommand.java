@@ -18,6 +18,7 @@ import com.liferay.change.tracking.web.internal.display.BasePersistenceRegistry;
 import com.liferay.change.tracking.web.internal.display.DisplayContextImpl;
 import com.liferay.change.tracking.web.internal.util.PublicationsPortletURLUtil;
 import com.liferay.diff.DiffHtml;
+import com.liferay.knowledge.base.model.KBArticleModel;
 import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
@@ -25,6 +26,8 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.change.tracking.sql.CTSQLModeThreadLocal;
+import com.liferay.portal.kernel.comment.CommentManager;
+import com.liferay.portal.kernel.comment.Discussion;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
@@ -45,11 +48,13 @@ import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCResourceCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService;
 import com.liferay.portal.kernel.servlet.PipingServletResponse;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -60,6 +65,8 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.kernel.workflow.WorkflowHandler;
+import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
 import com.liferay.portal.kernel.workflow.WorkflowTask;
 import com.liferay.portal.kernel.workflow.WorkflowTaskManager;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
@@ -79,6 +86,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
@@ -137,6 +145,16 @@ public class GetEntryRenderDataMVCResourceCommand
 						_portal.getHttpServletRequest(resourceRequest),
 						"an-unexpected-error-occurred")));
 		}
+	}
+
+	private Function<String, ServiceContext> _createServiceContextFunction() {
+		return className -> {
+			ServiceContext serviceContext = new ServiceContext();
+
+			serviceContext.setWorkflowAction(WorkflowConstants.ACTION_PUBLISH);
+
+			return serviceContext;
+		};
 	}
 
 	private <T extends BaseModel<T>> JSONObject _getCTEntryRenderDataJSONObject(
@@ -1039,11 +1057,19 @@ public class GetEntryRenderDataMVCResourceCommand
 			groupId = groupedModel.getGroupId();
 		}
 
+		long classPK = ctEntry.getModelClassPK();
+
+		if (model instanceof KBArticleModel) {
+			Map<String, Object> modelAttributes = model.getModelAttributes();
+
+			classPK = GetterUtil.getLong(
+				modelAttributes.get("resourcePrimKey"));
+		}
+
 		WorkflowInstanceLink workflowInstanceLink =
 			_workflowInstanceLinkLocalService.fetchWorkflowInstanceLink(
 				ctEntry.getCompanyId(), groupId,
-				_portal.getClassName(ctEntry.getModelClassNameId()),
-				ctEntry.getModelClassPK());
+				_portal.getClassName(ctEntry.getModelClassNameId()), classPK);
 
 		if (workflowInstanceLink == null) {
 			return new LinkedHashMap<>();
@@ -1126,6 +1152,35 @@ public class GetEntryRenderDataMVCResourceCommand
 					"workflowTaskId", workflowTask.getWorkflowTaskId()
 				).buildString();
 			}
+		).put(
+			"comments",
+			() -> {
+				WorkflowHandler<?> workflowHandler =
+					WorkflowHandlerRegistryUtil.getWorkflowHandler(
+						workflowInstanceLink.getClassName());
+
+				if (!workflowHandler.isCommentable()) {
+					return null;
+				}
+
+				Discussion discussion = _commentManager.getDiscussion(
+					themeDisplay.getUserId(), workflowInstanceLink.getGroupId(),
+					workflowInstanceLink.getClassName(),
+					workflowInstanceLink.getClassPK(),
+					_createServiceContextFunction());
+
+				int count = discussion.getDiscussionCommentsCount();
+
+				if (count == 1) {
+					return StringBundler.concat(
+						count, " ",
+						_language.get(themeDisplay.getLocale(), "comment"));
+				}
+
+				return StringBundler.concat(
+					count, " ",
+					_language.get(themeDisplay.getLocale(), "comments"));
+			}
 		).build();
 	}
 
@@ -1158,8 +1213,7 @@ public class GetEntryRenderDataMVCResourceCommand
 				sb.append("</span");
 				sb.append("</span");
 			}
-
-			if (Objects.equals(entry.getKey(), "usages")) {
+			else if (Objects.equals(entry.getKey(), "usages")) {
 				String url = entry.getValue();
 
 				sb.append("<a href=\"");
@@ -1189,6 +1243,9 @@ public class GetEntryRenderDataMVCResourceCommand
 
 	@Reference
 	private ClassNameLocalService _classNameLocalService;
+
+	@Reference
+	private CommentManager _commentManager;
 
 	@Reference
 	private CTCollectionLocalService _ctCollectionLocalService;
