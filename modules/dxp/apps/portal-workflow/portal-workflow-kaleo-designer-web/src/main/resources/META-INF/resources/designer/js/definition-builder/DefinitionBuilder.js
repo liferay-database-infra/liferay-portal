@@ -30,8 +30,11 @@ export default function DefinitionBuilder(props) {
 	] = useState(props.translations);
 	const [deserialize, setDeserialize] = useState(false);
 	const [elements, setElements] = useState(defaultNodes);
-	const [hadGroovyScriptBefore, setHadGroovyScriptBefore] = useState(false);
-	const [hasGroovyScript, setHasGroovyScript] = useState(false);
+	const [
+		hadGroovyOrJavaScriptBefore,
+		setHadGroovyOrJavaScriptBefore,
+	] = useState(false);
+	const [hasGroovyOrJavaScript, setHasGroovyOrJavaScript] = useState(false);
 	const [selectedLanguageId, setSelectedLanguageId] = useState('');
 	const [showDefinitionInfo, setShowDefinitionInfo] = useState(false);
 	const [sourceView, setSourceView] = useState(false);
@@ -55,8 +58,8 @@ export default function DefinitionBuilder(props) {
 		deserialize,
 		elements,
 		functionActionExecutors: props.functionActionExecutors,
-		hadGroovyScriptBefore,
-		hasGroovyScript,
+		hadGroovyOrJavaScriptBefore,
+		hasGroovyOrJavaScript,
 		scriptManagementConfigurationPortletURL:
 			props.scriptManagementConfigurationPortletURL,
 		selectedLanguageId,
@@ -73,8 +76,8 @@ export default function DefinitionBuilder(props) {
 		setDefinitionTitleTranslations,
 		setDeserialize,
 		setElements,
-		setHadGroovyScriptBefore,
-		setHasGroovyScript,
+		setHadGroovyOrJavaScriptBefore,
+		setHasGroovyOrJavaScript,
 		setSelectedLanguageId,
 		setShowAlert,
 		setShowDefinitionInfo,

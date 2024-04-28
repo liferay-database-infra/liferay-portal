@@ -5,6 +5,7 @@ Check | File Extensions | Description
 AccessModifierCheck | .java | Checks for cases where visibility of methods can be decreased. |
 [AnonymousClassCheck](check/anonymous_class_check.markdown#anonymousclasscheck) | .java | Checks for serialization issue when using anonymous class. |
 ArquillianCheck | .java | Checks for correct use of `com.liferay.arquillian.extension.junit.bridge.junit.Arquillian`. |
+AssertFailCheck | .java | Checks that calls to `Assert.fail` can be only used inside a try block as the last statement. |
 [AvoidStarImportCheck](https://checkstyle.sourceforge.io/checks/imports/avoidstarimport.html) | .java | Checks that there are no import statements that use the * notation. |
 BNDBreakingChangeCommitMessageCheck | .bnd | Checks that commit message should contain the schematized breaking changes. |
 [BNDBundleActivatorCheck](check/bnd_bundle_activator_check.markdown#bndbundleactivatorcheck) | .bnd | Validates property value for `Bundle-Activator`. |
@@ -33,6 +34,7 @@ DTOEnumCreationCheck | .java | Checks the creation of DTO enum. |
 DatabaseMetaDataCheck | .java | Checks usages of `java.sql.DatabaseMetaData`. |
 DeprecatedAPICheck | .java | Finds calls to deprecated classes, constructors, fields or methods. |
 EmptyConstructorCheck | .java | Finds unnecessary empty constructors. |
+[EqualsHashCodeCheck](https://checkstyle.sourceforge.io/checks/coding/equalshashcode.html) | .java | Checks that classes that either override `equals()` or `hashCode()` also overrides the other. |
 ExceptionPrintStackTraceCheck | .java | Avoid using printStackTrace. |
 FactoryCheck | .java, .jsp, .jspf, .jspx, .tag, .tpl or .vm | Finds cases where `*Factory` should be used when creating new instances of an object. |
 FilterStringWhitespaceCheck | .java | Finds missing and unnecessary whitespace in the value of the filter string in `ServiceTrackerFactory.open` or `WaiterUtil.waitForFilter`. |

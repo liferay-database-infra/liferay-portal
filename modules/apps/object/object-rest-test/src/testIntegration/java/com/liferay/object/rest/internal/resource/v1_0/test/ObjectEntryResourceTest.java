@@ -65,6 +65,7 @@ import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.function.UnsafeRunnable;
+import com.liferay.petra.function.UnsafeTriConsumer;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -5008,41 +5009,6 @@ public class ObjectEntryResourceTest {
 		);
 	}
 
-	@Test
-	public void testGetObjectEntryWithActions() throws Exception {
-		ObjectAction objectAction = _objectActionLocalService.addObjectAction(
-			RandomTestUtil.randomString(), TestPropsValues.getUserId(),
-			_objectDefinition1.getObjectDefinitionId(), true, StringPool.BLANK,
-			RandomTestUtil.randomString(),
-			LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
-			LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
-			RandomTestUtil.randomString(),
-			ObjectActionExecutorConstants.KEY_GROOVY,
-			ObjectActionTriggerConstants.KEY_STANDALONE,
-			new UnicodeProperties(), false);
-
-		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
-			JSONUtil.put(
-				_OBJECT_FIELD_NAME_1, "value"
-			).toString(),
-			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
-
-		JSONObject actionsJSONObject = jsonObject.getJSONObject("actions");
-
-		JSONObject actionJSONObject = actionsJSONObject.getJSONObject(
-			objectAction.getName());
-
-		Assert.assertEquals(
-			StringBundler.concat(
-				"http://localhost:8080/o",
-				_objectDefinition1.getRESTContextPath(),
-				"/by-external-reference-code/",
-				jsonObject.getString("externalReferenceCode"),
-				"/object-actions/", objectAction.getName()),
-			actionJSONObject.getString("href"));
-		Assert.assertEquals("PUT", actionJSONObject.getString("method"));
-	}
-
 	@FeatureFlags("LPS-174455")
 	@Test
 	public void testGetObjectEntryWithAttachmentField() throws Exception {
@@ -5564,6 +5530,33 @@ public class ObjectEntryResourceTest {
 				Http.Method.GET
 			).toString(),
 			JSONCompareMode.LENIENT);
+	}
+
+	@Test
+	public void testGetObjectEntryWithObjectActions() throws Exception {
+		_testGetObjectEntryWithObjectActions(
+			_addObjectAction(_objectDefinition1), _objectDefinition1,
+			(actionJSONObject, jsonObject, objectAction) -> Assert.assertEquals(
+				StringBundler.concat(
+					"http://localhost:8080/o",
+					_objectDefinition1.getRESTContextPath(),
+					"/by-external-reference-code/",
+					jsonObject.getString("externalReferenceCode"),
+					"/object-actions/", objectAction.getName()),
+				actionJSONObject.getString("href")));
+
+		_testGetObjectEntryWithObjectActions(
+			_addObjectAction(_siteScopedObjectDefinition1),
+			_siteScopedObjectDefinition1,
+			(actionJSONObject, jsonObject, objectAction) -> Assert.assertEquals(
+				StringBundler.concat(
+					"http://localhost:8080/o",
+					_siteScopedObjectDefinition1.getRESTContextPath(),
+					"/scopes/", TestPropsValues.getGroupId(),
+					"/by-external-reference-code/",
+					jsonObject.getString("externalReferenceCode"),
+					"/object-actions/", objectAction.getName()),
+				actionJSONObject.getString("href")));
 	}
 
 	@Test
@@ -8800,6 +8793,21 @@ public class ObjectEntryResourceTest {
 				className));
 	}
 
+	private ObjectAction _addObjectAction(ObjectDefinition objectDefinition)
+		throws Exception {
+
+		return _objectActionLocalService.addObjectAction(
+			RandomTestUtil.randomString(), TestPropsValues.getUserId(),
+			objectDefinition.getObjectDefinitionId(), true, StringPool.BLANK,
+			RandomTestUtil.randomString(),
+			LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+			LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+			RandomTestUtil.randomString(),
+			ObjectActionExecutorConstants.KEY_GROOVY,
+			ObjectActionTriggerConstants.KEY_STANDALONE,
+			new UnicodeProperties(), false);
+	}
+
 	private ObjectRelationship _addObjectRelationshipAndRelateObjectEntries(
 			ObjectDefinition objectDefinition1,
 			ObjectDefinition objectDefinition2, long primaryKey1,
@@ -9387,6 +9395,29 @@ public class ObjectEntryResourceTest {
 		_assertNestedFieldsInRelationships(
 			0, GetterUtil.getInteger(nestedFieldDepth, 1), itemJSONObject,
 			expectedFieldName, objectFieldNamesAndObjectFieldValues, type);
+	}
+
+	private void _testGetObjectEntryWithObjectActions(
+			ObjectAction objectAction, ObjectDefinition objectDefinition,
+			UnsafeTriConsumer<JSONObject, JSONObject, ObjectAction, Exception>
+				unsafeTriConsumer)
+		throws Exception {
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, "value"
+			).toString(),
+			_getEndpoint(TestPropsValues.getGroupId(), objectDefinition),
+			Http.Method.POST);
+
+		JSONObject actionsJSONObject = jsonObject.getJSONObject("actions");
+
+		JSONObject actionJSONObject = actionsJSONObject.getJSONObject(
+			objectAction.getName());
+
+		Assert.assertEquals("PUT", actionJSONObject.getString("method"));
+
+		unsafeTriConsumer.accept(actionJSONObject, jsonObject, objectAction);
 	}
 
 	private void _testPatchPutCustomObjectEntryExternalReferenceCode(

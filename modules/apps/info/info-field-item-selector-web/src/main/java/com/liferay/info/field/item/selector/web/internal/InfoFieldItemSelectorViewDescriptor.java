@@ -47,6 +47,11 @@ public class InfoFieldItemSelectorViewDescriptor
 	}
 
 	@Override
+	public String getDefaultDisplayStyle() {
+		return "list";
+	}
+
+	@Override
 	public String[] getDisplayViews() {
 		return new String[0];
 	}
@@ -66,10 +71,6 @@ public class InfoFieldItemSelectorViewDescriptor
 	public SearchContainer<InfoField<?>> getSearchContainer()
 		throws PortalException {
 
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)_httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
 		PortletRequest portletRequest =
 			(PortletRequest)_httpServletRequest.getAttribute(
 				JavaConstants.JAVAX_PORTLET_REQUEST);
@@ -80,13 +81,22 @@ public class InfoFieldItemSelectorViewDescriptor
 		String itemType = ParamUtil.getString(_httpServletRequest, "itemType");
 
 		InfoItemFormProvider<?> infoItemFormProvider =
-			_infoItemServiceRegistry.getInfoItemService(
+			_infoItemServiceRegistry.getFirstInfoItemService(
 				InfoItemFormProvider.class, itemType);
+
+		if (infoItemFormProvider == null) {
+			return searchContainer;
+		}
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)_httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		InfoForm infoForm = infoItemFormProvider.getInfoForm(
 			itemType, themeDisplay.getScopeGroupId());
 
-		List<InfoField<?>> infoFields = infoForm.getAllInfoFields();
+		List<InfoField<?>> infoFields = ListUtil.filter(
+			infoForm.getAllInfoFields(), InfoField::isEditable);
 
 		String keywords = ParamUtil.getString(_httpServletRequest, "keywords");
 
@@ -109,6 +119,21 @@ public class InfoFieldItemSelectorViewDescriptor
 	@Override
 	public TableItemView getTableItemView(InfoField<?> infoField) {
 		return new InfoFieldTableItemView(infoField);
+	}
+
+	@Override
+	public boolean isMultipleSelection() {
+		return true;
+	}
+
+	@Override
+	public boolean isShowBreadcrumb() {
+		return false;
+	}
+
+	@Override
+	public boolean isShowSearch() {
+		return true;
 	}
 
 	private final HttpServletRequest _httpServletRequest;

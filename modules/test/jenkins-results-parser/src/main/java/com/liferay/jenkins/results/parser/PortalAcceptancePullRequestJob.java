@@ -7,6 +7,11 @@ package com.liferay.jenkins.results.parser;
 
 import java.io.File;
 
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -64,7 +69,13 @@ public class PortalAcceptancePullRequestJob
 	protected Set<String> getRawBatchNames() {
 		Set<String> batchNames = super.getRawBatchNames();
 
-		if (_hasOnlyFilesInDirectory("modules")) {
+		if (_isRelevantTestSuite() &&
+			!_hasMatchingFiles(_restBuilderFilePathMatchers)) {
+
+			batchNames.remove("rest-builder-jdk8");
+		}
+
+		if (_isRelevantTestSuite() && _hasOnlyFilesInDirectory("modules")) {
 			batchNames.remove("semantic-versioning-jdk8");
 		}
 
@@ -93,6 +104,20 @@ public class PortalAcceptancePullRequestJob
 		return batchNames;
 	}
 
+	private boolean _hasMatchingFiles(List<PathMatcher> pathMatchers) {
+		GitWorkingDirectory gitWorkingDirectory = getGitWorkingDirectory();
+
+		for (File modifiedFile : gitWorkingDirectory.getModifiedFilesList()) {
+			for (PathMatcher pathMatcher : pathMatchers) {
+				if (pathMatcher.matches(modifiedFile.toPath())) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 	private boolean _hasOnlyFilesInDirectory(String directoryName) {
 		GitWorkingDirectory gitWorkingDirectory = getGitWorkingDirectory();
 
@@ -114,6 +139,17 @@ public class PortalAcceptancePullRequestJob
 		String testSuiteName = getTestSuiteName();
 
 		return testSuiteName.equals("relevant");
+	}
+
+	private static List<PathMatcher> _restBuilderFilePathMatchers;
+
+	static {
+		FileSystem fs = FileSystems.getDefault();
+
+		_restBuilderFilePathMatchers = Arrays.asList(
+			fs.getPathMatcher("glob:**/portal-tools-rest-builder/**"),
+			fs.getPathMatcher("glob:**/rest-config*.yaml"),
+			fs.getPathMatcher("glob:**/rest-openapi*.yaml"));
 	}
 
 	private Boolean _centralMergePullRequest;

@@ -211,7 +211,7 @@ const useQueryParams = (customFilterFields?: CustomFilterFieldsProps) => {
 					label: i18n.translate(filteredField.label),
 					name: filteredField.name,
 					value: Array.isArray(filterValueOptions)
-						? filterValueOptions.map(({label}) => label)
+						? filterValueOptions?.map(({label}) => label)
 						: filterValue,
 				};
 			}) || [],

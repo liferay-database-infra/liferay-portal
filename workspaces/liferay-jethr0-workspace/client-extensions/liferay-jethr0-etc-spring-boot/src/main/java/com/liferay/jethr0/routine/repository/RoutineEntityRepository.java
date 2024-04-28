@@ -6,6 +6,7 @@
 package com.liferay.jethr0.routine.repository;
 
 import com.liferay.jethr0.entity.repository.BaseEntityRepository;
+import com.liferay.jethr0.git.repository.GitBranchEntityRepository;
 import com.liferay.jethr0.job.JobEntity;
 import com.liferay.jethr0.job.repository.JobEntityRepository;
 import com.liferay.jethr0.routine.RoutineEntity;
@@ -38,6 +39,12 @@ public class RoutineEntityRepository
 		routineEntity.addJobEntity(jobEntity);
 
 		jobEntity.setRoutineEntity(routineEntity);
+	}
+
+	public void setGitBranchEntityRepository(
+		GitBranchEntityRepository gitBranchEntityRepository) {
+
+		_gitBranchEntityRepository = gitBranchEntityRepository;
 	}
 
 	public void setJobEntityRepository(
@@ -75,6 +82,7 @@ public class RoutineEntityRepository
 				jobEntity));
 	}
 
+	private GitBranchEntityRepository _gitBranchEntityRepository;
 	private JobEntityRepository _jobEntityRepository;
 
 	@Autowired

@@ -2889,9 +2889,12 @@ public class PortalImpl implements Portal {
 			!StringUtil.equalsIgnoreCase(
 				virtualHostname, defaultVirtualHostname)) {
 
-			String portalURL = getPortalURL(
-				virtualHostname, themeDisplay.getServerPort(),
-				themeDisplay.isSecure());
+			String portalURL =
+				getPortalURL(
+					virtualHostname, themeDisplay.getServerPort(),
+					themeDisplay.isSecure());
+
+			portalURL += _pathContext;
 
 			// Use the layout set's virtual host setting only if the layout set
 			// is already used for the current request
@@ -2905,7 +2908,7 @@ public class PortalImpl implements Portal {
 			if ((layoutSet.getLayoutSetId() != curLayoutSetId) ||
 				portalURL.startsWith(themeDisplay.getURLPortal())) {
 
-				String layoutSetFriendlyURL = portalURL + _pathContext;
+				String layoutSetFriendlyURL = portalURL;
 
 				if (themeDisplay.isI18n()) {
 					layoutSetFriendlyURL +=
@@ -5147,21 +5150,13 @@ public class PortalImpl implements Portal {
 
 	@Override
 	public String getUserEmailAddress(long userId) {
-		try {
-			User user = UserLocalServiceUtil.getUserById(userId);
+		User user = UserLocalServiceUtil.fetchUser(userId);
 
-			return user.getEmailAddress();
-		}
-		catch (PortalException portalException) {
-
-			// LPS-52675
-
-			if (_log.isDebugEnabled()) {
-				_log.debug(portalException);
-			}
-
+		if (user == null) {
 			return StringPool.BLANK;
 		}
+
+		return user.getEmailAddress();
 	}
 
 	@Override

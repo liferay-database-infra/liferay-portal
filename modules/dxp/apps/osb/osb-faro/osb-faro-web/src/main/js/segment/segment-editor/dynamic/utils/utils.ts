@@ -378,11 +378,20 @@ export const convertEventToProperty = (
 		? eventDefinition.get('name')
 		: eventDefinition.name;
 
+	const blocked = isMap(eventDefinition)
+		? eventDefinition.get('blocked')
+		: eventDefinition.blocked;
+
+	const hidden = isMap(eventDefinition)
+		? eventDefinition.get('hidden')
+		: eventDefinition.hidden;
+
 	return new Property({
 		entityName: Liferay.Language.get('event'),
 		id,
 		label: displayName || name,
-		name: id,
+		name,
+		options: [{label: 'eventHidden', value: blocked || hidden}],
 		propertyKey: 'event',
 		type: PropertyTypes.Event
 	});
@@ -428,6 +437,7 @@ export const convertReferencedObjectsToProperties = (
 
 	const eventProperties = referencedObjectsIMap
 		.get('event', Map())
+		.merge(referencedObjectsIMap.get('custom-events'))
 		.map(convertEventToProperty);
 
 	return fieldMappingProperties.merge(fromJS({event: eventProperties}));
