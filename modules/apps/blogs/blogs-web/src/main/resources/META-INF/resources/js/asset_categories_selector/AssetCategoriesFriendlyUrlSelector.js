@@ -9,36 +9,25 @@ import ClayIcon from '@clayui/icon';
 import ClayLink from '@clayui/link';
 import ClayMultiSelect from '@clayui/multi-select';
 import {useEventListener} from '@liferay/frontend-js-react-web';
-import classNames from 'classnames';
+import classnames from 'classnames';
 import {
 	normalizeFriendlyURL,
 	openCategorySelectionModal,
-	sub,
 } from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useMemo, useRef, useState} from 'react';
 
-const DEFAULT_URL = 'default-url';
-const CUSTOM_URL = 'custom-url';
 function AssetVocabulariesCategoriesFriendlyUrlSelector({
+	automaticURL: initialAutomaticURL,
 	customFriendlyURL = '',
-	friendlyUrlInfo,
-	formGroupClassName = '',
 	friendlyURLSeparatorCompanyConfigurationURL,
-	id,
+	friendlyUrlInfo,
 	inputAddon,
-	isValid = true,
-	label = Liferay.Language.get('add-categories-to-url'),
-	namespace,
-	required = false,
+	portletNamespace,
 	selectCategoryURL,
 	selectedCategories = [],
-	showVocabularyLabel = true,
-	useFallbackInput = true,
 }) {
-	const [customUrlCheckboxValue, setCustomUrlCheckboxValue] = useState(
-		DEFAULT_URL
-	);
+	const [automaticURL, setAutomaticURL] = useState(initialAutomaticURL);
 
 	const [friendlyUrlValue, setFriendlyUrlValue] = useState(customFriendlyURL);
 
@@ -59,9 +48,12 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 	};
 
 	const handleItemsChange = (items) => {
-		const assetCategories = Object.keys(items).map((key) => {
-			return {...items[key], label: items[key].title};
-		});
+		const assetCategories = Object.entries(items).map(
+			([id, {label, title}]) => ({
+				label: label || title,
+				value: id,
+			})
+		);
 
 		const addedItems = getUnique(
 			assetCategories.filter(
@@ -93,7 +85,7 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 	const handleSelectButtonClick = () => {
 		openCategorySelectionModal({
 			onSelect: handleItemsChange,
-			portletNamespace: namespace,
+			portletNamespace,
 			selectCategoryURL,
 		});
 	};
@@ -114,7 +106,7 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 			}
 		},
 		true,
-		document.getElementById(namespace + 'title')
+		document.getElementById(portletNamespace + 'title')
 	);
 
 	const handleChange = (event) => {
@@ -128,26 +120,23 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 				<div className="c-mb-4">
 					{Liferay.Language.get(
 						'customize-the-url-of-this-blog-entry-to-your-preference-or-stick-to-the-default-setting-based-on-the-entry-title'
-					)}
+					) + ' '}
 
 					{friendlyURLSeparatorCompanyConfigurationURL && (
 						<ClayLink
 							href={friendlyURLSeparatorCompanyConfigurationURL}
 						>
-							{' ' +
-								Liferay.Language.get(
-									'check-instance-settings-for-more-url-separator-configurations'
-								)}
+							{Liferay.Language.get(
+								'check-instance-settings-for-more-url-separator-configurations'
+							)}
 						</ClayLink>
 					)}
 				</div>
 
 				<ClayRadioGroup
-					defaultValue={DEFAULT_URL}
-					id={namespace + 'automaticURL'}
-					name={namespace + 'automaticURL'}
-					onChange={setCustomUrlCheckboxValue}
-					value={customUrlCheckboxValue}
+					name={portletNamespace + 'automaticURL'}
+					onChange={setAutomaticURL}
+					value={automaticURL}
 				>
 					<ClayRadio
 						label={
@@ -155,7 +144,7 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 								{Liferay.Language.get('use-the-default-url')}
 							</strong>
 						}
-						value={DEFAULT_URL}
+						value={true}
 					/>
 
 					<ClayRadio
@@ -164,83 +153,36 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 								{Liferay.Language.get('use-a-customized-url')}
 							</strong>
 						}
-						value={CUSTOM_URL}
+						value={false}
 					/>
 				</ClayRadioGroup>
 			</div>
 
-			<ClayForm.Group
-				className={classNames(formGroupClassName, {
-					'has-error': !isValid,
-				})}
-				id={id}
-			>
-				{useFallbackInput && (
-					<input
-						disabled={!selectedItems.length}
-						id={namespace + 'friendly_url_category_ids'}
-						name={namespace + 'friendly_url_category_ids'}
-						readOnly={true}
-						type="hidden"
-						value={selectedItems
-							.map((item) => item.categoryId)
-							.join()}
-					/>
-				)}
-
-				{label && (
-					<label
-						className={showVocabularyLabel ? '' : 'sr-only'}
-						htmlFor={namespace + '_MultiSelect'}
-					>
-						{label}
-
-						{required && (
-							<span className="inline-item inline-item-after reference-mark">
-								<ClayIcon symbol="asterisk" />
-
-								<span className="hide-accessible sr-only">
-									{Liferay.Language.get('required')}
-								</span>
-							</span>
-						)}
-					</label>
-				)}
+			<ClayForm.Group>
+				<label
+					className={classnames({disabled: automaticURL})}
+					htmlFor={`${portletNamespace}friendlyURLAssetCategoryIdsMultiSelect`}
+				>
+					{Liferay.Language.get('add-categories-to-url')}
+				</label>
 
 				<ClayInput.Group>
 					<ClayInput.GroupItem>
 						<ClayMultiSelect
-							disabled={!selectedItems.length}
-							id={namespace + '_MultiSelect'}
-							inputName={namespace}
+							disabled={automaticURL}
+							id={`${portletNamespace}friendlyURLAssetCategoryIdsMultiSelect`}
+							inputName={
+								portletNamespace + 'friendlyURLAssetCategoryIds'
+							}
 							items={selectedItems}
 							onItemsChange={handleItemsChange}
-							readOnly={true}
 						/>
-
-						{!isValid && (
-							<ClayForm.FeedbackGroup>
-								<ClayForm.FeedbackItem>
-									<ClayForm.FeedbackIndicator symbol="info-circle" />
-
-									<span className="ml-2">
-										{Liferay.Language.get(
-											'this-field-is-required'
-										)}
-									</span>
-								</ClayForm.FeedbackItem>
-							</ClayForm.FeedbackGroup>
-						)}
 					</ClayInput.GroupItem>
 
 					<ClayInput.GroupItem shrink>
 						<ClayButton
 							aria-haspopup="dialog"
-							aria-label={sub(
-								Liferay.Language.get('select-x'),
-								label
-							)}
-							disabled={customUrlCheckboxValue === DEFAULT_URL}
+							disabled={automaticURL}
 							displayType="secondary"
 							onClick={handleSelectButtonClick}
 							ref={selectButtonRef}
@@ -252,7 +194,10 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 			</ClayForm.Group>
 
 			<ClayForm.Group>
-				<label htmlFor="friendly-url">
+				<label
+					className={classnames({disabled: automaticURL})}
+					htmlFor="urlTitle"
+				>
 					{Liferay.Language.get('friendly-url')}
 
 					<span
@@ -274,8 +219,9 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 
 					<ClayInput.GroupItem append>
 						<ClayInput
-							disabled={customUrlCheckboxValue === DEFAULT_URL}
-							id={namespace + 'friendly_url'}
+							disabled={automaticURL}
+							id={portletNamespace + 'urlTitle'}
+							name={portletNamespace + 'urlTitle'}
 							onChange={handleChange}
 							placeholder={Liferay.Language.get('friendly-url')}
 							type="text"
@@ -289,17 +235,14 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 }
 
 AssetVocabulariesCategoriesFriendlyUrlSelector.propTypes = {
-	formGroupClassName: PropTypes.string,
-	id: PropTypes.string.isRequired,
+	automaticURL: PropTypes.bool,
+	customFriendlyURL: PropTypes.string,
+	friendlyURLSeparatorCompanyConfigurationURL: PropTypes.string,
+	friendlyUrlInfo: PropTypes.string,
 	inputAddon: PropTypes.string.isRequired,
-	isValid: PropTypes.bool,
-	label: PropTypes.string,
-	namespace: PropTypes.string.isRequired,
-	required: PropTypes.bool,
+	portletNamespace: PropTypes.string.isRequired,
 	selectCategoryURL: PropTypes.string.isRequired,
 	selectedCategories: PropTypes.array,
-	showVocabularyLabel: PropTypes.bool,
-	useFallbackInput: PropTypes.bool,
 };
 
 export default AssetVocabulariesCategoriesFriendlyUrlSelector;

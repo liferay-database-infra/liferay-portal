@@ -7,16 +7,21 @@ package com.liferay.blogs.web.internal.display.context;
 
 import com.liferay.asset.auto.tagger.configuration.AssetAutoTaggerConfiguration;
 import com.liferay.asset.kernel.model.AssetCategory;
+import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.model.AssetVocabulary;
+import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
 import com.liferay.blogs.configuration.BlogsFileUploadsConfiguration;
 import com.liferay.blogs.constants.BlogsPortletKeys;
 import com.liferay.blogs.item.selector.criterion.BlogsItemSelectorCriterion;
 import com.liferay.blogs.model.BlogsEntry;
+import com.liferay.blogs.service.BlogsEntryLocalServiceUtil;
 import com.liferay.blogs.settings.BlogsGroupServiceSettings;
 import com.liferay.blogs.web.internal.util.BlogsEntryUtil;
 import com.liferay.configuration.admin.constants.ConfigurationAdminPortletKeys;
 import com.liferay.depot.group.provider.SiteConnectedGroupGroupProvider;
+import com.liferay.friendly.url.model.FriendlyURLEntry;
+import com.liferay.friendly.url.service.FriendlyURLEntryLocalServiceUtil;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.ItemSelectorCriterion;
 import com.liferay.item.selector.criteria.DownloadFileEntryItemSelectorReturnType;
@@ -27,6 +32,9 @@ import com.liferay.item.selector.criteria.info.item.criterion.InfoItemItemSelect
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanParamUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -53,6 +61,8 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.util.PropsValues;
 
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
@@ -225,6 +235,47 @@ public class BlogsEditEntryDisplayContext {
 			getBlogsEntry(), _httpServletRequest, "entryId");
 
 		return _entryId;
+	}
+
+	public String getFriendlyURL() {
+		FriendlyURLEntry friendlyURLEntry = _getFriendlyURLEntry();
+
+		if (friendlyURLEntry != null) {
+			return friendlyURLEntry.getUrlTitle();
+		}
+
+		return StringPool.BLANK;
+	}
+
+	public JSONArray getFriendlyURLAssetCategoriesJSONArray() {
+		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+
+		FriendlyURLEntry friendlyURLEntry = _getFriendlyURLEntry();
+
+		if (friendlyURLEntry == null) {
+			return jsonArray;
+		}
+
+		AssetEntry assetEntry = AssetEntryLocalServiceUtil.fetchEntry(
+			PortalUtil.getClassNameId(FriendlyURLEntry.class),
+			friendlyURLEntry.getFriendlyURLEntryId());
+
+		if (assetEntry == null) {
+			return jsonArray;
+		}
+
+		Locale locale = _themeDisplay.getLocale();
+
+		for (AssetCategory assetCategory : assetEntry.getCategories()) {
+			jsonArray.put(
+				JSONUtil.put(
+					"label", assetCategory.getTitle(locale)
+				).put(
+					"value", assetCategory.getCategoryId()
+				));
+		}
+
+		return jsonArray;
 	}
 
 	public String getFriendlyURLSeparatorCompanyConfigurationURL()
@@ -458,6 +509,31 @@ public class BlogsEditEntryDisplayContext {
 		return _allowTrackbacks;
 	}
 
+	public boolean isAutomaticURL() {
+		String uniqueUrlTitle = BlogsEntryLocalServiceUtil.getUniqueUrlTitle(
+			_blogsEntry);
+
+		if (uniqueUrlTitle.equals(getURLTitle())) {
+			FriendlyURLEntry friendlyURLEntry = _getFriendlyURLEntry();
+
+			if (friendlyURLEntry == null) {
+				return true;
+			}
+
+			AssetEntry assetEntry = AssetEntryLocalServiceUtil.fetchEntry(
+				PortalUtil.getClassNameId(FriendlyURLEntry.class),
+				friendlyURLEntry.getFriendlyURLEntryId());
+
+			List<AssetCategory> assetCategories = assetEntry.getCategories();
+
+			if (assetCategories.isEmpty()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public boolean isAutoTaggingEnabled() {
 		if (getBlogsEntry() == null) {
 			return false;
@@ -513,6 +589,12 @@ public class BlogsEditEntryDisplayContext {
 		}
 
 		return _assetCategoryIds;
+	}
+
+	private FriendlyURLEntry _getFriendlyURLEntry() {
+		return FriendlyURLEntryLocalServiceUtil.fetchMainFriendlyURLEntry(
+			PortalUtil.getClassNameId(BlogsEntry.class.getName()),
+			getEntryId());
 	}
 
 	private long[] _getGroupIds() {

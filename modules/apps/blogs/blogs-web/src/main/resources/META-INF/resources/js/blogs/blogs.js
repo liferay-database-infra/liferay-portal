@@ -108,10 +108,6 @@ export default class Blogs {
 			`input[name=${this._config.namespace}automaticURL]:checked`
 		);
 
-		if (Liferay.FeatureFlags['LPD-11147']) {
-			return automaticURLInput.value === 'default-url';
-		}
-
 		return automaticURLInput.value === 'true';
 	}
 
@@ -181,8 +177,8 @@ export default class Blogs {
 			`#${this._config.namespace}urlOptions input`
 		);
 
-		if (urlOptions.length) {
-			if (!Liferay.FeatureFlags['LPD-11147']) {
+		if (!Liferay.FeatureFlags['LPD-11147']) {
+			if (urlOptions.length) {
 				urlOptions.forEach((option) => {
 					this._addEventListener(
 						option,
@@ -191,9 +187,7 @@ export default class Blogs {
 					);
 				});
 			}
-		}
 
-		if (!Liferay.FeatureFlags['LPD-11147']) {
 			const titleInput = this._getElementById('title');
 
 			if (titleInput) {
@@ -357,18 +351,9 @@ export default class Blogs {
 		const subtitle = this._getElementById('subtitle').value;
 		const title = this._getElementById('title').value;
 
-		let urlTitle = '';
-
-		if (Liferay.FeatureFlags['LPD-11147']) {
-			urlTitle = this._automaticURL()
-				? ''
-				: this._getElementById('friendly_url').value;
-		}
-		else {
-			urlTitle = this._automaticURL()
-				? ''
-				: this._getElementById('urlTitle').value;
-		}
+		const urlTitle = this._automaticURL()
+			? ''
+			: this._getElementById('urlTitle').value;
 
 		if (draft && ajax) {
 			const hasData =
@@ -426,7 +411,7 @@ export default class Blogs {
 							.value,
 						entryId: this._getElementById('entryId').value,
 						friendlyUrlCategories: this._getValuesByName(
-							'friendly_url_category_ids'
+							'friendlyURLAssetCategoryIds'
 						),
 						inputPermissionsViewRole,
 						referringPortletResource: this._getElementById(

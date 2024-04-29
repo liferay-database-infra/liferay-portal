@@ -51,7 +51,7 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 
 	@Override
 	public LayoutPageTemplateCollection addLayoutPageTemplateCollection(
-			long userId, long groupId,
+			String externalReferenceCode, long userId, long groupId,
 			long parentLayoutPageTemplateCollectionId, String name,
 			String description, int type, ServiceContext serviceContext)
 		throws PortalException {
@@ -69,6 +69,8 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 				layoutPageTemplateId);
 
 		layoutPageTemplateCollection.setUuid(serviceContext.getUuid());
+		layoutPageTemplateCollection.setExternalReferenceCode(
+			externalReferenceCode);
 		layoutPageTemplateCollection.setGroupId(groupId);
 		layoutPageTemplateCollection.setCompanyId(user.getCompanyId());
 		layoutPageTemplateCollection.setUserId(user.getUserId());
@@ -111,7 +113,7 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 
 		LayoutPageTemplateCollection targetLayoutPageTemplateCollection =
 			addLayoutPageTemplateCollection(
-				userId, sourceLayoutPageTemplateCollection.getGroupId(),
+				null, userId, sourceLayoutPageTemplateCollection.getGroupId(),
 				layoutParentPageTemplateCollectionId,
 				getUniqueLayoutPageTemplateCollectionName(
 					groupId, sourceLayoutPageTemplateCollection.getName(),
@@ -237,6 +239,15 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 	}
 
 	@Override
+	public LayoutPageTemplateCollection deleteLayoutPageTemplateCollection(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		return deleteLayoutPageTemplateCollection(
+			fetchLayoutPageTemplateCollection(externalReferenceCode, groupId));
+	}
+
+	@Override
 	public LayoutPageTemplateCollection fetchLayoutPageTemplateCollection(
 		long layoutPageTemplateCollectionId) {
 
@@ -250,6 +261,14 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 
 		return layoutPageTemplateCollectionPersistence.fetchByG_LPTCK_T(
 			groupId, layoutPageTemplateCollectionKey, type);
+	}
+
+	@Override
+	public LayoutPageTemplateCollection fetchLayoutPageTemplateCollection(
+		String externalReferenceCode, long groupId) {
+
+		return layoutPageTemplateCollectionPersistence.fetchByERC_G(
+			externalReferenceCode, groupId);
 	}
 
 	@Override

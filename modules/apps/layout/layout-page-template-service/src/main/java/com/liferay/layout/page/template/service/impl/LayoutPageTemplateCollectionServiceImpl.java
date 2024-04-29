@@ -39,9 +39,9 @@ public class LayoutPageTemplateCollectionServiceImpl
 
 	@Override
 	public LayoutPageTemplateCollection addLayoutPageTemplateCollection(
-			long groupId, long parentLayoutPageTemplateCollectionId,
-			String name, String description, int type,
-			ServiceContext serviceContext)
+			String externalReferenceCode, long groupId,
+			long parentLayoutPageTemplateCollectionId, String name,
+			String description, int type, ServiceContext serviceContext)
 		throws PortalException {
 
 		_portletResourcePermission.check(
@@ -50,8 +50,9 @@ public class LayoutPageTemplateCollectionServiceImpl
 
 		return layoutPageTemplateCollectionLocalService.
 			addLayoutPageTemplateCollection(
-				getUserId(), groupId, parentLayoutPageTemplateCollectionId,
-				name, description, type, serviceContext);
+				externalReferenceCode, getUserId(), groupId,
+				parentLayoutPageTemplateCollectionId, name, description, type,
+				serviceContext);
 	}
 
 	@Override
@@ -86,6 +87,24 @@ public class LayoutPageTemplateCollectionServiceImpl
 	}
 
 	@Override
+	public LayoutPageTemplateCollection deleteLayoutPageTemplateCollection(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		LayoutPageTemplateCollection layoutPageTemplateCollection =
+			layoutPageTemplateCollectionLocalService.
+				fetchLayoutPageTemplateCollection(
+					externalReferenceCode, groupId);
+
+		_layoutPageTemplateCollectionModelResourcePermission.check(
+			getPermissionChecker(), layoutPageTemplateCollection,
+			ActionKeys.DELETE);
+
+		return layoutPageTemplateCollectionLocalService.
+			deleteLayoutPageTemplateCollection(layoutPageTemplateCollection);
+	}
+
+	@Override
 	public void deleteLayoutPageTemplateCollections(
 			long[] layoutPageTemplateCollectionIds)
 		throws PortalException {
@@ -112,6 +131,25 @@ public class LayoutPageTemplateCollectionServiceImpl
 			layoutPageTemplateCollectionLocalService.
 				fetchLayoutPageTemplateCollection(
 					layoutPageTemplateCollectionId);
+
+		if (layoutPageTemplateCollection != null) {
+			_layoutPageTemplateCollectionModelResourcePermission.check(
+				getPermissionChecker(), layoutPageTemplateCollection,
+				ActionKeys.VIEW);
+		}
+
+		return layoutPageTemplateCollection;
+	}
+
+	@Override
+	public LayoutPageTemplateCollection fetchLayoutPageTemplateCollection(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		LayoutPageTemplateCollection layoutPageTemplateCollection =
+			layoutPageTemplateCollectionLocalService.
+				fetchLayoutPageTemplateCollection(
+					externalReferenceCode, groupId);
 
 		if (layoutPageTemplateCollection != null) {
 			_layoutPageTemplateCollectionModelResourcePermission.check(
