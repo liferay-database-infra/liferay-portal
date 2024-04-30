@@ -12,6 +12,7 @@ export function detectGroovyOrJavaScript(elements, setHasGroovyOrJavaScript) {
 
 			if (
 				hasScriptActionsOrAssignments(data) ||
+				hasScriptNotificationRecipient(data) ||
 				hasScriptTimerActionOrReassignments(element) ||
 				isConditionNode(element)
 			) {
@@ -45,6 +46,36 @@ function hasScriptActionsOrAssignments(data) {
 			data.assignments.scriptLanguage.includes('java')
 		);
 	}
+}
+
+function isNumericKey(key) {
+	return !isNaN(parseFloat(key)) && isFinite(key);
+}
+
+function hasScriptNotificationRecipient(data) {
+	if (data.notifications) {
+		return data.notifications.recipients.some((recipient) => {
+			if (Array.isArray(recipient)) {
+				return recipient[0].assignmentType.includes(
+					'scriptedRecipient'
+				);
+			}
+
+			for (const key in recipient) {
+				if (isNumericKey(key)) {
+					const {notificationRecipient} = recipient;
+
+					return notificationRecipient.assignmentType.includes(
+						'scriptedRecipient'
+					);
+				}
+			}
+
+			return recipient.assignmentType.includes('scriptedRecipient');
+		});
+	}
+
+	return false;
 }
 
 function hasScriptTimerActionOrReassignments(element) {

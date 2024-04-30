@@ -54,9 +54,95 @@ test.describe('manage object definitions through model builder', () => {
 			await apiHelpers.objectAdmin.deleteObjectFolder(objectFolder.id);
 		}
 	});
+
+	test('can edit object folder label and ERC by Model Builder', async ({
+		apiHelpers,
+		modalEditObjectFolderPage,
+		modelBuilderPage,
+	}) => {
+		const objectFolder =
+			await apiHelpers.objectAdmin.postRandomObjectFolder();
+
+		await modelBuilderPage.goto({objectFolderName: objectFolder.name});
+
+		await modelBuilderPage.editObjectFolderDetailsButton.click();
+
+		const newObjectFolderLabel = 'objectFolderLabel' + getRandomInt();
+		const newObjectFolderERC = 'objectFolderERC' + getRandomInt();
+
+		await modalEditObjectFolderPage.editObjectFolderDetails(
+			newObjectFolderERC,
+			newObjectFolderLabel
+		);
+
+		expect(
+			modelBuilderPage.getObjectFolderLabelHeaderLocator(
+				newObjectFolderLabel
+			)
+		).toBeVisible();
+
+		expect(modelBuilderPage.selectedObjectFolder).toBeVisible();
+
+		expect(
+			modelBuilderPage.getObjectFolderERCHeaderLocator(newObjectFolderERC)
+		).toBeVisible();
+
+		// Clean up
+
+		await apiHelpers.objectAdmin.deleteObjectFolder(objectFolder.id);
+	});
 });
 
 test.describe('manage object definitions through view object definitions', () => {
+	test('can edit object folder label and ERC in the view object definitions page', async ({
+		apiHelpers,
+		modalEditObjectFolderPage,
+		viewObjectDefinitionsPage,
+	}) => {
+		const objectFolder =
+			await apiHelpers.objectAdmin.postRandomObjectFolder();
+
+		await viewObjectDefinitionsPage.goto();
+
+		await viewObjectDefinitionsPage.openObjectFolder(
+			objectFolder.label['en_US']
+		);
+
+		await viewObjectDefinitionsPage.openObjectFolderActions();
+
+		await viewObjectDefinitionsPage.objectFolderEditLabelAndERCOption.click();
+
+		const newObjectFolderLabel = 'objectFolderLabel' + getRandomInt();
+		const newObjectFolderERC = 'objectFolderERC' + getRandomInt();
+
+		await modalEditObjectFolderPage.editObjectFolderDetails(
+			newObjectFolderERC,
+			newObjectFolderLabel
+		);
+
+		expect(
+			viewObjectDefinitionsPage.objectFolders.getByText(
+				newObjectFolderLabel
+			)
+		).toBeVisible();
+
+		expect(
+			viewObjectDefinitionsPage.getObjectFolderCardHeaderLabel(
+				newObjectFolderLabel
+			)
+		).toBeVisible();
+
+		expect(
+			viewObjectDefinitionsPage.getObjectFolderCardHeaderERC(
+				newObjectFolderERC
+			)
+		).toBeVisible();
+
+		// Clean up
+
+		await apiHelpers.objectAdmin.deleteObjectFolder(objectFolder.id);
+	});
+
 	test('created object folders are on the left side bar', async ({
 		apiHelpers,
 		viewObjectDefinitionsPage,
