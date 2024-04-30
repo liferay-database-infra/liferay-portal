@@ -164,7 +164,7 @@ public class UpgradeCompanyId extends BaseCompanyIdUpgradeProcess {
 
 			runSQL(
 				connection,
-				_getUpdateSQL(
+				getUpdateSQL(
 					"Company", "companyId", "ownerId",
 					PortletKeys.PREFS_OWNER_TYPE_COMPANY));
 
@@ -172,7 +172,7 @@ public class UpgradeCompanyId extends BaseCompanyIdUpgradeProcess {
 
 			runSQL(
 				connection,
-				_getUpdateSQL(
+				getUpdateSQL(
 					"Group_", "groupId", "ownerId",
 					PortletKeys.PREFS_OWNER_TYPE_GROUP));
 
@@ -180,7 +180,7 @@ public class UpgradeCompanyId extends BaseCompanyIdUpgradeProcess {
 
 			runSQL(
 				connection,
-				_getUpdateSQL(
+				getUpdateSQL(
 					"Layout", "plid", "plid",
 					PortletKeys.PREFS_OWNER_TYPE_LAYOUT));
 
@@ -188,7 +188,7 @@ public class UpgradeCompanyId extends BaseCompanyIdUpgradeProcess {
 
 			runSQL(
 				connection,
-				_getUpdateSQL(
+				getUpdateSQL(
 					"LayoutRevision", "layoutRevisionId", "plid",
 					PortletKeys.PREFS_OWNER_TYPE_LAYOUT));
 
@@ -196,7 +196,7 @@ public class UpgradeCompanyId extends BaseCompanyIdUpgradeProcess {
 
 			runSQL(
 				connection,
-				_getUpdateSQL(
+				getUpdateSQL(
 					"Organization_", "organizationId", "ownerId",
 					PortletKeys.PREFS_OWNER_TYPE_ORGANIZATION));
 
@@ -204,7 +204,7 @@ public class UpgradeCompanyId extends BaseCompanyIdUpgradeProcess {
 
 			runSQL(
 				connection,
-				_getUpdateSQL(
+				getUpdateSQL(
 					"PortletItem", "portletItemId", "ownerId",
 					PortletKeys.PREFS_OWNER_TYPE_ARCHIVED));
 
@@ -212,12 +212,12 @@ public class UpgradeCompanyId extends BaseCompanyIdUpgradeProcess {
 
 			runSQL(
 				connection,
-				_getUpdateSQL(
+				getUpdateSQL(
 					"User_", "userId", "ownerId",
 					PortletKeys.PREFS_OWNER_TYPE_USER));
 		}
 
-		private String _getSelectSQL(
+		protected String getSelectSQL(
 				String foreignTableName, String foreignColumnName,
 				String columnName)
 			throws SQLException {
@@ -246,14 +246,14 @@ public class UpgradeCompanyId extends BaseCompanyIdUpgradeProcess {
 				".", columnName);
 		}
 
-		private String _getUpdateSQL(
+		protected String getUpdateSQL(
 				String foreignTableName, String foreignColumnName,
 				String columnName, int ownerType)
 			throws IOException, SQLException {
 
 			return StringBundler.concat(
 				getUpdateSQL(
-					_getSelectSQL(
+					getSelectSQL(
 						foreignTableName, foreignColumnName, columnName)),
 				" where ownerType = ", ownerType,
 				" and (companyId is null or companyId = 0)");
