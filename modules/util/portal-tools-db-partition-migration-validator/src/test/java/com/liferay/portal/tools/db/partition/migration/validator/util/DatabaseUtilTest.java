@@ -150,6 +150,38 @@ public class DatabaseUtilTest {
 		Assert.assertEquals(module2Release, releases.get(1));
 	}
 
+	@Test
+	public void testReplaceSchemaName() {
+		Assert.assertEquals(
+			"jdbc:mysql://localhost:3306/lportal",
+			DatabaseUtil.replaceSchemaName(
+				"jdbc:mysql://localhost:3306/lportal", null));
+		Assert.assertEquals(
+			"jdbc:postgresql://localhost:5432/lportal",
+			DatabaseUtil.replaceSchemaName(
+				"jdbc:postgresql://localhost:5432/lportal", null));
+
+		Assert.assertEquals(
+			"jdbc:mysql://localhost:3306/db",
+			DatabaseUtil.replaceSchemaName(
+				"jdbc:mysql://localhost:3306/lportal", "db"));
+		Assert.assertEquals(
+			"jdbc:postgresql://localhost:5432/lportal?currentSchema=db",
+			DatabaseUtil.replaceSchemaName(
+				"jdbc:postgresql://localhost:5432/lportal", "db"));
+
+		Assert.assertEquals(
+			"jdbc:mysql://localhost:3306/db?parameter=value",
+			DatabaseUtil.replaceSchemaName(
+				"jdbc:mysql://localhost:3306/lportal?parameter=value", "db"));
+		Assert.assertEquals(
+			"jdbc:postgresql://localhost:5432/lportal?parameter=value&" +
+				"currentSchema=db",
+			DatabaseUtil.replaceSchemaName(
+				"jdbc:postgresql://localhost:5432/lportal?parameter=value",
+				"db"));
+	}
+
 	private void _mockCompanies(List<Company> companies) throws SQLException {
 		PreparedStatement preparedStatement = Mockito.mock(
 			PreparedStatement.class);
