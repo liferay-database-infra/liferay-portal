@@ -51,6 +51,10 @@ public class EntityInitializer {
 		_gitCommitEntityRepository.setRoutineEntityRepository(
 			_routineEntityRepository);
 
+		_gitPullRequestEntityRepository.setGitBranchEntityRepository(
+			_gitBranchEntityRepository);
+		_gitPullRequestEntityRepository.setGitUserEntityRepository(
+			_gitUserEntityRepository);
 		_gitPullRequestEntityRepository.setJobEntityRepository(
 			_jobEntityRepository);
 
@@ -74,6 +78,8 @@ public class EntityInitializer {
 			_jobPrioritizerEntityRepository);
 
 		_jobEntityRepository.setBuildEntityRepository(_buildEntityRepository);
+		_jobEntityRepository.setGitPullRequestEntityRepository(
+			_gitPullRequestEntityRepository);
 		_jobEntityRepository.setJobQueue(_jobQueue);
 		_jobEntityRepository.setRoutineEntityRepository(
 			_routineEntityRepository);

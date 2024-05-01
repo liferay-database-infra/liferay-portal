@@ -124,6 +124,7 @@ import com.liferay.portal.kernel.workflow.WorkflowTaskManager;
 import com.liferay.portal.kernel.workflow.search.WorkflowModelSearchResult;
 import com.liferay.portal.search.test.util.SearchTestRule;
 import com.liferay.portal.security.permission.SimplePermissionChecker;
+import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.workflow.comparator.WorkflowComparatorFactory;
@@ -198,6 +199,8 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 	public void setUp() throws Exception {
 		_group = GroupTestUtil.addGroup(
 			_company.getCompanyId(), _companyAdminUser.getUserId(), 0);
+
+		_childGroup = GroupTestUtil.addGroup(_group.getGroupId());
 
 		_serviceContext = ServiceContextTestUtil.getServiceContext(
 			_group, _companyAdminUser.getUserId());
@@ -438,7 +441,7 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 			WorkflowConstants.STATUS_PENDING, article.getStatus());
 
 		_checkUserNotificationEventsByUsers(
-			_adminUser, _portalContentReviewerUser, _siteAdminUser);
+			1, _adminUser, _portalContentReviewerUser, _siteAdminUser);
 
 		_assignWorkflowTaskToUser(_adminUser, _adminUser);
 
@@ -474,7 +477,7 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 			WorkflowConstants.STATUS_PENDING, article.getStatus());
 
 		_checkUserNotificationEventsByUsers(
-			_adminUser, _portalContentReviewerUser, _siteAdminUser);
+			1, _adminUser, _portalContentReviewerUser, _siteAdminUser);
 
 		_assignWorkflowTaskToUser(_adminUser, _adminUser);
 
@@ -516,7 +519,7 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 			WorkflowConstants.STATUS_PENDING, article.getStatus());
 
 		_checkUserNotificationEventsByUsers(
-			_adminUser, _portalContentReviewerUser, _siteAdminUser);
+			1, _adminUser, _portalContentReviewerUser, _siteAdminUser);
 
 		_assignWorkflowTaskToUser(_adminUser, _adminUser);
 
@@ -551,7 +554,7 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 			WorkflowConstants.STATUS_PENDING, article.getStatus());
 
 		_checkUserNotificationEventsByUsers(
-			_adminUser, _portalContentReviewerUser, _siteAdminUser);
+			1, _adminUser, _portalContentReviewerUser, _siteAdminUser);
 
 		_assignWorkflowTaskToUser(_adminUser, _adminUser);
 
@@ -597,7 +600,7 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 
 		BlogsEntry blogsEntry = _addBlogsEntry(memberUser);
 
-		_checkUserNotificationEventsByUsers(reviewerUser);
+		_checkUserNotificationEventsByUsers(1, reviewerUser);
 
 		_assignWorkflowTaskToUser(reviewerUser, reviewerUser);
 
@@ -646,7 +649,7 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 
 		BlogsEntry blogsEntry = _addBlogsEntry(memberUser);
 
-		_checkUserNotificationEventsByUsers(reviewerUser);
+		_checkUserNotificationEventsByUsers(1, reviewerUser);
 
 		_assignWorkflowTaskToUser(reviewerUser, reviewerUser);
 
@@ -679,7 +682,7 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 		Assert.assertEquals(
 			WorkflowConstants.STATUS_PENDING, article.getStatus());
 
-		_checkUserNotificationEventsByUsers(_siteMemberUser);
+		_checkUserNotificationEventsByUsers(1, _siteMemberUser);
 
 		Assert.assertTrue(_hasAssignableUsers(_adminUser));
 
@@ -707,7 +710,7 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 		BlogsEntry blogsEntry = _addBlogsEntry();
 
 		_checkUserNotificationEventsByUsers(
-			_adminUser, _portalContentReviewerUser, _siteAdminUser);
+			1, _adminUser, _portalContentReviewerUser, _siteAdminUser);
 
 		_assignWorkflowTaskToUser(_siteAdminUser, _siteAdminUser);
 
@@ -745,7 +748,7 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 			_serviceContext);
 
 		_checkUserNotificationEventsByUsers(
-			_adminUser, _portalContentReviewerUser, _siteAdminUser);
+			1, _adminUser, _portalContentReviewerUser, _siteAdminUser);
 
 		_assignWorkflowTaskToUser(_adminUser, _adminUser);
 
@@ -777,15 +780,15 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 		BlogsEntry blogsEntry = _addBlogsEntry();
 
 		_checkUserNotificationEventsByUsers(
-			_adminUser, _portalContentReviewerUser, _siteAdminUser);
+			1, _adminUser, _portalContentReviewerUser, _siteAdminUser);
 
 		_assignWorkflowTaskToUser(_portalContentReviewerUser, _adminUser);
 
-		_checkUserNotificationEventsByUsers(_adminUser);
+		_checkUserNotificationEventsByUsers(1, _adminUser);
 
 		_assignWorkflowTaskToUser(_adminUser, _portalContentReviewerUser);
 
-		_checkUserNotificationEventsByUsers(_portalContentReviewerUser);
+		_checkUserNotificationEventsByUsers(1, _portalContentReviewerUser);
 
 		_completeWorkflowTask(_portalContentReviewerUser, Constants.APPROVE);
 
@@ -804,7 +807,7 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 
 		_addBlogsEntry();
 
-		_checkUserNotificationEventsByUsers(_siteAdminUser);
+		_checkUserNotificationEventsByUsers(1, _siteAdminUser);
 
 		User user = _createUser(RoleConstants.SITE_ADMINISTRATOR);
 
@@ -1021,6 +1024,47 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 			WorkflowConstants.STATUS_DRAFT, fileVersion.getStatus());
 	}
 
+	@FeatureFlags("LPD-23210")
+	@Test
+	public void testPreventNotifyingAncestorSites() throws Exception {
+
+		// Notifiy ancestor sites
+
+		_activateWorkflow(
+			0, BlogsEntry.class.getName(), 0, 0, _SITE_MEMBER_SINGLE_APPROVER,
+			1);
+
+		User childSiteMemberUser = _createUser(
+			RoleConstants.SITE_MEMBER, _childGroup);
+
+		_serviceContext = ServiceContextTestUtil.getServiceContext(
+			_childGroup.getGroupId());
+
+		BlogsEntry blogsEntry = _addBlogsEntry();
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_PENDING, blogsEntry.getStatus());
+
+		_checkUserNotificationEventsByUsers(
+			1, childSiteMemberUser, _siteMemberUser);
+
+		// Prevent notifiying ancestor sites
+
+		ConfigurationTestUtil.saveConfiguration(
+			_configuration,
+			HashMapDictionaryBuilder.<String, Object>put(
+				"preventNotifyingAncestorSites", true
+			).build());
+
+		blogsEntry = _addBlogsEntry();
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_PENDING, blogsEntry.getStatus());
+
+		_checkUserNotificationEventsByUsers(1, childSiteMemberUser);
+		_checkUserNotificationEventsByUsers(0, _siteMemberUser);
+	}
+
 	@Test
 	public void testRejectDLFileEntry() throws Exception {
 		_activateSingleApproverWorkflow(DLFolder.class.getName(), 0, -1);
@@ -1059,15 +1103,15 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 		BlogsEntry blogsEntry = _addBlogsEntry();
 
 		_checkUserNotificationEventsByUsers(
-			_adminUser, _portalContentReviewerUser, _siteAdminUser);
+			1, _adminUser, _portalContentReviewerUser, _siteAdminUser);
 
 		_assignWorkflowTaskToUser(_adminUser, _portalContentReviewerUser);
 
-		_checkUserNotificationEventsByUsers(_portalContentReviewerUser);
+		_checkUserNotificationEventsByUsers(1, _portalContentReviewerUser);
 
 		_completeWorkflowTask(_portalContentReviewerUser, Constants.REJECT);
 
-		_checkUserNotificationEventsByUsers(_adminUser);
+		_checkUserNotificationEventsByUsers(1, _adminUser);
 
 		blogsEntry = _blogsEntryLocalService.getBlogsEntry(
 			blogsEntry.getEntryId());
@@ -1687,7 +1731,9 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 			StringPool.BLANK, null, null);
 	}
 
-	private void _checkUserNotificationEventsByUsers(User... users) {
+	private void _checkUserNotificationEventsByUsers(
+		long expected, User... users) {
+
 		for (User user : users) {
 			List<UserNotificationEvent> userNotificationEvents =
 				_userNotificationEventLocalService.
@@ -1696,16 +1742,18 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 						UserNotificationDeliveryConstants.TYPE_WEBSITE, false);
 
 			Assert.assertEquals(
-				userNotificationEvents.toString(), 1,
+				userNotificationEvents.toString(), expected,
 				userNotificationEvents.size());
 
-			UserNotificationEvent userNotificationEvent =
-				userNotificationEvents.get(0);
+			if (expected > 0) {
+				UserNotificationEvent userNotificationEvent =
+					userNotificationEvents.get(0);
 
-			userNotificationEvent.setArchived(true);
+				userNotificationEvent.setArchived(true);
 
-			_userNotificationEventLocalService.updateUserNotificationEvent(
-				userNotificationEvent);
+				_userNotificationEventLocalService.updateUserNotificationEvent(
+					userNotificationEvent);
+			}
 		}
 	}
 
@@ -2181,6 +2229,9 @@ public class WorkflowTaskManagerImplTest extends BaseWorkflowManagerTestCase {
 
 	@Inject
 	private BlogsEntryLocalService _blogsEntryLocalService;
+
+	@DeleteAfterTestRun
+	private Group _childGroup;
 
 	@Inject
 	private CommerceChannelLocalService _commerceChannelLocalService;
