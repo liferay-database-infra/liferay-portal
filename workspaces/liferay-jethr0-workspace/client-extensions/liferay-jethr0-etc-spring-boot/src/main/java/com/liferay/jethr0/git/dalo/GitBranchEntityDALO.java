@@ -38,11 +38,11 @@ public class GitBranchEntityDALO extends BaseEntityDALO<GitBranchEntity> {
 			typeQueries.add("(type eq '" + type.getKey() + "')");
 		}
 
-		String filter = StringUtil.join(" or ", typeQueries);
+		String filterString = StringUtil.join(" or ", typeQueries);
 
 		List<GitBranchEntity.Type> typesList = Arrays.asList(types);
 
-		for (GitBranchEntity gitBranchEntity : getAll(filter, null, null)) {
+		for (GitBranchEntity gitBranchEntity : getAll(filterString, null, null)) {
 			if (!typesList.contains(gitBranchEntity.getType())) {
 				continue;
 			}

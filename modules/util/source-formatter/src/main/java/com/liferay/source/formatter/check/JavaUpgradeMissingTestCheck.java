@@ -7,7 +7,6 @@ package com.liferay.source.formatter.check;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.source.formatter.SourceFormatterArgs;
 import com.liferay.source.formatter.check.util.JavaSourceUtil;
 import com.liferay.source.formatter.check.util.SourceUtil;
@@ -33,6 +32,10 @@ public class JavaUpgradeMissingTestCheck extends BaseFileCheck {
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
 		throws Exception {
+
+		if (!isModulesFile(absolutePath) && !isPortalSource()) {
+			return content;
+		}
 
 		String className = JavaSourceUtil.getClassName(fileName);
 
@@ -74,34 +77,13 @@ public class JavaUpgradeMissingTestCheck extends BaseFileCheck {
 		String fileName, String absolutePath, String content,
 		String className) {
 
-		String expectedTestClassName = null;
-		File file = null;
+		String expectedTestClassName = StringBundler.concat(
+			JavaSourceUtil.getPackageName(content), ".test.", className,
+			"Test");
 
-		if (isModulesFile(absolutePath)) {
-			expectedTestClassName = StringBundler.concat(
-				JavaSourceUtil.getPackageName(content), ".test.", className,
-				"Test");
-
-			file = JavaSourceUtil.getJavaFile(
-				expectedTestClassName, SourceUtil.getRootDirName(absolutePath),
-				getBundleSymbolicNamesMap(absolutePath));
-		}
-		else if (absolutePath.contains("/portal-impl/") ||
-				 absolutePath.contains("/portal-kernel/")) {
-
-			expectedTestClassName = StringUtil.replaceFirst(
-				absolutePath,
-				new String[] {"/portal-impl/src/", "/portal-kernel/src/"},
-				new String[] {
-					"/portal-impl/test/unit/", "/portal-kernel/test/unit/"
-				});
-
-			expectedTestClassName = StringUtil.insert(
-				expectedTestClassName, "Test",
-				expectedTestClassName.length() - 5);
-
-			file = new File(expectedTestClassName);
-		}
+		File file = JavaSourceUtil.getJavaFile(
+			expectedTestClassName, SourceUtil.getRootDirName(absolutePath),
+			getBundleSymbolicNamesMap(absolutePath));
 
 		if ((file == null) || !file.exists()) {
 			addMessage(

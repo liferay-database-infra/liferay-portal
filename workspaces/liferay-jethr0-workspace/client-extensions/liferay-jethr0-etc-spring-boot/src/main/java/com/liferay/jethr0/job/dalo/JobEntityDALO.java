@@ -40,7 +40,7 @@ public class JobEntityDALO extends BaseEntityDALO<JobEntity> {
 	public Set<JobEntity> getJobsByState(JobEntity.State... states) {
 		Set<JobEntity> jobEntities = new HashSet<>();
 
-		String filter = null;
+		String filterString = null;
 
 		if (states.length > 0) {
 			Set<String> stateQueries = new HashSet<>();
@@ -49,12 +49,12 @@ public class JobEntityDALO extends BaseEntityDALO<JobEntity> {
 				stateQueries.add("(state eq '" + state.getKey() + "')");
 			}
 
-			filter = StringUtil.join(" or ", stateQueries);
+			filterString = StringUtil.join(" or ", stateQueries);
 		}
 
 		List<JobEntity.State> statesList = Arrays.asList(states);
 
-		for (JobEntity jobEntity : getAll(filter, null, null)) {
+		for (JobEntity jobEntity : getAll(filterString, null, null)) {
 			if (!statesList.contains(jobEntity.getState())) {
 				continue;
 			}

@@ -288,7 +288,7 @@ public class TestrayRunComparisonResourceImpl
 	}
 
 	private List<TestrayCaseResultComparison> _getTestrayCaseResultComparisons(
-			String filter, String testrayCaseResultError1,
+			String filterString, String testrayCaseResultError1,
 			String testrayCaseResultError2, String testrayCaseResultIssue1,
 			String testrayCaseResultIssue2, String testrayCaseResultStatus1,
 			String testrayCaseResultStatus2, long testrayRunId1,
@@ -302,7 +302,7 @@ public class TestrayRunComparisonResourceImpl
 			_getObjectEntriesMap(
 				_merge(
 					ListUtil.fromArray(
-						"runId eq '" + testrayRunId1 + "'", filter,
+						"runId eq '" + testrayRunId1 + "'", filterString,
 						testrayCaseResultError1, testrayCaseResultIssue1,
 						testrayCaseResultStatus1),
 					" and "),
@@ -311,7 +311,7 @@ public class TestrayRunComparisonResourceImpl
 			_getObjectEntriesMap(
 				_merge(
 					ListUtil.fromArray(
-						"runId eq '" + testrayRunId2 + "'", filter,
+						"runId eq '" + testrayRunId2 + "'", filterString,
 						testrayCaseResultError2, testrayCaseResultIssue2,
 						testrayCaseResultStatus2),
 					" and "),
