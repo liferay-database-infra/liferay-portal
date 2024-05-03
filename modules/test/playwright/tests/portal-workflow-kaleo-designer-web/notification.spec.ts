@@ -6,13 +6,21 @@
 import {expect, mergeTests} from '@playwright/test';
 
 import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
+import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {workflowPagesTest} from '../../fixtures/workflowPagesTest';
 import {getRandomInt} from '../../utils/getRandomInt';
 
-export const test = mergeTests(apiHelpersTest, loginTest(), workflowPagesTest);
+export const test = mergeTests(
+	apiHelpersTest,
+	loginTest(),
+	featureFlagsTest({
+		'LPD-11179': true,
+	}),
+	workflowPagesTest
+);
 
-const notification = {
+const roleTypeNotification = {
 	notificationDescription: 'notificationDescription0' + getRandomInt(),
 	notificationName: 'Role Type Notification',
 	notificationTypeEmail: true,
@@ -25,6 +33,20 @@ const notification = {
 	},
 	template: 'template0' + getRandomInt(),
 	templateLanguage: 'freemarker',
+} as Notification;
+
+const scriptedRecipientNotification = {
+	notificationDescription: 'notificationDescription1' + getRandomInt(),
+	notificationName: 'notificationName1' + getRandomInt(),
+	notificationTypeEmail: true,
+	notificationTypeUser: true,
+	recipientType: 'scriptedRecipient',
+	recipientTypeData: {
+		script: 'script' + getRandomInt(),
+		scriptLanguage: 'groovy',
+	},
+	template: 'template1' + getRandomInt(),
+	templateLanguage: 'text',
 } as Notification;
 
 let workflowDefinitionId: number;
@@ -47,10 +69,74 @@ test.beforeEach(async ({apiHelpers}) => {
 	workflowDefinitionId = workflowDefinition.id;
 });
 
-test.afterEach(async ({apiHelpers}) => {
+test.afterEach(async ({apiHelpers, scriptManagementPage}) => {
 	await apiHelpers.headlessAdminWorkflow.deleteWorkflowDefinition(
 		workflowDefinitionId
 	);
+
+	await scriptManagementPage.enableScriptManagementConfiguration();
+});
+
+test('cannot see scripted recipient option when script management configuration is disabled', async ({
+	nodePropertiesSidebarPage,
+	notificationPage,
+	processBuilderPage,
+	scriptManagementPage,
+}) => {
+	await scriptManagementPage.disableScriptManagementConfiguration();
+
+	await processBuilderPage.goto();
+
+	await processBuilderPage.clickWorkflowDefinitionName(
+		workflowDefinitionName
+	);
+
+	await nodePropertiesSidebarPage.dragTaskNodeToDiagram();
+
+	await nodePropertiesSidebarPage.addNotificationButton.click();
+
+	expect(
+		await notificationPage.getRecipientTypeTypeOption('scriptedRecipient')
+	).toBeNull();
+});
+
+test('cannot save a workflow definition with a scripted recipient notification when script management configuration is disabled', async ({
+	diagramViewPage,
+	nodePropertiesSidebarPage,
+	notificationPage,
+	page,
+	processBuilderPage,
+	scriptManagementPage,
+}) => {
+	await processBuilderPage.goto();
+
+	await processBuilderPage.clickWorkflowDefinitionName(
+		workflowDefinitionName
+	);
+
+	await nodePropertiesSidebarPage.dragTaskNodeToDiagram();
+
+	await nodePropertiesSidebarPage.nodeLabelInput.fill('Notification Node');
+
+	await nodePropertiesSidebarPage.addNotificationButton.click();
+
+	await notificationPage.fillNotificationFields(
+		scriptedRecipientNotification
+	);
+
+	await diagramViewPage.saveWorkflowDefinition();
+
+	await scriptManagementPage.disableScriptManagementConfiguration();
+
+	await processBuilderPage.goto();
+
+	await processBuilderPage.clickWorkflowDefinitionName(
+		workflowDefinitionName
+	);
+
+	await diagramViewPage.saveWorkflowDefinition();
+
+	await expect(page.getByText('Error Updating Definition')).toBeVisible();
 });
 
 test('create a notification using role type', async ({
@@ -69,7 +155,7 @@ test('create a notification using role type', async ({
 
 	await nodePropertiesSidebarPage.deleteNotifications();
 
-	await nodePropertiesSidebarPage.createNotification(notification);
+	await nodePropertiesSidebarPage.createNotification(roleTypeNotification);
 
 	await processBuilderPage.switchToSourceViewAndBackToDiagram();
 
@@ -85,7 +171,7 @@ test('create a notification using role type', async ({
 
 	await notificationSectionPage.assertNotificationSectionFields(
 		0,
-		notification
+		roleTypeNotification
 	);
 
 	await diagramViewPage.saveWorkflowDefinition();
@@ -104,6 +190,6 @@ test('create a notification using role type', async ({
 
 	await notificationSectionPage.assertNotificationSectionFields(
 		0,
-		notification
+		roleTypeNotification
 	);
 });

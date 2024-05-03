@@ -6,20 +6,6 @@
 import {getRandomInt} from '../utils/getRandomInt';
 import {ApiHelpers} from './ApiHelpers';
 
-type TObjectAction = {
-	active?: boolean;
-	id?: number;
-	label: {
-		[key: string]: string;
-	};
-	name: string;
-	objectActionExecutorKey: string;
-	objectActionTriggerKey: string;
-	parameters: {
-		[key: string]: number;
-	};
-};
-
 export class ObjectAdminApiHelper {
 	readonly apiHelpers: ApiHelpers;
 	readonly basePath: string;
@@ -60,11 +46,11 @@ export class ObjectAdminApiHelper {
 		);
 	}
 
-	async postObjectDefinitionByExternalRefernceCodeObjectAction(
+	async postObjectActionByExternalReferenceCode(
 		externalReferenceCode: string,
-		objectAction?: TObjectAction
-	): Promise<TObjectAction> {
-		return this.apiHelpers.post(
+		objectAction?: Partial<ObjectAction>
+	): Promise<ObjectAction> {
+		return this.apiHelpers.post<Partial<ObjectAction>>(
 			`${this.apiHelpers.baseUrl}${this.basePath}/object-definitions/by-external-reference-code/${externalReferenceCode}/object-actions`,
 			{data: objectAction}
 		);
@@ -79,9 +65,23 @@ export class ObjectAdminApiHelper {
 		);
 	}
 
-	async postRandomObjectDefinition(
-		objectFolderExternalReferenceCode?: string
+	async postObjectValidation(
+		objectDefinitionExternalReferenceCode: string,
+		objectValidation: ObjectValidation
 	) {
+		return this.apiHelpers.post<ObjectValidation>(
+			`${this.apiHelpers.baseUrl}${this.basePath}/object-definitions/by-external-reference-code/${objectDefinitionExternalReferenceCode}/object-validation-rules`,
+			{data: objectValidation}
+		);
+	}
+
+	async postRandomObjectDefinition({
+		objectFolderExternalReferenceCode,
+		status,
+	}: {
+		objectFolderExternalReferenceCode?: string;
+		status: {code: number};
+	}) {
 		const objectDefinitionExternalReferenceCode =
 			'ObjectDefinition' + getRandomInt();
 
@@ -113,7 +113,7 @@ export class ObjectAdminApiHelper {
 				en_US: objectDefinitionExternalReferenceCode,
 			},
 			scope: 'company',
-			status: {code: 0},
+			status,
 		};
 
 		if (objectFolderExternalReferenceCode) {
@@ -124,7 +124,7 @@ export class ObjectAdminApiHelper {
 		return this.apiHelpers.post(
 			`${this.apiHelpers.baseUrl}${this.basePath}/object-definitions`,
 			{data: requestBody}
-		);
+		) as Promise<ObjectDefinition>;
 	}
 
 	async postRandomObjectFolder(): Promise<ObjectFolder> {

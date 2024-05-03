@@ -4,13 +4,13 @@
  */
 
 import ClayButton from '@clayui/button';
-import {Outlet, useLocation, useNavigate} from 'react-router-dom';
+import {Outlet, useLocation, useNavigate, useParams} from 'react-router-dom';
 
 import {AppToolBar} from '../../../../../components/AppToolBar/AppToolBar';
 import {AppFlowList} from '../../../../../components/NewAppFlowList/AppFlowList';
 import {useAccount} from '../../../../../hooks/data/useAccounts';
 
-import './PublishSolutionForm.scss';
+import './PublishSolutionOutlet.scss';
 import {SOLUTION_FLOW_ITEMS} from '../constants';
 
 import 'react-quill/dist/quill.snow.css';
@@ -20,17 +20,25 @@ const button = {
 	continue: 'Continue',
 };
 
-const PublishSolutionForm = () => {
+const PublishSolutionOutlet = () => {
 	const {data: account} = useAccount();
 	const location = useLocation();
 	const navigate = useNavigate();
-	const lastPath = location.pathname.split('/').at(-1);
 
-	const activeIndex = SOLUTION_FLOW_ITEMS.findIndex(
+	const {id} = useParams();
+	const paths = location.pathname.split('/');
+	const lastPath = paths.at(id ? -2 : -1);
+
+	let activeIndex = SOLUTION_FLOW_ITEMS.findIndex(
 		({path}) => path === lastPath
 	);
 
-	const activeRoute = SOLUTION_FLOW_ITEMS[activeIndex];
+	if (activeIndex === -1) {
+		activeIndex = 0;
+	}
+
+	const activeRoute =
+		SOLUTION_FLOW_ITEMS[activeIndex] || SOLUTION_FLOW_ITEMS[0];
 
 	const onClickButton = (buttonName: string) => {
 		const isContinue = buttonName === button.continue;
@@ -54,7 +62,7 @@ const PublishSolutionForm = () => {
 			}
 		});
 
-		return navigate(
+		navigate(
 			SOLUTION_FLOW_ITEMS[isContinue ? activeIndex + 1 : activeIndex - 1]
 				.path
 		);
@@ -73,15 +81,13 @@ const PublishSolutionForm = () => {
 				<div className="ml-8 solutions-body-container">
 					<h1 className="header-title mb-4">{activeRoute.title}</h1>
 
-					<div className="header-description">
-						{activeRoute.description}
-					</div>
+					{activeRoute.description}
 
 					<div className="mt-6 solutions-form">
 						<Outlet />
 					</div>
 
-					<hr className="my-6"></hr>
+					<hr className="my-6" />
 
 					<div className="d-flex justify-content-end">
 						{activeIndex !== 0 && (
@@ -93,6 +99,7 @@ const PublishSolutionForm = () => {
 								Back
 							</ClayButton>
 						)}
+
 						<ClayButton
 							displayType="primary"
 							onClick={() => onClickButton(button.continue)}
@@ -106,4 +113,4 @@ const PublishSolutionForm = () => {
 	);
 };
 
-export default PublishSolutionForm;
+export default PublishSolutionOutlet;
