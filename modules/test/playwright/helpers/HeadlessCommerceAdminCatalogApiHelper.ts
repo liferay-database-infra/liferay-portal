@@ -20,7 +20,6 @@ type TProduct = {
 	name?: {
 		[key: string]: string;
 	};
-	productChannelFilter?: boolean;
 	productConfiguration?: {
 		allowBackOrder?: boolean;
 	};

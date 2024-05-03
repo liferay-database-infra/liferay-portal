@@ -133,6 +133,7 @@ import com.liferay.portal.kernel.util.TempFileEntryUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.kernel.workflow.WorkflowTask;
 import com.liferay.portal.kernel.workflow.WorkflowTaskManager;
+import com.liferay.portal.security.script.management.test.util.ScriptManagementConfigurationTestRule;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
@@ -199,6 +200,7 @@ public class ObjectEntryLocalServiceTest {
 		new AggregateTestRule(
 			new LiferayIntegrationTestRule(),
 			PermissionCheckerMethodTestRule.INSTANCE,
+			ScriptManagementConfigurationTestRule.INSTANCE,
 			SynchronousDestinationTestRule.INSTANCE);
 
 	@Before
@@ -2331,11 +2333,13 @@ public class ObjectEntryLocalServiceTest {
 			deleteExtensionDynamicObjectDefinitionTableValues(
 				objectDefinition, user.getUserId());
 
-		Assert.assertTrue(
-			MapUtil.isEmpty(
-				_objectEntryLocalService.
-					getExtensionDynamicObjectDefinitionTableValues(
-						objectDefinition, user.getUserId())));
+		Map<String, Serializable> extensionValues =
+			_objectEntryLocalService.
+				getExtensionDynamicObjectDefinitionTableValues(
+					objectDefinition, user.getUserId());
+
+		Assert.assertEquals(0L, extensionValues.get("longField"));
+		Assert.assertNull(extensionValues.get("textField"));
 	}
 
 	@Test

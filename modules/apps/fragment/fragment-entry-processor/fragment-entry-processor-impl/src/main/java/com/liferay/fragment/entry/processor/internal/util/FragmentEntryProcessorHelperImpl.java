@@ -329,6 +329,25 @@ public class FragmentEntryProcessorHelperImpl
 			return null;
 		}
 
+		JSONObject configJSONObject = editableValueJSONObject.getJSONObject(
+			"config");
+
+		InfoField infoField = infoFieldValue.getInfoField();
+
+		if (FeatureFlagManagerUtil.isEnabled("LPD-11377") &&
+			infoField.isRepeatable()) {
+
+			List<InfoFieldValue<Object>> infoFieldValues = new ArrayList<>(
+				infoItemFieldValues.getInfoFieldValues(fieldName));
+
+			infoFieldValue = _getSpecificIteration(
+				infoFieldValues, configJSONObject);
+
+			if (infoFieldValue == null) {
+				return null;
+			}
+		}
+
 		Object value = infoFieldValue.getValue(locale);
 
 		if (value == null) {
@@ -341,9 +360,6 @@ public class FragmentEntryProcessorHelperImpl
 			if (list.isEmpty()) {
 				return StringPool.BLANK;
 			}
-
-			JSONObject configJSONObject = editableValueJSONObject.getJSONObject(
-				"config");
 
 			if (JSONUtil.isEmpty(configJSONObject) ||
 				!FeatureFlagManagerUtil.isEnabled("LPD-11377")) {
@@ -360,25 +376,7 @@ public class FragmentEntryProcessorHelperImpl
 				return infoCollectionTextFormatter.format(list, locale);
 			}
 
-			String iterationType = configJSONObject.getString("iterationType");
-
-			if (Objects.equals(iterationType, "iteration-number")) {
-				int iterationNumber = configJSONObject.getInt(
-					"iterationNumber", 0);
-
-				if ((iterationNumber > 0) && (iterationNumber <= list.size())) {
-					value = list.get(iterationNumber - 1);
-				}
-				else {
-					value = StringPool.BLANK;
-				}
-			}
-			else if (Objects.equals(iterationType, "last")) {
-				value = list.get(list.size() - 1);
-			}
-			else {
-				value = list.get(0);
-			}
+			value = _getSpecificIteration(list, configJSONObject);
 		}
 
 		if (value instanceof Date) {
@@ -405,7 +403,7 @@ public class FragmentEntryProcessorHelperImpl
 			return labeledFieldValue.getLabel(locale);
 		}
 		else if (value instanceof String) {
-			InfoField infoField = infoFieldValue.getInfoField();
+			infoField = infoFieldValue.getInfoField();
 
 			if (infoField.getInfoFieldType() instanceof DateInfoFieldType) {
 				Locale dateLocale = LocaleUtil.getSiteDefault();
@@ -726,9 +724,44 @@ public class FragmentEntryProcessorHelperImpl
 		return sortTimeStylePattern;
 	}
 
+	private <T> T _getSpecificIteration(
+		List<T> list, JSONObject configJSONObject) {
+
+		if (list.isEmpty()) {
+			return null;
+		}
+
+		if (JSONUtil.isEmpty(configJSONObject) ||
+			!FeatureFlagManagerUtil.isEnabled("LPD-11377")) {
+
+			return list.get(0);
+		}
+
+		String iterationType = configJSONObject.getString("iterationType");
+
+		if (Objects.equals(iterationType, _ITERATION_TYPE_NUMBER)) {
+			int iterationNumber = configJSONObject.getInt("iterationNumber", 0);
+
+			if ((iterationNumber > 0) && (iterationNumber <= list.size())) {
+				return list.get(iterationNumber - 1);
+			}
+
+			return null;
+		}
+		else if (Objects.equals(iterationType, _ITERATION_TYPE_LAST)) {
+			return list.get(list.size() - 1);
+		}
+
+		return list.get(0);
+	}
+
 	private static final InfoCollectionTextFormatter<Object>
 		_INFO_COLLECTION_TEXT_FORMATTER =
 			new CommaSeparatedInfoCollectionTextFormatter();
+
+	private static final String _ITERATION_TYPE_LAST = "last";
+
+	private static final String _ITERATION_TYPE_NUMBER = "iteration-number";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		FragmentEntryProcessorHelperImpl.class);
