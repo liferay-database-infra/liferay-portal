@@ -14,7 +14,7 @@ import com.liferay.jethr0.jenkins.JenkinsQueue;
 import com.liferay.jethr0.job.JobEntity;
 import com.liferay.jethr0.job.repository.JobEntityRepository;
 import com.liferay.jethr0.routine.RoutineEntity;
-import com.liferay.jethr0.routine.UpstreamBranchCronRoutineEntity;
+import com.liferay.jethr0.routine.UpstreamBranchRoutineEntity;
 import com.liferay.jethr0.routine.repository.RoutineEntityRepository;
 import com.liferay.jethr0.util.JobUtil;
 
@@ -28,7 +28,8 @@ public class AddJobLiferayEventHandler extends BaseJobLiferayEventHandler {
 	@Override
 	public String process() {
 		JobEntityRepository jobEntityRepository = getJobEntityRepository();
-		BuildEntityRepository buildEntityRepository = getBuildRepository();
+		BuildEntityRepository buildEntityRepository =
+			getBuildEntityRepository();
 
 		JobEntity jobEntity = jobEntityRepository.add(getJobJSONObject());
 
@@ -37,11 +38,11 @@ public class AddJobLiferayEventHandler extends BaseJobLiferayEventHandler {
 		RoutineEntity routineEntity = jobEntity.getRoutineEntity();
 
 		if (routineEntity != null) {
-			UpstreamBranchCronRoutineEntity upstreamBranchCronRoutineEntity =
-				(UpstreamBranchCronRoutineEntity)routineEntity;
+			UpstreamBranchRoutineEntity upstreamBranchRoutineEntity =
+				(UpstreamBranchRoutineEntity)routineEntity;
 
 			GitBranchEntity gitBranchEntity =
-				upstreamBranchCronRoutineEntity.getGitBranchEntity();
+				upstreamBranchRoutineEntity.getGitBranchEntity();
 
 			GitCommitEntity latestGitCommitEntity =
 				gitBranchEntity.getLatestGitCommitEntity();
@@ -52,18 +53,16 @@ public class AddJobLiferayEventHandler extends BaseJobLiferayEventHandler {
 				jobEntityUpdated = true;
 
 				GitCommitEntity previousGitCommitEntity =
-					upstreamBranchCronRoutineEntity.
-						getPreviousGitCommitEntity();
+					upstreamBranchRoutineEntity.getPreviousGitCommitEntity();
 
 				if (previousGitCommitEntity == null) {
 					RoutineEntityRepository routineEntityRepository =
 						getRoutineEntityRepository();
 
-					upstreamBranchCronRoutineEntity.setPreviousGitCommitEntity(
+					upstreamBranchRoutineEntity.setPreviousGitCommitEntity(
 						latestGitCommitEntity);
 
-					routineEntityRepository.update(
-						upstreamBranchCronRoutineEntity);
+					routineEntityRepository.update(upstreamBranchRoutineEntity);
 				}
 			}
 		}

@@ -7,7 +7,7 @@ package com.liferay.jethr0.routine.scheduler;
 
 import com.liferay.jethr0.git.branch.GitBranchEntity;
 import com.liferay.jethr0.git.commit.GitCommitEntity;
-import com.liferay.jethr0.routine.UpstreamBranchCronRoutineEntity;
+import com.liferay.jethr0.routine.UpstreamBranchRoutineEntity;
 import com.liferay.jethr0.routine.repository.RoutineEntityRepository;
 
 import java.util.Objects;
@@ -30,21 +30,21 @@ public class UpstreamGitBranchCronRoutineEntityJob
 
 		Object routineEntityObject = jobDataMap.get("routineEntity");
 
-		if (!(routineEntityObject instanceof UpstreamBranchCronRoutineEntity)) {
+		if (!(routineEntityObject instanceof UpstreamBranchRoutineEntity)) {
 			return;
 		}
 
-		UpstreamBranchCronRoutineEntity upstreamBranchCronRoutineEntity =
-			(UpstreamBranchCronRoutineEntity)routineEntityObject;
+		UpstreamBranchRoutineEntity upstreamBranchRoutineEntity =
+			(UpstreamBranchRoutineEntity)routineEntityObject;
 
 		GitBranchEntity gitBranchEntity =
-			upstreamBranchCronRoutineEntity.getGitBranchEntity();
+			upstreamBranchRoutineEntity.getGitBranchEntity();
 
 		GitCommitEntity latestGitCommitEntity =
 			gitBranchEntity.getLatestGitCommitEntity();
 
 		GitCommitEntity previousGitCommitEntity =
-			upstreamBranchCronRoutineEntity.getPreviousGitCommitEntity();
+			upstreamBranchRoutineEntity.getPreviousGitCommitEntity();
 
 		if ((latestGitCommitEntity == null) ||
 			((previousGitCommitEntity != null) &&
@@ -55,7 +55,7 @@ public class UpstreamGitBranchCronRoutineEntityJob
 			return;
 		}
 
-		upstreamBranchCronRoutineEntity.setPreviousGitCommitEntity(
+		upstreamBranchRoutineEntity.setPreviousGitCommitEntity(
 			latestGitCommitEntity);
 
 		RoutineEntityJobFactory routineEntityJobFactory =
@@ -64,9 +64,9 @@ public class UpstreamGitBranchCronRoutineEntityJob
 		RoutineEntityRepository routineEntityRepository =
 			routineEntityJobFactory.getRoutineEntityRepository();
 
-		routineEntityRepository.update(upstreamBranchCronRoutineEntity);
+		routineEntityRepository.update(upstreamBranchRoutineEntity);
 
-		invokeJobEntity(upstreamBranchCronRoutineEntity);
+		invokeJobEntity(upstreamBranchRoutineEntity);
 	}
 
 }

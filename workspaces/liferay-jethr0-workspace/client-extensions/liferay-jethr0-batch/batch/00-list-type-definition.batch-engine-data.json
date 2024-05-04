@@ -727,6 +727,14 @@
 					}
 				},
 				{
+					"externalReferenceCode": "upstreamBranch",
+					"key": "upstreamBranch",
+					"name": "Upstream Branch",
+					"name_i18n": {
+						"en-US": "Upstream Branch"
+					}
+				},
+				{
 					"externalReferenceCode": "upstreamBranchCron",
 					"key": "upstreamBranchCron",
 					"name": "Upstream Branch Cron",

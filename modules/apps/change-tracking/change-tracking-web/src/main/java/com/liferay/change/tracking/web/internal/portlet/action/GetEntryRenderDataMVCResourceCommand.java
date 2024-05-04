@@ -91,7 +91,6 @@ import java.text.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -648,9 +647,9 @@ public class GetEntryRenderDataMVCResourceCommand
 			}
 
 			Map<String, Object> workflowData = _getWorkflowData(
-				ctEntry, rightModel, themeDisplay);
+				ctEntry, rightModel, resourceResponse, themeDisplay);
 
-			if (!workflowData.isEmpty()) {
+			if (workflowData != null) {
 				jsonObject.put("workflowData", workflowData);
 			}
 		}
@@ -1124,7 +1123,8 @@ public class GetEntryRenderDataMVCResourceCommand
 	}
 
 	private <T extends BaseModel<T>> Map<String, Object> _getWorkflowData(
-			CTEntry ctEntry, T model, ThemeDisplay themeDisplay)
+			CTEntry ctEntry, T model, ResourceResponse resourceResponse,
+			ThemeDisplay themeDisplay)
 		throws Exception {
 
 		try (SafeCloseable safeCloseable =
@@ -1137,7 +1137,7 @@ public class GetEntryRenderDataMVCResourceCommand
 			WorkflowTask workflowTask = _getWorkflowTask(workflowInstanceLink);
 
 			if (workflowTask == null) {
-				return new LinkedHashMap<>();
+				return null;
 			}
 
 			Format format = FastDateFormatFactoryUtil.getDateTime(
@@ -1205,6 +1205,8 @@ public class GetEntryRenderDataMVCResourceCommand
 						return null;
 					}
 
+					JSONObject jsonObject = _jsonFactory.createJSONObject();
+
 					Discussion discussion = _commentManager.getDiscussion(
 						themeDisplay.getUserId(),
 						workflowInstanceLink.getGroupId(),
@@ -1215,14 +1217,50 @@ public class GetEntryRenderDataMVCResourceCommand
 					int count = discussion.getDiscussionCommentsCount();
 
 					if (count == 1) {
-						return StringBundler.concat(
-							count, " ",
-							_language.get(themeDisplay.getLocale(), "comment"));
+						jsonObject.put(
+							"title",
+							StringBundler.concat(
+								count, " ",
+								_language.get(
+									themeDisplay.getLocale(), "comment")));
+					}
+					else {
+						jsonObject.put(
+							"title",
+							StringBundler.concat(
+								count, " ",
+								_language.get(
+									themeDisplay.getLocale(), "comments")));
 					}
 
-					return StringBundler.concat(
-						count, " ",
-						_language.get(themeDisplay.getLocale(), "comments"));
+					HttpServletRequest httpServletRequest =
+						themeDisplay.getRequest();
+
+					jsonObject.put(
+						"url",
+						PortletURLBuilder.createRenderURL(
+							_portal.getLiferayPortletResponse(resourceResponse),
+							PortletKeys.MY_WORKFLOW_TASK
+						).setMVCPath(
+							"/edit_workflow_task.jsp"
+						).setRedirect(
+							PortletURLBuilder.create(
+								PortletURLFactoryUtil.create(
+									httpServletRequest,
+									CTPortletKeys.PUBLICATIONS,
+									PortletRequest.RENDER_PHASE)
+							).setMVCRenderCommandName(
+								"/change_tracking/view_change"
+							).setParameter(
+								"ctCollectionId", ctEntry.getCtCollectionId()
+							).setParameter(
+								"ctEntryId", ctEntry.getCtEntryId()
+							).buildString()
+						).setParameter(
+							"workflowTaskId", workflowTask.getWorkflowTaskId()
+						).buildString());
+
+					return String.valueOf(jsonObject);
 				}
 			).put(
 				"createDate", format.format(workflowTask.getCreateDate())

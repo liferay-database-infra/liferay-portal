@@ -12,10 +12,6 @@ public interface CronRoutineEntity extends RoutineEntity {
 
 	public String getCron();
 
-	public Boolean getScheduled();
-
 	public void setCron(String cron);
-
-	public void setScheduled(Boolean scheduled);
 
 }

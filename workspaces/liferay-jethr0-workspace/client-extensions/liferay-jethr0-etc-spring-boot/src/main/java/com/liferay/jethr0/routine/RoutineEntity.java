@@ -25,6 +25,8 @@ public interface RoutineEntity extends Entity {
 
 	public void addJobEntity(JobEntity jobEntity);
 
+	public Boolean getEnabled();
+
 	public GitBranchEntity getGitBranchEntity();
 
 	public long getGitBranchEntityId();
@@ -49,6 +51,8 @@ public interface RoutineEntity extends Entity {
 
 	public void removeJobEntity(JobEntity jobEntity);
 
+	public void setEnabled(Boolean enabled);
+
 	public void setGitBranchEntity(GitBranchEntity gitBranchEntity);
 
 	public void setJobName(String jobName);
@@ -66,6 +70,7 @@ public interface RoutineEntity extends Entity {
 	public enum Type {
 
 		CRON("cron", "Cron"), MANUAL("manual", "Manual"),
+		UPSTREAM_BRANCH("upstreamBranch", "Upstream Branch"),
 		UPSTREAM_BRANCH_CRON("upstreamBranchCron", "Upstream Branch Cron");
 
 		public static Type get(Object picklistValue) {

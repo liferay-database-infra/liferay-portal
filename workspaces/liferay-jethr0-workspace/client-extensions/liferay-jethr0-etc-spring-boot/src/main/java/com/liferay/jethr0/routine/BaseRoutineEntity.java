@@ -10,9 +10,7 @@ import com.liferay.jethr0.git.branch.GitBranchEntity;
 import com.liferay.jethr0.job.JobEntity;
 import com.liferay.jethr0.util.StringUtil;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -32,12 +30,17 @@ public abstract class BaseRoutineEntity
 
 	@Override
 	public void addJobEntities(Set<JobEntity> jobEntities) {
-		_jobEntities.addAll(jobEntities);
+		addRelatedEntities(jobEntities);
 	}
 
 	@Override
 	public void addJobEntity(JobEntity jobEntity) {
-		addJobEntities(Collections.singleton(jobEntity));
+		addRelatedEntity(jobEntity);
+	}
+
+	@Override
+	public Boolean getEnabled() {
+		return _enabled;
 	}
 
 	@Override
@@ -52,7 +55,7 @@ public abstract class BaseRoutineEntity
 
 	@Override
 	public Set<JobEntity> getJobEntities() {
-		return _jobEntities;
+		return getRelatedEntities(JobEntity.class);
 	}
 
 	@Override
@@ -88,6 +91,8 @@ public abstract class BaseRoutineEntity
 		Type type = getType();
 
 		jsonObject.put(
+			"enabled", getEnabled()
+		).put(
 			"jobName", getJobName()
 		).put(
 			"jobParameters", String.valueOf(_getJobParametersJSONArray())
@@ -118,12 +123,17 @@ public abstract class BaseRoutineEntity
 
 	@Override
 	public void removeJobEntities(Set<JobEntity> jobEntities) {
-		_jobEntities.removeAll(jobEntities);
+		removeRelatedEntities(jobEntities);
 	}
 
 	@Override
 	public void removeJobEntity(JobEntity jobEntity) {
-		_jobEntities.remove(jobEntity);
+		removeRelatedEntity(jobEntity);
+	}
+
+	@Override
+	public void setEnabled(Boolean enabled) {
+		_enabled = enabled;
 	}
 
 	@Override
@@ -240,9 +250,9 @@ public abstract class BaseRoutineEntity
 
 	private static final Log _log = LogFactory.getLog(BaseRoutineEntity.class);
 
+	private Boolean _enabled;
 	private GitBranchEntity _gitBranchEntity;
 	private long _gitBranchEntityId;
-	private final Set<JobEntity> _jobEntities = new HashSet<>();
 	private String _jobName;
 	private Map<String, String> _jobParameters;
 	private int _jobPriority;
