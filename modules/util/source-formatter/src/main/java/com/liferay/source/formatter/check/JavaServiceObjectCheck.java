@@ -16,7 +16,9 @@ import com.liferay.source.formatter.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -46,11 +48,10 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 		}
 
 		String javaTermContent = _formatGetterMethodCalls(
-			javaTerm, fileContent, fileName, absolutePath, importNames);
+			javaTerm, fileContent, fileName, importNames);
 
 		return _formatSetterMethodCalls(
-			javaTerm, javaTermContent, fileContent, fileName, absolutePath,
-			importNames);
+			javaTerm, javaTermContent, fileContent, fileName, importNames);
 	}
 
 	@Override
@@ -60,7 +61,7 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 
 	private String _formatGetterMethodCalls(
 			JavaTerm javaTerm, String fileContent, String fileName,
-			String absolutePath, List<String> importNames)
+			List<String> importNames)
 		throws IOException {
 
 		String content = javaTerm.getContent();
@@ -82,8 +83,7 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 				matcher.group(3), TextFormatter.I);
 
 			if (_isBooleanColumn(
-					absolutePath, variableTypeName, getterObjectName,
-					importNames)) {
+					variableTypeName, getterObjectName, importNames)) {
 
 				return StringUtil.replaceFirst(
 					content, "get", "is", matcher.start(2));
@@ -95,7 +95,7 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 
 	private String _formatSetterMethodCalls(
 			JavaTerm javaTerm, String content, String fileContent,
-			String fileName, String absolutePath, List<String> importNames)
+			String fileName, List<String> importNames)
 		throws IOException {
 
 		Matcher matcher1 = _setterCallsPattern.matcher(content);
@@ -136,8 +136,7 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 				populateModelInformations();
 
 				Object[] modelInformation = getModelInformation(
-					_getPackagePath(
-						absolutePath, variableTypeName, importNames));
+					_getPackagePath(variableTypeName, importNames));
 
 				if (modelInformation == null) {
 					continue outerLoop;
@@ -220,8 +219,7 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 	}
 
 	private String _getPackagePath(
-		String absolutePath, String variableTypeName,
-		List<String> importNames) {
+		String variableTypeName, List<String> importNames) {
 
 		int x = variableTypeName.lastIndexOf(StringPool.PERIOD);
 
@@ -247,10 +245,6 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 			}
 		}
 
-		if (absolutePath.contains("/portal-impl/")) {
-			return "portal-impl";
-		}
-
 		return StringPool.BLANK;
 	}
 
@@ -258,6 +252,8 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 		String variableTypeName, String setterObjectName,
 		Element serviceXMLElement) {
 
+		String columnName = null;
+		String dbName = null;
 		String tableName = variableTypeName;
 
 		for (Element entityElement :
@@ -277,41 +273,67 @@ public class JavaServiceObjectCheck extends BaseJavaTermCheck {
 			convertedSetterObjectName = convertedSetterObjectName.replaceFirst(
 				"(.+?)(List|Map|(Unicode)?Properties)$", "$1");
 
+			Map<String, String> columnNamesMap = new HashMap<>();
+
 			for (Element columnElement :
 					(List<Element>)entityElement.elements("column")) {
 
-				String columnName = columnElement.attributeValue("name");
+				columnNamesMap.put(
+					StringUtil.toLowerCase(
+						columnElement.attributeValue("name")),
+					columnElement.attributeValue("db-name"));
+			}
 
-				if (StringUtil.equalsIgnoreCase(setterObjectName, columnName) ||
-					StringUtil.equalsIgnoreCase(
-						convertedSetterObjectName, columnName) ||
-					(setterObjectName.equals("className") &&
-					 columnName.equals("classNameId"))) {
+			String lowerCaseName = StringUtil.toLowerCase(setterObjectName);
 
-					if (Validator.isNotNull(
-							columnElement.attributeValue("db-name"))) {
+			if (columnNamesMap.containsKey(lowerCaseName)) {
+				columnName = setterObjectName;
+				dbName = columnNamesMap.get(lowerCaseName);
 
-						return tableName + ":" +
-							columnElement.attributeValue("db-name");
-					}
+				break;
+			}
 
-					return tableName + ":" + columnName;
-				}
+			lowerCaseName = StringUtil.toLowerCase(convertedSetterObjectName);
+
+			if (columnNamesMap.containsKey(lowerCaseName)) {
+				columnName = convertedSetterObjectName;
+				dbName = columnNamesMap.get(lowerCaseName);
+
+				break;
+			}
+
+			lowerCaseName = StringUtil.toLowerCase(setterObjectName + "Id");
+
+			if (!setterObjectName.endsWith("Id") &&
+				columnNamesMap.containsKey(lowerCaseName)) {
+
+				columnName = setterObjectName + "Id";
+				dbName = columnNamesMap.get(lowerCaseName);
+
+				break;
 			}
 		}
 
-		return tableName + ":" + setterObjectName;
+		if (columnName == null) {
+			return tableName + ":" + setterObjectName;
+		}
+
+		if (dbName != null) {
+			return tableName + ":" + dbName;
+		}
+
+		return tableName + ":" + columnName;
 	}
 
 	private boolean _isBooleanColumn(
-			String absolutePath, String variableTypeName,
-			String getterObjectName, List<String> importNames)
+			String variableTypeName, String getterObjectName,
+			List<String> importNames)
 		throws IOException {
 
 		populateModelInformations();
 
 		Object[] modelInformation = getModelInformation(
-			_getPackagePath(absolutePath, variableTypeName, importNames));
+			_getPackagePath(variableTypeName, importNames));
 
 		if (modelInformation == null) {
 			return false;

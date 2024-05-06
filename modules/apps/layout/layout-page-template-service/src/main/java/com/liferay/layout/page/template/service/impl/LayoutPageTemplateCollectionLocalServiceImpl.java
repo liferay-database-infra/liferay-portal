@@ -244,7 +244,8 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 		throws PortalException {
 
 		return deleteLayoutPageTemplateCollection(
-			fetchLayoutPageTemplateCollection(externalReferenceCode, groupId));
+			getLayoutPageTemplateCollectionByExternalReferenceCode(
+				externalReferenceCode, groupId));
 	}
 
 	@Override
@@ -261,14 +262,6 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 
 		return layoutPageTemplateCollectionPersistence.fetchByG_LPTCK_T(
 			groupId, layoutPageTemplateCollectionKey, type);
-	}
-
-	@Override
-	public LayoutPageTemplateCollection fetchLayoutPageTemplateCollection(
-		String externalReferenceCode, long groupId) {
-
-		return layoutPageTemplateCollectionPersistence.fetchByERC_G(
-			externalReferenceCode, groupId);
 	}
 
 	@Override
