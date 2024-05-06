@@ -36,3 +36,7 @@ export const RETRIEVE_TYPES = {
 };
 
 export const STR_BLANK = '';
+
+export const UNMODIFIABLE_OBJECTS_WHITELIST = Liferay.FeatureFlags['LPD-21414']
+	? ['L_ACCOUNT', 'L_USER']
+	: [];
