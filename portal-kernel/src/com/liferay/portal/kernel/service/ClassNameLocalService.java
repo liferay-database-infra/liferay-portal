@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 import java.io.Serializable;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.osgi.annotation.versioning.ProviderType;
 
@@ -250,6 +251,17 @@ public interface ClassNameLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery();
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Supplier<Long> getLazyClassNameId(String className);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Supplier<Long[]> getLazyClassNameIds(
+		String keyName, String[] classNames);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Supplier<long[]> getLazyClassNameIdsLongArray(
+		String keyName, String[] classNames);
 
 	/**
 	 * Returns the OSGi service identifier.
