@@ -190,7 +190,7 @@ public class LayoutServiceContextHelperImpl
 
 		@Override
 		public String getContextPath() {
-			return null;
+			return _portal.getPathContext();
 		}
 
 		@Override
@@ -841,6 +841,8 @@ public class LayoutServiceContextHelperImpl
 				WebKeys.COMPANY_ID,
 				_httpServletRequest.getAttribute(WebKeys.COMPANY_ID)
 			).put(
+				WebKeys.CTX, _httpServletRequest.getAttribute(WebKeys.CTX)
+			).put(
 				WebKeys.LAYOUT, _httpServletRequest.getAttribute(WebKeys.LAYOUT)
 			).put(
 				WebKeys.THEME_DISPLAY,
@@ -854,6 +856,9 @@ public class LayoutServiceContextHelperImpl
 
 			_httpServletRequest.setAttribute(
 				WebKeys.COMPANY_ID, _company.getCompanyId());
+			_httpServletRequest.setAttribute(
+				WebKeys.CTX,
+				ServletContextPool.get(_portal.getServletContextName()));
 
 			ThemeDisplay themeDisplay = _getThemeDisplay(
 				_company, permissionChecker, user);

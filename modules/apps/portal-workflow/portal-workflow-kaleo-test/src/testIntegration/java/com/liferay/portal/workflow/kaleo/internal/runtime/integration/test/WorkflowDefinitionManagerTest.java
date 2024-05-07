@@ -59,10 +59,12 @@ public class WorkflowDefinitionManagerTest extends BaseWorkflowManagerTestCase {
 	@Test
 	public void testDeployGroovyWorkflowDefinition() throws Exception {
 		String content = StringUtil.read(
-			getResourceInputStream("single-approver-workflow-definition.xml"));
+			getResourceInputStream(
+				"single-approver-site-member-workflow-definition.xml"));
 
 		try (Closeable closeable =
-				ScriptManagementConfigurationTestUtil.disable()) {
+				ScriptManagementConfigurationTestUtil.saveWithCloseable(
+					false)) {
 
 			AssertUtils.assertFailure(
 				KaleoDefinitionValidationException.NotAllowedScriptLanguage.

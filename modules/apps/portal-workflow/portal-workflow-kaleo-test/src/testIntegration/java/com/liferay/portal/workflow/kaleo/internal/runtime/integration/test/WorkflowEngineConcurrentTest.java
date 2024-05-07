@@ -9,6 +9,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.scheduler.SchedulerEngine;
 import com.liferay.portal.kernel.scheduler.SchedulerEngineHelper;
+import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -121,7 +122,12 @@ public class WorkflowEngineConcurrentTest extends BaseWorkflowManagerTestCase {
 					SchedulerEngine.class.getClassLoader(),
 					new Class<?>[] {SchedulerEngine.class},
 					(proxy, method, args) -> {
-						if (Objects.equals(method.getName(), "schedule")) {
+						if (Objects.equals(
+								method.getName(), "getScheduledJob")) {
+
+							return new SchedulerResponse();
+						}
+						else if (Objects.equals(method.getName(), "schedule")) {
 							Message message = (Message)args[3];
 
 							_kaleoTimerInstanceTokenIds.add(
