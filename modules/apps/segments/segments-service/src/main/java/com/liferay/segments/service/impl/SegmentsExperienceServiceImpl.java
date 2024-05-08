@@ -43,8 +43,8 @@ public class SegmentsExperienceServiceImpl
 
 	@Override
 	public SegmentsExperience addSegmentsExperience(
-			long groupId, long segmentsEntryId, long plid,
-			Map<Locale, String> nameMap, boolean active,
+			String externalReferenceCode, long groupId, long segmentsEntryId,
+			long plid, Map<Locale, String> nameMap, boolean active,
 			UnicodeProperties typeSettingsUnicodeProperties,
 			ServiceContext serviceContext)
 		throws PortalException {
@@ -56,8 +56,8 @@ public class SegmentsExperienceServiceImpl
 		}
 
 		return segmentsExperienceLocalService.addSegmentsExperience(
-			getUserId(), groupId, segmentsEntryId, plid, nameMap, active,
-			typeSettingsUnicodeProperties, serviceContext);
+			externalReferenceCode, getUserId(), groupId, segmentsEntryId, plid,
+			nameMap, active, typeSettingsUnicodeProperties, serviceContext);
 	}
 
 	@Override
@@ -107,6 +107,23 @@ public class SegmentsExperienceServiceImpl
 	}
 
 	@Override
+	public SegmentsExperience deleteSegmentsExperience(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		SegmentsExperience segmentsExperience =
+			segmentsExperienceLocalService.
+				getSegmentsExperienceByExternalReferenceCode(
+					externalReferenceCode, groupId);
+
+		_segmentsExperienceResourcePermission.check(
+			getPermissionChecker(), segmentsExperience, ActionKeys.DELETE);
+
+		return segmentsExperienceLocalService.deleteSegmentsExperience(
+			segmentsExperience);
+	}
+
+	@Override
 	public SegmentsExperience fetchSegmentsExperience(
 			long groupId, String segmentsExperienceKey, long plid)
 		throws PortalException {
@@ -143,6 +160,22 @@ public class SegmentsExperienceServiceImpl
 		SegmentsExperience segmentsExperience =
 			segmentsExperienceLocalService.getSegmentsExperience(
 				groupId, segmentsExperienceKey, _getPublishedLayoutPlid(plid));
+
+		_segmentsExperienceResourcePermission.check(
+			getPermissionChecker(), segmentsExperience, ActionKeys.VIEW);
+
+		return segmentsExperience;
+	}
+
+	@Override
+	public SegmentsExperience getSegmentsExperienceByExternalReferenceCode(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		SegmentsExperience segmentsExperience =
+			segmentsExperienceLocalService.
+				getSegmentsExperienceByExternalReferenceCode(
+					externalReferenceCode, groupId);
 
 		_segmentsExperienceResourcePermission.check(
 			getPermissionChecker(), segmentsExperience, ActionKeys.VIEW);

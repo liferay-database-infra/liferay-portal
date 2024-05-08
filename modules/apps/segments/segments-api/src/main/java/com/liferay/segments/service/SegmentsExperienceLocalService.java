@@ -67,28 +67,7 @@ public interface SegmentsExperienceLocalService
 	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.segments.service.impl.SegmentsExperienceLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the segments experience local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link SegmentsExperienceLocalServiceUtil} if injection and service tracking are not available.
 	 */
 	public SegmentsExperience addDefaultSegmentsExperience(
-			long userId, long plid, ServiceContext serviceContext)
-		throws PortalException;
-
-	public SegmentsExperience addSegmentsExperience(
-			long userId, long groupId, long segmentsEntryId, long plid,
-			Map<Locale, String> nameMap, boolean active,
-			UnicodeProperties typeSettingsUnicodeProperties,
-			ServiceContext serviceContext)
-		throws PortalException;
-
-	public SegmentsExperience addSegmentsExperience(
-			long userId, long groupId, long segmentsEntryId, long plid,
-			Map<Locale, String> nameMap, int priority, boolean active,
-			UnicodeProperties typeSettingsUnicodeProperties,
-			ServiceContext serviceContext)
-		throws PortalException;
-
-	public SegmentsExperience addSegmentsExperience(
-			long userId, long groupId, long segmentsEntryId,
-			String segmentsExperienceKey, long plid,
-			Map<Locale, String> nameMap, int priority, boolean active,
-			UnicodeProperties typeSettingsUnicodeProperties,
+			String externalReferenceCode, long userId, long plid,
 			ServiceContext serviceContext)
 		throws PortalException;
 
@@ -105,6 +84,29 @@ public interface SegmentsExperienceLocalService
 	@Indexable(type = IndexableType.REINDEX)
 	public SegmentsExperience addSegmentsExperience(
 		SegmentsExperience segmentsExperience);
+
+	public SegmentsExperience addSegmentsExperience(
+			String externalReferenceCode, long userId, long groupId,
+			long segmentsEntryId, long plid, Map<Locale, String> nameMap,
+			boolean active, UnicodeProperties typeSettingsUnicodeProperties,
+			ServiceContext serviceContext)
+		throws PortalException;
+
+	public SegmentsExperience addSegmentsExperience(
+			String externalReferenceCode, long userId, long groupId,
+			long segmentsEntryId, long plid, Map<Locale, String> nameMap,
+			int priority, boolean active,
+			UnicodeProperties typeSettingsUnicodeProperties,
+			ServiceContext serviceContext)
+		throws PortalException;
+
+	public SegmentsExperience addSegmentsExperience(
+			String externalReferenceCode, long userId, long groupId,
+			long segmentsEntryId, String segmentsExperienceKey, long plid,
+			Map<Locale, String> nameMap, int priority, boolean active,
+			UnicodeProperties typeSettingsUnicodeProperties,
+			ServiceContext serviceContext)
+		throws PortalException;
 
 	public SegmentsExperience appendSegmentsExperience(
 			long userId, long groupId, long segmentsEntryId, long plid,
@@ -176,6 +178,10 @@ public interface SegmentsExperienceLocalService
 	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
 	public SegmentsExperience deleteSegmentsExperience(
 			SegmentsExperience segmentsExperience)
+		throws PortalException;
+
+	public SegmentsExperience deleteSegmentsExperience(
+			String externalReferenceCode, long groupId)
 		throws PortalException;
 
 	public void deleteSegmentsExperiences(long groupId, long plid)
@@ -268,6 +274,10 @@ public interface SegmentsExperienceLocalService
 	public SegmentsExperience fetchSegmentsExperience(
 		long groupId, String segmentsExperienceKey, long plid);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public SegmentsExperience fetchSegmentsExperienceByExternalReferenceCode(
+		String externalReferenceCode, long groupId);
+
 	/**
 	 * Returns the segments experience matching the UUID and group.
 	 *
@@ -318,6 +328,11 @@ public interface SegmentsExperienceLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public SegmentsExperience getSegmentsExperience(
 			long groupId, String segmentsExperienceKey, long plid)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public SegmentsExperience getSegmentsExperienceByExternalReferenceCode(
+			String externalReferenceCode, long groupId)
 		throws PortalException;
 
 	/**
