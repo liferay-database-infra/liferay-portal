@@ -204,6 +204,8 @@ public class JspServletPerformanceTest {
 
 			jarOutputStream.closeEntry();
 
+			jarOutputStream.finish();
+
 			return new UnsyncByteArrayInputStream(
 				unsyncByteArrayOutputStream.unsafeGetByteArray(), 0,
 				unsyncByteArrayOutputStream.size());

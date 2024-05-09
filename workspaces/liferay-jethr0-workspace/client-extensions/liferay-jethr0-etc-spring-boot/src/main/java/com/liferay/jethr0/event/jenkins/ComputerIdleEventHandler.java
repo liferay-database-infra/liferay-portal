@@ -10,10 +10,10 @@ import com.liferay.jethr0.bui1d.queue.BuildQueue;
 import com.liferay.jethr0.bui1d.repository.BuildEntityRepository;
 import com.liferay.jethr0.bui1d.repository.BuildRunEntityRepository;
 import com.liferay.jethr0.bui1d.run.BuildRunEntity;
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.jenkins.JenkinsQueue;
 import com.liferay.jethr0.jenkins.node.JenkinsNodeEntity;
 import com.liferay.jethr0.jenkins.server.JenkinsServerEntity;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 
 import org.json.JSONObject;
@@ -25,7 +25,7 @@ public class ComputerIdleEventHandler extends ComputerUpdateEventHandler {
 
 	@Override
 	public String process() throws InvalidJSONException {
-		JenkinsQueue jenkinsQueue = getJenkinsQueue();
+		JenkinsQueue jenkinsQueue = Jethr0ContextUtil.getJenkinsQueue();
 
 		if (!jenkinsQueue.isInitialized()) {
 			return "{\"message\": \"Jenkins queue is not initialized\"}";
@@ -39,7 +39,7 @@ public class ComputerIdleEventHandler extends ComputerUpdateEventHandler {
 			return null;
 		}
 
-		BuildQueue buildQueue = getBuildQueue();
+		BuildQueue buildQueue = Jethr0ContextUtil.getBuildQueue();
 
 		BuildEntity buildEntity = buildQueue.nextBuildEntity(jenkinsNodeEntity);
 
@@ -50,13 +50,13 @@ public class ComputerIdleEventHandler extends ComputerUpdateEventHandler {
 		buildEntity.setState(BuildEntity.State.QUEUED);
 
 		BuildRunEntityRepository buildRunEntityRepository =
-			getBuildRunEntityRepository();
+			Jethr0ContextUtil.getBuildRunEntityRepository();
 
 		BuildRunEntity buildRunEntity = buildRunEntityRepository.create(
 			buildEntity, BuildRunEntity.State.QUEUED);
 
 		JenkinsEventProcessor jenkinsEventProcessor =
-			getJenkinsEventProcessor();
+			Jethr0ContextUtil.getJenkinsEventProcessor();
 
 		jenkinsEventProcessor.sendMessage(
 			String.valueOf(
@@ -76,7 +76,7 @@ public class ComputerIdleEventHandler extends ComputerUpdateEventHandler {
 			).build());
 
 		BuildEntityRepository buildEntityRepository =
-			getBuildEntityRepository();
+			Jethr0ContextUtil.getBuildEntityRepository();
 
 		buildEntityRepository.update(buildEntity);
 
@@ -85,10 +85,8 @@ public class ComputerIdleEventHandler extends ComputerUpdateEventHandler {
 		return jenkinsNodeEntity.toString();
 	}
 
-	protected ComputerIdleEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
-
-		super(eventHandlerContext, messageJSONObject);
+	protected ComputerIdleEventHandler(JSONObject messageJSONObject) {
+		super(messageJSONObject);
 	}
 
 }

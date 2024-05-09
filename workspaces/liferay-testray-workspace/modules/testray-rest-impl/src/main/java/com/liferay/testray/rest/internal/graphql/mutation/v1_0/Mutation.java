@@ -92,6 +92,22 @@ public class Mutation {
 	}
 
 	@GraphQLField
+	public TestrayTestFlow
+			updateTestrayTestFlowByTestraySubtaskIdTestraySubtask(
+				@GraphQLName("testraySubtaskId") Long testraySubtaskId,
+				@GraphQLName("testrayTestFlow") TestrayTestFlow testrayTestFlow)
+		throws Exception {
+
+		return _applyComponentServiceObjects(
+			_testrayTestFlowResourceComponentServiceObjects,
+			this::_populateResourceContext,
+			testrayTestFlowResource ->
+				testrayTestFlowResource.
+					putTestrayTestFlowByTestraySubtaskIdTestraySubtask(
+						testraySubtaskId, testrayTestFlow));
+	}
+
+	@GraphQLField
 	public TestrayTestFlow createTestrayTestFlow(
 			@GraphQLName("testrayTaskId") Long testrayTaskId)
 		throws Exception {

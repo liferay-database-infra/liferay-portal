@@ -26,26 +26,7 @@ import java.util.Map;
  */
 public class TestrayUtil {
 
-	public static long getTotalCount(String sql, List<Object> params)
-		throws SQLException {
-
-		StringBundler sb = new StringBundler(3);
-
-		sb.append("select COUNT(*) as count FROM ( ");
-		sb.append(sql);
-		sb.append(") count");
-
-		List<Map<String, Object>> values = runSQL(sb.toString(), params);
-
-		return GetterUtil.getLong(
-			values.get(
-				0
-			).get(
-				"count"
-			));
-	}
-
-	public static List<Map<String, Object>> runSQL(
+	public static List<Map<String, Object>> executeQuery(
 			String sql, List<Object> params)
 		throws SQLException {
 
@@ -85,6 +66,42 @@ public class TestrayUtil {
 		}
 
 		return list;
+	}
+
+	public static int executeUpdate(String sql, List<Object> params)
+		throws SQLException {
+
+		try (Connection connection = DataAccess.getConnection()) {
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				sql);
+
+			if (ListUtil.isNotEmpty(params)) {
+				for (int i = 0; i < params.size(); i++) {
+					preparedStatement.setObject(i + 1, params.get(i));
+				}
+			}
+
+			return preparedStatement.executeUpdate();
+		}
+	}
+
+	public static long getTotalCount(String sql, List<Object> params)
+		throws SQLException {
+
+		StringBundler sb = new StringBundler(3);
+
+		sb.append("select count(*) as count from ( ");
+		sb.append(sql);
+		sb.append(") count");
+
+		List<Map<String, Object>> values = executeQuery(sb.toString(), params);
+
+		return GetterUtil.getLong(
+			values.get(
+				0
+			).get(
+				"count"
+			));
 	}
 
 }

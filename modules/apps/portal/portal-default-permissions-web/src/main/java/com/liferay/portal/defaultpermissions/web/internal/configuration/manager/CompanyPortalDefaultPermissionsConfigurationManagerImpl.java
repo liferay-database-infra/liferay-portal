@@ -8,6 +8,7 @@ package com.liferay.portal.defaultpermissions.web.internal.configuration.manager
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.defaultpermissions.configuration.PortalDefaultPermissionsCompanyConfiguration;
 import com.liferay.portal.defaultpermissions.configuration.manager.PortalDefaultPermissionsConfigurationManager;
@@ -25,13 +26,16 @@ import org.osgi.service.component.annotations.Reference;
 /**
  * @author Stefano Motta
  */
-@Component(service = PortalDefaultPermissionsConfigurationManager.class)
+@Component(
+	property = "portal.default.permissions.scope=company",
+	service = PortalDefaultPermissionsConfigurationManager.class
+)
 public class CompanyPortalDefaultPermissionsConfigurationManagerImpl
 	implements PortalDefaultPermissionsConfigurationManager {
 
 	@Override
 	public Map<String, Map<String, String[]>> getDefaultPermissions(
-		long companyId) {
+		long companyId, long groupId) {
 
 		try {
 			PortalDefaultPermissionsCompanyConfiguration
@@ -58,12 +62,32 @@ public class CompanyPortalDefaultPermissionsConfigurationManagerImpl
 	}
 
 	@Override
+	public Map<String, String[]> getDefaultPermissions(
+		long companyId, long groupId, String className) {
+
+		Map<String, Map<String, String[]>> defaultPermissions =
+			getDefaultPermissions(companyId, groupId);
+
+		if (defaultPermissions == null) {
+			return null;
+		}
+
+		return defaultPermissions.get(className);
+	}
+
+	@Override
+	public ExtendedObjectClassDefinition.Scope getScope() {
+		return ExtendedObjectClassDefinition.Scope.COMPANY;
+	}
+
+	@Override
 	public void saveDefaultPermissions(
-		long companyId, Map<String, Map<String, String[]>> defaultPermissions) {
+		long primaryKey,
+		Map<String, Map<String, String[]>> defaultPermissions) {
 
 		try {
 			_configurationProvider.saveCompanyConfiguration(
-				PortalDefaultPermissionsCompanyConfiguration.class, companyId,
+				PortalDefaultPermissionsCompanyConfiguration.class, primaryKey,
 				HashMapDictionaryBuilder.<String, Object>put(
 					"defaultPermissions",
 					_objectMapper.writeValueAsString(defaultPermissions)

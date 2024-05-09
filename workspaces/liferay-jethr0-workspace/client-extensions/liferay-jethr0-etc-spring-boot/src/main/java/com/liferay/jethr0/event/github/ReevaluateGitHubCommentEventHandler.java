@@ -5,12 +5,12 @@
 
 package com.liferay.jethr0.event.github;
 
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.event.github.comment.GitHubComment;
 import com.liferay.jethr0.event.github.pullrequest.GitHubPullRequest;
 import com.liferay.jethr0.job.JobEntity;
 import com.liferay.jethr0.job.PortalEvaluatePullRequestJobEntity;
 import com.liferay.jethr0.job.repository.JobEntityRepository;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 import com.liferay.jethr0.util.StringUtil;
 
 import java.util.regex.Matcher;
@@ -57,15 +57,16 @@ public class ReevaluateGitHubCommentEventHandler
 	}
 
 	protected ReevaluateGitHubCommentEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
+		JSONObject messageJSONObject) {
 
-		super(eventHandlerContext, messageJSONObject);
+		super(messageJSONObject);
 	}
 
 	private JobEntity _createJobEntity(String jenkinsBuildID)
 		throws InvalidJSONException {
 
-		JobEntityRepository jobEntityRepository = getJobEntityRepository();
+		JobEntityRepository jobEntityRepository =
+			Jethr0ContextUtil.getJobEntityRepository();
 
 		JobEntity jobEntity = jobEntityRepository.create(
 			null, "ci:reevaluate:" + jenkinsBuildID, null, 3, null,

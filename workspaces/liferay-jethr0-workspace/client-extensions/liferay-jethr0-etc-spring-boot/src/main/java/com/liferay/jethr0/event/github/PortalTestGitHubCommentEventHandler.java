@@ -5,7 +5,6 @@
 
 package com.liferay.jethr0.event.github;
 
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.event.github.pullrequest.GitHubPullRequest;
 import com.liferay.jethr0.event.jenkins.client.JenkinsClient;
 import com.liferay.jethr0.git.branch.GitBranchEntity;
@@ -13,6 +12,7 @@ import com.liferay.jethr0.job.JobEntity;
 import com.liferay.jethr0.job.PortalPullRequestJobEntity;
 import com.liferay.jethr0.job.PullRequestJobEntity;
 import com.liferay.jethr0.job.repository.JobEntityRepository;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 import com.liferay.jethr0.util.StringUtil;
 
 import java.io.IOException;
@@ -42,7 +42,7 @@ public class PortalTestGitHubCommentEventHandler
 
 		URL distPortalJobURL = _getDistPortalJobURL();
 
-		JenkinsClient jenkinsClient = getJenkinsClient();
+		JenkinsClient jenkinsClient = Jethr0ContextUtil.getJenkinsClient();
 
 		String response = jenkinsClient.requestGet(
 			StringUtil.toURL(
@@ -85,9 +85,9 @@ public class PortalTestGitHubCommentEventHandler
 	}
 
 	protected PortalTestGitHubCommentEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
+		JSONObject messageJSONObject) {
 
-		super(eventHandlerContext, messageJSONObject);
+		super(messageJSONObject);
 
 		String testSuiteName = "default";
 
@@ -166,7 +166,8 @@ public class PortalTestGitHubCommentEventHandler
 		portalPullRequestJobEntity.setPortalBundlesDistURL(
 			distPortalBundlesBuildURL);
 
-		JobEntityRepository jobEntityRepository = getJobEntityRepository();
+		JobEntityRepository jobEntityRepository =
+			Jethr0ContextUtil.getJobEntityRepository();
 
 		jobEntityRepository.update(portalPullRequestJobEntity);
 
@@ -174,7 +175,7 @@ public class PortalTestGitHubCommentEventHandler
 
 		gitHubPullRequest.comment("The test will run with a prebuilt bundle.");
 
-		JenkinsClient jenkinsClient = getJenkinsClient();
+		JenkinsClient jenkinsClient = Jethr0ContextUtil.getJenkinsClient();
 
 		String response = jenkinsClient.requestGet(
 			StringUtil.toURL(distPortalBundlesBuildURL + "/git-hash"));

@@ -41,6 +41,10 @@ import org.osgi.annotation.versioning.ProviderType;
 @ProviderType
 public interface TestrayTestFlowResource {
 
+	public TestrayTestFlow putTestrayTestFlowByTestraySubtaskIdTestraySubtask(
+			Long testraySubtaskId, TestrayTestFlow testrayTestFlow)
+		throws Exception;
+
 	public TestrayTestFlow postTestrayTestFlow(Long testrayTaskId)
 		throws Exception;
 

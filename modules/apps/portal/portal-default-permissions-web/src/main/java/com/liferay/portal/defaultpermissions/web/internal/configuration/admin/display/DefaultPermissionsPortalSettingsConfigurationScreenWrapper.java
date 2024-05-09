@@ -8,7 +8,7 @@ package com.liferay.portal.defaultpermissions.web.internal.configuration.admin.d
 import com.liferay.configuration.admin.display.ConfigurationScreen;
 import com.liferay.configuration.admin.display.ConfigurationScreenWrapper;
 import com.liferay.portal.defaultpermissions.resource.PortalDefaultPermissionsModelResourceRegistry;
-import com.liferay.portal.defaultpermissions.web.internal.display.context.ViewCompanyPortalDefaultPermissionsConfigurationDisplayContext;
+import com.liferay.portal.defaultpermissions.web.internal.display.context.CompanyViewPortalDefaultPermissionsConfigurationDisplayContext;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -64,7 +64,7 @@ public class DefaultPermissionsPortalSettingsConfigurationScreenWrapper
 		@Override
 		public String getJspPath() {
 			return "/configuration" +
-				"/view_company_portal_default_permissions_configuration.jsp";
+				"/view_portal_default_permissions_configuration.jsp";
 		}
 
 		@Override
@@ -103,7 +103,7 @@ public class DefaultPermissionsPortalSettingsConfigurationScreenWrapper
 
 			httpServletRequest.setAttribute(
 				WebKeys.PORTLET_DISPLAY_CONTEXT,
-				new ViewCompanyPortalDefaultPermissionsConfigurationDisplayContext(
+				new CompanyViewPortalDefaultPermissionsConfigurationDisplayContext(
 					httpServletRequest, _language,
 					_portalDefaultPermissionsModelResourceRegistry));
 		}

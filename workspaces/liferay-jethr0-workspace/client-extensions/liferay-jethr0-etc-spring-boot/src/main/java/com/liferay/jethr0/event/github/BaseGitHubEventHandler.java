@@ -8,12 +8,12 @@ package com.liferay.jethr0.event.github;
 import com.liferay.jethr0.bui1d.queue.BuildQueue;
 import com.liferay.jethr0.bui1d.repository.BuildEntityRepository;
 import com.liferay.jethr0.event.BaseEventHandler;
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.event.github.repository.GitHubRepository;
 import com.liferay.jethr0.git.branch.GitBranchEntity;
 import com.liferay.jethr0.git.repository.GitBranchEntityRepository;
 import com.liferay.jethr0.jenkins.JenkinsQueue;
 import com.liferay.jethr0.job.JobEntity;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 import com.liferay.jethr0.util.PropertiesUtil;
 import com.liferay.jethr0.util.StringUtil;
 
@@ -30,10 +30,8 @@ import org.json.JSONObject;
  */
 public abstract class BaseGitHubEventHandler extends BaseEventHandler {
 
-	protected BaseGitHubEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
-
-		super(eventHandlerContext, messageJSONObject);
+	protected BaseGitHubEventHandler(JSONObject messageJSONObject) {
+		super(messageJSONObject);
 	}
 
 	protected GitHubRepository getGitHubRepository()
@@ -49,7 +47,7 @@ public abstract class BaseGitHubEventHandler extends BaseEventHandler {
 				"Missing \"repository\" from message JSON");
 		}
 
-		GitHubFactory gitHubFactory = getGitHubFactory();
+		GitHubFactory gitHubFactory = Jethr0ContextUtil.getGitHubFactory();
 
 		return gitHubFactory.newGitHubRepository(repositoryJSONObject);
 	}
@@ -82,7 +80,7 @@ public abstract class BaseGitHubEventHandler extends BaseEventHandler {
 		}
 
 		GitBranchEntityRepository gitBranchEntityRepository =
-			getGitBranchEntityRepository();
+			Jethr0ContextUtil.getGitBranchEntityRepository();
 
 		_jenkinsGitBranchEntity = gitBranchEntityRepository.getByURL(
 			_JENKINS_GITHUB_URL);
@@ -96,7 +94,7 @@ public abstract class BaseGitHubEventHandler extends BaseEventHandler {
 		}
 
 		BuildEntityRepository buildEntityRepository =
-			getBuildEntityRepository();
+			Jethr0ContextUtil.getBuildEntityRepository();
 
 		for (JSONObject initialBuildJSONObject :
 				jobEntity.getInitialBuildJSONObjects()) {
@@ -104,11 +102,11 @@ public abstract class BaseGitHubEventHandler extends BaseEventHandler {
 			buildEntityRepository.create(jobEntity, initialBuildJSONObject);
 		}
 
-		BuildQueue buildQueue = getBuildQueue();
+		BuildQueue buildQueue = Jethr0ContextUtil.getBuildQueue();
 
 		buildQueue.addJobEntity(jobEntity);
 
-		JenkinsQueue jenkinsQueue = getJenkinsQueue();
+		JenkinsQueue jenkinsQueue = Jethr0ContextUtil.getJenkinsQueue();
 
 		jenkinsQueue.invoke();
 	}

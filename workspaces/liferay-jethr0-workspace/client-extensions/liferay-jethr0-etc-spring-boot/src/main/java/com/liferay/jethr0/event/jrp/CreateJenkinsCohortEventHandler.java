@@ -5,12 +5,12 @@
 
 package com.liferay.jethr0.event.jrp;
 
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.jenkins.cohort.JenkinsCohortEntity;
 import com.liferay.jethr0.jenkins.repository.JenkinsCohortEntityRepository;
 import com.liferay.jethr0.jenkins.repository.JenkinsNodeEntityRepository;
 import com.liferay.jethr0.jenkins.repository.JenkinsServerEntityRepository;
 import com.liferay.jethr0.jenkins.server.JenkinsServerEntity;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,7 +25,7 @@ public class CreateJenkinsCohortEventHandler extends BaseJRPEventHandler {
 		JSONObject jenkinsCohortJSONObject = getJenkinsCohortJSONObject();
 
 		JenkinsCohortEntityRepository jenkinsCohortEntityRepository =
-			getJenkinsCohortEntityRepository();
+			Jethr0ContextUtil.getJenkinsCohortEntityRepository();
 
 		JenkinsCohortEntity jenkinsCohortEntity =
 			jenkinsCohortEntityRepository.create(jenkinsCohortJSONObject);
@@ -37,9 +37,9 @@ public class CreateJenkinsCohortEventHandler extends BaseJRPEventHandler {
 			!jenkinsServersJSONArray.isEmpty()) {
 
 			JenkinsServerEntityRepository jenkinsServerEntityRepository =
-				getJenkinsServerEntityRepository();
+				Jethr0ContextUtil.getJenkinsServerEntityRepository();
 			JenkinsNodeEntityRepository jenkinsNodeEntityRepository =
-				getJenkinsNodeEntityRepository();
+				Jethr0ContextUtil.getJenkinsNodeEntityRepository();
 
 			for (int i = 0; i < jenkinsServersJSONArray.length(); i++) {
 				JSONObject jenkinsServerJSONObject =
@@ -60,10 +60,8 @@ public class CreateJenkinsCohortEventHandler extends BaseJRPEventHandler {
 		return jenkinsCohortEntity.toString();
 	}
 
-	protected CreateJenkinsCohortEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
-
-		super(eventHandlerContext, messageJSONObject);
+	protected CreateJenkinsCohortEventHandler(JSONObject messageJSONObject) {
+		super(messageJSONObject);
 	}
 
 }

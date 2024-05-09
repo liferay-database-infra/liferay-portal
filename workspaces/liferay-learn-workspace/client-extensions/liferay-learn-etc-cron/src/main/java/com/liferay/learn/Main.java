@@ -154,7 +154,9 @@ public class Main {
 			System.getenv("LIFERAY_LEARN_ETC_CRON_LIFERAY_OAUTH_CLIENT_SECRET"),
 			liferaySiteFriendlyUrlPath, new URL(liferayUrl), baseDirFile,
 			GetterUtil.getBoolean(
-				System.getenv("LIFERAY_LEARN_ETC_CRON_OFFLINE")));
+				System.getenv("LIFERAY_LEARN_ETC_CRON_OFFLINE")),
+			GetterUtil.getBoolean(
+				System.getenv("LIFERAY_LEARN_ETC_SKIP_DIFF_CHECK")));
 
 		String exceptionMessage = null;
 
@@ -223,13 +225,14 @@ public class Main {
 			String latestHashFileName, String liferayDataDefinitionKey,
 			String liferayOAuthClientId, String liferayOAuthClientSecret,
 			String liferaySiteFriendlyUrlPath, URL liferayURL, File baseDir,
-			boolean offline)
+			boolean offline, boolean skipDiffCheck)
 		throws Exception {
 
 		_liferayOAuthClientId = liferayOAuthClientId;
 		_liferayOAuthClientSecret = liferayOAuthClientSecret;
 		_liferayURL = liferayURL;
 		_offline = offline;
+		_skipDiffCheck = skipDiffCheck;
 
 		_lastestHashFileName = latestHashFileName;
 
@@ -355,7 +358,8 @@ public class Main {
 						fileName, _baseDirName);
 
 					if (!_diffFileNames.isEmpty() &&
-						!_diffFileNames.contains(relativeFileName)) {
+						!_diffFileNames.contains(relativeFileName) &&
+						!_skipDiffCheck) {
 
 						System.out.println(
 							"Skipping structured content (no diffs) " +
@@ -368,7 +372,8 @@ public class Main {
 
 					if (StringUtil.equals(
 							DigestUtils.md5Hex(file.toString()),
-							_getMD5Hex(siteStructuredContent))) {
+							_getMD5Hex(siteStructuredContent)) &&
+						!_skipDiffCheck) {
 
 						System.out.println(
 							"Skipping structured content (same md5Hex) " +
@@ -408,7 +413,8 @@ public class Main {
 							fileName, _baseDirName);
 
 						if (!_diffFileNames.isEmpty() &&
-							!_diffFileNames.contains(relativeFileName)) {
+							!_diffFileNames.contains(relativeFileName) &&
+							!_skipDiffCheck) {
 
 							System.out.println(
 								"Skipping structured content " +
@@ -429,7 +435,8 @@ public class Main {
 						fileName, _baseDirName);
 
 					if (!_diffFileNames.isEmpty() &&
-						!_diffFileNames.contains(relativeFileName)) {
+						!_diffFileNames.contains(relativeFileName) &&
+						!_skipDiffCheck) {
 
 						System.out.println(
 							"Skipping structured content " +
@@ -1675,6 +1682,7 @@ public class Main {
 	private String _oldHash = StringPool.BLANK;
 	private Parser _parser;
 	private SiteResource _siteResource;
+	private final boolean _skipDiffCheck;
 	private final Map<String, Long> _structuredContentFolderIds =
 		new HashMap<>();
 	private StructuredContentFolderResource _structuredContentFolderResource;

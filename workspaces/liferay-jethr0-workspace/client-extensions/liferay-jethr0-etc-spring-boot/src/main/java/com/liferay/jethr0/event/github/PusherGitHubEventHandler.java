@@ -8,7 +8,6 @@ package com.liferay.jethr0.event.github;
 import com.liferay.jethr0.bui1d.BuildEntity;
 import com.liferay.jethr0.bui1d.queue.BuildQueue;
 import com.liferay.jethr0.bui1d.repository.BuildEntityRepository;
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.event.github.commit.GitHubCommit;
 import com.liferay.jethr0.event.github.repository.GitHubRepository;
 import com.liferay.jethr0.event.github.user.GitHubUser;
@@ -23,6 +22,7 @@ import com.liferay.jethr0.job.RepositoryArchiveJobEntity;
 import com.liferay.jethr0.job.repository.JobEntityRepository;
 import com.liferay.jethr0.routine.RoutineEntity;
 import com.liferay.jethr0.routine.UpstreamBranchRoutineEntity;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 import com.liferay.jethr0.util.JobUtil;
 import com.liferay.jethr0.util.StringUtil;
 
@@ -48,24 +48,45 @@ public class PusherGitHubEventHandler extends BaseGitHubEventHandler {
 
 	@Override
 	public String process() throws InvalidJSONException, IOException {
+		GitBranchEntity gitBranchEntity = _getGitBranchEntity();
+
+		GitHubCommit headGitHubCommit = _getHeadGitHubCommit();
+
+		if ((gitBranchEntity != null) && (headGitHubCommit != null)) {
+			if (_log.isInfoEnabled()) {
+				_log.info(
+					StringUtil.combine(
+						"Pusher started for ", gitBranchEntity.getURL(), " at ",
+						headGitHubCommit.getShortSHA()));
+			}
+		}
+
 		_updateUpstreamGitBranchEntity();
 		_updateUpstreamGitBranchMirror();
 
 		_syncCentralSubrepository();
 
+		if ((gitBranchEntity != null) && (headGitHubCommit != null)) {
+			if (_log.isInfoEnabled()) {
+				_log.info(
+					StringUtil.combine(
+						"Pusher completed for ", gitBranchEntity.getURL(),
+						" at ", headGitHubCommit.getShortSHA()));
+			}
+		}
+
 		return null;
 	}
 
-	protected PusherGitHubEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
-
-		super(eventHandlerContext, messageJSONObject);
+	protected PusherGitHubEventHandler(JSONObject messageJSONObject) {
+		super(messageJSONObject);
 	}
 
 	private JobEntity _createMergeCentralSubrepositoryJobEntity()
 		throws InvalidJSONException {
 
-		JobEntityRepository jobEntityRepository = getJobEntityRepository();
+		JobEntityRepository jobEntityRepository =
+			Jethr0ContextUtil.getJobEntityRepository();
 
 		GitBranchEntity gitBranchEntity = _getGitBranchEntity();
 
@@ -101,7 +122,7 @@ public class PusherGitHubEventHandler extends BaseGitHubEventHandler {
 		refName = refName.replaceAll(".*/([^/]+)", "$1");
 
 		GitBranchEntityRepository gitBranchEntityRepository =
-			getGitBranchEntityRepository();
+			Jethr0ContextUtil.getGitBranchEntityRepository();
 
 		GitHubRepository gitHubRepository = getGitHubRepository();
 
@@ -125,7 +146,7 @@ public class PusherGitHubEventHandler extends BaseGitHubEventHandler {
 				"Missing \"head_commit\" from message JSON");
 		}
 
-		GitHubFactory gitHubFactory = getGitHubFactory();
+		GitHubFactory gitHubFactory = Jethr0ContextUtil.getGitHubFactory();
 
 		return gitHubFactory.newGitHubCommit(headCommitJSONObject);
 	}
@@ -211,8 +232,14 @@ public class PusherGitHubEventHandler extends BaseGitHubEventHandler {
 
 		gitBranchEntity.setLatestSHA(headGitHubCommit.getSHA());
 
+		BuildQueue buildQueue = Jethr0ContextUtil.getBuildQueue();
 		GitCommitEntityRepository gitCommitEntityRepository =
-			getGitCommitEntityRepository();
+			Jethr0ContextUtil.getGitCommitEntityRepository();
+		BuildEntityRepository buildEntityRepository =
+			Jethr0ContextUtil.getBuildEntityRepository();
+		JenkinsQueue jenkinsQueue = Jethr0ContextUtil.getJenkinsQueue();
+		JobEntityRepository jobEntityRepository =
+			Jethr0ContextUtil.getJobEntityRepository();
 
 		GitCommitEntity latestGitCommitEntity =
 			gitCommitEntityRepository.createGitCommitEntity(
@@ -243,11 +270,6 @@ public class PusherGitHubEventHandler extends BaseGitHubEventHandler {
 			upstreamBranchRoutineEntity.setPreviousGitCommitEntity(
 				latestGitCommitEntity);
 
-			BuildEntityRepository buildEntityRepository =
-				getBuildEntityRepository();
-
-			JobEntityRepository jobEntityRepository = getJobEntityRepository();
-
 			JobEntity jobEntity = jobEntityRepository.create(
 				routineEntity,
 				JobUtil.getUpdateJobEntityName(routineEntity.getJobName()),
@@ -268,13 +290,17 @@ public class PusherGitHubEventHandler extends BaseGitHubEventHandler {
 				}
 
 				if (jobEntity.getState() == JobEntity.State.QUEUED) {
-					BuildQueue buildQueue = getBuildQueue();
-
 					buildQueue.addJobEntity(jobEntity);
 
-					JenkinsQueue jenkinsQueue = getJenkinsQueue();
-
 					jenkinsQueue.invoke();
+				}
+
+				if ((gitBranchEntity != null) && (headGitHubCommit != null)) {
+					if (_log.isInfoEnabled()) {
+						_log.info(
+							StringUtil.combine(
+								"Pusher started job ", jobEntity.getId()));
+					}
 				}
 			}
 			catch (Exception exception) {
@@ -285,7 +311,7 @@ public class PusherGitHubEventHandler extends BaseGitHubEventHandler {
 		}
 
 		GitBranchEntityRepository gitBranchEntityRepository =
-			getGitBranchEntityRepository();
+			Jethr0ContextUtil.getGitBranchEntityRepository();
 
 		gitBranchEntityRepository.update(gitBranchEntity);
 	}
@@ -300,7 +326,8 @@ public class PusherGitHubEventHandler extends BaseGitHubEventHandler {
 
 		GitBranchEntity gitBranchEntity = _getGitBranchEntity();
 
-		JobEntityRepository jobEntityRepository = getJobEntityRepository();
+		JobEntityRepository jobEntityRepository =
+			Jethr0ContextUtil.getJobEntityRepository();
 
 		JobEntity jobEntity = jobEntityRepository.create(
 			null,

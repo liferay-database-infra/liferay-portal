@@ -215,6 +215,10 @@ public class ObjectDefinitionResourceImpl
 		com.liferay.object.model.ObjectDefinition
 			serviceBuilderObjectDefinition;
 
+		if (!FeatureFlagManagerUtil.isEnabled("LPD-23379")) {
+			objectDefinition.setEnableIndexSearch(() -> true);
+		}
+
 		if (GetterUtil.getBoolean(objectDefinition.getSystem())) {
 			serviceBuilderObjectDefinition =
 				_objectDefinitionService.addSystemObjectDefinition(
@@ -224,6 +228,8 @@ public class ObjectDefinitionResourceImpl
 						objectDefinition.
 							getObjectFolderExternalReferenceCode()),
 					GetterUtil.getBoolean(objectDefinition.getEnableComments()),
+					GetterUtil.getBoolean(
+						objectDefinition.getEnableIndexSearch()),
 					LocalizedMapUtil.getLocalizedMap(
 						objectDefinition.getLabel()),
 					objectDefinition.getName(),
@@ -255,6 +261,8 @@ public class ObjectDefinitionResourceImpl
 						objectDefinition.
 							getObjectFolderExternalReferenceCode()),
 					GetterUtil.getBoolean(objectDefinition.getEnableComments()),
+					GetterUtil.getBoolean(
+						objectDefinition.getEnableIndexSearch(), true),
 					GetterUtil.getBoolean(
 						objectDefinition.getEnableLocalization()),
 					GetterUtil.getBoolean(
@@ -498,6 +506,10 @@ public class ObjectDefinitionResourceImpl
 					titleObjectFieldId);
 		}
 		else {
+			if (!FeatureFlagManagerUtil.isEnabled("LPD-23379")) {
+				objectDefinition.setEnableIndexSearch(() -> true);
+			}
+
 			serviceBuilderObjectDefinition =
 				_objectDefinitionService.updateCustomObjectDefinition(
 					objectDefinition.getExternalReferenceCode(),
@@ -515,6 +527,8 @@ public class ObjectDefinitionResourceImpl
 					GetterUtil.getBoolean(
 						objectDefinition.getEnableCategorization(), true),
 					GetterUtil.getBoolean(objectDefinition.getEnableComments()),
+					GetterUtil.getBoolean(
+						objectDefinition.getEnableIndexSearch()),
 					GetterUtil.getBoolean(
 						objectDefinition.getEnableLocalization()),
 					GetterUtil.getBoolean(

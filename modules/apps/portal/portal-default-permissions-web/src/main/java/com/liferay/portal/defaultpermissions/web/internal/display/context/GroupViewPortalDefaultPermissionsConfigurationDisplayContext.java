@@ -5,28 +5,31 @@
 
 package com.liferay.portal.defaultpermissions.web.internal.display.context;
 
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.petra.function.transform.TransformUtil;
-import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
 import com.liferay.portal.defaultpermissions.resource.PortalDefaultPermissionsModelResourceRegistry;
 import com.liferay.portal.defaultpermissions.web.internal.search.PortalDefaultPermissionsSearch;
 import com.liferay.portal.defaultpermissions.web.internal.search.PortalDefaultPermissionsSearchEntry;
 import com.liferay.portal.kernel.dao.search.DisplayTerms;
+import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.Language;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.List;
-import java.util.function.Predicate;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
@@ -38,9 +41,10 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * @author Stefano Motta
  */
-public class ViewCompanyPortalDefaultPermissionsConfigurationDisplayContext {
+public class GroupViewPortalDefaultPermissionsConfigurationDisplayContext
+	extends BaseViewPortalDefaultPermissionsConfigurationDisplayContext {
 
-	public ViewCompanyPortalDefaultPermissionsConfigurationDisplayContext(
+	public GroupViewPortalDefaultPermissionsConfigurationDisplayContext(
 		HttpServletRequest httpServletRequest, Language language,
 		PortalDefaultPermissionsModelResourceRegistry
 			portalDefaultPermissionsModelResourceRegistry) {
@@ -58,6 +62,40 @@ public class ViewCompanyPortalDefaultPermissionsConfigurationDisplayContext {
 				JavaConstants.JAVAX_PORTLET_RESPONSE));
 	}
 
+	public List<DropdownItem> getActionDropdownItems(
+		PortalDefaultPermissionsSearchEntry
+			portalDefaultPermissionsSearchEntry) {
+
+		return DropdownItemListBuilder.add(
+			dropdownItem -> {
+				dropdownItem.putData("action", "editDefaultPermissions");
+				dropdownItem.putData(
+					"editDefaultPermissionsURL",
+					getEditURL(
+						portalDefaultPermissionsSearchEntry.getClassName()));
+				dropdownItem.putData(
+					"qa-id",
+					"edit-" + portalDefaultPermissionsSearchEntry.getLabel());
+				dropdownItem.setLabel(
+					LanguageUtil.get(_httpServletRequest, "edit"));
+				dropdownItem.setTarget("modal-permissions");
+			}
+		).add(
+			dropdownItem -> {
+				dropdownItem.putData("action", "resetDefaultPermissions");
+				dropdownItem.putData(
+					"qa-id",
+					"reset-" + portalDefaultPermissionsSearchEntry.getLabel());
+				dropdownItem.putData(
+					"resetDefaultPermissionsURL",
+					getResetURL(
+						portalDefaultPermissionsSearchEntry.getClassName()));
+				dropdownItem.setLabel(
+					LanguageUtil.get(_httpServletRequest, "reset"));
+			}
+		).build();
+	}
+
 	public String getEditURL(String className) {
 		return PortletURLBuilder.create(
 			PortalUtil.getControlPanelPortletURL(
@@ -69,6 +107,8 @@ public class ViewCompanyPortalDefaultPermissionsConfigurationDisplayContext {
 			"/configuration/edit_portal_default_permissions_configuration"
 		).setParameter(
 			"modelResource", className
+		).setParameter(
+			"scope", ExtendedObjectClassDefinition.Scope.GROUP
 		).setWindowState(
 			LiferayWindowState.POP_UP
 		).buildString();
@@ -103,8 +143,28 @@ public class ViewCompanyPortalDefaultPermissionsConfigurationDisplayContext {
 		).buildPortletURL();
 	}
 
-	public PortalDefaultPermissionsSearch getSearchContainer() {
-		PortalDefaultPermissionsSearch searchContainer =
+	public String getResetURL(String className) {
+		return PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				_httpServletRequest,
+				"com_liferay_portlet_configuration_web_portlet_" +
+					"PortletConfigurationPortlet",
+				PortletRequest.ACTION_PHASE)
+		).setActionName(
+			"/configuration/edit_portal_default_permissions_configuration"
+		).setCMD(
+			"reset"
+		).setParameter(
+			"modelResource", className
+		).setParameter(
+			"scope", ExtendedObjectClassDefinition.Scope.GROUP
+		).buildString();
+	}
+
+	public SearchContainer<PortalDefaultPermissionsSearchEntry>
+		getSearchContainer() {
+
+		SearchContainer<PortalDefaultPermissionsSearchEntry> searchContainer =
 			new PortalDefaultPermissionsSearch(
 				_liferayPortletRequest, getPortletURL());
 
@@ -114,7 +174,7 @@ public class ViewCompanyPortalDefaultPermissionsConfigurationDisplayContext {
 			portalDefaultPermissionSearchEntries =
 				_createPortalDefaultPermissionSearchEntryList();
 
-		portalDefaultPermissionSearchEntries = _filter(
+		portalDefaultPermissionSearchEntries = filter(
 			portalDefaultPermissionSearchEntries, searchTerms.getKeywords(),
 			searchTerms.getKeywords());
 
@@ -136,39 +196,20 @@ public class ViewCompanyPortalDefaultPermissionsConfigurationDisplayContext {
 		return TransformUtil.transform(
 			_portalDefaultPermissionsModelResourceRegistry.
 				getPortalDefaultPermissionsModelResources(),
-			portalDefaultPermissionsModelResource ->
-				new PortalDefaultPermissionsSearchEntry(
+			portalDefaultPermissionsModelResource -> {
+				ExtendedObjectClassDefinition.Scope scope =
+					portalDefaultPermissionsModelResource.getScope();
+
+				if (!scope.equals(ExtendedObjectClassDefinition.Scope.GROUP)) {
+					return null;
+				}
+
+				return new PortalDefaultPermissionsSearchEntry(
 					portalDefaultPermissionsModelResource.getClassName(),
 					_language.get(
 						themeDisplay.getLocale(),
-						portalDefaultPermissionsModelResource.getLabel())));
-	}
-
-	private Predicate<PortalDefaultPermissionsSearchEntry> _createPredicate(
-		String className, String label) {
-
-		Predicate<PortalDefaultPermissionsSearchEntry> predicate =
-			new PortalDefaultPermissionsSearchEntryClassNamePredicate(
-				className);
-
-		return predicate.or(
-			new PortalDefaultPermissionsSearchEntryLabelPredicate(label));
-	}
-
-	private List<PortalDefaultPermissionsSearchEntry> _filter(
-		List<PortalDefaultPermissionsSearchEntry>
-			portalDefaultPermissionSearchEntries,
-		String className, String label) {
-
-		if (Validator.isNull(className) && Validator.isNull(label)) {
-			return portalDefaultPermissionSearchEntries;
-		}
-
-		Predicate<PortalDefaultPermissionsSearchEntry> predicate =
-			_createPredicate(className, label);
-
-		return ListUtil.filter(
-			portalDefaultPermissionSearchEntries, predicate::test);
+						portalDefaultPermissionsModelResource.getLabel()));
+			});
 	}
 
 	private final HttpServletRequest _httpServletRequest;
@@ -177,71 +218,5 @@ public class ViewCompanyPortalDefaultPermissionsConfigurationDisplayContext {
 	private final LiferayPortletResponse _liferayPortletResponse;
 	private final PortalDefaultPermissionsModelResourceRegistry
 		_portalDefaultPermissionsModelResourceRegistry;
-
-	private class PortalDefaultPermissionsSearchEntryClassNamePredicate
-		implements Predicate<PortalDefaultPermissionsSearchEntry> {
-
-		public PortalDefaultPermissionsSearchEntryClassNamePredicate(
-			String keywords) {
-
-			_keywords = keywords;
-		}
-
-		@Override
-		public boolean test(
-			PortalDefaultPermissionsSearchEntry
-				portalDefaultPermissionsSearchEntry) {
-
-			if (Validator.isNull(_keywords)) {
-				return true;
-			}
-
-			String delimiter = StringPool.SPACE;
-
-			if (!StringUtil.contains(_keywords, StringPool.SPACE)) {
-				delimiter = StringPool.BLANK;
-			}
-
-			return StringUtil.containsIgnoreCase(
-				portalDefaultPermissionsSearchEntry.getClassName(), _keywords,
-				delimiter);
-		}
-
-		private final String _keywords;
-
-	}
-
-	private class PortalDefaultPermissionsSearchEntryLabelPredicate
-		implements Predicate<PortalDefaultPermissionsSearchEntry> {
-
-		public PortalDefaultPermissionsSearchEntryLabelPredicate(
-			String keywords) {
-
-			_keywords = keywords;
-		}
-
-		@Override
-		public boolean test(
-			PortalDefaultPermissionsSearchEntry
-				portalDefaultPermissionsSearchEntry) {
-
-			if (Validator.isNull(_keywords)) {
-				return true;
-			}
-
-			String delimiter = StringPool.SPACE;
-
-			if (!StringUtil.contains(_keywords, StringPool.SPACE)) {
-				delimiter = StringPool.BLANK;
-			}
-
-			return StringUtil.containsIgnoreCase(
-				portalDefaultPermissionsSearchEntry.getLabel(), _keywords,
-				delimiter);
-		}
-
-		private final String _keywords;
-
-	}
 
 }

@@ -13,6 +13,7 @@ import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.StagedModel;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.xml.Element;
 
 import java.util.Map;
@@ -54,6 +55,11 @@ public class
 			return;
 		}
 
+		configurationValueJSONObject.put(
+			"className",
+			_portal.getClassName(
+				configurationValueJSONObject.getLong("classNameId")));
+
 		AssetListEntry assetListEntry =
 			_assetListEntryLocalService.fetchAssetListEntry(
 				configurationValueJSONObject.getLong("classPK"));
@@ -64,7 +70,7 @@ public class
 
 		if (exportReferencedContent) {
 			StagedModelDataHandlerUtil.exportReferenceStagedModel(
-				portletDataContext, assetListEntry, stagedModel,
+				portletDataContext, stagedModel, assetListEntry,
 				PortletDataContext.REFERENCE_TYPE_DEPENDENCY);
 		}
 		else {
@@ -72,7 +78,7 @@ public class
 				assetListEntry);
 
 			portletDataContext.addReferenceElement(
-				assetListEntry, entityElement, stagedModel,
+				stagedModel, entityElement, assetListEntry,
 				PortletDataContext.REFERENCE_TYPE_DEPENDENCY, true);
 		}
 	}
@@ -101,5 +107,8 @@ public class
 
 	@Reference
 	private FragmentEntryConfigurationParser _fragmentEntryConfigurationParser;
+
+	@Reference
+	private Portal _portal;
 
 }

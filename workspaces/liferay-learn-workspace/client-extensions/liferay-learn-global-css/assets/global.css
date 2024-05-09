@@ -694,7 +694,7 @@ pre[class*='language-'] {
 .learn-card,
 .section-card {
 	border: 1px solid rgba(9, 16, 24, 0.12);
-	border-radius: var(--border-radius-lg);
+	border-radius: var(--border-radius);
 	box-shadow: 0 6px 15px -6px rgba(9, 16, 29, 0.06);
 	cursor: pointer;
 	flex: 0 0 calc(50% - var(--spacer-3));
@@ -837,6 +837,34 @@ pre[class*='language-'] {
 	color: var(--color-brand-primary, #0b5fff);
 	height: 2rem;
 	width: 2rem;
+}
+
+.search-capability {
+	.input-group .input-group-inset-item-after {
+		border-bottom-right-radius: 3rem;
+		border-left-width: 0;
+		border-top-right-radius: 3rem;
+		width: 4.5rem;
+	}
+
+	.input-group-inset-after.form-control {
+		border-bottom-left-radius: 3rem;
+		border-right-color: transparent;
+		border-top-left-radius: 3rem;
+		font-size: var(--h5-font-size);
+		padding: 1rem;
+	}
+
+	.lexicon-icon {
+		color: var(--primary);
+		fill: var(--primary);
+		height: 2rem;
+		width: 2rem;
+	}
+
+	.panel-body {
+		padding: 0;
+	}
 }
 
 .search-results {

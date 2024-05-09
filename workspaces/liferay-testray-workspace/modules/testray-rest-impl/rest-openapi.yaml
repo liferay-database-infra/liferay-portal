@@ -118,8 +118,26 @@ components:
             type: object
         TestrayTestFlow:
             properties:
-                testraySubtasksAmount:
+                caseResultAmount:
                     format: int32
+                    type: integer
+                comment:
+                    type: string
+                dueStatus:
+                    type: string
+                issues:
+                    type: string
+                mbMessageId:
+                    format: int64
+                    type: integer
+                mbThreadId:
+                    format: int64
+                    type: integer
+                subtaskAmount:
+                    format: int32
+                    type: integer
+                userId:
+                    format: int64
                     type: integer
             type: object
         TestrayTestSuite:
@@ -461,6 +479,44 @@ paths:
                     description:
                         Invalid answer provided
             tags: ["TestrayTestSuite"]
+    "/testray-testflow/by-testray-subtaskId/{testraySubtaskId}":
+        put:
+            operationId: putTestrayTestFlowByTestraySubtaskIdTestraySubtask
+            parameters:
+                - in: path
+                  name: testraySubtaskId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/TestrayTestFlow"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/TestrayTestFlow"
+            responses:
+                204:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/TestrayTestFlow"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/TestrayTestFlow"
+                400:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/TestrayTestFlow"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/TestrayTestFlow"
+                    description:
+                        Invalid answer provided
+            tags: ["TestrayTestFlow"]
     "/testray-testflow/{testrayTaskId}":
         post:
             operationId: postTestrayTestFlow

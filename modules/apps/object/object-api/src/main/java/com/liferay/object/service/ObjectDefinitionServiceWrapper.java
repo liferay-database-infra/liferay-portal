@@ -31,7 +31,8 @@ public class ObjectDefinitionServiceWrapper
 	@Override
 	public com.liferay.object.model.ObjectDefinition addCustomObjectDefinition(
 			long objectFolderId, boolean enableComments,
-			boolean enableLocalization, boolean enableObjectEntryDraft,
+			boolean enableIndexSearch, boolean enableLocalization,
+			boolean enableObjectEntryDraft,
 			java.util.Map<java.util.Locale, String> labelMap, String name,
 			String panelAppOrder, String panelCategoryKey,
 			java.util.Map<java.util.Locale, String> pluralLabelMap,
@@ -40,10 +41,10 @@ public class ObjectDefinitionServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectDefinitionService.addCustomObjectDefinition(
-			objectFolderId, enableComments, enableLocalization,
-			enableObjectEntryDraft, labelMap, name, panelAppOrder,
-			panelCategoryKey, pluralLabelMap, portlet, scope, storageType,
-			objectFields);
+			objectFolderId, enableComments, enableIndexSearch,
+			enableLocalization, enableObjectEntryDraft, labelMap, name,
+			panelAppOrder, panelCategoryKey, pluralLabelMap, portlet, scope,
+			storageType, objectFields);
 	}
 
 	@Override
@@ -59,7 +60,7 @@ public class ObjectDefinitionServiceWrapper
 	@Override
 	public com.liferay.object.model.ObjectDefinition addSystemObjectDefinition(
 			String externalReferenceCode, long userId, long objectFolderId,
-			boolean enableComments,
+			boolean enableComments, boolean enableIndexSearch,
 			java.util.Map<java.util.Locale, String> labelMap, String name,
 			String panelAppOrder, String panelCategoryKey,
 			java.util.Map<java.util.Locale, String> pluralLabelMap,
@@ -69,8 +70,8 @@ public class ObjectDefinitionServiceWrapper
 
 		return _objectDefinitionService.addSystemObjectDefinition(
 			externalReferenceCode, userId, objectFolderId, enableComments,
-			labelMap, name, panelAppOrder, panelCategoryKey, pluralLabelMap,
-			portlet, scope, objectFields);
+			enableIndexSearch, labelMap, name, panelAppOrder, panelCategoryKey,
+			pluralLabelMap, portlet, scope, objectFields);
 	}
 
 	@Override
@@ -177,8 +178,8 @@ public class ObjectDefinitionServiceWrapper
 				long descriptionObjectFieldId, long objectFolderId,
 				long titleObjectFieldId, boolean accountEntryRestricted,
 				boolean active, boolean enableCategorization,
-				boolean enableComments, boolean enableLocalization,
-				boolean enableObjectEntryDraft,
+				boolean enableComments, boolean enableIndexSearch,
+				boolean enableLocalization, boolean enableObjectEntryDraft,
 				boolean enableObjectEntryHistory,
 				java.util.Map<java.util.Locale, String> labelMap, String name,
 				String panelAppOrder, String panelCategoryKey, boolean portlet,
@@ -190,10 +191,10 @@ public class ObjectDefinitionServiceWrapper
 			externalReferenceCode, objectDefinitionId,
 			accountEntryRestrictedObjectFieldId, descriptionObjectFieldId,
 			objectFolderId, titleObjectFieldId, accountEntryRestricted, active,
-			enableCategorization, enableComments, enableLocalization,
-			enableObjectEntryDraft, enableObjectEntryHistory, labelMap, name,
-			panelAppOrder, panelCategoryKey, portlet, pluralLabelMap, scope,
-			status);
+			enableCategorization, enableComments, enableIndexSearch,
+			enableLocalization, enableObjectEntryDraft,
+			enableObjectEntryHistory, labelMap, name, panelAppOrder,
+			panelCategoryKey, portlet, pluralLabelMap, scope, status);
 	}
 
 	@Override

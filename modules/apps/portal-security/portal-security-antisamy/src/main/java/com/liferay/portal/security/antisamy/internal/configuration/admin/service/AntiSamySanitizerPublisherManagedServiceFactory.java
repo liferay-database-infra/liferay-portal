@@ -22,7 +22,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceRegistration;
-import org.osgi.service.cm.ConfigurationException;
 import org.osgi.service.cm.ManagedServiceFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -41,6 +40,10 @@ public class AntiSamySanitizerPublisherManagedServiceFactory
 
 	@Override
 	public void deleted(String pid) {
+		if (_sanitizerServiceRegistration == null) {
+			return;
+		}
+
 		String className = _classNames.get(pid);
 
 		_antiSamySanitizerImpl.removePolicy(className);
@@ -52,8 +55,10 @@ public class AntiSamySanitizerPublisherManagedServiceFactory
 	}
 
 	@Override
-	public void updated(String pid, Dictionary<String, ?> properties)
-		throws ConfigurationException {
+	public void updated(String pid, Dictionary<String, ?> properties) {
+		if (_sanitizerServiceRegistration == null) {
+			return;
+		}
 
 		AntiSamyClassNameConfiguration antiSamyClassNameConfiguration =
 			ConfigurableUtil.createConfigurable(

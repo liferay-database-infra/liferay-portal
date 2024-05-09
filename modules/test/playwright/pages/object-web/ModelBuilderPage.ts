@@ -13,6 +13,7 @@ export class ModelBuilderPage {
 	readonly createNewObjectDefinitionButton: Locator;
 	readonly deleteObjectDefinitionOption: Locator;
 	readonly deleteObjectRelationshipButton: Locator;
+	readonly deleteTrashButton: Locator;
 	readonly editObjectFolderDetailsButton: Locator;
 	readonly fitViewButton: Locator;
 	readonly goToFolderButton: Locator;
@@ -52,6 +53,9 @@ export class ModelBuilderPage {
 		this.deleteObjectRelationshipButton = page.getByLabel(
 			'Delete Relationship'
 		);
+		this.deleteTrashButton = page
+			.getByRole('tabpanel')
+			.getByTitle('Delete');
 		this.editObjectFolderDetailsButton = page.locator(
 			'button[name=editObjectFolderButton]'
 		);
@@ -65,10 +69,9 @@ export class ModelBuilderPage {
 		this.leftSidebarItems = page.locator(
 			'li.treeview-item div.autofit-row'
 		);
-		this.modalDeleteObjectDefinitionConfirmationButton = page.getByRole(
-			'button',
-			{exact: true, name: 'Delete'}
-		);
+		this.modalDeleteObjectDefinitionConfirmationButton = page
+			.getByRole('dialog')
+			.getByRole('button', {exact: true, name: 'Delete'});
 		this.modalDeleteObjectDefinitionTextField = page.getByPlaceholder(
 			'Confirm Object Definition Name'
 		);

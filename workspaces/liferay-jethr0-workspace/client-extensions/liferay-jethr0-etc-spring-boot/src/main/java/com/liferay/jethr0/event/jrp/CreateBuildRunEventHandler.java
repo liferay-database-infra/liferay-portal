@@ -10,10 +10,10 @@ import com.liferay.jethr0.bui1d.queue.BuildQueue;
 import com.liferay.jethr0.bui1d.repository.BuildEntityRepository;
 import com.liferay.jethr0.bui1d.repository.BuildRunEntityRepository;
 import com.liferay.jethr0.bui1d.run.BuildRunEntity;
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.jenkins.JenkinsQueue;
 import com.liferay.jethr0.job.JobEntity;
 import com.liferay.jethr0.job.repository.JobEntityRepository;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 
 import org.json.JSONObject;
 
@@ -25,7 +25,7 @@ public class CreateBuildRunEventHandler extends BaseJRPEventHandler {
 	@Override
 	public String process() throws InvalidJSONException {
 		BuildEntityRepository buildEntityRepository =
-			getBuildEntityRepository();
+			Jethr0ContextUtil.getBuildEntityRepository();
 
 		JSONObject buildJSONObject = getBuildJSONObject();
 
@@ -35,7 +35,7 @@ public class CreateBuildRunEventHandler extends BaseJRPEventHandler {
 		JobEntity jobEntity = buildEntity.getJobEntity();
 
 		BuildRunEntityRepository buildRunEntityRepository =
-			getBuildRunEntityRepository();
+			Jethr0ContextUtil.getBuildRunEntityRepository();
 
 		BuildRunEntity buildRunEntity = buildRunEntityRepository.create(
 			buildEntity, BuildRunEntity.State.OPENED);
@@ -49,16 +49,17 @@ public class CreateBuildRunEventHandler extends BaseJRPEventHandler {
 		if (jobEntity.getState() == JobEntity.State.COMPLETED) {
 			jobEntity.setState(JobEntity.State.QUEUED);
 
-			JobEntityRepository jobEntityRepository = getJobEntityRepository();
+			JobEntityRepository jobEntityRepository =
+				Jethr0ContextUtil.getJobEntityRepository();
 
 			jobEntityRepository.update(jobEntity);
 		}
 
-		BuildQueue buildQueue = getBuildQueue();
+		BuildQueue buildQueue = Jethr0ContextUtil.getBuildQueue();
 
 		buildQueue.addBuildEntity(buildEntity);
 
-		JenkinsQueue jenkinsQueue = getJenkinsQueue();
+		JenkinsQueue jenkinsQueue = Jethr0ContextUtil.getJenkinsQueue();
 
 		jenkinsQueue.invoke();
 
@@ -67,10 +68,8 @@ public class CreateBuildRunEventHandler extends BaseJRPEventHandler {
 		return buildRunEntity.toString();
 	}
 
-	protected CreateBuildRunEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
-
-		super(eventHandlerContext, messageJSONObject);
+	protected CreateBuildRunEventHandler(JSONObject messageJSONObject) {
+		super(messageJSONObject);
 	}
 
 }

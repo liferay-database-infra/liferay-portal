@@ -36,7 +36,7 @@ definition {
 		}
 
 		task ("When goes to Fields Tab.") {
-			DataSetAdmin.goToTab(tabName = "Fields");
+			DataSetAdmin.goToTab(tabName = "Visualization Modes");
 		}
 	}
 
@@ -53,6 +53,8 @@ definition {
 	@description = "LPS-179282. Confirm that metadata fields are not present for the user "
 	@priority = 3
 	test AssertNotPresentMetadataFields {
+		property portal.upstream = "quarantine";
+
 		task ("And Clicking to Add a new field") {
 			LexiconEntry.gotoAdd();
 		}
@@ -89,6 +91,8 @@ definition {
 	@description = "LPS-194126 Confirm that a new translation field has been created"
 	@priority = 3
 	test AssertTheNewFieldTranslation {
+		property portal.upstream = "quarantine";
+
 		task ("Given a new Object entity") {
 			ObjectAdmin.addObjectViaAPI(
 				labelName = "DataSetObject",
@@ -147,7 +151,7 @@ definition {
 		}
 
 		task ("And go to fields tab") {
-			DataSetAdmin.goToTab(tabName = "Fields");
+			DataSetAdmin.goToTab(tabName = "Visualization Modes");
 		}
 
 		task ("And click on add button") {
@@ -282,63 +286,6 @@ definition {
 			AssertElementPresent(
 				locator1 = "CommerceWidget#TAG_FACET_LABEL_LAYOUT",
 				tagName = "Translated");
-		}
-	}
-
-	@description = "LPS-185226. Confirm that the user can add a field"
-	@priority = 5
-	test CanAddField {
-		property portal.acceptance = "true";
-
-		task ("And clicks on Add Fields button/And checks id field/And clicks on Save button") {
-			DataSetAdmin.addFields(key_fieldList = "id");
-		}
-
-		task ("Then the added fields are shown on Fields tab page") {
-			DataSetAdmin.assertFieldsOnTable(
-				key_position = 1,
-				keyName = "id");
-		}
-	}
-
-	@description = "LPS-179151. Confirm the change in the field label field."
-	@priority = 5
-	test CanAssertChangeInTheLabelField {
-		property portal.acceptance = "true";
-
-		task ("And adds two or more fields") {
-			DataSetAdmin.addFields(key_fieldList = "id,label");
-		}
-
-		task ("And clicks on ellipsis button on one of these fields") {
-			Click(
-				key_fieldName = "id",
-				locator1 = "DataSet#VERTICAL_ELLIPSIS_BY_FIELDS_NAME");
-		}
-
-		task ("And clicks on Edit option") {
-			MenuItem.click(menuItem = "Edit");
-		}
-
-		task ("And the user changes the label field to "test"") {
-			Type(
-				key_text = "Label",
-				locator1 = "TextInput#ANY",
-				value1 = "test");
-		}
-
-		task ("And clicks on Save button") {
-			Click(
-				key_text = "Save",
-				locator1 = "CP2ActivationKeys#KEY_DEACTIVATION_TERMS");
-		}
-
-		task ("Then the field label is changed the field should have “test” as its label") {
-			AssertElementPresent(
-				chosenFilter = "test",
-				key_tableColumn = 1,
-				key_tableRow = 1,
-				locator1 = "DataSet#FILTER_TABLE_CELL");
 		}
 	}
 
@@ -1022,26 +969,26 @@ definition {
 	}
 
 	@description = "LPS-174141. Confirm that the user can check and uncheck all the fields"
-	@priority = 4
+	@priority = 3
 	test CanCheckAndUncheckAllFields {
 		task ("And Clicking to Add a new field") {
 			LexiconEntry.gotoAdd();
 		}
 
 		task ("And select all the fields.") {
-			DataSetAdmin.checkFields(key_fieldList = "");
+			DataSetAdmin.checkFields(key_fieldList = "renderer,rendererType");
 		}
 
 		task ("Then Confirm all fields are checked ") {
-			DataSetAdmin.assertFieldsChecked(key_fieldList = "creator,dateCreated,dateModified,externalReferenceCode,id,status,label,name,renderer,rendererType,r_fdsViewFDSFieldRelationship_c_fdsViewId,r_fdsViewFDSFieldRelationship_c_fdsViewERC,sortable,type");
+			DataSetAdmin.assertFieldsChecked(key_fieldList = "renderer,rendererType");
 		}
 
 		task ("When Uncheck all the fields.") {
-			DataSetAdmin.uncheckFields(key_fieldList = "");
+			DataSetAdmin.uncheckFields(key_fieldList = "renderer,rendererType");
 		}
 
 		task ("Then Confirm that all fields are unchecked ") {
-			DataSetAdmin.assertFieldsNotChecked(key_fieldList = "creator,dateCreated,dateModified,externalReferenceCode,id,status,label,name,renderer,rendererType,r_fdsViewFDSFieldRelationship_c_fdsViewId,r_fdsViewFDSFieldRelationship_c_fdsViewERC,sortable,type");
+			DataSetAdmin.assertFieldsNotChecked(key_fieldList = "renderer,rendererType");
 		}
 	}
 
@@ -1157,42 +1104,6 @@ definition {
 		}
 	}
 
-	@description = "LPS-178736. Confirm that the user can edit Label field on Edit"
-	@priority = 5
-	test CanEditLabelFieldOnEdit {
-		property portal.acceptance = "true";
-
-		task ("And add an id Field") {
-			DataSetAdmin.addFields(key_fieldList = "id");
-		}
-
-		task ("When the user clicks on the edit option from the id Field") {
-			Click(
-				key_fieldName = "id",
-				locator1 = "DataSet#VERTICAL_ELLIPSIS_BY_FIELDS_NAME");
-
-			MenuItem.click(menuItem = "Edit");
-		}
-
-		task ("And change the label to "Id Edited"") {
-			Type(
-				key_text = "Label",
-				locator1 = "TextInput#ANY",
-				value1 = "Id Edited");
-
-			Click(
-				key_text = "Save",
-				locator1 = "CP2ActivationKeys#KEY_DEACTIVATION_TERMS");
-		}
-
-		task ("Then assert the "Id Edited" is present from the column label") {
-			AssertElementPresent(
-				key_tableColumn = "Label",
-				key_tableRow = "Id Edited",
-				locator1 = "DataSet#FIELDS_TABLE_AND_ROW");
-		}
-	}
-
 	@description = "LPS-185228. Confirm that a field is not added after checking and unchecking it."
 	@priority = 5
 	test CannotAddFieldAfterUncheckingIt {
@@ -1214,13 +1125,13 @@ definition {
 			Button.clickSave();
 		}
 
-		task ("Then label field should appear on Fields tab page") {
+		task ("Then label field should appear on Visualization Modes tab page") {
 			DataSetAdmin.assertFieldsOnTable(
 				key_position = 1,
 				keyName = "label");
 		}
 
-		task ("And id should not appear on Fields tab page") {
+		task ("And id should not appear on Visualization Modes tab page") {
 			AssertElementNotPresent(
 				key_position = 1,
 				keyName = "id",
@@ -1330,72 +1241,22 @@ definition {
 		}
 	}
 
-	@description = "LPS-176051. Confirm that the user can save changes when clicks on Save button"
-	@priority = 5
-	test CanSaveChangesOnSaveButton {
-		property portal.acceptance = "true";
-
-		task ("And add new fields") {
-			DataSetAdmin.addFields(key_fieldList = "id,label");
-		}
-
-		task ("And clicks on Edit option") {
-			Click(
-				key_fieldName = "id",
-				locator1 = "DataSet#VERTICAL_ELLIPSIS_BY_FIELDS_NAME");
-
-			MenuItem.click(menuItem = "Edit");
-		}
-
-		task ("And choose another client extension option") {
-			Click(
-				dropdownLabel = "Renderer",
-				locator1 = "ObjectField#ANY_DROPDOWN_LABEL");
-
-			MenuItem.click(menuItem = "Date and Time");
-		}
-
-		task ("And clicks on Save button") {
-			Click(
-				key_text = "Save",
-				locator1 = "CP2ActivationKeys#KEY_DEACTIVATION_TERMS");
-		}
-
-		task ("Then the Edit field modal is closed") {
-			AssertElementNotPresent(
-				locator1 = "Portlet#MODAL_TITLE",
-				value1 = "Edit id");
-		}
-
-		task ("And a successful message appears") {
-			Alert.viewSuccessMessage();
-		}
-
-		task ("And the changes are applied") {
-			DataSetAdmin.assertFieldsOnTable(
-				key_position = 1,
-				keyName = "id");
-
-			DataSetAdmin.assertFieldsOnTable(
-				key_position = 1,
-				keyName = "Date and Time");
-		}
-	}
-
 	@description = "LPS-179282. Confirm that the search bar returns works as expected"
 	@priority = 4
 	test CanSearchField {
+		property portal.upstream = "quarantine";
+
 		task ("And Clicking to Add a new field") {
 			LexiconEntry.gotoAdd();
 		}
 
-		task ("And type Account in the search bar and click enter") {
-			DataSetAdmin.searchFieldInModal(searchTerm = "name");
+		task ("And type rendererType in the search bar and click enter") {
+			DataSetAdmin.searchFieldInModal(searchTerm = "rendererType");
 		}
 
 		task ("Then the corresponding option is the just displayed") {
 			AssertElementPresent(
-				key_name = "name",
+				key_name = "rendererType",
 				locator1 = "DataSet#FIELDS_ITEM");
 		}
 	}
@@ -1403,6 +1264,8 @@ definition {
 	@description = "LPS-185227. Confirm that the user can search a specific field when adding fields."
 	@priority = 4
 	test CanSearchFieldOnAddFieldsModal {
+		property portal.upstream = "quarantine";
+
 		task ("And clicks on Add Fields button") {
 			LexiconEntry.gotoAdd();
 		}

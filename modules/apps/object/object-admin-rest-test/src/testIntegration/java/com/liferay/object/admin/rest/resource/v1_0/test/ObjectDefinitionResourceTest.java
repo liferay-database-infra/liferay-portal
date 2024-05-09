@@ -276,6 +276,7 @@ public class ObjectDefinitionResourceTest
 					objectDefinitionsJSONObject.getString("items"))));
 	}
 
+	@FeatureFlags("LPD-23379")
 	@Override
 	@Test
 	public void testPostObjectDefinition() throws Exception {
@@ -328,6 +329,7 @@ public class ObjectDefinitionResourceTest
 						name = "a" + RandomTestUtil.randomString();
 						readOnly = ReadOnly.FALSE;
 						required = false;
+						state = false;
 						system = true;
 					}
 				}
@@ -392,6 +394,15 @@ public class ObjectDefinitionResourceTest
 
 		assertEquals(postObjectDefinition, randomObjectDefinition);
 		assertValid(postObjectDefinition);
+
+		randomObjectDefinition = randomObjectDefinition();
+
+		randomObjectDefinition.setEnableIndexSearch((Boolean)null);
+
+		postObjectDefinition = testPostObjectDefinition_addObjectDefinition(
+			randomObjectDefinition);
+
+		Assert.assertTrue(postObjectDefinition.getEnableIndexSearch());
 	}
 
 	@Override

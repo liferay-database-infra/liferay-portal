@@ -14,11 +14,13 @@ import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.petra.sql.dsl.expression.Predicate;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.testray.rest.dto.v1_0.TestrayTestFlow;
 import com.liferay.testray.rest.internal.util.TestrayUtil;
 import com.liferay.testray.rest.internal.util.comparator.TestrayCaseResultsComparator;
@@ -62,7 +64,7 @@ public class TestrayTestFlowResourceImpl
 		sb.append("and cr.r_caseToCaseResult_c_caseId = c.c_caseId_ order by ");
 		sb.append("cr.errors_ ");
 
-		List<Map<String, Object>> values = TestrayUtil.runSQL(
+		List<Map<String, Object>> values = TestrayUtil.executeQuery(
 			StringUtil.replace(
 				sb.toString(), "[%COMPANY_ID%]",
 				String.valueOf(contextCompany.getCompanyId())),
@@ -161,6 +163,53 @@ public class TestrayTestFlowResourceImpl
 		TestrayTestFlow testrayTestFlow = new TestrayTestFlow();
 
 		testrayTestFlow.setTestraySubtasksAmount(testraySubtasksAmount);
+
+		return testrayTestFlow;
+	}
+
+	@Override
+	public TestrayTestFlow putTestrayTestFlowByTestraySubtaskIdTestraySubtask(
+			Long testraySubtaskId, TestrayTestFlow testrayTestFlow)
+		throws Exception {
+
+		StringBundler sb = new StringBundler(6);
+
+		sb.append("update O_[%COMPANY_ID%]_CaseResult set ");
+		sb.append("r_userToCaseResults_userId = ? ");
+
+		List<Object> params = new ArrayList<>();
+
+		params.add(testrayTestFlow.getUserId());
+
+		if (Validator.isNotNull(testrayTestFlow.getDueStatus())) {
+			sb.append(", dueStatus_ = ? ");
+			params.add(testrayTestFlow.getDueStatus());
+		}
+
+		if (Validator.isNotNull(testrayTestFlow.getIssues())) {
+			sb.append(", issues_ = ? ");
+			params.add(testrayTestFlow.getIssues());
+		}
+
+		if (Validator.isNotNull(testrayTestFlow.getComment())) {
+			sb.append(", comment_ = ?, mbMessageId_ = ?, mbThreadId_ = ? ");
+			params.add(testrayTestFlow.getComment());
+			params.add(testrayTestFlow.getMbMessageId());
+			params.add(testrayTestFlow.getMbThreadId());
+		}
+
+		sb.append("where r_subtaskToCaseResults_c_subtaskId = ?");
+
+		params.add(testraySubtaskId);
+
+		testrayTestFlow.setCaseResultAmount(
+			TestrayUtil.executeUpdate(
+				StringUtil.replace(
+					sb.toString(), "[%COMPANY_ID%]",
+					String.valueOf(contextCompany.getCompanyId())),
+				params));
+
+		EntityCacheUtil.clearCache();
 
 		return testrayTestFlow;
 	}

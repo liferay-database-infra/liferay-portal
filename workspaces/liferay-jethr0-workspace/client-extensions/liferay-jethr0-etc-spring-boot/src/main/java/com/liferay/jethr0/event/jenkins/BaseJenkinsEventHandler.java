@@ -8,10 +8,10 @@ package com.liferay.jethr0.event.jenkins;
 import com.liferay.jethr0.bui1d.repository.BuildRunEntityRepository;
 import com.liferay.jethr0.bui1d.run.BuildRunEntity;
 import com.liferay.jethr0.event.BaseEventHandler;
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.jenkins.node.JenkinsNodeEntity;
 import com.liferay.jethr0.jenkins.repository.JenkinsServerEntityRepository;
 import com.liferay.jethr0.jenkins.server.JenkinsServerEntity;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 import com.liferay.jethr0.util.StringUtil;
 
 import java.net.URL;
@@ -25,10 +25,8 @@ import org.json.JSONObject;
  */
 public abstract class BaseJenkinsEventHandler extends BaseEventHandler {
 
-	protected BaseJenkinsEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
-
-		super(eventHandlerContext, messageJSONObject);
+	protected BaseJenkinsEventHandler(JSONObject messageJSONObject) {
+		super(messageJSONObject);
 	}
 
 	protected long getBuildDuration() throws InvalidJSONException {
@@ -96,7 +94,7 @@ public abstract class BaseJenkinsEventHandler extends BaseEventHandler {
 		}
 
 		BuildRunEntityRepository buildRunEntityRepository =
-			getBuildRunEntityRepository();
+			Jethr0ContextUtil.getBuildRunEntityRepository();
 
 		BuildRunEntity buildRunEntity = buildRunEntityRepository.getById(
 			Long.valueOf(buildRunID));
@@ -199,12 +197,12 @@ public abstract class BaseJenkinsEventHandler extends BaseEventHandler {
 		throws InvalidJSONException {
 
 		JenkinsServerEntityRepository jenkinsServerEntityRepository =
-			getJenkinsServerEntityRepository();
+			Jethr0ContextUtil.getJenkinsServerEntityRepository();
 
 		URL jenkinsURL = getJenkinsURL();
 
 		JenkinsServerEntity jenkinsServerEntity =
-			jenkinsServerEntityRepository.getByURL(jenkinsURL);
+			jenkinsServerEntityRepository.createByURL(jenkinsURL);
 
 		if (jenkinsServerEntity == null) {
 			throw new InvalidJSONException(

@@ -20,23 +20,23 @@ import {Liferay} from '../../../services/liferay';
 import {
 	APIResponse,
 	TestrayCaseResult,
-	TestraySubTask,
+	TestraySubtask,
 	liferayMessageBoardImpl,
 	testrayCaseResultImpl,
-	testraySubTaskImpl,
+	testraySubtaskImpl,
 } from '../../../services/rest';
 import {CaseResultStatuses} from '../../../util/statuses';
 
 type SubtaskForm = typeof yupSchema.subtask.__outputType;
 
-type SubTaskCompleteModalProps = {
+type SubtaskCompleteModalProps = {
 	modal: FormModalOptions;
 	revalidateSubtask: () => void;
 	setForceRefetch?: React.Dispatch<React.SetStateAction<number>>;
-	subtask: TestraySubTask;
+	subtask: TestraySubtask;
 };
 
-const SubtaskCompleteModal: React.FC<SubTaskCompleteModalProps> = ({
+const SubtaskCompleteModal: React.FC<SubtaskCompleteModalProps> = ({
 	modal: {observer, onClose, onError, onSave},
 	revalidateSubtask,
 	setForceRefetch,
@@ -52,8 +52,6 @@ const SubtaskCompleteModal: React.FC<SubTaskCompleteModalProps> = ({
 				.eq('r_subtaskToCaseResults_c_subtaskId', subtask.id)
 				.and()
 				.in('dueStatus', ['BLOCKED', 'FAILED', 'PASSED', 'TESTFIX'])
-				.and()
-				.ne('issues', '')
 				.build(),
 		[subtask.id]
 	);
@@ -133,11 +131,12 @@ const SubtaskCompleteModal: React.FC<SubTaskCompleteModalProps> = ({
 		};
 
 		try {
-			await testraySubTaskImpl.complete(
+			await testraySubtaskImpl.complete(
 				dueStatus as string,
 				_issues,
 				commentSubtask,
-				subtask?.id
+				subtask?.id,
+				subtask.r_userToSubtasks_userId
 			);
 
 			revalidateSubtask();

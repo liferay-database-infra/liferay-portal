@@ -5,8 +5,8 @@
 
 package com.liferay.jethr0.event.github;
 
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.event.github.pullrequest.GitHubPullRequest;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 
 import org.json.JSONObject;
 
@@ -16,10 +16,8 @@ import org.json.JSONObject;
 public abstract class BaseGitHubPullRequestEventHandler
 	extends BaseGitHubIssueEventHandler {
 
-	protected BaseGitHubPullRequestEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
-
-		super(eventHandlerContext, messageJSONObject);
+	protected BaseGitHubPullRequestEventHandler(JSONObject messageJSONObject) {
+		super(messageJSONObject);
 	}
 
 	@Override
@@ -44,7 +42,7 @@ public abstract class BaseGitHubPullRequestEventHandler
 				"Missing \"pull_request\" from message JSON");
 		}
 
-		GitHubFactory gitHubFactory = getGitHubFactory();
+		GitHubFactory gitHubFactory = Jethr0ContextUtil.getGitHubFactory();
 
 		_gitHubPullRequest = gitHubFactory.newGitHubPullRequest(
 			pullRequestJSONObject);

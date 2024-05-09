@@ -120,6 +120,7 @@ public class AnalyticsBatchExportImportManagerImpl
 		zipOutputStream.putNextEntry(new ZipEntry("export.jsonl"));
 
 		List<BatchEngineExportTask> batchEngineExportTasks = new ArrayList<>();
+		boolean skipUpload = true;
 
 		for (String batchEngineExportTaskItemDelegateName :
 				batchEngineExportTaskItemDelegateNames) {
@@ -161,6 +162,8 @@ public class AnalyticsBatchExportImportManagerImpl
 					continue;
 				}
 
+				skipUpload = false;
+
 				try (ZipInputStream zipInputStream = new ZipInputStream(
 						_batchEngineExportTaskLocalService.
 							openContentInputStream(
@@ -181,18 +184,28 @@ public class AnalyticsBatchExportImportManagerImpl
 
 		StreamUtil.cleanUp(zipOutputStream);
 
-		_notify(
-			"Uploading resources " + resourceName, notificationUnsafeConsumer);
+		if (!skipUpload) {
+			_notify(
+				"Uploading resources " + resourceName,
+				notificationUnsafeConsumer);
 
-		try (FileInputStream fileInputStream = new FileInputStream(tempFile)) {
-			_upload(
-				companyId, fileInputStream, resourceLastModifiedDate,
-				resourceName);
+			try (FileInputStream fileInputStream = new FileInputStream(
+					tempFile)) {
+
+				_upload(
+					companyId, fileInputStream, resourceLastModifiedDate,
+					resourceName);
+			}
+
+			_notify(
+				"Completed uploading resources " + resourceName,
+				notificationUnsafeConsumer);
 		}
-
-		_notify(
-			"Completed uploading resources " + resourceName,
-			notificationUnsafeConsumer);
+		else {
+			_notify(
+				"Skip uploading resource " + resourceName,
+				notificationUnsafeConsumer);
+		}
 
 		for (BatchEngineExportTask batchEngineExportTask :
 				batchEngineExportTasks) {

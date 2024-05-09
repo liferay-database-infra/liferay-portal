@@ -5,11 +5,11 @@
 
 package com.liferay.jethr0.event.github;
 
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.event.github.client.GitHubClient;
 import com.liferay.jethr0.event.github.comment.GitHubComment;
 import com.liferay.jethr0.event.github.pullrequest.GitHubPullRequest;
 import com.liferay.jethr0.event.jenkins.client.JenkinsClient;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 import com.liferay.jethr0.util.StringUtil;
 
 import java.io.IOException;
@@ -80,14 +80,12 @@ public class StopGitHubCommentEventHandler
 		return null;
 	}
 
-	protected StopGitHubCommentEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
-
-		super(eventHandlerContext, messageJSONObject);
+	protected StopGitHubCommentEventHandler(JSONObject messageJSONObject) {
+		super(messageJSONObject);
 	}
 
 	private Map<String, String> _getBuildParameters(String buildURL) {
-		GitHubClient gitHubClient = getGitHubClient();
+		GitHubClient gitHubClient = Jethr0ContextUtil.getGitHubClient();
 
 		String response = gitHubClient.requestGet(
 			StringUtil.toURL(
@@ -130,7 +128,7 @@ public class StopGitHubCommentEventHandler
 	}
 
 	private Set<String> _getDownstreamBuildURLs(String buildURL) {
-		GitHubClient gitHubClient = getGitHubClient();
+		GitHubClient gitHubClient = Jethr0ContextUtil.getGitHubClient();
 
 		String response = gitHubClient.requestGet(
 			StringUtil.toURL(buildURL + "/logText/progressiveText"));
@@ -172,7 +170,7 @@ public class StopGitHubCommentEventHandler
 	}
 
 	private void _stopBuild(String buildURL) throws IOException {
-		JenkinsClient jenkinsClient = getJenkinsClient();
+		JenkinsClient jenkinsClient = Jethr0ContextUtil.getJenkinsClient();
 
 		String response = jenkinsClient.requestGet(
 			StringUtil.toURL(buildURL + "/api/json?tree=result"));

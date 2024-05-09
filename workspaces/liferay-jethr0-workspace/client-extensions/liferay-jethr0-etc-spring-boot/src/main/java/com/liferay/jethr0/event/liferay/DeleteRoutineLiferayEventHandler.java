@@ -5,10 +5,10 @@
 
 package com.liferay.jethr0.event.liferay;
 
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.routine.RoutineEntity;
 import com.liferay.jethr0.routine.repository.RoutineEntityRepository;
 import com.liferay.jethr0.routine.scheduler.RoutineEntityScheduler;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 
 import org.json.JSONObject;
 
@@ -21,9 +21,9 @@ public class DeleteRoutineLiferayEventHandler
 	@Override
 	public String process() {
 		RoutineEntityRepository routineEntityRepository =
-			getRoutineEntityRepository();
+			Jethr0ContextUtil.getRoutineEntityRepository();
 		RoutineEntityScheduler routineEntityScheduler =
-			getRoutineEntityScheduler();
+			Jethr0ContextUtil.getRoutineEntityScheduler();
 
 		JSONObject routineJSONObject = getRoutineJSONObject();
 
@@ -35,10 +35,8 @@ public class DeleteRoutineLiferayEventHandler
 		return String.valueOf(routineEntity);
 	}
 
-	protected DeleteRoutineLiferayEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject jsonObject) {
-
-		super(eventHandlerContext, jsonObject);
+	protected DeleteRoutineLiferayEventHandler(JSONObject messageJSONObject) {
+		super(messageJSONObject);
 	}
 
 }

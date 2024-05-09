@@ -5,10 +5,10 @@
 
 package com.liferay.jethr0.event.github;
 
-import com.liferay.jethr0.event.EventHandlerContext;
 import com.liferay.jethr0.job.JobEntity;
 import com.liferay.jethr0.job.SubrepositoryPullRequestJobEntity;
 import com.liferay.jethr0.job.repository.JobEntityRepository;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 import com.liferay.jethr0.util.StringUtil;
 
 import java.io.IOException;
@@ -27,9 +27,9 @@ public class SubrepositoryOpenGitHubPullRequestEventHandler
 	extends BaseOpenGitHubPullRequestEventHandler {
 
 	protected SubrepositoryOpenGitHubPullRequestEventHandler(
-		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
+		JSONObject messageJSONObject) {
 
-		super(eventHandlerContext, messageJSONObject);
+		super(messageJSONObject);
 	}
 
 	@Override
@@ -68,7 +68,8 @@ public class SubrepositoryOpenGitHubPullRequestEventHandler
 		subrepositoryPullRequestJobEntity.setPortalUpstreamBranchName(
 			portalBranchName);
 
-		JobEntityRepository jobEntityRepository = getJobEntityRepository();
+		JobEntityRepository jobEntityRepository =
+			Jethr0ContextUtil.getJobEntityRepository();
 
 		jobEntityRepository.update(subrepositoryPullRequestJobEntity);
 
