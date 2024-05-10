@@ -196,12 +196,20 @@ public class BaseCommerceContextHttp implements CommerceContext {
 	@Override
 	public CommerceOrder getCommerceOrder() {
 		try {
+			CommerceChannel commerceChannel =
+				_commerceChannelLocalService.fetchCommerceChannelBySiteGroupId(
+					_portal.getScopeGroupId(_httpServletRequest));
+
+			if (commerceChannel == null) {
+				return null;
+			}
+
 			HttpServletRequest originalHttpServletRequest =
 				_portal.getOriginalServletRequest(_httpServletRequest);
 
 			HttpSession httpSession = originalHttpServletRequest.getSession();
 
-			long groupId = getCommerceChannelGroupId();
+			long groupId = commerceChannel.getGroupId();
 
 			String uuid = (String)httpSession.getAttribute(
 				CommerceOrder.class.getName() + StringPool.POUND + groupId);

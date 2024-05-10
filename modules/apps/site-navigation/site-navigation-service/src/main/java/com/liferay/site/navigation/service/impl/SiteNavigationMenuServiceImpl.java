@@ -39,7 +39,22 @@ public class SiteNavigationMenuServiceImpl
 
 	@Override
 	public SiteNavigationMenu addSiteNavigationMenu(
-			long groupId, String name, int type, boolean auto,
+			String externalReferenceCode, long groupId, String name, int type,
+			boolean auto, ServiceContext serviceContext)
+		throws PortalException {
+
+		_portletResourcePermission.check(
+			getPermissionChecker(), groupId,
+			SiteNavigationActionKeys.ADD_SITE_NAVIGATION_MENU);
+
+		return siteNavigationMenuLocalService.addSiteNavigationMenu(
+			externalReferenceCode, getUserId(), groupId, name, type, auto,
+			serviceContext);
+	}
+
+	@Override
+	public SiteNavigationMenu addSiteNavigationMenu(
+			String externalReferenceCode, long groupId, String name, int type,
 			ServiceContext serviceContext)
 		throws PortalException {
 
@@ -48,12 +63,14 @@ public class SiteNavigationMenuServiceImpl
 			SiteNavigationActionKeys.ADD_SITE_NAVIGATION_MENU);
 
 		return siteNavigationMenuLocalService.addSiteNavigationMenu(
-			getUserId(), groupId, name, type, auto, serviceContext);
+			externalReferenceCode, getUserId(), groupId, name, type,
+			serviceContext);
 	}
 
 	@Override
 	public SiteNavigationMenu addSiteNavigationMenu(
-			long groupId, String name, int type, ServiceContext serviceContext)
+			String externalReferenceCode, long groupId, String name,
+			ServiceContext serviceContext)
 		throws PortalException {
 
 		_portletResourcePermission.check(
@@ -61,20 +78,7 @@ public class SiteNavigationMenuServiceImpl
 			SiteNavigationActionKeys.ADD_SITE_NAVIGATION_MENU);
 
 		return siteNavigationMenuLocalService.addSiteNavigationMenu(
-			getUserId(), groupId, name, type, serviceContext);
-	}
-
-	@Override
-	public SiteNavigationMenu addSiteNavigationMenu(
-			long groupId, String name, ServiceContext serviceContext)
-		throws PortalException {
-
-		_portletResourcePermission.check(
-			getPermissionChecker(), groupId,
-			SiteNavigationActionKeys.ADD_SITE_NAVIGATION_MENU);
-
-		return siteNavigationMenuLocalService.addSiteNavigationMenu(
-			getUserId(), groupId, name, serviceContext);
+			externalReferenceCode, getUserId(), groupId, name, serviceContext);
 	}
 
 	@Override
@@ -90,6 +94,23 @@ public class SiteNavigationMenuServiceImpl
 	}
 
 	@Override
+	public SiteNavigationMenu deleteSiteNavigationMenu(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		SiteNavigationMenu siteNavigationMenu =
+			siteNavigationMenuLocalService.
+				fetchSiteNavigationMenuByExternalReferenceCode(
+					externalReferenceCode, groupId);
+
+		_siteNavigationMenuModelResourcePermission.check(
+			getPermissionChecker(), siteNavigationMenu, ActionKeys.DELETE);
+
+		return siteNavigationMenuLocalService.deleteSiteNavigationMenu(
+			siteNavigationMenu);
+	}
+
+	@Override
 	public SiteNavigationMenu fetchSiteNavigationMenu(long siteNavigationMenuId)
 		throws PortalException {
 
@@ -98,6 +119,24 @@ public class SiteNavigationMenuServiceImpl
 
 		return siteNavigationMenuLocalService.fetchSiteNavigationMenu(
 			siteNavigationMenuId);
+	}
+
+	@Override
+	public SiteNavigationMenu getSiteNavigationMenuByExternalReferenceCode(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		SiteNavigationMenu siteNavigationMenu =
+			siteNavigationMenuLocalService.
+				getSiteNavigationMenuByExternalReferenceCode(
+					externalReferenceCode, groupId);
+
+		if (siteNavigationMenu != null) {
+			_siteNavigationMenuModelResourcePermission.check(
+				getPermissionChecker(), siteNavigationMenu, ActionKeys.VIEW);
+		}
+
+		return siteNavigationMenu;
 	}
 
 	@Override

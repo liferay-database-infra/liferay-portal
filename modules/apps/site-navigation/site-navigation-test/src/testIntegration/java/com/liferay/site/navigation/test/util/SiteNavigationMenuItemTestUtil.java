@@ -31,7 +31,7 @@ public class SiteNavigationMenuItemTestUtil {
 		throws PortalException {
 
 		return SiteNavigationMenuItemLocalServiceUtil.addSiteNavigationMenuItem(
-			TestPropsValues.getUserId(), siteNavigationMenu.getGroupId(),
+			null, TestPropsValues.getUserId(), siteNavigationMenu.getGroupId(),
 			siteNavigationMenu.getSiteNavigationMenuId(), 0,
 			SiteNavigationMenuItemTypeConstants.NODE, position,
 			StringPool.BLANK,
@@ -45,7 +45,7 @@ public class SiteNavigationMenuItemTestUtil {
 		throws PortalException {
 
 		return SiteNavigationMenuItemLocalServiceUtil.addSiteNavigationMenuItem(
-			TestPropsValues.getUserId(), siteNavigationMenu.getGroupId(),
+			null, TestPropsValues.getUserId(), siteNavigationMenu.getGroupId(),
 			siteNavigationMenu.getSiteNavigationMenuId(),
 			parentSiteNavigationMenuItemId,
 			SiteNavigationMenuItemTypeConstants.LAYOUT, StringPool.BLANK,

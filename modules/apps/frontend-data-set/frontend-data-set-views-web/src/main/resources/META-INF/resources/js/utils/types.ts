@@ -24,6 +24,10 @@ export enum EFieldType {
 	STRING = 'string',
 }
 
+export enum ESelectionFilterSourceType {
+	PICKLIST = 'PICKLIST',
+}
+
 export interface IBaseVisualizationMode<Mode extends string> {
 	label: string;
 	mode: Mode;
@@ -44,6 +48,7 @@ export interface IField {
 	label?: string;
 	name: string;
 	selected?: boolean;
+	sortable?: boolean;
 	type?: string;
 	visible?: boolean;
 }
@@ -59,6 +64,14 @@ export interface IFDSField {
 	rendererLabel?: string;
 	sortable: boolean;
 	type: string;
+}
+
+export interface IFieldTreeItem extends IField {
+	children?: IFieldTreeItem[];
+	initialChildren?: IFieldTreeItem[];
+	query?: string;
+	savedId?: string;
+	selected?: boolean;
 }
 
 export interface IFilter {
@@ -81,9 +94,10 @@ export interface IDateFilter extends IFilter {
 
 export interface ISelectionFilter extends IFilter {
 	include: boolean;
-	listTypeDefinitionERC: string;
 	multiple: boolean;
 	preselectedValues: string;
+	source: string;
+	sourceType: ESelectionFilterSourceType;
 }
 
 export interface IPickList {

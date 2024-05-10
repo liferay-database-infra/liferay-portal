@@ -38,6 +38,7 @@ import com.liferay.info.item.renderer.InfoItemRendererRegistry;
 import com.liferay.info.item.updater.InfoItemFieldValuesUpdater;
 import com.liferay.info.list.renderer.InfoListRenderer;
 import com.liferay.info.permission.provider.InfoPermissionProvider;
+import com.liferay.info.staging.InfoStagingClassMapper;
 import com.liferay.item.selector.ItemSelectorView;
 import com.liferay.item.selector.ItemSelectorViewDescriptorRenderer;
 import com.liferay.item.selector.criteria.info.item.criterion.InfoItemItemSelectorCriterion;
@@ -85,6 +86,7 @@ import com.liferay.object.web.internal.info.item.provider.ObjectEntryInfoItemPer
 import com.liferay.object.web.internal.info.item.provider.ObjectEntryInfoItemScopeProvider;
 import com.liferay.object.web.internal.info.item.provider.ObjectEntryInfoItemStatusProvider;
 import com.liferay.object.web.internal.info.item.renderer.ObjectEntryRowInfoItemRenderer;
+import com.liferay.object.web.internal.info.staging.ObjectEntryInfoStagingClassMapper;
 import com.liferay.object.web.internal.info.item.updater.ObjectEntryInfoItemFieldValuesUpdater;
 import com.liferay.object.web.internal.info.list.renderer.ObjectEntryTableInfoListRenderer;
 import com.liferay.object.web.internal.info.permission.provider.ObjectEntryInfoPermissionProvider;
@@ -417,6 +419,14 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 				).build()),
 			_bundleContext.registerService(
 				InfoPermissionProvider.class, infoPermissionProvider,
+				HashMapDictionaryBuilder.<String, Object>put(
+					"company.id", objectDefinition.getCompanyId()
+				).put(
+					"item.class.name", objectDefinition.getClassName()
+				).build()),
+			_bundleContext.registerService(
+				InfoStagingClassMapper.class,
+				new ObjectEntryInfoStagingClassMapper(objectDefinition),
 				HashMapDictionaryBuilder.<String, Object>put(
 					"company.id", objectDefinition.getCompanyId()
 				).put(

@@ -31,32 +31,33 @@ public class SiteNavigationMenuServiceWrapper
 
 	@Override
 	public SiteNavigationMenu addSiteNavigationMenu(
-			long groupId, String name, int type, boolean auto,
+			String externalReferenceCode, long groupId, String name, int type,
+			boolean auto,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _siteNavigationMenuService.addSiteNavigationMenu(
-			groupId, name, type, auto, serviceContext);
+			externalReferenceCode, groupId, name, type, auto, serviceContext);
 	}
 
 	@Override
 	public SiteNavigationMenu addSiteNavigationMenu(
-			long groupId, String name, int type,
+			String externalReferenceCode, long groupId, String name, int type,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _siteNavigationMenuService.addSiteNavigationMenu(
-			groupId, name, type, serviceContext);
+			externalReferenceCode, groupId, name, type, serviceContext);
 	}
 
 	@Override
 	public SiteNavigationMenu addSiteNavigationMenu(
-			long groupId, String name,
+			String externalReferenceCode, long groupId, String name,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _siteNavigationMenuService.addSiteNavigationMenu(
-			groupId, name, serviceContext);
+			externalReferenceCode, groupId, name, serviceContext);
 	}
 
 	@Override
@@ -66,6 +67,15 @@ public class SiteNavigationMenuServiceWrapper
 
 		return _siteNavigationMenuService.deleteSiteNavigationMenu(
 			siteNavigationMenuId);
+	}
+
+	@Override
+	public SiteNavigationMenu deleteSiteNavigationMenu(
+			String externalReferenceCode, long groupId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _siteNavigationMenuService.deleteSiteNavigationMenu(
+			externalReferenceCode, groupId);
 	}
 
 	@Override
@@ -84,6 +94,16 @@ public class SiteNavigationMenuServiceWrapper
 	@Override
 	public String getOSGiServiceIdentifier() {
 		return _siteNavigationMenuService.getOSGiServiceIdentifier();
+	}
+
+	@Override
+	public SiteNavigationMenu getSiteNavigationMenuByExternalReferenceCode(
+			String externalReferenceCode, long groupId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _siteNavigationMenuService.
+			getSiteNavigationMenuByExternalReferenceCode(
+				externalReferenceCode, groupId);
 	}
 
 	@Override

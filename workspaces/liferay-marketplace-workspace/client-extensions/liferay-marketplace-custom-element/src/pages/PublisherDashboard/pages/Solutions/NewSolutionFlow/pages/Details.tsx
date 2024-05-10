@@ -10,6 +10,10 @@ import ClayModal, {useModal} from '@clayui/modal';
 import {useState} from 'react';
 
 import Form from '../../../../../../components/MarketplaceForm';
+import {
+	SolutionTypes,
+	useSolutionContext,
+} from '../../../../../../context/SolutionContext';
 import IconsBlock from '../../components/Blocks/IconBlock';
 import ImagesGrid from '../../components/Blocks/ImagesGrid';
 import SingleImage from '../../components/Blocks/SingleImage';
@@ -17,29 +21,29 @@ import TextAndImages from '../../components/Blocks/TextAndImages';
 import TextAndVideos from '../../components/Blocks/TextAndVideo';
 import TextBlock from '../../components/Blocks/TextBlock';
 
-const blocks = [
-	{name: 'text-block', render: TextBlock},
-	{name: 'text-images-block', render: TextAndImages},
-	{name: 'text-video-block', render: TextAndVideos},
-	{name: 'single-image-block', render: SingleImage},
-	{name: 'images-grid-block', render: ImagesGrid},
-	{name: 'icons-block', render: IconsBlock},
-];
+export const blockTypes = {
+	'icons-block': IconsBlock,
+	'images-grid-block': ImagesGrid,
+	'single-image-block': SingleImage,
+	'text-block': TextBlock,
+	'text-images-block': TextAndImages,
+	'text-video-block': TextAndVideos,
+} as const;
 
 const items = [
 	{label: 'Choose an option', value: ''},
 	{label: 'Text & Images Block', value: 'text-images-block'},
 	{label: 'Text & Video Block', value: 'text-video-block'},
 	{label: 'Text Block', value: 'text-block'},
-	{label: 'Single Image Block', value: 'single-image-block'},
-	{label: 'Icons Block', value: 'icons-block'},
-	{label: 'Images Grid Block', value: 'images-grid-block'},
+	{disabled: true, label: 'Single Image Block', value: 'single-image-block'},
+	{disabled: true, label: 'Icons Block', value: 'icons-block'},
+	{disabled: true, label: 'Images Grid Block', value: 'images-grid-block'},
 ];
 
 const Details = () => {
+	const [{details: blocks}, dispatch] = useSolutionContext();
 	const {observer, onOpenChange, open} = useModal();
 	const [selectedBlock, setSelectedBlock] = useState('');
-	const [selectedBlockList, setSelectedBlockList] = useState<string[]>([]);
 
 	return (
 		<div className="solutions-form-details">
@@ -47,26 +51,38 @@ const Details = () => {
 				Add a minimum of 2 blocks
 			</Form.Label>
 
-			{selectedBlockList.map((selectedBlock, index) => {
+			{blocks.map((block, index) => {
+				const Component = (blockTypes as any)[block.type];
+
 				return (
 					<Form.SectionWithControllers
 						index={index}
 						key={index}
 						name={
-							items.find(({value}) => value === selectedBlock)
-								?.label ?? selectedBlock
+							items.find(({value}) => value === block.type)
+								?.label as string
 						}
-						position={selectedBlockList.length}
+						position={blocks.length}
 					>
-						{blocks.map((block, index) => {
-							if (block.name === selectedBlock) {
-								const Component = block.render;
-
-								return <Component key={index} />;
+						<Component
+							block={block}
+							key={index}
+							onChange={(content: any) =>
+								dispatch({
+									payload: {
+										block: {
+											...blocks[index],
+											content: {
+												...blocks[index].content,
+												...content,
+											},
+										},
+										index,
+									},
+									type: SolutionTypes.SET_UPDATE_BLOCK,
+								})
 							}
-
-							return null;
-						})}
+						/>
 					</Form.SectionWithControllers>
 				);
 			})}
@@ -119,6 +135,7 @@ const Details = () => {
 						>
 							{items.map((item, index) => (
 								<ClaySelect.Option
+									disabled={item.disabled}
 									key={index}
 									label={item.label}
 									value={item.value}
@@ -140,10 +157,14 @@ const Details = () => {
 								displayType="primary"
 								onClick={() => {
 									onOpenChange(false);
-									setSelectedBlockList([
-										...selectedBlockList,
-										selectedBlock,
-									]);
+
+									dispatch({
+										payload: {
+											content: {},
+											type: selectedBlock,
+										} as any,
+										type: SolutionTypes.SET_NEW_BLOCK,
+									});
 								}}
 							>
 								Save

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
@@ -83,8 +82,7 @@ const usePublishSolutionSubmission = (
 				title: {
 					en_US: file.fileName,
 				},
-			},
-			console.info
+			}
 		);
 
 		dispatch({payload: product, type: SolutionTypes.SET_PRODUCT});
@@ -94,10 +92,8 @@ const usePublishSolutionSubmission = (
 
 	const syncSolutionHeader = async (product: Product) => {
 		const {
-			header: {description, headerImages, headerVideo, radioValue, title},
+			header: {contentType, description, title},
 		} = context;
-
-		const headerVideoDescription = '';
 
 		const {productId, productSpecifications = []} = product;
 
@@ -147,17 +143,17 @@ const usePublishSolutionSubmission = (
 			title
 		);
 
-		if (radioValue === 'embed-video-url') {
-			if (headerVideoDescription) {
+		if (contentType.type === 'embed-video-url') {
+			if (contentType.content?.headerVideoDescription) {
 				await _updateSpecification(
 					PRODUCT_SPECIFICATION_KEY.SOLUTION_HEADER_VIDEO_DESCRIPTION,
-					headerVideoDescription
+					contentType.content.headerVideoDescription
 				);
 			}
 
 			await _updateSpecification(
 				PRODUCT_SPECIFICATION_KEY.SOLUTION_HEADER_VIDEO_URL,
-				headerVideo
+				contentType.content.headerVideoUrl as string
 			);
 
 			return;
@@ -167,7 +163,7 @@ const usePublishSolutionSubmission = (
 		// the app icon defined as priority 0
 
 		let priority = 0;
-		for (const image of headerImages) {
+		for (const image of contentType.content.headerImages) {
 			priority++;
 
 			if (image.uploaded) {
@@ -192,8 +188,7 @@ const usePublishSolutionSubmission = (
 					title: {
 						en_US: image.imageDescription || image.file.name,
 					},
-				},
-				console.info
+				}
 			);
 
 			image.uploaded = true;
@@ -201,8 +196,6 @@ const usePublishSolutionSubmission = (
 	};
 
 	const onSave = async () => {
-		console.log(context);
-
 		const product = await syncProfile();
 
 		await syncSolutionHeader(product);

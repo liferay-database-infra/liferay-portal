@@ -9,14 +9,9 @@ import com.liferay.osgi.util.ServiceTrackerFactory;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.lang.SafeCloseable;
-import com.liferay.petra.string.StringPool;
-import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
-import com.liferay.portal.kernel.audit.AuditMessage;
-import com.liferay.portal.kernel.audit.AuditRouter;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.cluster.ClusterableContextThreadLocal;
 import com.liferay.portal.kernel.dependency.manager.DependencyManagerSyncUtil;
-import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.Destination;
@@ -28,7 +23,6 @@ import com.liferay.portal.kernel.messaging.MessageListener;
 import com.liferay.portal.kernel.messaging.MessageListenerException;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
-import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.kernel.scheduler.JobState;
 import com.liferay.portal.kernel.scheduler.SchedulerEngine;
 import com.liferay.portal.kernel.scheduler.SchedulerEngineHelper;
@@ -41,11 +35,8 @@ import com.liferay.portal.kernel.scheduler.TriggerFactory;
 import com.liferay.portal.kernel.scheduler.TriggerState;
 import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
-import com.liferay.portal.kernel.util.InetAddressUtil;
 import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.scheduler.internal.configuration.SchedulerEngineHelperConfiguration;
 import com.liferay.portal.scheduler.internal.messaging.config.ScriptingMessageListener;
 
 import java.util.ArrayList;
@@ -63,7 +54,6 @@ import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
@@ -71,10 +61,7 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
 /**
  * @author Michael C. Han
  */
-@Component(
-	configurationPid = "com.liferay.portal.scheduler.internal.configuration.SchedulerEngineHelperConfiguration",
-	enabled = false, service = SchedulerEngineHelper.class
-)
+@Component(enabled = false, service = SchedulerEngineHelper.class)
 public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 
 	@Override
@@ -91,35 +78,6 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 		schedule(
 			trigger, storageType, description,
 			DestinationNames.SCHEDULER_SCRIPTING, message);
-	}
-
-	@Override
-	public void auditSchedulerJobs(Message message, TriggerState triggerState)
-		throws SchedulerException {
-
-		AuditRouter auditRouter = _auditRouterSnapshot.get();
-
-		if (!_schedulerEngineHelperConfiguration.auditSchedulerJobEnabled() ||
-			(auditRouter == null)) {
-
-			return;
-		}
-
-		try {
-			AuditMessage auditMessage = new AuditMessage(
-				SchedulerEngine.SCHEDULER, CompanyConstants.SYSTEM, 0,
-				StringPool.BLANK, SchedulerEngine.class.getName(), "0",
-				triggerState.toString(), new Date(),
-				_jsonFactory.createJSONObject(_jsonFactory.serialize(message)));
-
-			auditMessage.setServerName(InetAddressUtil.getLocalHostName());
-			auditMessage.setServerPort(_portal.getPortalLocalPort(false));
-
-			auditRouter.route(auditMessage);
-		}
-		catch (Exception exception) {
-			throw new SchedulerException(exception);
-		}
 	}
 
 	@Override
@@ -283,11 +241,6 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 
 		_schedulerEngine.schedule(
 			trigger, description, destinationName, message, storageType);
-
-		SchedulerResponse schedulerResponse = _schedulerEngine.getScheduledJob(
-			trigger.getJobName(), trigger.getGroupName(), storageType);
-
-		auditSchedulerJobs(schedulerResponse.getMessage(), TriggerState.NORMAL);
 	}
 
 	@Override
@@ -306,11 +259,6 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 	@Activate
 	protected void activate(ComponentContext componentContext)
 		throws Exception {
-
-		_schedulerEngineHelperConfiguration =
-			ConfigurableUtil.createConfigurable(
-				SchedulerEngineHelperConfiguration.class,
-				componentContext.getProperties());
 
 		_bundleContext = componentContext.getBundleContext();
 
@@ -385,13 +333,6 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 		_bundleContext = null;
 	}
 
-	@Modified
-	protected void modified(Map<String, Object> properties) throws Exception {
-		_schedulerEngineHelperConfiguration =
-			ConfigurableUtil.createConfigurable(
-				SchedulerEngineHelperConfiguration.class, properties);
-	}
-
 	private void _registerMessaging(
 		BundleContext bundleContext, String destinationName,
 		MessageListener messageListener) {
@@ -423,17 +364,10 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 	private static final Log _log = LogFactoryUtil.getLog(
 		SchedulerEngineHelperImpl.class);
 
-	private static final Snapshot<AuditRouter> _auditRouterSnapshot =
-		new Snapshot<>(
-			SchedulerEngineHelperImpl.class, AuditRouter.class, null, true);
-
 	private volatile BundleContext _bundleContext;
 
 	@Reference
 	private DestinationFactory _destinationFactory;
-
-	@Reference
-	private JSONFactory _jsonFactory;
 
 	private final Map<String, ServiceRegistration<MessageListener>>
 		_messageListenerServiceRegistrations = new ConcurrentHashMap<>();
@@ -441,14 +375,9 @@ public class SchedulerEngineHelperImpl implements SchedulerEngineHelper {
 	@Reference(target = ModuleServiceLifecycle.PORTAL_INITIALIZED)
 	private ModuleServiceLifecycle _moduleServiceLifecycle;
 
-	@Reference
-	private Portal _portal;
-
 	@Reference(target = "(scheduler.engine.proxy=true)")
 	private SchedulerEngine _schedulerEngine;
 
-	private volatile SchedulerEngineHelperConfiguration
-		_schedulerEngineHelperConfiguration;
 	private ServiceTracker<SchedulerJobConfiguration, SchedulerJobConfiguration>
 		_schedulerJobConfigurationServiceTracker;
 	private final List<ServiceRegistration<?>> _serviceRegistrations =

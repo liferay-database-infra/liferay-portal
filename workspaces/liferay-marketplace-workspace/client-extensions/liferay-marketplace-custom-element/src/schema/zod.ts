@@ -7,6 +7,31 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {z} from 'zod';
 
 import i18n from '../i18n';
+import {removeHTMLTags} from '../utils/string';
+
+const baseContentSchema = z.object({
+	description: z.string().min(1).refine(removeHTMLTags),
+	title: z.string().min(1),
+});
+
+const blocksContentSchemas = {
+	textBlock: baseContentSchema,
+	textImages: baseContentSchema.extend({
+		files: z.array(z.any()).optional(),
+	}),
+	textVideo: baseContentSchema.extend({
+		videoUrl: z.string().optional(),
+	}),
+};
+
+const contentMediaTypeImage = z.object({
+	headerImages: z.array(z.any()).min(1),
+});
+
+const contentMediaTypeVideo = z.object({
+	headerVideoDescription: z.string().optional(),
+	headerVideoUrl: z.string().url().min(1),
+});
 
 const zodSchema = {
 	accountCreator: z.object({
@@ -110,6 +135,43 @@ const zodSchema = {
 		password: z.string().optional(),
 	}),
 	solutionPublishing: {
+		company: z.object({
+			description: z.string().min(1),
+			email: z.string().min(1),
+			phone: z.string().min(1),
+			website: z.string().min(1),
+		}),
+		contactUs: z.string().min(1),
+		details: z
+			.array(
+				z.object({
+					content: z.lazy(() =>
+						z.union([
+							blocksContentSchemas.textBlock,
+							blocksContentSchemas.textImages,
+							blocksContentSchemas.textVideo,
+						])
+					),
+					type: z.enum([
+						'text-block',
+						'text-images-block',
+						'text-video-block',
+					]),
+				})
+			)
+			.min(2),
+		header: z
+			.object({
+				contentType: z.object({
+					content: z.lazy(() =>
+						z.union([contentMediaTypeImage, contentMediaTypeVideo])
+					),
+					type: z.enum(['embed-video-url', 'upload-images']),
+				}),
+				description: z.string().min(1),
+				title: z.string().min(1),
+			})
+			.refine((data) => !!removeHTMLTags(data.description)),
 		profile: z.object({
 			categories: z.array(z.any()).nonempty(),
 			description: z.string().min(3),

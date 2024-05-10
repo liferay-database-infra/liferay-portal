@@ -6,10 +6,10 @@
 import {FrameLocator, Locator, Page} from '@playwright/test';
 
 import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
-import {waitForSuccessAlert} from '../../utils/waitForSuccessAlert';
 import {KnowledgeBasePage} from './KnowledgeBasePage';
 
 export class KnowledgeBaseEditArticlePage {
+	readonly cancelButton: Locator;
 	readonly contentFrameLocator: FrameLocator;
 	readonly contentTextBox: Locator;
 	readonly page: Page;
@@ -23,6 +23,7 @@ export class KnowledgeBaseEditArticlePage {
 	knowledgeBasePage: KnowledgeBasePage;
 
 	constructor(page: Page) {
+		this.cancelButton = page.getByRole('link', {name: 'Cancel'});
 		this.contentFrameLocator = page.frameLocator('iframe');
 		this.contentTextBox = this.contentFrameLocator.getByRole('textbox');
 		this.knowledgeBasePage = new KnowledgeBasePage(page);
@@ -44,6 +45,10 @@ export class KnowledgeBaseEditArticlePage {
 		await this.knowledgeBasePage.goToCreateNewArticle();
 	}
 
+	async cancel() {
+		await this.cancelButton.click();
+	}
+
 	async publishNewKnowledgeBaseArticle(content: string, title: string) {
 		await this.titlePlaceholder.fill(title);
 		await this.contentTextBox.fill(content);
@@ -61,11 +66,6 @@ export class KnowledgeBaseEditArticlePage {
 			target: this.publishMenuItem,
 			trigger: this.publishButton,
 		});
-
-		await waitForSuccessAlert(
-			this.page,
-			`Success:${title} was successfully published.`
-		);
 	}
 
 	async scheduleNewKnowledgeBaseArticle(

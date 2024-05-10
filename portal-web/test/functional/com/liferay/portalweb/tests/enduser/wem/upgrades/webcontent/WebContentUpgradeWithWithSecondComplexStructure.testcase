@@ -143,15 +143,23 @@ definition {
 			menuItem = "Edit Default Values",
 			rowEntry = "WC Structure Name");
 
+		AssertVisible(
+			key_fieldFieldLabel = "Label UF Comunicado",
+			locator1 = "WCEditWebContent#TEXT_INPUT");
+
 		Type(
 			key_fieldFieldLabel = "Label UF Comunicado",
 			locator1 = "WCEditWebContent#TEXT_INPUT",
 			value1 = "Edited LabelUFComunicado Field");
 
+		AssertVisible(
+			key_fieldFieldLabel = "Lista UF Comunicado",
+			locator1 = "WCEditWebContent#TEXT_INPUT");
+
 		Type(
 			key_fieldFieldLabel = "Lista UF Comunicado",
 			locator1 = "WCEditWebContent#TEXT_INPUT",
-			value1 = "Edited ListaUFComunidado Field");
+			value1 = "Edited ListaUFComunicado Field");
 
 		WebContentStructures.saveCP();
 
@@ -169,9 +177,9 @@ definition {
 			value1 = "Edited LabelUFComunicado Field");
 
 		AssertTextEquals.assertValue(
-			key_fieldFieldLabel = "Label UF Comunicado",
+			key_fieldFieldLabel = "Lista UF Comunicado",
 			locator1 = "WCEditWebContent#TEXT_INPUT",
-			value1 = "Edited LabelUFComunicado Field");
+			value1 = "Edited ListaUFComunicado Field");
 	}
 
 	@description = "This is a use case for LRQA-61632. Can Disable Searchable In Text Field With With Second Complex Structure"

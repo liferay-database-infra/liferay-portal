@@ -14,6 +14,8 @@ import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.ModelListenerException;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
+import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.io.Serializable;
@@ -21,6 +23,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -30,6 +33,18 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(service = ValidationHelper.class)
 public class ValidationHelper {
+
+	public static boolean isSupported(ObjectDefinition objectDefinition) {
+		if (!objectDefinition.isUnmodifiableSystemObject() ||
+			(FeatureFlagManagerUtil.isEnabled("LPD-21414") &&
+			 _allowedUnmodifiableSystemObjectDefinitionNames.contains(
+				 objectDefinition.getName()))) {
+
+			return true;
+		}
+
+		return false;
+	}
 
 	public boolean isValidObjectEntry(
 			String externalReferenceCode, long objectEntryId)
@@ -130,6 +145,10 @@ public class ValidationHelper {
 			throw new ModelListenerException(exception);
 		}
 	}
+
+	private static final Set<String>
+		_allowedUnmodifiableSystemObjectDefinitionNames = SetUtil.fromArray(
+			"AccountEntry", "User");
 
 	@Reference
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;

@@ -18,42 +18,108 @@ import {ProductVocabulary} from '../enums/ProductVocabulary';
 import {useGetVocabulariesAndCategories} from '../hooks/data/useGetVocabulariesAndCategories';
 import HeadlessCommerceAdminCatalogImpl from '../services/rest/HeadlessCommerceAdminCatalog';
 
+export type TextBlock = {
+	content: {
+		description: string;
+		title: string;
+	};
+	type: 'text-block';
+};
+
+export type TextImageBlock = {
+	content: {
+		description: string;
+		files: UploadedFile[];
+		title: string;
+	};
+	type: 'text-images-block';
+};
+
+export type TextVideoBlock = {
+	content: {
+		description: string;
+		title: string;
+		videoUrl: string;
+	};
+	type: 'text-video-block';
+};
+
+export type ContentBlock = TextBlock | TextImageBlock | TextVideoBlock;
+
+export type HeaderContentTypeEmbeded = {
+	content: {
+		headerVideoDescription?: string;
+		headerVideoUrl: string;
+	};
+	type: 'embed-video-url';
+};
+
+export type HeaderContentTypeImages = {
+	content: {
+		headerImages: UploadedFile[];
+	};
+	type: 'upload-images';
+};
+
+export type HeaderContentType =
+	| HeaderContentTypeEmbeded
+	| HeaderContentTypeImages;
+
 export enum SolutionTypes {
 	SET_CLEANUP = 'SET_CLEANUP',
+	SET_COMPANY = 'SET_COMPANY',
+	SET_CONTACT_US = 'SET_CONTACT_US',
+	SET_DETAILS = 'SET_DETAILS',
 	SET_HEADER = 'SET_HEADER',
+	SET_NEW_BLOCK = 'SET_NEW_BLOCK',
 	SET_PRODUCT = 'SET_PRODUCT',
 	SET_PRODUCT_ID = 'SET_PRODUCT_ID',
 	SET_PROFILE = 'SET_PROFILE',
+	SET_UPDATE_BLOCK = 'SET_UPDATE_BLOCK',
 }
 
 type SolutionPayload = {
 	[SolutionTypes.SET_CLEANUP]: undefined;
-	[SolutionTypes.SET_HEADER]: Partial<{
-		description: '';
-		headerImages: UploadedFile[];
-		headerVideo: '';
-		radioValue: '';
-		title: '';
+	[SolutionTypes.SET_COMPANY]: Partial<{
+		description: string;
+		email: string;
+		phone: string;
+		website: string;
 	}>;
+	[SolutionTypes.SET_CONTACT_US]: string;
+	[SolutionTypes.SET_DETAILS]: ContentBlock[];
+	[SolutionTypes.SET_HEADER]: Partial<{
+		contentType: HeaderContentType;
+		description: string;
+		title: string;
+	}>;
+	[SolutionTypes.SET_NEW_BLOCK]: ContentBlock;
 	[SolutionTypes.SET_PRODUCT]: Product;
 	[SolutionTypes.SET_PRODUCT_ID]: number;
 	[SolutionTypes.SET_PROFILE]: Partial<{
-		categories: [];
-		description: '';
+		categories: any[];
+		description: string;
 		file: UploadedFile;
-		name: '';
-		tags: [];
+		name: string;
+		tags: any[];
 	}>;
+	[SolutionTypes.SET_UPDATE_BLOCK]: {block: ContentBlock; index: number};
 };
 
 export type SolutionInitialState = {
 	_product?: Product;
 	catalogId: number;
+	company: {
+		description: string;
+		email: string;
+		phone: string;
+		website: string;
+	};
+	contactUs: string;
+	details: ContentBlock[];
 	header: {
+		contentType: HeaderContentType;
 		description: any;
-		headerImages: UploadedFile[];
-		headerVideo: string;
-		radioValue: string;
 		title: string;
 	};
 	productId: number;
@@ -77,11 +143,22 @@ export type SolutionInitialState = {
 
 const solutionInitialState: SolutionInitialState = {
 	catalogId: 0,
-	header: {
+	company: {
 		description: '',
-		headerImages: [],
-		headerVideo: '',
-		radioValue: '',
+		email: '',
+		phone: '',
+		website: '',
+	},
+	contactUs: '',
+	details: [],
+	header: {
+		contentType: {
+			content: {
+				headerImages: [] as UploadedFile[],
+			},
+			type: 'upload-images',
+		},
+		description: '',
 		title: '',
 	},
 	productId: 0,
@@ -109,6 +186,23 @@ const filterProductVocabularies = (product: Product, vocabulary: string) =>
 
 const reducer = (state: SolutionInitialState, action: AppActions) => {
 	switch (action.type) {
+		case SolutionTypes.SET_COMPANY: {
+			return {
+				...state,
+				company: {
+					...state.company,
+					...action.payload,
+				},
+			};
+		}
+
+		case SolutionTypes.SET_CONTACT_US: {
+			return {
+				...state,
+				contactUs: action.payload,
+			};
+		}
+
 		case SolutionTypes.SET_PRODUCT_ID: {
 			return {
 				...state,
@@ -176,6 +270,30 @@ const reducer = (state: SolutionInitialState, action: AppActions) => {
 					...state.header,
 					...action.payload,
 				},
+			};
+		}
+
+		case SolutionTypes.SET_NEW_BLOCK: {
+			return {
+				...state,
+				details: [...state.details, action.payload],
+			};
+		}
+
+		case SolutionTypes.SET_UPDATE_BLOCK: {
+			const details = state.details;
+
+			const newDetails = details.map((detail, index) => {
+				if (index === action.payload.index) {
+					return action.payload.block;
+				}
+
+				return detail;
+			});
+
+			return {
+				...state,
+				details: newDetails,
 			};
 		}
 

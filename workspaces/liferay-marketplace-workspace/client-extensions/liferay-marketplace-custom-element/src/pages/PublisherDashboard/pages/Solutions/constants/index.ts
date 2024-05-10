@@ -33,6 +33,8 @@ export const SOLUTION_FLOW_ITEMS = [
 			'design-the-storefront-for-your-solution-this-will-set-the-information-displayed-on-the-solutions-page-this-section-is-dedicated-to-creating-the-solutions-header'
 		),
 		label: i18n.translate('solution-header'),
+		parseSchema: (context: SolutionInitialState) =>
+			zodSchema.solutionPublishing.header.safeParse(context.header),
 		path: 'header',
 		title: i18n.translate('customize-solution-header'),
 	},
@@ -41,6 +43,8 @@ export const SOLUTION_FLOW_ITEMS = [
 			'design-the-storefront-for-your-solution-this-will-set-the-information-displayed-on-the-solutions-page-this-section-is-dedicated-to-creating-the-solutions-detail-content'
 		),
 		label: i18n.translate('solution-details'),
+		parseSchema: (context: SolutionInitialState) =>
+			zodSchema.solutionPublishing.details.safeParse(context.details),
 		path: 'details',
 		title: i18n.translate('customize-storefront-solutions-details'),
 	},
@@ -49,6 +53,8 @@ export const SOLUTION_FLOW_ITEMS = [
 			'define-profile-company-information-for-your-solution-this-will-inform-users-about-this-versions-updates-on-the-storefront'
 		),
 		label: i18n.translate('company-profile'),
+		parseSchema: (context: SolutionInitialState) =>
+			zodSchema.solutionPublishing.company.safeParse(context.company),
 		path: 'company',
 		title: i18n.translate('provide-company-profile-details'),
 	},
@@ -57,6 +63,8 @@ export const SOLUTION_FLOW_ITEMS = [
 			'define-contact-us-information-for-your-solution-this-will-inform-users-about-this-versions-updates-on-the-storefront'
 		),
 		label: i18n.translate('contact-us'),
+		parseSchema: (context: SolutionInitialState) =>
+			zodSchema.solutionPublishing.contactUs.safeParse(context.contactUs),
 		path: 'contact',
 		title: i18n.translate('provide-contact-us-details'),
 	},

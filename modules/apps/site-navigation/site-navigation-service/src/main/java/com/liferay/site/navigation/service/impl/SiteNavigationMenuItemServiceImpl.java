@@ -35,13 +35,13 @@ public class SiteNavigationMenuItemServiceImpl
 
 	@Override
 	public SiteNavigationMenuItem addSiteNavigationMenuItem(
-			long groupId, long siteNavigationMenuId,
-			long parentSiteNavigationMenuItemId, String type,
-			String typeSettings, ServiceContext serviceContext)
+			String externalReferenceCode, long groupId,
+			long siteNavigationMenuId, long parentSiteNavigationMenuItemId,
+			String type, String typeSettings, ServiceContext serviceContext)
 		throws PortalException {
 
 		return siteNavigationMenuItemLocalService.addSiteNavigationMenuItem(
-			getUserId(), groupId, siteNavigationMenuId,
+			externalReferenceCode, getUserId(), groupId, siteNavigationMenuId,
 			parentSiteNavigationMenuItemId, type, typeSettings, serviceContext);
 	}
 
@@ -64,6 +64,15 @@ public class SiteNavigationMenuItemServiceImpl
 	}
 
 	@Override
+	public SiteNavigationMenuItem deleteSiteNavigationMenuItem(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		return siteNavigationMenuItemLocalService.deleteSiteNavigationMenuItem(
+			externalReferenceCode, groupId);
+	}
+
+	@Override
 	public void deleteSiteNavigationMenuItems(long siteNavigationMenuId)
 		throws PortalException {
 
@@ -78,6 +87,27 @@ public class SiteNavigationMenuItemServiceImpl
 		return siteNavigationMenuItemLocalService.
 			getParentSiteNavigationMenuItemIds(
 				siteNavigationMenuId, typeSettingsKeyword);
+	}
+
+	@Override
+	public SiteNavigationMenuItem
+			getSiteNavigationMenuItemByExternalReferenceCode(
+				String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		SiteNavigationMenuItem siteNavigationMenuItem =
+			siteNavigationMenuItemLocalService.
+				getSiteNavigationMenuItemByExternalReferenceCode(
+					externalReferenceCode, groupId);
+
+		if (siteNavigationMenuItem != null) {
+			_siteNavigationMenuModelResourcePermission.check(
+				getPermissionChecker(),
+				siteNavigationMenuItem.getSiteNavigationMenuId(),
+				ActionKeys.VIEW);
+		}
+
+		return siteNavigationMenuItem;
 	}
 
 	@Override

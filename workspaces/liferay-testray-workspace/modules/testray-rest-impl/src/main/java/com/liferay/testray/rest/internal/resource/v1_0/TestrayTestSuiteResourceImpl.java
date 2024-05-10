@@ -30,6 +30,8 @@ import com.liferay.testray.rest.resource.v1_0.TestrayTestSuiteResource;
 import java.io.File;
 import java.io.Serializable;
 
+import java.sql.Timestamp;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,8 +141,8 @@ public class TestrayTestSuiteResourceImpl
 	}
 
 	private void _addTestrayCase(
-			long companyId, Node testcaseNode, long testrayBuildId,
-			String testrayBuildTime,
+			long companyId, Node testcaseNode, String testrayBuildDate,
+			long testrayBuildId,
 			Map<String, Serializable> testrayCasePropertiesMap,
 			long testrayProjectId, long testrayRunId)
 		throws Exception {
@@ -237,14 +239,14 @@ public class TestrayTestSuiteResourceImpl
 		}
 
 		_addTestrayCaseResult(
-			companyId, testcaseNode, testrayBuildId, testrayBuildTime,
+			companyId, testcaseNode, testrayBuildDate, testrayBuildId,
 			testrayCaseId, testrayCasePropertiesMap, testrayComponentId,
 			testrayRunId);
 	}
 
 	private void _addTestrayCaseResult(
-			long companyId, Node testcaseNode, long testrayBuildId,
-			String testrayBuildTime, long testrayCaseId,
+			long companyId, Node testcaseNode, String testrayBuildDate,
+			long testrayBuildId, long testrayCaseId,
 			Map<String, Serializable> testrayCasePropertiesMap,
 			long testrayComponentId, long testrayRunId)
 		throws Exception {
@@ -257,7 +259,7 @@ public class TestrayTestSuiteResourceImpl
 			HashMapBuilder.<String, Serializable>put(
 				"attachments", _addTestrayAttachments(testcaseNode)
 			).put(
-				"closedDate", testrayBuildTime
+				"closedDate", Timestamp.valueOf(testrayBuildDate)
 			).put(
 				"dueStatus",
 				() -> {
@@ -295,7 +297,7 @@ public class TestrayTestSuiteResourceImpl
 			).put(
 				"r_runToCaseResult_c_runId", testrayRunId
 			).put(
-				"startDate", testrayBuildTime
+				"startDate", Timestamp.valueOf(testrayBuildDate)
 			).put(
 				"warnings",
 				GetterUtil.getInteger(
@@ -323,8 +325,8 @@ public class TestrayTestSuiteResourceImpl
 	}
 
 	private void _addTestrayCases(
-			long companyId, Element element, long testrayBuildId,
-			String testrayBuildTime, long testrayProjectId, long testrayRunId)
+			long companyId, Element element, String testrayBuildDate,
+			long testrayBuildId, long testrayProjectId, long testrayRunId)
 		throws Exception {
 
 		NodeList testCaseNodeList = element.getElementsByTagName("testcase");
@@ -336,7 +338,7 @@ public class TestrayTestSuiteResourceImpl
 				_getTestrayCaseProperties((Element)testcaseNode);
 
 			_addTestrayCase(
-				companyId, testcaseNode, testrayBuildId, testrayBuildTime,
+				companyId, testcaseNode, testrayBuildDate, testrayBuildId,
 				testrayCasePropertiesMap, testrayProjectId, testrayRunId);
 		}
 	}
@@ -486,7 +488,8 @@ public class TestrayTestSuiteResourceImpl
 			HashMapBuilder.<String, Serializable>put(
 				"description", _getTestrayBuildDescription(propertiesMap)
 			).put(
-				"dueDate", propertiesMap.get("testray.build.time")
+				"dueDate",
+				Timestamp.valueOf(propertiesMap.get("testray.build.date"))
 			).put(
 				"dueStatus", "ACTIVATED"
 			).put(
@@ -954,9 +957,9 @@ public class TestrayTestSuiteResourceImpl
 			testrayBuildId, propertiesMap.get("testray.run.id"));
 
 		_addTestrayCases(
-			contextCompany.getCompanyId(), element, testrayBuildId,
-			propertiesMap.get("testray.build.time"), testrayProjectId,
-			testrayRunId);
+			contextCompany.getCompanyId(), element,
+			propertiesMap.get("testray.build.date"), testrayBuildId,
+			testrayProjectId, testrayRunId);
 	}
 
 	@Reference(

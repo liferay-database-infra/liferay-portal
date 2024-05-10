@@ -7,17 +7,31 @@ import {useMemo} from 'react';
 
 import {MDFColumnKey} from '../../../common/enums/mdfColumnKey';
 import MDFRequestDTO from '../../../common/interfaces/dto/mdfRequestDTO';
+import {MDFRequestListItem} from '../../../common/interfaces/mdfRequestListItem';
+import {LiferayAPIs} from '../../../common/services/liferay/common/enums/apis';
+import LiferayItems from '../../../common/services/liferay/common/interfaces/liferayItems';
+import useGet from '../../../common/services/liferay/object/useGet';
 import getIntlNumberFormat from '../../../common/utils/getIntlNumberFormat';
 import getMDFActivityPeriod from '../utils/getMDFActivityPeriod';
 import getMDFBudgetInfos from '../utils/getMDFBudgetInfos';
 import getMDFDates from '../utils/getMDFDates';
 
 export default function useGetListItemsFromMDFRequests(
-	items?: MDFRequestDTO[]
+	isCSV: boolean,
+	page: number,
+	pageSize: number,
+	urlParams: URLSearchParams
 ) {
-	return useMemo(
-		() =>
-			items?.map((item) => ({
+	const swrResponse = useGet<LiferayItems<MDFRequestDTO[]>>(
+		urlParams &&
+			`/o/${
+				LiferayAPIs.OBJECT
+			}/mdfrequests?${urlParams.toString()}&page=${page}&pageSize=${pageSize}`
+	);
+
+	const listItems = useMemo(() => {
+		return swrResponse.data?.items?.map((item) => {
+			const baseItem: MDFRequestListItem = {
 				[MDFColumnKey.BALANCE]: Number(item.totalPaidAmount)
 					? getIntlNumberFormat(item.currency).format(
 							Number(item.totalClaimedRequest) -
@@ -30,7 +44,7 @@ export default function useGetListItemsFromMDFRequests(
 					item.minDateActivity,
 					item.maxDateActivity
 				),
-				[MDFColumnKey.STATUS]: item.mdfRequestStatus?.name,
+				[MDFColumnKey.REQUEST_STATUS]: item.mdfRequestStatus?.name,
 				[MDFColumnKey.PARTNER]: item.companyName,
 				[MDFColumnKey.AMOUNT_PAID]: !Number(item.totalPaidAmount)
 					? '-'
@@ -44,7 +58,22 @@ export default function useGetListItemsFromMDFRequests(
 					  ),
 				...getMDFDates(item.submitDate, item.dateModified),
 				...getMDFBudgetInfos(item.totalMDFRequestAmount, item.currency),
-			})),
-		[items]
-	);
+			};
+
+			isCSV
+				? delete baseItem[MDFColumnKey.ACCOUNT_ENTRY_ID]
+				: (baseItem[MDFColumnKey.ACCOUNT_ENTRY_ID] =
+						item.r_accToMDFReqs_accountEntryId);
+
+			return baseItem;
+		});
+	}, [isCSV, swrResponse.data?.items]);
+
+	return {
+		...swrResponse,
+		data: {
+			...swrResponse.data,
+			items: listItems,
+		},
+	};
 }

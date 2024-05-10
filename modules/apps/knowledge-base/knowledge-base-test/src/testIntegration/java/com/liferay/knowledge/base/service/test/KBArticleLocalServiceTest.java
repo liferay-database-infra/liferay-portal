@@ -1555,6 +1555,9 @@ public class KBArticleLocalServiceTest {
 		Assert.assertTrue(
 			_kbArticleLocalService.hasKBArticleLock(
 				_user.getUserId(), kbArticle.getResourcePrimKey()));
+
+		_kbArticleLocalService.unlockKBArticle(
+			_user.getUserId(), kbArticle.getResourcePrimKey());
 	}
 
 	protected void importMarkdownArticles() throws PortalException {
@@ -1639,7 +1642,8 @@ public class KBArticleLocalServiceTest {
 			Assert.assertEquals(duplicateLock.getLockId(), lock.getLockId());
 		}
 
-		_kbArticleLocalService.unlockKBArticle(resourcePrimKey);
+		_kbArticleLocalService.unlockKBArticle(
+			previousUser.getUserId(), resourcePrimKey);
 
 		Assert.assertFalse(
 			LockManagerUtil.isLocked(

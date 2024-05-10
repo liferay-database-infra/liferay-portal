@@ -15,21 +15,12 @@ import {sub} from 'frontend-js-web';
 import React, {ComponentProps, useEffect, useState} from 'react';
 
 import {FDSViewType} from '../FDSViews';
-import {getFields} from '../api';
-import {IField} from '../utils/types';
+import {IField, IFieldTreeItem} from '../utils/types';
 import AutoSearch from './AutoSearch';
 
 import '../../css/components/FieldSelectModalContent.scss';
 
-interface IFieldTreeItem extends IField {
-	children?: IFieldTreeItem[];
-	initialChildren?: IFieldTreeItem[];
-	query?: string;
-	savedId?: string;
-	selected?: boolean;
-}
-
-function visit(fields: Array<IFieldTreeItem>, callback: Function) {
+export function visit(fields: Array<IFieldTreeItem>, callback: Function) {
 	fields.forEach((field) => {
 		callback(field);
 
@@ -170,7 +161,7 @@ const Highlight = ({query, text}: {query?: string; text?: string}) => {
 
 const FieldSelectModalContent = ({
 	closeModal,
-	fdsView,
+	fieldTreeItems,
 	onSaveButtonClick,
 	saveButtonDisabled,
 	selectedFields,
@@ -178,6 +169,7 @@ const FieldSelectModalContent = ({
 }: {
 	closeModal: Function;
 	fdsView: FDSViewType;
+	fieldTreeItems: Array<IFieldTreeItem>;
 	onSaveButtonClick: ({
 		selectedFields,
 	}: {
@@ -189,7 +181,7 @@ const FieldSelectModalContent = ({
 }) => {
 	const [initialFields, setInitialFields] = useState<Array<
 		IFieldTreeItem
-	> | null>(null);
+	> | null>(fieldTreeItems);
 	const [selectedKeys, setSelectedKeys] = useState<Set<React.Key>>(
 		new Set<React.Key>()
 	);
@@ -200,19 +192,16 @@ const FieldSelectModalContent = ({
 	const [expandedKeys, setExpandedKeys] = useState<Array<React.Key>>([]);
 
 	useEffect(() => {
-		getFields(fdsView).then((fields) => {
-			if (fields) {
-				const [initialSelectedKeys, updatedFields] = initializeFields({
-					fields,
-					selectedFields,
-				});
+		if (fields) {
+			const [initialSelectedKeys, updatedFields] = initializeFields({
+				fields,
+				selectedFields,
+			});
 
-				setSelectedKeys(initialSelectedKeys);
+			setSelectedKeys(initialSelectedKeys);
 
-				setInitialFields(updatedFields);
-				setFields(updatedFields);
-			}
-		});
+			setFields(updatedFields);
+		}
 
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);

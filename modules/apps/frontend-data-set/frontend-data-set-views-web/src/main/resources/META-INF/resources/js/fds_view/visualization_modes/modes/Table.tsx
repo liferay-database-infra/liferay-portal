@@ -21,7 +21,9 @@ import fuzzy from 'fuzzy';
 import React, {useEffect, useState} from 'react';
 
 import {IFDSViewSectionProps} from '../../../FDSView';
-import FieldSelectModalContent from '../../../components/FieldSelectModalContent';
+import FieldSelectModalContent, {
+	visit,
+} from '../../../components/FieldSelectModalContent';
 import OrderableTable from '../../../components/OrderableTable';
 import {
 	API_URL,
@@ -36,7 +38,12 @@ import '../../../../css/TableVisualizationMode.scss';
 import ClayAlert from '@clayui/alert';
 import ClayIcon from '@clayui/icon';
 
-import {EFieldType, IFDSField, IField} from '../../../utils/types';
+import {
+	EFieldType,
+	IFDSField,
+	IField,
+	IFieldTreeItem,
+} from '../../../utils/types';
 
 const defaultLanguageId = Liferay.ThemeDisplay.getDefaultLanguageId();
 
@@ -111,6 +118,7 @@ interface IEditFDSFieldModalContentProps {
 	fdsField: IFDSField;
 	namespace: string;
 	onSaveButtonClick: Function;
+	sortable: boolean;
 }
 
 const EditFDSFieldModalContent = ({
@@ -119,13 +127,14 @@ const EditFDSFieldModalContent = ({
 	fdsField,
 	namespace,
 	onSaveButtonClick,
+	sortable,
 }: IEditFDSFieldModalContentProps) => {
 	const [selectedFDSFieldRenderer, setSelectedFDSFieldRenderer] = useState(
 		fdsField.renderer ?? 'default'
 	);
 
 	const [fdsFieldSortable, setFSDFieldSortable] = useState<boolean>(
-		fdsField.sortable ?? fdsField.type !== EFieldType.OBJECT
+		fdsField.sortable
 	);
 
 	const fdsInternalCellRendererNames = FDS_INTERNAL_CELL_RENDERERS.map(
@@ -306,7 +315,7 @@ const EditFDSFieldModalContent = ({
 				<ClayForm.Group>
 					<ClayCheckbox
 						checked={fdsFieldSortable}
-						disabled={fdsField.type === EFieldType.OBJECT}
+						disabled={!sortable}
 						inline
 						label={Liferay.Language.get('sortable')}
 						onChange={({target: {checked}}) =>
@@ -351,6 +360,7 @@ function Table(props: IFDSViewSectionProps & {title?: string}) {
 	const {
 		fdsClientExtensionCellRenderers,
 		fdsView,
+		fieldTreeItems,
 		namespace,
 		saveFDSFieldsURL,
 		title,
@@ -485,13 +495,18 @@ function Table(props: IFDSViewSectionProps & {title?: string}) {
 	}) => {
 		setSaveButtonDisabled(true);
 
-		const creationData: Array<{name: string; type: string}> = [];
+		const creationData: Array<{
+			name: string;
+			sortable: boolean;
+			type: string;
+		}> = [];
 		const deletionIds: Array<number> = [];
 
 		fields.forEach((field) => {
 			if (!field.id) {
 				creationData.push({
 					name: field.name,
+					sortable: field.sortable || false,
 					type: field.type || 'string',
 				});
 			}
@@ -614,6 +629,7 @@ function Table(props: IFDSViewSectionProps & {title?: string}) {
 				<FieldSelectModalContent
 					{...props}
 					closeModal={closeModal}
+					fieldTreeItems={fieldTreeItems}
 					onSaveButtonClick={({
 						selectedFields,
 					}: {
@@ -663,6 +679,7 @@ function Table(props: IFDSViewSectionProps & {title?: string}) {
 							}) || null
 						);
 					}}
+					sortable={isSortable(fieldTreeItems, item)}
 				/>
 			),
 		});
@@ -762,6 +779,22 @@ export function Fields(props: IFDSViewSectionProps) {
 			<Table {...props} title={Liferay.Language.get('fields')} />
 		</ClayLayout.ContainerFluid>
 	);
+}
+
+function isSortable(
+	fieldTreeItems: Array<IFieldTreeItem>,
+	selectedItem: IFDSField
+): boolean {
+	let isSortable = false;
+	visit(fieldTreeItems, (fieldTreeItem: IFieldTreeItem) => {
+		if (fieldTreeItem.name === selectedItem.name) {
+			isSortable = fieldTreeItem.sortable || false;
+
+			return;
+		}
+	});
+
+	return isSortable;
 }
 
 export default Table;

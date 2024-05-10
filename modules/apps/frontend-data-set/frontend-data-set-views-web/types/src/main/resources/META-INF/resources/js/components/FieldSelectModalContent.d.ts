@@ -6,18 +6,15 @@
 import {TreeView} from '@clayui/core';
 import {ComponentProps} from 'react';
 import {FDSViewType} from '../FDSViews';
-import {IField} from '../utils/types';
+import {IField, IFieldTreeItem} from '../utils/types';
 import '../../css/components/FieldSelectModalContent.scss';
-interface IFieldTreeItem extends IField {
-	children?: IFieldTreeItem[];
-	initialChildren?: IFieldTreeItem[];
-	query?: string;
-	savedId?: string;
-	selected?: boolean;
-}
+export declare function visit(
+	fields: Array<IFieldTreeItem>,
+	callback: Function
+): void;
 declare const FieldSelectModalContent: ({
 	closeModal,
-	fdsView,
+	fieldTreeItems,
 	onSaveButtonClick,
 	saveButtonDisabled,
 	selectedFields,
@@ -25,6 +22,7 @@ declare const FieldSelectModalContent: ({
 }: {
 	closeModal: Function;
 	fdsView: FDSViewType;
+	fieldTreeItems: Array<IFieldTreeItem>;
 	onSaveButtonClick: ({
 		selectedFields,
 	}: {

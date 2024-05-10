@@ -20,7 +20,9 @@ import SortingDeprecated from './fds_view/SortingDeprecated';
 import Filters from './fds_view/filters/Filters';
 import VisualizationModes from './fds_view/visualization_modes/VisualizationModes';
 import {API_URL, OBJECT_RELATIONSHIP} from './utils/constants';
+import getFields from './utils/getFields';
 import openDefaultFailureToast from './utils/openDefaultFailureToast';
+import {IFieldTreeItem} from './utils/types';
 
 const NAVIGATION_BAR_ITEMS = [
 	{
@@ -63,6 +65,7 @@ interface IFDSViewSectionProps {
 	fdsFilterClientExtensions: IClientExtensionRenderer[];
 	fdsView: FDSViewType;
 	fdsViewsURL: string;
+	fieldTreeItems: Array<IFieldTreeItem>;
 	namespace: string;
 	onActiveSectionChange: (section: number) => void;
 	onFDSViewUpdate: (data: FDSViewType) => void;
@@ -91,6 +94,9 @@ const FDSView = ({
 }: IFDSViewProps) => {
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [fdsView, setFDSView] = useState<FDSViewType>();
+	const [fieldTreeItems, setFieldTreeItems] = useState<Array<IFieldTreeItem>>(
+		[]
+	);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -109,7 +115,11 @@ const FDSView = ({
 			if (responseJSON?.id) {
 				setFDSView(responseJSON);
 
-				setLoading(false);
+				getFields(responseJSON).then((fields) => {
+					setFieldTreeItems(fields);
+
+					setLoading(false);
+				});
 			}
 			else {
 				openDefaultFailureToast();
@@ -149,6 +159,7 @@ const FDSView = ({
 						fdsFilterClientExtensions={fdsFilterClientExtensions}
 						fdsView={fdsView}
 						fdsViewsURL={fdsViewsURL}
+						fieldTreeItems={fieldTreeItems}
 						namespace={namespace}
 						onActiveSectionChange={(tab) => setActiveIndex(tab)}
 						onFDSViewUpdate={(updatedFdsViewData) => {

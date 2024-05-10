@@ -62,7 +62,9 @@ function RoutinesPage() {
 		<ClayLayout.Container>
 			<Jethr0Card>
 				<Jethr0NavigationBar active="Routines" />
+
 				<Jethr0Breadcrumbs breadcrumbs={breadcrumbs} />
+
 				<Jethr0ContainerFluid>
 					<ClayLayout.Row justify="between">
 						<Heading level={3} weight="lighter">
@@ -78,6 +80,7 @@ function RoutinesPage() {
 						/>
 					</ClayLayout.Row>
 				</Jethr0ContainerFluid>
+
 				<Jethr0Table>
 					<thead>
 						<tr>
@@ -116,6 +119,7 @@ function RoutinesPage() {
 					</tbody>
 				</Jethr0Table>
 			</Jethr0Card>
+
 			{routinesPage && (
 				<ClayPaginationBarWithBasicItems
 					activeDelta={routinesPage.pageSize}

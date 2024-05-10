@@ -80,6 +80,13 @@ public class APISchemaRelevantObjectEntryModelListener
 					"an-api-schema-must-be-an-existing-object-definition");
 			}
 
+			if (!ValidationHelper.isSupported(objectDefinition)) {
+				throw new ObjectEntryValuesException.InvalidObjectField(
+					null,
+					"An API schema must be a modifiable object definition",
+					"an-api-schema-must-be-a-modifiable-object-definition");
+			}
+
 			if (Validator.isNotNull(
 					_objectEntryHelper.getObjectEntry(
 						objectEntry.getCompanyId(),

@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.kernel.scheduler.JobState;
 import com.liferay.portal.kernel.scheduler.JobStateSerializeUtil;
 import com.liferay.portal.kernel.scheduler.SchedulerEngine;
+import com.liferay.portal.kernel.scheduler.SchedulerEngineAuditor;
 import com.liferay.portal.kernel.scheduler.SchedulerEngineHelper;
 import com.liferay.portal.kernel.scheduler.SchedulerException;
 import com.liferay.portal.kernel.scheduler.StorageType;
@@ -792,6 +793,9 @@ public class QuartzSchedulerEngine implements SchedulerEngine {
 	)
 	private Release _release;
 
+	@Reference
+	private SchedulerEngineAuditor _schedulerEngineAuditor;
+
 	private volatile boolean _schedulerEngineEnabled;
 
 	private class SchedulerListenerImpl extends SchedulerListenerSupport {
@@ -802,6 +806,10 @@ public class QuartzSchedulerEngine implements SchedulerEngine {
 
 		public void jobResumed(JobKey jobKey) {
 			_audit(jobKey, TriggerState.NORMAL);
+		}
+
+		public void jobScheduled(Trigger trigger) {
+			_audit(trigger.getJobKey(), TriggerState.NORMAL);
 		}
 
 		public void triggerFinalized(Trigger trigger) {
@@ -832,13 +840,6 @@ public class QuartzSchedulerEngine implements SchedulerEngine {
 		}
 
 		private void _audit(JobKey jobKey, TriggerState triggerState) {
-			SchedulerEngineHelper schedulerEngineHelper =
-				_schedulerEngineHelperSnapshot.get();
-
-			if (schedulerEngineHelper == null) {
-				return;
-			}
-
 			try {
 				JobDetail jobDetail = _scheduler.getJobDetail(jobKey);
 
@@ -848,7 +849,8 @@ public class QuartzSchedulerEngine implements SchedulerEngine {
 
 				message.setValues(new HashMap<>(jobDataMap.getWrappedMap()));
 
-				schedulerEngineHelper.auditSchedulerJobs(message, triggerState);
+				_schedulerEngineAuditor.auditSchedulerJobs(
+					message, triggerState);
 			}
 			catch (Exception exception) {
 				_log.error(

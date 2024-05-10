@@ -634,6 +634,52 @@
 			"label": "Portal Release"
 		},
 		{
+			"externalReferenceCode": "portalUpstream",
+			"jobDefinitionsToJobDefinitionParameters": [
+				{
+					"externalReferenceCode": "jenkinsBranchURL"
+				},
+				{
+					"externalReferenceCode": "osbAsahBranchURL"
+				},
+				{
+					"externalReferenceCode": "portalBranchSHA"
+				},
+				{
+					"externalReferenceCode": "portalBranchURL"
+				},
+				{
+					"externalReferenceCode": "portalBuildProfile"
+				},
+				{
+					"externalReferenceCode": "portalUpstreamBranchName"
+				},
+				{
+					"externalReferenceCode": "testrayBuildName"
+				},
+				{
+					"externalReferenceCode": "testrayProjectName"
+				},
+				{
+					"externalReferenceCode": "testrayRoutineName"
+				},
+				{
+					"externalReferenceCode": "testraySlackChannels"
+				},
+				{
+					"externalReferenceCode": "testraySlackIconEmoji"
+				},
+				{
+					"externalReferenceCode": "testraySlackUserName"
+				},
+				{
+					"externalReferenceCode": "testSuiteName"
+				}
+			],
+			"key": "portalUpstream",
+			"label": "Portal Upstream"
+		},
+		{
 			"externalReferenceCode": "portalUpstreamAcceptance",
 			"jobDefinitionsToJobDefinitionParameters": [
 				{
@@ -656,6 +702,9 @@
 					"externalReferenceCode": "jenkinsBranchURL"
 				},
 				{
+					"externalReferenceCode": "osbAsahBranchURL"
+				},
+				{
 					"externalReferenceCode": "portalBranchSHA"
 				},
 				{
@@ -666,6 +715,24 @@
 				},
 				{
 					"externalReferenceCode": "portalUpstreamBranchName"
+				},
+				{
+					"externalReferenceCode": "testrayBuildName"
+				},
+				{
+					"externalReferenceCode": "testrayProjectName"
+				},
+				{
+					"externalReferenceCode": "testrayRoutineName"
+				},
+				{
+					"externalReferenceCode": "testraySlackChannels"
+				},
+				{
+					"externalReferenceCode": "testraySlackIconEmoji"
+				},
+				{
+					"externalReferenceCode": "testraySlackUserName"
 				},
 				{
 					"externalReferenceCode": "testSuiteName"

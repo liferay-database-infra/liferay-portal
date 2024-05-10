@@ -3,40 +3,90 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import ClayIcon from '@clayui/icon';
+import ReactQuill from 'react-quill';
 
 import Form from '../../../../../../components/MarketplaceForm';
-import TextBlock from './TextBlock';
+import VideoThumbnail from '../../../../../../components/VideoThumbnail';
+import {TextVideoBlock} from '../../../../../../context/SolutionContext';
+import i18n from '../../../../../../i18n';
+import {BlockTypeProps} from './BlockPropsType';
 
-const TextAndVideos = () => (
-	<>
-		<TextBlock />
+const TextAndVideos: React.FC<BlockTypeProps<TextVideoBlock>> = ({
+	block,
+	onChange,
+}) => {
+	const {content} = block;
 
-		<div className="p-4">
-			<Form.Label className="mt-5" htmlFor="url">
-				Video URL
-			</Form.Label>
-
-			<Form.Input name="video-url" placeholder="http://" type="text" />
-
-			<Form.HelpMessage>
-				You can paste links directly from YouTube.
-			</Form.HelpMessage>
-
-			<div className="border d-flex flex-row mt-5 p-4 rounded">
-				<div className="align-items-center d-flex justify-content-center rounded video-player">
-					<ClayIcon symbol="video" />
-				</div>
+	return (
+		<>
+			<div className="p-4">
+				<Form.Label
+					className="mt-2"
+					htmlFor="title"
+					info="title"
+					required
+				>
+					Title
+				</Form.Label>
 
 				<Form.Input
-					className="ml-3"
-					name="video-description"
-					placeholder="Video description"
+					name="title"
+					onChange={(event) => onChange({title: event.target.value})}
+					placeholder="Enter title header"
 					type="text"
+					value={content.title}
 				/>
+
+				<Form.Label
+					className="mt-5"
+					htmlFor="description"
+					info="description"
+					required
+				>
+					{i18n.translate('description')}
+				</Form.Label>
+
+				<div className="rich-text-editor">
+					<ReactQuill
+						onChange={(text) => onChange({description: text})}
+						placeholder="Insert text here"
+						value={content.description}
+					/>
+				</div>
 			</div>
-		</div>
-	</>
-);
+
+			<div className="p-4">
+				<Form.Label htmlFor="url" info="video">
+					Video URL
+				</Form.Label>
+
+				<Form.Input
+					name="video-url"
+					onChange={({target: {value}}) =>
+						onChange({videoUrl: value})
+					}
+					placeholder="http://"
+					type="text"
+					value={content.videoUrl}
+				/>
+
+				<Form.HelpMessage>
+					You can paste links directly from YouTube.
+				</Form.HelpMessage>
+
+				<div className="border d-flex flex-row mt-5 p-4 rounded">
+					<VideoThumbnail videoURL={content.videoUrl} />
+
+					<Form.Input
+						className="ml-3"
+						name="video-description"
+						placeholder="Video description"
+						type="text"
+					/>
+				</div>
+			</div>
+		</>
+	);
+};
 
 export default TextAndVideos;

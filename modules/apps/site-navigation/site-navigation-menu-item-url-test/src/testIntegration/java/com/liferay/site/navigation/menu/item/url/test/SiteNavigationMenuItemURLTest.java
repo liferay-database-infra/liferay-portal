@@ -66,12 +66,12 @@ public class SiteNavigationMenuItemURLTest {
 
 		SiteNavigationMenu siteNavigationMenu =
 			_siteNavigationMenuLocalService.addSiteNavigationMenu(
-				TestPropsValues.getUserId(), _group.getGroupId(), "Menu",
+				null, TestPropsValues.getUserId(), _group.getGroupId(), "Menu",
 				SiteNavigationConstants.TYPE_DEFAULT, true, serviceContext);
 
 		SiteNavigationMenuItem siteNavigationMenuItem =
 			_siteNavigationMenuItemLocalService.addSiteNavigationMenuItem(
-				TestPropsValues.getUserId(), _group.getGroupId(),
+				null, TestPropsValues.getUserId(), _group.getGroupId(),
 				siteNavigationMenu.getSiteNavigationMenuId(), 0,
 				SiteNavigationMenuItemTypeConstants.URL,
 				UnicodePropertiesBuilder.put(
@@ -107,12 +107,12 @@ public class SiteNavigationMenuItemURLTest {
 
 		SiteNavigationMenu siteNavigationMenu =
 			_siteNavigationMenuLocalService.addSiteNavigationMenu(
-				TestPropsValues.getUserId(), _group.getGroupId(), "Menu",
+				null, TestPropsValues.getUserId(), _group.getGroupId(), "Menu",
 				SiteNavigationConstants.TYPE_DEFAULT, true, serviceContext);
 
 		SiteNavigationMenuItem siteNavigationMenuItem =
 			_siteNavigationMenuItemLocalService.addSiteNavigationMenuItem(
-				TestPropsValues.getUserId(), _group.getGroupId(),
+				null, TestPropsValues.getUserId(), _group.getGroupId(),
 				siteNavigationMenu.getSiteNavigationMenuId(), 0,
 				SiteNavigationMenuItemTypeConstants.URL,
 				UnicodePropertiesBuilder.put(

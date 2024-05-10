@@ -16,16 +16,16 @@ export function getMDFClaimFromDTO(mdfClaim: MDFClaimDTO): MDFClaim {
 			mdfClaim?.mdfClmToMDFClmActs?.map((activityItem) => {
 				const {
 					currency,
-					eventProgram,
+					eventProgramFile,
 					externalReferenceCode,
 					id,
-					listOfQualifiedLeads,
+					listOfQualifiedLeadsFile,
 					metrics,
 					r_actToMDFClmActs_c_activityId,
 					r_mdfClmToMDFClmActs_c_mdfClaimId,
 					selected,
 					telemarketingMetrics,
-					telemarketingScript,
+					telemarketingScriptFile,
 					totalCost,
 					typeActivity,
 					videoLink,
@@ -38,8 +38,8 @@ export function getMDFClaimFromDTO(mdfClaim: MDFClaimDTO): MDFClaim {
 								expenseName,
 								externalReferenceCode,
 								id,
-								invoice,
 								invoiceAmount,
+								invoiceFile,
 								r_bgtToMDFClmBgts_c_budgetId,
 								selected,
 							} = budgetItem;
@@ -48,33 +48,33 @@ export function getMDFClaimFromDTO(mdfClaim: MDFClaimDTO): MDFClaim {
 								expenseName,
 								externalReferenceCode,
 								id,
-								invoice:
-									invoice &&
-									getLiferayFileFromAttachment(invoice),
 								invoiceAmount,
+								invoiceFile:
+									invoiceFile &&
+									getLiferayFileFromAttachment(invoiceFile),
 								r_bgtToMDFClmBgts_c_budgetId,
 								selected,
 							};
 						}
 					),
 					currency,
-					eventProgram:
-						eventProgram &&
-						getLiferayFileFromAttachment(eventProgram),
+					eventProgramFile:
+						eventProgramFile &&
+						getLiferayFileFromAttachment(eventProgramFile),
 					externalReferenceCode,
 					id,
-					listOfQualifiedLeads:
-						listOfQualifiedLeads &&
-						getLiferayFileFromAttachment(listOfQualifiedLeads),
+					listOfQualifiedLeadsFile:
+						listOfQualifiedLeadsFile &&
+						getLiferayFileFromAttachment(listOfQualifiedLeadsFile),
 					metrics,
 					proofOfPerformance: getPOPFromMDFActDocs(activityItem),
 					r_actToMDFClmActs_c_activityId,
 					r_mdfClmToMDFClmActs_c_mdfClaimId,
 					selected,
 					telemarketingMetrics,
-					telemarketingScript:
-						telemarketingScript &&
-						getLiferayFileFromAttachment(telemarketingScript),
+					telemarketingScriptFile:
+						telemarketingScriptFile &&
+						getLiferayFileFromAttachment(telemarketingScriptFile),
 					totalCost,
 					typeActivity,
 					videoLink,

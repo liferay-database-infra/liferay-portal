@@ -92,13 +92,16 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 		if (inputAddonNodeRef.current) {
 			inputAddonNodeRef.current.innerText =
 				inputAddon +
-				selectedItems
-					.map(
-						(category) => `${normalizeFriendlyURL(category.label)}/`
-					)
-					.join('');
+				(disabled
+					? ''
+					: selectedItems
+							.map(
+								(category) =>
+									`${normalizeFriendlyURL(category.label)}/`
+							)
+							.join(''));
 		}
-	}, [inputAddon, inputAddonNodeRef, selectedItems]);
+	}, [inputAddon, inputAddonNodeRef, selectedItems, disabled]);
 
 	useEffect(() => {
 		const input = friendlyURLinputRef.current;
@@ -143,7 +146,7 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 						inputName={
 							portletNamespace + 'friendlyURLAssetCategoryIds'
 						}
-						items={selectedItems}
+						items={disabled ? [] : selectedItems}
 						onItemsChange={handleItemsChange}
 					/>
 				</ClayInput.GroupItem>

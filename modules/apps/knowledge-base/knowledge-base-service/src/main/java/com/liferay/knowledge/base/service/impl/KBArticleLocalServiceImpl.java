@@ -536,7 +536,7 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 				KBArticle.class.getName(), kbArticle.getResourcePrimKey());
 		}
 		finally {
-			unlockKBArticle(resourcePrimKey);
+			unlockKBArticle(userId, resourcePrimKey);
 		}
 
 		return kbArticle;
@@ -631,7 +631,7 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 				serviceContext);
 		}
 		finally {
-			unlockKBArticle(resourcePrimKey);
+			unlockKBArticle(userId, resourcePrimKey);
 		}
 	}
 
@@ -1165,6 +1165,22 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 			return null;
 		}
 
+		if (userId <= 0) {
+			Lock lock = _lockManager.fetchLock(
+				KBArticleConstants.getClassName(), resourcePrimKey);
+
+			if (lock != null) {
+				LockedKBArticleException lockedKBArticleException =
+					new LockedKBArticleException();
+
+				lockedKBArticleException.setLock(lock);
+
+				throw lockedKBArticleException;
+			}
+
+			return null;
+		}
+
 		try {
 			return _lockManager.lock(
 				userId, KBArticleConstants.getClassName(), resourcePrimKey,
@@ -1302,7 +1318,7 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 			_indexKBArticle(latestKBArticle);
 		}
 		finally {
-			unlockKBArticle(resourcePrimKey);
+			unlockKBArticle(userId, resourcePrimKey);
 		}
 	}
 
@@ -1374,7 +1390,7 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 			return kbArticle;
 		}
 		finally {
-			unlockKBArticle(resourcePrimKey);
+			unlockKBArticle(userId, resourcePrimKey);
 		}
 	}
 
@@ -1461,7 +1477,7 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 				null, serviceContext);
 		}
 		finally {
-			unlockKBArticle(resourcePrimKey);
+			unlockKBArticle(userId, resourcePrimKey);
 		}
 	}
 
@@ -1495,12 +1511,25 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 	}
 
 	@Override
-	public void unlockKBArticle(long resourcePrimKey) {
+	public void unlockKBArticle(long userId, long resourcePrimKey) {
+		unlockKBArticle(userId, resourcePrimKey, false);
+	}
+
+	@Override
+	public void unlockKBArticle(
+		long userId, long resourcePrimKey, boolean force) {
+
 		if (!FeatureFlagManagerUtil.isEnabled("LPD-11003")) {
 			return;
 		}
 
-		_lockManager.unlock(KBArticleConstants.getClassName(), resourcePrimKey);
+		if (force ||
+			_lockManager.hasLock(
+				userId, KBArticleConstants.getClassName(), resourcePrimKey)) {
+
+			_lockManager.unlock(
+				KBArticleConstants.getClassName(), resourcePrimKey);
+		}
 	}
 
 	@Override
@@ -1535,7 +1564,7 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 				selectedFileNames, removeFileEntryIds, serviceContext);
 		}
 		finally {
-			unlockKBArticle(resourcePrimKey);
+			unlockKBArticle(userId, resourcePrimKey);
 		}
 	}
 
@@ -1668,7 +1697,7 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 		}
 		finally {
 			if (autoLock && hasKBArticleLock(userId, resourcePrimKey)) {
-				unlockKBArticle(resourcePrimKey);
+				unlockKBArticle(userId, resourcePrimKey);
 			}
 		}
 	}

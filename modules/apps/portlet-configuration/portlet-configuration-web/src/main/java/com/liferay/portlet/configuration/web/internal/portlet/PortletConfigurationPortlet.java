@@ -281,15 +281,7 @@ public class PortletConfigurationPortlet extends MVCPortlet {
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
 
-		Portlet portlet = ActionUtil.getPortlet(actionRequest);
-
-		PortletPreferences portletPreferences =
-			ActionUtil.getLayoutPortletSetup(actionRequest, portlet);
-
-		actionRequest = ActionUtil.getWrappedActionRequest(
-			actionRequest, portletPreferences);
-
-		_updateScope(actionRequest, portlet);
+		_updateScope(actionRequest);
 
 		if (!SessionErrors.isEmpty(actionRequest)) {
 			return;
@@ -1070,12 +1062,20 @@ public class PortletConfigurationPortlet extends MVCPortlet {
 			String.valueOf(netvibesShowAddAppLink));
 	}
 
-	private void _updateScope(ActionRequest actionRequest, Portlet portlet)
-		throws Exception {
+	private void _updateScope(ActionRequest actionRequest) throws Exception {
+		Portlet portlet = ActionUtil.getPortlet(actionRequest);
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		PortletPreferences portletPreferences =
+			themeDisplay.getStrictLayoutPortletSetup(
+				themeDisplay.getLayout(), portlet.getPortletId());
+
+		actionRequest = ActionUtil.getWrappedActionRequest(
+			actionRequest, portletPreferences);
 
 		String oldScopeName = _getOldScopeName(actionRequest);
-
-		PortletPreferences portletPreferences = actionRequest.getPreferences();
 
 		String[] scopes = StringUtil.split(
 			ParamUtil.getString(actionRequest, "scope"));
@@ -1103,9 +1103,6 @@ public class PortletConfigurationPortlet extends MVCPortlet {
 			portletTitle, oldScopeName, newScopeName);
 
 		if (!newPortletTitle.equals(portletTitle)) {
-			ThemeDisplay themeDisplay =
-				(ThemeDisplay)actionRequest.getAttribute(WebKeys.THEME_DISPLAY);
-
 			portletPreferences.setValue(
 				"portletSetupTitle_" + themeDisplay.getLanguageId(),
 				newPortletTitle);

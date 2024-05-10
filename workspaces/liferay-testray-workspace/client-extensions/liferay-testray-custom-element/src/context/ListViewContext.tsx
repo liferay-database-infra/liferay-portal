@@ -378,13 +378,12 @@ const ListViewContextProvider: React.FC<
 			filters: filterPinnedStorage,
 			pin: !!filterPinnedStorage.entries.length,
 		}),
+
 		...(columnsStorage && {columns: columnsStorage}),
 		id,
 	});
 
-	const {filterInitialContext, page, pageSize} = useQueryParams(
-		state.customFilterFields
-	);
+	const {filterInitialContext} = useQueryParams(state.customFilterFields);
 
 	return (
 		<ListViewContext.Provider
@@ -394,12 +393,6 @@ const ListViewContextProvider: React.FC<
 					...(filter && {
 						filters: filterInitialContext as ListViewFilter,
 					}),
-					...(state.appliedFilter
-						? {page: Number(page)}
-						: {page: state.page}),
-					...(state.appliedFilter
-						? {pageSize: Number(pageSize)}
-						: {pageSize: state.pageSize}),
 				},
 				dispatch,
 			]}

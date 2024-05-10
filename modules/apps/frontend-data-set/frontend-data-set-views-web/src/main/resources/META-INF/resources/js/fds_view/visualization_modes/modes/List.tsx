@@ -17,7 +17,7 @@ import FieldSelectModalContent from '../../../components/FieldSelectModalContent
 import {API_URL, OBJECT_RELATIONSHIP} from '../../../utils/constants';
 import openDefaultFailureToast from '../../../utils/openDefaultFailureToast';
 import openDefaultSuccessToast from '../../../utils/openDefaultSuccessToast';
-import {IField} from '../../../utils/types';
+import {IField, IFieldTreeItem} from '../../../utils/types';
 import FieldAssignmentControls from '../components/FieldAssignmentControls';
 
 interface IFDSListSection {
@@ -29,18 +29,23 @@ interface IFDSListSection {
 interface IListSection {
 	externalReferenceCode?: IFDSListSection['externalReferenceCode'];
 	field?: IField;
+	fieldTreeItems: Array<IFieldTreeItem>;
 	label: string;
 	name: IFDSListSection['name'];
 }
 
 export default function List(props: IFDSViewSectionProps) {
-	const {fdsView} = props;
+	const {fdsView, fieldTreeItems} = props;
 
 	const [listSections, setListSections] = useState<Array<IListSection>>([
-		{label: Liferay.Language.get('title'), name: 'title'},
-		{label: Liferay.Language.get('description'), name: 'description'},
-		{label: Liferay.Language.get('image'), name: 'image'},
-		{label: Liferay.Language.get('symbol'), name: 'symbol'},
+		{fieldTreeItems, label: Liferay.Language.get('title'), name: 'title'},
+		{
+			fieldTreeItems,
+			label: Liferay.Language.get('description'),
+			name: 'description',
+		},
+		{fieldTreeItems, label: Liferay.Language.get('image'), name: 'image'},
+		{fieldTreeItems, label: Liferay.Language.get('symbol'), name: 'symbol'},
 	]);
 	const [saveButtonDisabled, setSaveButtonDisabled] = useState(false);
 
@@ -73,7 +78,11 @@ export default function List(props: IFDSViewSectionProps) {
 				);
 
 				if (!fdsListSection) {
-					return listSection;
+					return {
+						fieldTreeItems,
+						label: listSection.label,
+						name: listSection.name,
+					};
 				}
 
 				return {
@@ -288,7 +297,7 @@ function ListSection({
 	onSelect,
 	saveButtonDisabled,
 }: IListSectionProps) {
-	const {field, label} = listSection;
+	const {field, fieldTreeItems, label} = listSection;
 
 	const openSelectFieldModal = () => {
 		openModal({
@@ -296,6 +305,7 @@ function ListSection({
 				<FieldSelectModalContent
 					{...modalProps}
 					closeModal={closeModal}
+					fieldTreeItems={fieldTreeItems}
 					onSaveButtonClick={({
 						selectedFields,
 					}: {

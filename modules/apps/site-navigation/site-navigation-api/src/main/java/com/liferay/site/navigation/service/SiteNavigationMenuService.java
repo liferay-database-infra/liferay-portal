@@ -47,20 +47,26 @@ public interface SiteNavigationMenuService extends BaseService {
 	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.site.navigation.service.impl.SiteNavigationMenuServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the site navigation menu remote service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link SiteNavigationMenuServiceUtil} if injection and service tracking are not available.
 	 */
 	public SiteNavigationMenu addSiteNavigationMenu(
-			long groupId, String name, int type, boolean auto,
+			String externalReferenceCode, long groupId, String name, int type,
+			boolean auto, ServiceContext serviceContext)
+		throws PortalException;
+
+	public SiteNavigationMenu addSiteNavigationMenu(
+			String externalReferenceCode, long groupId, String name, int type,
 			ServiceContext serviceContext)
 		throws PortalException;
 
 	public SiteNavigationMenu addSiteNavigationMenu(
-			long groupId, String name, int type, ServiceContext serviceContext)
-		throws PortalException;
-
-	public SiteNavigationMenu addSiteNavigationMenu(
-			long groupId, String name, ServiceContext serviceContext)
+			String externalReferenceCode, long groupId, String name,
+			ServiceContext serviceContext)
 		throws PortalException;
 
 	public SiteNavigationMenu deleteSiteNavigationMenu(
 			long siteNavigationMenuId)
+		throws PortalException;
+
+	public SiteNavigationMenu deleteSiteNavigationMenu(
+			String externalReferenceCode, long groupId)
 		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
@@ -73,6 +79,11 @@ public interface SiteNavigationMenuService extends BaseService {
 	 * @return the OSGi service identifier
 	 */
 	public String getOSGiServiceIdentifier();
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public SiteNavigationMenu getSiteNavigationMenuByExternalReferenceCode(
+			String externalReferenceCode, long groupId)
+		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<SiteNavigationMenu> getSiteNavigationMenus(long groupId);

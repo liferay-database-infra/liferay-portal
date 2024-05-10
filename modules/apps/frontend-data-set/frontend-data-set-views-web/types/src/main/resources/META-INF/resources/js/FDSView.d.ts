@@ -7,11 +7,13 @@
 
 import {IClientExtensionRenderer} from '@liferay/frontend-data-set-web';
 import {FDSViewType} from './FDSViews';
+import {IFieldTreeItem} from './utils/types';
 interface IFDSViewSectionProps {
 	fdsClientExtensionCellRenderers: IClientExtensionRenderer[];
 	fdsFilterClientExtensions: IClientExtensionRenderer[];
 	fdsView: FDSViewType;
 	fdsViewsURL: string;
+	fieldTreeItems: Array<IFieldTreeItem>;
 	namespace: string;
 	onActiveSectionChange: (section: number) => void;
 	onFDSViewUpdate: (data: FDSViewType) => void;
