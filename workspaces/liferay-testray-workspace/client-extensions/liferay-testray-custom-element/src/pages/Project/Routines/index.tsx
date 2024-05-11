@@ -4,6 +4,7 @@
  */
 
 import {useParams} from 'react-router-dom';
+import { TestrayRoutine } from '~/services/rest';
 
 import Container from '../../../components/Layout/Container';
 import ListViewRest from '../../../components/ListView';
@@ -47,8 +48,13 @@ const Routines = () => {
 						},
 						{
 							clickable: true,
-							key: 'createDate',
-							render: (createDate) => getTimeFromNow(createDate),
+							key: 'dueDate',
+							render: (_, testrayRoutine: TestrayRoutine) =>
+								testrayRoutine?.testrayBuildDueDate
+									? getTimeFromNow(
+											testrayRoutine?.testrayBuildDueDate
+									  )
+									: null,
 							value: i18n.translate('execution-date'),
 						},
 						{

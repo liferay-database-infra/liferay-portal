@@ -119,6 +119,7 @@ export type TestrayBuild = {
 	dateArchived: string;
 	dateCreated: string;
 	description: string;
+	dueDate: string;
 	dueStatus: PickList;
 	gitHash: string;
 	id: number;
@@ -448,12 +449,11 @@ export type TestrayFactorCategory = {
 
 export type TestrayRoutine = {
 	actions: ObjectActionsItems;
-	builds: TestrayBuild[];
-	dateCreated: string;
 	id: number;
 	name: string;
 	routineToBuilds: TestrayBuild[];
 	routineToProjects?: TestrayProject;
+	testrayBuildDueDate: string;
 };
 
 export type TestrayFactor = {
