@@ -77,6 +77,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.interval.IntervalActionProcessor;
+import com.liferay.portal.kernel.io.ByteArrayFileInputStream;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.lock.InvalidLockException;
 import com.liferay.portal.kernel.lock.Lock;
@@ -223,9 +224,9 @@ public class DLFileEntryLocalServiceImpl
 		String name = String.valueOf(
 			counterLocalService.increment(DLFileEntry.class.getName()));
 
-		String extension = FileUtil.getExtension(sourceFileName);
-
 		String fileName = null;
+
+		String extension = FileUtil.getExtension(sourceFileName);
 
 		if (Validator.isNotNull(sourceFileName)) {
 			fileName = DLUtil.getSanitizedFileName(
@@ -234,6 +235,19 @@ public class DLFileEntryLocalServiceImpl
 		else {
 			fileName = DLValidatorUtil.fixName(
 				DLUtil.getSanitizedFileName(title, extension));
+		}
+
+		String inputStreamExtension = null;
+
+		if (inputStream instanceof ByteArrayFileInputStream) {
+			ByteArrayFileInputStream byteArrayFileInputStream =
+				(ByteArrayFileInputStream)inputStream;
+
+			File byteArrayFileInputStreamFile =
+				byteArrayFileInputStream.getFile();
+
+			inputStreamExtension = FileUtil.getExtension(
+				byteArrayFileInputStreamFile.getName());
 		}
 
 		if (fileEntryTypeId == -1) {
@@ -247,8 +261,8 @@ public class DLFileEntryLocalServiceImpl
 			fileEntryTypeId);
 
 		_validateFile(
-			groupId, folderId, 0, fileEntryTypeId, fileName, extension, title,
-			displayDate, expirationDate);
+			groupId, folderId, 0, fileEntryTypeId, fileName, extension,
+			inputStreamExtension, title, displayDate, expirationDate);
 
 		long fileEntryId = counterLocalService.increment();
 
@@ -3689,6 +3703,19 @@ public class DLFileEntryLocalServiceImpl
 				extension = dlFileEntry.getExtension();
 			}
 
+			String inputStreamExtension = null;
+
+			if (inputStream instanceof ByteArrayFileInputStream) {
+				ByteArrayFileInputStream byteArrayFileInputStream =
+					(ByteArrayFileInputStream)inputStream;
+
+				File byteArrayFileInputStreamFile =
+					byteArrayFileInputStream.getFile();
+
+				inputStreamExtension = FileUtil.getExtension(
+					byteArrayFileInputStreamFile.getName());
+			}
+
 			if (Validator.isNull(mimeType)) {
 				mimeType = dlFileEntry.getMimeType();
 			}
@@ -3714,7 +3741,8 @@ public class DLFileEntryLocalServiceImpl
 			_validateFile(
 				dlFileEntry.getGroupId(), dlFileEntry.getFolderId(),
 				dlFileEntry.getFileEntryId(), fileEntryTypeId, fileName,
-				extension, title, displayDate, expirationDate);
+				extension, inputStreamExtension, title, displayDate,
+				expirationDate);
 
 			// File version
 
@@ -3876,8 +3904,8 @@ public class DLFileEntryLocalServiceImpl
 
 	private void _validateFile(
 			long groupId, long folderId, long fileEntryId, long fileEntryTypeId,
-			String fileName, String extension, String title, Date displayDate,
-			Date expirationDate)
+			String fileName, String extension, String inputStreamExtension,
+			String title, Date displayDate, Date expirationDate)
 		throws PortalException {
 
 		DLValidatorUtil.validateFileName(fileName);
@@ -3889,7 +3917,7 @@ public class DLFileEntryLocalServiceImpl
 				DLFileEntryTypeConstants.FILE_ENTRY_TYPE_SCOPE_SYSTEM) ||
 			Validator.isNotNull(extension)) {
 
-			_validateFileExtension(fileName, extension);
+			_validateFileExtension(fileName, extension, inputStreamExtension);
 		}
 
 		validateFile(groupId, folderId, fileEntryId, fileName, title);
@@ -3931,7 +3959,8 @@ public class DLFileEntryLocalServiceImpl
 				folderId));
 	}
 
-	private void _validateFileExtension(String fileName, String extension)
+	private void _validateFileExtension(
+			String fileName, String extension, String inputStreamExtension)
 		throws PortalException {
 
 		if (!DLAppHelperThreadLocal.isEnabled()) {
@@ -3944,11 +3973,17 @@ public class DLFileEntryLocalServiceImpl
 			return;
 		}
 
+		if (Validator.isNotNull(inputStreamExtension) &&
+			!extension.equals(inputStreamExtension)) {
+
+			throw new FileExtensionException.MismatchExtension();
+		}
+
 		int maxLength = ModelHintsUtil.getMaxLength(
 			DLFileEntry.class.getName(), "extension");
 
 		if (extension.length() > maxLength) {
-			throw new FileExtensionException(
+			throw new FileExtensionException.InvalidExtension(
 				StringBundler.concat(
 					extension, " of file ", fileName, " exceeds max length of ",
 					maxLength));

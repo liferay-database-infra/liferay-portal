@@ -69,6 +69,15 @@
 		}
 	},
 	{
+		"key": "no-features-found-for-the-selected-product-capabilities-and-feature-availability",
+		"value": {
+			"en-US": "No features found for the selected product capabilities and feature availability.",
+			"es-ES": "No se encontraron funciones para las capacidades del producto seleccionado y la disponibilidad de funciones.",
+			"ja-JP": "選択した製品の機能と利用可能な機能に対応する機能が見つかりません。",
+			"pt-BR": "Nenhum recurso encontrado para os recursos e disponibilidade de recursos do produto selecionado."
+		}
+	},
+	{
 		"key": "notifications",
 		"value": {
 			"en-US": "Notifications",
@@ -81,6 +90,15 @@
 		"key": "sites",
 		"value": {
 			"en-US": "Sites"
+		}
+	},
+	{
+		"key": "there-are-no-breaking-changes-in-out-of-the-box-features-and-capabilities-for-this-quarterly-release",
+		"value": {
+			"en-US": "There are no breaking changes in out-of-the-box features and capabilities for this quarterly release.",
+			"es-ES": "No hay cambios rupturistas (breaking changes) en funcionalidades o capacidades listas para su uso en esta versión trimestral (Quarterly Release).",
+			"ja-JP": "この四半期ごとのリリースでは、基本機能および性能に重大な変更点はありません。",
+			"pt-BR": "Não há alterações significativas nos recursos e capacidades prontos para uso nesta versão trimestral (Quarterly Release)."
 		}
 	}
 ]

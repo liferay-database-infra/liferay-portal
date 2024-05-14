@@ -24,6 +24,7 @@ import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -51,6 +52,34 @@ public class MailServiceTestUtil {
 			"There are no messages in the inbox");
 	}
 
+	public static MailMessage getMailMessage(
+		String headerName, String[] headerValues) {
+
+		Arrays.sort(headerValues);
+
+		for (com.dumbster.smtp.MailMessage mailMessage :
+				_smtpServer.getMessages()) {
+
+			String mailMessageHeaderValue = mailMessage.getFirstHeaderValue(
+				headerName);
+
+			if (mailMessageHeaderValue == null) {
+				continue;
+			}
+
+			String[] mailMessageHeaderValues = mailMessageHeaderValue.split(
+				"[,;]\\s*");
+
+			Arrays.sort(mailMessageHeaderValues);
+
+			if (Arrays.equals(mailMessageHeaderValues, headerValues)) {
+				return new MailMessageImpl(mailMessage);
+			}
+		}
+
+		return null;
+	}
+
 	public static List<MailMessage> getMailMessages(
 		String headerName, String headerValue) {
 
@@ -67,10 +96,10 @@ public class MailServiceTestUtil {
 				}
 			}
 			else {
-				String messageHeaderValue = mailMessage.getFirstHeaderValue(
+				String mailMessageHeaderValue = mailMessage.getFirstHeaderValue(
 					headerName);
 
-				if (messageHeaderValue.equals(headerValue)) {
+				if (mailMessageHeaderValue.equals(headerValue)) {
 					mailMessages.add(mailMessage);
 				}
 			}

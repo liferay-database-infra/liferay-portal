@@ -31,6 +31,7 @@ const PublishSolutionOutlet = () => {
 	const {
 		activeIndex,
 		activeRoute,
+		id,
 		onClickContinue,
 		onClickPrevious,
 		onExit,
@@ -66,17 +67,14 @@ const PublishSolutionOutlet = () => {
 					to: undefined as any,
 				}}
 				previewProps={{
-					disabled: true,
+					disabled: false,
 					onClick: () => alert('Preview...'),
 				}}
 				saveAsDraftProps={{
-					disabled: activeIndex < 1,
+					disabled: activeIndex < (id ? 1 : 2),
 					onClick: onSaveAsDraft,
 				}}
 			/>
-			<details>
-				<pre>{JSON.stringify(context._product, null, 2)}</pre>
-			</details>
 
 			<hr />
 
@@ -89,10 +87,6 @@ const PublishSolutionOutlet = () => {
 				<div className="ml-8 solutions-body-container">
 					<h1 className="header-title mb-4">{activeRoute.title}</h1>
 					{activeRoute.description}
-
-					<details>
-						<pre>{JSON.stringify(context.profile, null, 2)}</pre>
-					</details>
 
 					<div className="mt-6 solutions-form">
 						<Outlet />

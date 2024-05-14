@@ -17,6 +17,7 @@ import com.liferay.petra.sql.dsl.query.FromStep;
 import com.liferay.petra.sql.dsl.query.GroupByStep;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.defaultpermissions.util.PortalDefaultPermissionsUtil;
 import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.change.tracking.CTTransactionException;
@@ -32,6 +33,7 @@ import com.liferay.portal.kernel.exception.SitemapChangeFrequencyException;
 import com.liferay.portal.kernel.exception.SitemapIncludeException;
 import com.liferay.portal.kernel.exception.SitemapPagePriorityException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.lock.LockManagerUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -409,6 +411,13 @@ public class LayoutLocalServiceImpl extends LayoutLocalServiceBaseImpl {
 			user.getCompanyId(), groupId, user.getUserId(),
 			Layout.class.getName(), layout.getPlid(), false,
 			addGroupPermissions, addGuestPermissions);
+
+		if (FeatureFlagManagerUtil.isEnabled("LPD-21265") &&
+			Objects.equals(layout.getType(), LayoutConstants.TYPE_CONTENT)) {
+
+			PortalDefaultPermissionsUtil.setModelDefaultPermissions(
+				layout, layout.getCompanyId(), groupId, serviceContext);
+		}
 
 		// Group
 

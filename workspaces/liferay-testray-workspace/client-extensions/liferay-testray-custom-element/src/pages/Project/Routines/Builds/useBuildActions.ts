@@ -5,7 +5,7 @@
 
 import {useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
-import useAutoFillBuild from '~/hooks/useAutofillBuild';
+import useAutofillBuild from '~/hooks/useAutofillBuild';
 import {Liferay} from '~/services/liferay';
 
 import useFormModal from '../../../../hooks/useFormModal';
@@ -17,7 +17,7 @@ import {Action, ActionsHookParameter} from '../../../../types';
 const useBuildActions = ({isHeaderActions}: ActionsHookParameter = {}) => {
 	const formModal = useFormModal();
 	const {removeItemFromList, updateItemFromList} = useMutate();
-	const {setBuildA, setBuildB} = useAutoFillBuild();
+	const {setBuildA, setBuildB} = useAutofillBuild();
 	const navigate = useNavigate();
 
 	const modal = formModal.modal;
@@ -27,17 +27,6 @@ const useBuildActions = ({isHeaderActions}: ActionsHookParameter = {}) => {
 			action: () => alert('Archive'),
 			icon: 'download',
 			name: i18n.translate('export-csv'),
-		},
-		{
-			action: (testrayBuild) =>
-				navigate(
-					isHeaderActions
-						? 'update'
-						: `build/${testrayBuild.id}/update`
-				),
-			icon: 'pencil',
-			name: i18n.translate(isHeaderActions ? 'edit-build' : 'edit'),
-			permission: 'UPDATE',
 		},
 		{
 			action: ({id, promoted}, mutate) => {

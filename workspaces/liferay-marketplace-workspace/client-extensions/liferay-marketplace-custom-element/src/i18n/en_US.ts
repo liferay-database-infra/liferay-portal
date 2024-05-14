@@ -203,6 +203,10 @@ export default {
 	'maximum-number-of-upload-reached': 'Maximum Number of Upload Reached',
 	'monetize-your-apps-and-solutions': 'Monetize your apps and solutions',
 	'more-info': 'More Info',
+	'move-down': 'Move Down',
+	'move-to-bottom': 'Move to Bottom',
+	'move-to-top': 'Move to Top',
+	'move-up': 'Move Up',
 	'name': 'Name',
 	'no': 'No',
 	'no-apps-yet': 'No Apps Yet',
@@ -254,6 +258,7 @@ export default {
 	'ram-in-gbs': 'RAM in GBs',
 	'recent-published-apps': 'Recent Published Apps',
 	'recent-trials': 'Recent Trials',
+	'remove': 'Remove',
 	'remove-a-version': 'Remove a Version',
 	'request-a-marketplace-publisher-account':
 		'Request a Marketplace Publisher Account',

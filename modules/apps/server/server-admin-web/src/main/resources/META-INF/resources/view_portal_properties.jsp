@@ -25,77 +25,49 @@ ViewPortalPropertiesDisplayContext viewPortalPropertiesDisplayContext = new View
 		>
 
 			<%
-			String property = (String)entry.getKey();
-			String value = (String)entry.getValue();
-
-			List<String> overriddenProperties = viewPortalPropertiesDisplayContext.getOverriddenProperties();
-
-			boolean overriddenPropertyValue = overriddenProperties.contains(property);
-
-			String featureFlagPrefix = "feature.flag.";
+			String propertyKey = (String)entry.getKey();
 			%>
 
-			<c:choose>
-				<c:when test="<%= StringUtil.startsWith(property, featureFlagPrefix) %>">
-					<liferay-ui:search-container-column-text
-						cssClass="table-cell-expand"
-						name="property"
-						value="<%= HtmlUtil.escape(StringUtil.shorten(property, 80)) %>"
-					/>
+			<liferay-ui:search-container-column-text
+				cssClass="table-cell-expand"
+				name="property"
+				value="<%= HtmlUtil.escape(StringUtil.shorten(propertyKey, 80)) %>"
+			/>
 
-					<liferay-ui:search-container-column-text
-						cssClass="table-cell-expand"
-						name="value"
-					>
-						<select name="<portlet:namespace />portalProperty<%= HtmlUtil.escapeAttribute(property) %>">
-							<option <%= Objects.equals("true", value) ? "selected" : StringPool.BLANK %> value="true"><liferay-ui:message key="true" /></option>
-							<option <%= Objects.equals("false", value) ? "selected" : StringPool.BLANK %> value="false"><liferay-ui:message key="false" /></option>
-						</select>
-					</liferay-ui:search-container-column-text>
+			<%
+			String propertyValue = (String)entry.getValue();
+			%>
 
-					<liferay-ui:search-container-column-text
-						name="source"
-					>
-						<liferay-ui:icon
-							iconCssClass='<%= overriddenPropertyValue ? "icon-hdd" : "icon-file-alt" %>'
-							message='<%= LanguageUtil.get(request, overriddenPropertyValue ? "the-value-of-this-property-was-overridden-using-the-control-panel-and-is-stored-in-the-database" : "the-value-of-this-property-is-read-from-a-portal.properties-file-or-one-of-its-extension-files") %>'
-						/>
-					</liferay-ui:search-container-column-text>
-				</c:when>
-				<c:otherwise>
-					<liferay-ui:search-container-column-text
-						name="property"
-						value="<%= HtmlUtil.escape(StringUtil.shorten(property, 80)) %>"
-					/>
+			<liferay-ui:search-container-column-text
+				cssClass="table-cell-expand"
+				name="value"
+			>
+				<c:if test="<%= Validator.isNotNull(propertyValue) %>">
+					<span class="lfr-portal-tooltip" title="<%= HtmlUtil.escape(propertyValue) %>">
+						<%= HtmlUtil.escape(StringUtil.shorten(propertyValue, 80)) %>
+					</span>
+				</c:if>
+			</liferay-ui:search-container-column-text>
 
-					<liferay-ui:search-container-column-text
-						name="value"
-					>
-						<c:if test="<%= Validator.isNotNull(value) %>">
-							<c:choose>
-								<c:when test="<%= value.length() > 80 %>">
-									<span class="lfr-portal-tooltip" title="<%= HtmlUtil.escape(value) %>">
-										<%= HtmlUtil.escape(StringUtil.shorten(value, 80)) %>
-									</span>
-								</c:when>
-								<c:otherwise>
-									<%= HtmlUtil.escape(value) %>
-								</c:otherwise>
-							</c:choose>
-						</c:if>
-					</liferay-ui:search-container-column-text>
+			<%
+			List<String> overriddenProperties = viewPortalPropertiesDisplayContext.getOverriddenProperties();
 
-					<liferay-ui:search-container-column-text
-						name="source"
-					>
-						<liferay-ui:icon
-							icon='<%= overriddenPropertyValue ? "hdd" : "document" %>'
-							markupView="lexicon"
-							message='<%= LanguageUtil.get(request, overriddenPropertyValue ? "the-value-of-this-property-was-overridden-using-the-control-panel-and-is-stored-in-the-database" : "the-value-of-this-property-is-read-from-a-portal.properties-file-or-one-of-its-extension-files") %>'
-						/>
-					</liferay-ui:search-container-column-text>
-				</c:otherwise>
-			</c:choose>
+			boolean overriddenPropertyValue = overriddenProperties.contains(propertyKey);
+
+			String message = LanguageUtil.get(request, overriddenPropertyValue ? "the-value-of-this-property-was-overridden-using-the-control-panel-and-is-stored-in-the-database" : "the-value-of-this-property-is-read-from-a-portal.properties-file-or-one-of-its-extension-files");
+			%>
+
+			<liferay-ui:search-container-column-text
+				name="source"
+			>
+				<clay:icon
+					aria-label='<%= message %>'
+					cssClass="lfr-portal-tooltip"
+					data-title='<%= message %>'
+					symbol="<%= overriddenPropertyValue ? "hdd" : "document" %>"
+					tabindex="0"
+				/>
+			</liferay-ui:search-container-column-text>
 		</liferay-ui:search-container-row>
 
 		<liferay-ui:search-iterator

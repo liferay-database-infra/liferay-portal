@@ -41,6 +41,7 @@ import SelectionFilterModalContent from './modal_content/selection_filter/Select
 
 import '../../../css/Filters.scss';
 import RequiredMark from '../../components/RequiredMark';
+import sortItems from '../../utils/sortItems';
 
 type FilterCollection = Array<
 	IClientExtensionFilter | IDateFilter | ISelectionFilter
@@ -672,26 +673,11 @@ function Filters({fdsFilterClientExtensions, fdsView, namespace}: IProps) {
 				})),
 			];
 
-			if (fdsView.fdsFiltersOrder) {
-				const order = fdsView.fdsFiltersOrder.split(',');
-
-				let notOrdered: FilterCollection = [];
-
-				notOrdered = filtersOrdered.filter(
-					(filter) => !order.includes(String(filter.id))
-				);
-
-				filtersOrdered = fdsView.fdsFiltersOrder
-					.split(',')
-					.map((fdsFilterId) =>
-						filtersOrdered.find(
-							(filter) => filter.id === Number(fdsFilterId)
-						)
-					)
-					.filter(Boolean) as FilterCollection;
-
-				filtersOrdered = [...notOrdered, ...filtersOrdered];
-			}
+			filtersOrdered = sortItems(
+				filtersOrdered,
+				responseJSON.fdsFiltersOrder,
+				true
+			) as FilterCollection;
 
 			setFilters(
 				filtersOrdered.map((filter) => {
@@ -742,9 +728,18 @@ function Filters({fdsFilterClientExtensions, fdsView, namespace}: IProps) {
 		const storedFDSFiltersOrder = responseJSON?.fdsFiltersOrder;
 
 		if (
+			filters &&
 			storedFDSFiltersOrder &&
 			storedFDSFiltersOrder === fdsFiltersOrder
 		) {
+			setFilters(
+				sortItems(
+					filters,
+					storedFDSFiltersOrder,
+					true
+				) as FilterCollection
+			);
+
 			openDefaultSuccessToast();
 		}
 		else {
@@ -934,6 +929,7 @@ function Filters({fdsFilterClientExtensions, fdsView, namespace}: IProps) {
 							onCreationButtonClick(EFilterType.SELECTION),
 					},
 				]}
+				creationMenuLabel={Liferay.Language.get('new-filter')}
 				fields={[
 					{
 						label: Liferay.Language.get('name'),
@@ -949,7 +945,7 @@ function Filters({fdsFilterClientExtensions, fdsView, namespace}: IProps) {
 					},
 				]}
 				items={filters}
-				noItemsButtonLabel={Liferay.Language.get('create-filter')}
+				noItemsButtonLabel={Liferay.Language.get('new-filter')}
 				noItemsDescription={Liferay.Language.get(
 					'start-creating-a-filter-to-display-specific-data'
 				)}

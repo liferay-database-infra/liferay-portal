@@ -13,10 +13,35 @@ import {
 import {useParams} from 'react-router-dom';
 
 import {UploadedFile} from '../components/FileList/FileList';
-import {PRODUCT_SPECIFICATION_KEY} from '../enums/Product';
+import Loading from '../components/Loading';
+import {PRODUCT_SPECIFICATION_KEY, PRODUCT_TAGS} from '../enums/Product';
 import {ProductVocabulary} from '../enums/ProductVocabulary';
 import {useGetVocabulariesAndCategories} from '../hooks/data/useGetVocabulariesAndCategories';
 import HeadlessCommerceAdminCatalogImpl from '../services/rest/HeadlessCommerceAdminCatalog';
+import {safeJSONParse} from '../utils/util';
+
+export enum BLOCK_DIRECTIONS {
+	DELETE,
+	MOVE_DOWN,
+	MOVE_TO_BOTTOM,
+	MOVE_TO_TOP,
+	MOVE_UP,
+}
+
+export type HeaderContentTypeEmbeded = {
+	content: {
+		headerVideoDescription?: string;
+		headerVideoUrl: string;
+	};
+	type: 'embed-video-url';
+};
+
+export type HeaderContentTypeImages = {
+	content: {
+		headerImages: UploadedFile[];
+	};
+	type: 'upload-images';
+};
 
 export type TextBlock = {
 	content: {
@@ -46,31 +71,18 @@ export type TextVideoBlock = {
 
 export type ContentBlock = TextBlock | TextImageBlock | TextVideoBlock;
 
-export type HeaderContentTypeEmbeded = {
-	content: {
-		headerVideoDescription?: string;
-		headerVideoUrl: string;
-	};
-	type: 'embed-video-url';
-};
-
-export type HeaderContentTypeImages = {
-	content: {
-		headerImages: UploadedFile[];
-	};
-	type: 'upload-images';
-};
-
 export type HeaderContentType =
 	| HeaderContentTypeEmbeded
 	| HeaderContentTypeImages;
 
 export enum SolutionTypes {
+	SET_BLOCK_MOVE = 'SET_BLOCK_MOVE',
 	SET_CLEANUP = 'SET_CLEANUP',
 	SET_COMPANY = 'SET_COMPANY',
 	SET_CONTACT_US = 'SET_CONTACT_US',
 	SET_DETAILS = 'SET_DETAILS',
 	SET_HEADER = 'SET_HEADER',
+	SET_LOADING = 'SET_LOADING',
 	SET_NEW_BLOCK = 'SET_NEW_BLOCK',
 	SET_PRODUCT = 'SET_PRODUCT',
 	SET_PRODUCT_ID = 'SET_PRODUCT_ID',
@@ -79,6 +91,10 @@ export enum SolutionTypes {
 }
 
 type SolutionPayload = {
+	[SolutionTypes.SET_BLOCK_MOVE]: {
+		direction: BLOCK_DIRECTIONS;
+		index: number;
+	};
 	[SolutionTypes.SET_CLEANUP]: undefined;
 	[SolutionTypes.SET_COMPANY]: Partial<{
 		description: string;
@@ -93,6 +109,7 @@ type SolutionPayload = {
 		description: string;
 		title: string;
 	}>;
+	[SolutionTypes.SET_LOADING]: boolean;
 	[SolutionTypes.SET_NEW_BLOCK]: ContentBlock;
 	[SolutionTypes.SET_PRODUCT]: Product;
 	[SolutionTypes.SET_PRODUCT_ID]: number;
@@ -122,6 +139,7 @@ export type SolutionInitialState = {
 		description: any;
 		title: string;
 	};
+	loading: boolean;
 	productId: number;
 	profile: {
 		categories: {
@@ -161,6 +179,7 @@ const solutionInitialState: SolutionInitialState = {
 		description: '',
 		title: '',
 	},
+	loading: false,
 	productId: 0,
 	profile: {
 		categories: [],
@@ -203,6 +222,10 @@ const reducer = (state: SolutionInitialState, action: AppActions) => {
 			};
 		}
 
+		case SolutionTypes.SET_LOADING: {
+			return {...state, loading: action.payload};
+		}
+
 		case SolutionTypes.SET_PRODUCT_ID: {
 			return {
 				...state,
@@ -211,27 +234,150 @@ const reducer = (state: SolutionInitialState, action: AppActions) => {
 		}
 
 		case SolutionTypes.SET_PRODUCT: {
+			const newState = {...state};
 			const _product = action.payload;
-
 			const productSpecifications = _product.productSpecifications || [];
 
-			const getSpecificationValue = (
-				specificationKey: PRODUCT_SPECIFICATION_KEY
-			) =>
-				productSpecifications.find(
-					(productSpecification) =>
-						productSpecification.specificationKey ===
-						specificationKey
-				)?.value?.en_US;
+			const specificationsMap = new Map<string, string>();
+
+			for (const productSpecification of productSpecifications) {
+				specificationsMap.set(
+					productSpecification.specificationKey,
+					productSpecification.value.en_US || ''
+				);
+			}
+
+			const solutionHeaderImages = _product.images.filter(({tags}) =>
+				tags?.includes(PRODUCT_TAGS.SOLUTION_HEADER)
+			);
+
+			let contentType = {
+				content: {
+					headerImages: solutionHeaderImages.map(
+						({externalReferenceCode, src, title}) => ({
+							changed: false,
+							fileName: title.en_US,
+							id: externalReferenceCode,
+							preview: new URL(src).pathname,
+							progress: 100,
+							uploaded: true,
+						})
+					),
+				},
+				type: 'upload-images',
+			} as HeaderContentType;
+
+			const headerVideoUrl = specificationsMap.get(
+				PRODUCT_SPECIFICATION_KEY.SOLUTION_HEADER_VIDEO_URL
+			);
+
+			if (headerVideoUrl) {
+				contentType = {
+					content: {
+						headerVideoDescription: specificationsMap.get(
+							PRODUCT_SPECIFICATION_KEY.SOLUTION_HEADER_VIDEO_DESCRIPTION
+						),
+						headerVideoUrl: specificationsMap.get(
+							PRODUCT_SPECIFICATION_KEY.SOLUTION_HEADER_VIDEO_URL
+						),
+					},
+					type: 'embed-video-url',
+				} as HeaderContentTypeEmbeded;
+			}
+
+			const solutionCompanyEmail = specificationsMap.get(
+				PRODUCT_SPECIFICATION_KEY.SOLUTION_COMPANY_EMAIL
+			);
+
+			const company = {...solutionInitialState.company};
+
+			if (solutionCompanyEmail) {
+				company.email = solutionCompanyEmail;
+
+				company.description =
+					specificationsMap.get(
+						PRODUCT_SPECIFICATION_KEY.SOLUTION_COMPANY_DESCRIPTION
+					) || '';
+
+				company.phone =
+					specificationsMap.get(
+						PRODUCT_SPECIFICATION_KEY.SOLUTION_COMPANY_PHONE
+					) || '';
+
+				company.website =
+					specificationsMap.get(
+						PRODUCT_SPECIFICATION_KEY.SOLUTION_COMPANY_WEBSITE
+					) || '';
+			}
+
+			const blockDetails = specificationsMap.get(
+				PRODUCT_SPECIFICATION_KEY.SOLUTION_DETAILS_BLOCKS
+			);
+
+			if (blockDetails) {
+				const solutionDetailsImages = _product.images.filter(({tags}) =>
+					tags?.includes(PRODUCT_TAGS.SOLUTION_DETAILS)
+				);
+
+				const blocks = safeJSONParse(
+					blockDetails,
+					solutionInitialState.details
+				) as ContentBlock[];
+
+				const newBlocks = blocks.map((block) => {
+					if (block.type === 'text-images-block') {
+						return {
+							...block,
+							content: {
+								...block.content,
+								files: block.content.files.map((file) => {
+									const image = solutionDetailsImages.find(
+										({externalReferenceCode}) =>
+											externalReferenceCode ===
+											((file as unknown) as string)
+									);
+
+									const newFile = {
+										changed: false,
+										fileName: image?.title?.en_US,
+										id: image?.externalReferenceCode,
+										preview: image?.src
+											? new URL(image.src).pathname
+											: '',
+										progress: 100,
+										uploaded: true,
+									};
+
+									return newFile as any;
+								}),
+							},
+						};
+					}
+
+					return block;
+				});
+
+				solutionDetailsImages;
+
+				newState.details = newBlocks;
+			}
+
+			newState.contactUs =
+				specificationsMap.get(
+					PRODUCT_SPECIFICATION_KEY.SOLUTION_CONTACT_EMAIL
+				) || '';
 
 			return {
 				...state,
+				...newState,
 				_product,
+				company,
 				header: ({
-					description: getSpecificationValue(
+					contentType,
+					description: specificationsMap.get(
 						PRODUCT_SPECIFICATION_KEY.SOLUTION_HEADER_DESCRIPTION
 					),
-					title: getSpecificationValue(
+					title: specificationsMap.get(
 						PRODUCT_SPECIFICATION_KEY.SOLUTION_HEADER_TITLE
 					),
 				} as unknown) as SolutionInitialState['header'],
@@ -297,6 +443,46 @@ const reducer = (state: SolutionInitialState, action: AppActions) => {
 			};
 		}
 
+		case SolutionTypes.SET_BLOCK_MOVE: {
+			const {direction, index} = action.payload;
+			const blocks = [...state.details];
+
+			const blockToMove = blocks[index];
+
+			const moveActions = {
+				[BLOCK_DIRECTIONS.MOVE_TO_TOP]: () => {
+					blocks.splice(index, 1);
+					blocks.unshift(blockToMove);
+				},
+				[BLOCK_DIRECTIONS.MOVE_TO_BOTTOM]: () => {
+					blocks.splice(index, 1);
+					blocks.push(blockToMove);
+				},
+				[BLOCK_DIRECTIONS.MOVE_UP]: () => {
+					const newIndex = index - 1;
+
+					blocks[index] = blocks[newIndex];
+					blocks[newIndex] = blockToMove;
+				},
+				[BLOCK_DIRECTIONS.MOVE_DOWN]: () => {
+					const newIndex = index + 1;
+
+					blocks[index] = blocks[newIndex];
+					blocks[newIndex] = blockToMove;
+				},
+				[BLOCK_DIRECTIONS.DELETE]: () => {
+					blocks.splice(index, 1);
+				},
+			};
+
+			moveActions[direction]();
+
+			return {
+				...state,
+				details: blocks,
+			};
+		}
+
 		default:
 			return state;
 	}
@@ -317,7 +503,6 @@ export default function SolutionContextProvider({
 }: SolutionContextProviderProps) {
 	const [state, dispatch] = useReducer(reducer, solutionInitialState);
 	const {id: productId} = useParams();
-
 	const {data = {}} = useGetVocabulariesAndCategories([
 		ProductVocabulary.PRODUCT_TYPE,
 		ProductVocabulary.SOLUTION_CATEGORY,
@@ -331,7 +516,9 @@ export default function SolutionContextProvider({
 
 		HeadlessCommerceAdminCatalogImpl.getProduct(
 			productId as string,
-			new URLSearchParams({nestedFields: 'productSpecifications'})
+			new URLSearchParams({
+				nestedFields: 'attachments,images,productSpecifications',
+			})
 		)
 			.then((response) =>
 				dispatch({payload: response, type: SolutionTypes.SET_PRODUCT})
@@ -352,6 +539,13 @@ export default function SolutionContextProvider({
 				dispatch,
 			]}
 		>
+			{state.loading && (
+				<Loading.FullScreen>
+					Hang tight, the submission of <b>{state.profile.name}</b> is
+					being sent to <b>Liferay</b>
+				</Loading.FullScreen>
+			)}
+
 			{children}
 		</SolutionContext.Provider>
 	);

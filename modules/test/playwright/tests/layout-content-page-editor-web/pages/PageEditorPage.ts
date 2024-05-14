@@ -14,6 +14,8 @@ import getRandomString from '../../../utils/getRandomString';
 import {waitForSuccessAlert} from '../../../utils/waitForSuccessAlert';
 import getPageDefinition from '../utils/getPageDefinition';
 
+type FragmentSet = 'Layout Elements';
+
 export class PageEditorPage {
 	readonly page: Page;
 
@@ -39,13 +41,38 @@ export class PageEditorPage {
 		this.segmentEditorPage = new SegmentEditorPage(page);
 	}
 
+	async addFragment(setName: FragmentSet, name: string) {
+		await this.goToSidebarTab('Fragments and Widgets');
+
+		const header = this.page.getByRole('menuitem', {
+			exact: true,
+			name: setName,
+		});
+
+		const isOpen = await header.evaluate(
+			(element) => element.getAttribute('aria-expanded') === 'true'
+		);
+
+		if (!isOpen) {
+			await this.experienceSelector.click();
+		}
+
+		await this.page.getByLabel(`Add ${name}`).focus();
+
+		await this.page.keyboard.press('Enter');
+		await this.page.keyboard.press('Enter');
+
+		await this.waitForChangesSaved();
+	}
+
 	async changeFragmentConfiguration(
 		fragmentId: string,
 		tab: ConfigurationTab,
 		fieldLabel: string,
-		value: string
+		value: string,
+		isDesktop = true
 	) {
-		await this.selectFragment(fragmentId);
+		await this.selectFragment(fragmentId, isDesktop);
 		await this.goToConfigurationTab(tab);
 
 		// Change value in different way depending on field type
@@ -225,6 +252,14 @@ export class PageEditorPage {
 		);
 	}
 
+	async duplicateFragment(fragmentId: string) {
+		await this.selectFragment(fragmentId);
+
+		await this.page.keyboard.press('Control+D');
+
+		await this.waitForChangesSaved();
+	}
+
 	async editEditableText(
 		fragmentId: string,
 		editableId: string,
@@ -362,7 +397,17 @@ export class PageEditorPage {
 	}
 
 	async goToSidebarTab(tab: SidebarTab) {
-		await this.page.getByRole('tab', {exact: true, name: tab}).click();
+		const tabElement = this.page.getByRole('tab', {exact: true, name: tab});
+
+		const isOpen = await tabElement.evaluate(
+			(element) => element.getAttribute('aria-selected') === 'true'
+		);
+
+		if (!isOpen) {
+			await this.page.getByRole('tab', {exact: true, name: tab}).click();
+
+			await this.page.locator('header', {hasText: tab}).waitFor();
+		}
 	}
 
 	async isActive(fragmentId: string, isDesktop = true) {
@@ -482,6 +527,13 @@ export class PageEditorPage {
 
 	async switchViewport(viewport: Viewport) {
 		await this.page.getByLabel(viewport, {exact: true}).click();
+
+		if (viewport !== 'Desktop') {
+			await this.page
+				.frameLocator('.page-editor__global-context-iframe')
+				.locator('.page-editor')
+				.waitFor();
+		}
 	}
 
 	async waitForChangesSaved() {

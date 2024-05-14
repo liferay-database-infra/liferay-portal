@@ -5,6 +5,8 @@
 
 package com.liferay.portal.search.opensearch2.internal.query;
 
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.search.internal.query.BooleanQueryImpl;
 import com.liferay.portal.search.internal.query.CommonTermsQueryImpl;
 import com.liferay.portal.search.internal.query.FuzzyQueryImpl;
@@ -12,11 +14,13 @@ import com.liferay.portal.search.internal.query.MatchAllQueryImpl;
 import com.liferay.portal.search.internal.query.MoreLikeThisQueryImpl;
 import com.liferay.portal.search.internal.query.MultiMatchQueryImpl;
 import com.liferay.portal.search.internal.query.TermQueryImpl;
+import com.liferay.portal.search.internal.query.TermsQueryImpl;
 import com.liferay.portal.search.internal.query.WildcardQueryImpl;
 import com.liferay.portal.search.opensearch2.internal.OpenSearchTestRule;
 import com.liferay.portal.search.opensearch2.internal.util.JsonpUtil;
 import com.liferay.portal.search.query.BooleanQuery;
 import com.liferay.portal.search.query.Query;
+import com.liferay.portal.search.query.TermsQuery;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Collections;
@@ -111,26 +115,58 @@ public class OpenSearchQueryTranslatorTest {
 		org.opensearch.client.opensearch._types.query_dsl.Query
 			innerOpenSearchQuery = mustQueries.get(0);
 
-		String queryString = JsonpUtil.toString(innerOpenSearchQuery);
+		String jsonp = JsonpUtil.toString(innerOpenSearchQuery);
 
 		Assert.assertTrue(
-			queryString,
-			queryString.contains("\"boost\":" + String.valueOf(_BOOST)));
+			jsonp, jsonp.contains("\"boost\":" + String.valueOf(_BOOST)));
+	}
+
+	@Test
+	public void testTranslateTermsQueryExceedingMaxAllowedTerms() {
+		TermsQuery termsQuery = new TermsQueryImpl("groupId");
+
+		termsQuery.addValues("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+
+		_setMaxTermsCount(10);
+
+		_assertTermsCount(1, termsQuery);
+
+		_setMaxTermsCount(5);
+
+		_assertTermsCount(2, termsQuery);
+
+		_setMaxTermsCount(3);
+
+		_assertTermsCount(4, termsQuery);
 	}
 
 	private void _assertBoost(Query query) {
 		query.setBoost(_BOOST);
 
+		String jsonp = _toJSONP(query);
+
+		Assert.assertTrue(
+			jsonp, jsonp.contains("\"boost\":" + String.valueOf(_BOOST)));
+	}
+
+	private void _assertTermsCount(int expected, TermsQuery termsQuery) {
+		String jsonp = _toJSONP(termsQuery);
+
+		Assert.assertEquals(jsonp, expected, StringUtil.count(jsonp, "terms"));
+	}
+
+	private void _setMaxTermsCount(int maxTermsCount) {
+		ReflectionTestUtil.setFieldValue(
+			_openSearchQueryTranslator, "_MAX_TERMS_COUNT", maxTermsCount);
+	}
+
+	private String _toJSONP(Query query) {
 		org.opensearch.client.opensearch._types.query_dsl.Query
 			openSearchQuery =
 				new org.opensearch.client.opensearch._types.query_dsl.Query(
 					_openSearchQueryTranslator.translate(query));
 
-		String queryString = JsonpUtil.toString(openSearchQuery);
-
-		Assert.assertTrue(
-			queryString,
-			queryString.contains("\"boost\":" + String.valueOf(_BOOST)));
+		return JsonpUtil.toString(openSearchQuery);
 	}
 
 	private static final Float _BOOST = 1.5F;

@@ -12,18 +12,56 @@ import com.liferay.portal.kernel.exception.PortalException;
  */
 public class FileExtensionException extends PortalException {
 
-	public FileExtensionException() {
+	public static class InvalidExtension extends FileExtensionException {
+
+		public InvalidExtension() {
+		}
+
+		public InvalidExtension(String msg) {
+			super(msg);
+		}
+
+		public InvalidExtension(String msg, Throwable throwable) {
+			super(msg, throwable);
+		}
+
+		public InvalidExtension(Throwable throwable) {
+			super(throwable);
+		}
+
 	}
 
-	public FileExtensionException(String msg) {
+	public static class MismatchExtension extends FileExtensionException {
+
+		public MismatchExtension() {
+		}
+
+		public MismatchExtension(String msg) {
+			super(msg);
+		}
+
+		public MismatchExtension(String msg, Throwable throwable) {
+			super(msg, throwable);
+		}
+
+		public MismatchExtension(Throwable throwable) {
+			super(throwable);
+		}
+
+	}
+
+	private FileExtensionException() {
+	}
+
+	private FileExtensionException(String msg) {
 		super(msg);
 	}
 
-	public FileExtensionException(String msg, Throwable throwable) {
+	private FileExtensionException(String msg, Throwable throwable) {
 		super(msg, throwable);
 	}
 
-	public FileExtensionException(Throwable throwable) {
+	private FileExtensionException(Throwable throwable) {
 		super(throwable);
 	}
 

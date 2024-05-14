@@ -21,7 +21,8 @@ import {API_URL, FUZZY_OPTIONS, OBJECT_RELATIONSHIP} from '../utils/constants';
 import getFields from '../utils/getFields';
 import openDefaultFailureToast from '../utils/openDefaultFailureToast';
 import openDefaultSuccessToast from '../utils/openDefaultSuccessToast';
-import {IField} from '../utils/types';
+import sortItems from '../utils/sortItems';
+import {IField, IOrderable} from '../utils/types';
 
 interface IAddFDSSortModalContentInterface {
 	closeModal: Function;
@@ -35,10 +36,9 @@ interface IContentRendererProps {
 	query: string;
 }
 
-interface IFDSSort {
+interface IFDSSort extends IOrderable {
 	externalReferenceCode: string;
 	fieldName: string;
-	id: number;
 	sortingDirection: string;
 }
 
@@ -145,7 +145,7 @@ const AddFDSSortModalContent = ({
 	return (
 		<>
 			<ClayModal.Header>
-				{Liferay.Language.get('new-default-sort')}
+				{Liferay.Language.get('new-sorting-option')}
 			</ClayModal.Header>
 
 			<ClayModal.Body>
@@ -353,36 +353,23 @@ const SortingDeprecated = ({fdsView, namespace}: IFDSViewSectionProps) => {
 	useEffect(() => {
 		const getFDSSort = async () => {
 			const response = await fetch(
-				`${API_URL.FDS_SORTS}?filter=(${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_SORT_ID} eq '${fdsView.id}')&nestedFields=${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_SORT}&sort=dateCreated:desc`
+				`${API_URL.FDS_SORTS}?filter=(${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_SORT_ID} eq '${fdsView.id}')&nestedFields=${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_SORT}&sort=dateCreated:asc`
 			);
 
 			const responseJSON = await response.json();
 
 			const storedFDSSorts: IFDSSort[] = responseJSON.items;
 
-			let ordered = storedFDSSorts;
-			let notOrdered: IFDSSort[] = [];
+			setFDSSorts(
+				sortItems(
+					storedFDSSorts,
 
-			if (responseJSON.fdsSortsOrder) {
-				const fdsSortsOrderArray = responseJSON.fdsSortsOrder.split(
-					','
-				) as string[];
+					// @ts-ignore
 
-				ordered = fdsSortsOrderArray
-					.map((fdsSortId) =>
-						storedFDSSorts.find(
-							(fdsSort) => fdsSort.id === Number(fdsSortId)
-						)
-					)
-					.filter(Boolean) as IFDSSort[];
-
-				notOrdered = storedFDSSorts.filter(
-					(filter) => !fdsSortsOrderArray.includes(String(filter.id))
-				);
-			}
-
-			setFDSSorts([...notOrdered, ...ordered]);
-
+					storedFDSSorts?.[0]?.[OBJECT_RELATIONSHIP.FDS_VIEW_FDS_SORT]
+						?.fdsSortsOrder as string
+				) as IFDSSort[]
+			);
 			setLoading(false);
 		};
 
@@ -509,7 +496,13 @@ const SortingDeprecated = ({fdsView, namespace}: IFDSViewSectionProps) => {
 
 		const storedFDSSortsOrder = responseJSON?.fdsSortsOrder;
 
-		if (storedFDSSortsOrder && storedFDSSortsOrder === fdsSortsOrder) {
+		if (
+			fdsSorts &&
+			storedFDSSortsOrder &&
+			storedFDSSortsOrder === fdsSortsOrder
+		) {
+			setFDSSorts(sortItems(fdsSorts, storedFDSSortsOrder) as IFDSSort[]);
+
 			openDefaultSuccessToast();
 		}
 		else {
@@ -544,7 +537,9 @@ const SortingDeprecated = ({fdsView, namespace}: IFDSViewSectionProps) => {
 						]}
 						creationMenuItems={[
 							{
-								label: Liferay.Language.get('new-default-sort'),
+								label: Liferay.Language.get(
+									'new-sorting-option'
+								),
 								onClick: handleCreation,
 							},
 						]}
@@ -565,7 +560,7 @@ const SortingDeprecated = ({fdsView, namespace}: IFDSViewSectionProps) => {
 						]}
 						items={fdsSorts}
 						noItemsButtonLabel={Liferay.Language.get(
-							'new-default-sort'
+							'new-sorting-option'
 						)}
 						noItemsDescription={Liferay.Language.get(
 							'start-creating-a-sort-to-display-specific-data'

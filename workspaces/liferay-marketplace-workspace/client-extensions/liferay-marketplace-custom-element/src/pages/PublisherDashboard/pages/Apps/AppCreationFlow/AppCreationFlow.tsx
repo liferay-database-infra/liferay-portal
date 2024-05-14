@@ -81,6 +81,7 @@ export function AppCreationFlow({catalogId}: AppCreationFlowProps) {
 				accountName={account?.name as string}
 				appImage={appLogo?.preview}
 				appName={appName}
+				exitHref="../"
 			/>
 
 			<div className="app-creation-flow-body">
@@ -403,7 +404,7 @@ export function AppCreationFlow({catalogId}: AppCreationFlowProps) {
 								selectedItem: '',
 							});
 
-							location.href = `${Liferay.ThemeDisplay.getCanonicalURL().replace(
+							location.href = `${Liferay.ThemeDisplay.getLayoutURL().replace(
 								'/create-new-app',
 								'/publisher-dashboard'
 							)}`;

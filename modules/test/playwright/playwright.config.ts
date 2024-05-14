@@ -28,7 +28,6 @@ import {config as knowledgeBaseWebConfig} from './tests/knowledge-base-web/confi
 import {config as layoutAdminWebConfig} from './tests/layout-admin-web/config';
 import {config as layoutContentPageEditorWebConfig} from './tests/layout-content-page-editor-web/config';
 import {config as layoutSetPrototypeWebConfig} from './tests/layout-set-prototype-web/config';
-import {config as layoutTaglib} from './tests/layout-taglib/config';
 import {config as lockedItemsConfig} from './tests/locked-items-web/config';
 import {config as loginWebConfig} from './tests/login-web/config';
 import {config as notificationWebConfig} from './tests/notification-web/config';
@@ -38,8 +37,6 @@ import {config as portalDefaultPermissionsWebConfig} from './tests/portal-defaul
 import {config as portalSearchWebConfig} from './tests/portal-search-web/config';
 import {config as portalSecurityScriptManagementWeb} from './tests/portal-security-script-management-web/config';
 import {config as portalWorkflowKaleoDesignerWebConfig} from './tests/portal-workflow-kaleo-designer-web/config';
-import {config as productNavigationControlMenuWebConfig} from './tests/product-navigation-control-menu-web/config';
-import {config as productNavigationProductMenuWebConfig} from './tests/product-navigation-product-menu-web/config';
 import {config as productNavigationUserPersonalBarWebConfig} from './tests/product-navigation-user-personal-bar-web/config';
 import {config as stableConfig} from './tests/stable/config';
 import {config as stylebookConfig} from './tests/style-book-web/config';
@@ -75,7 +72,6 @@ export default defineConfig({
 		layoutAdminWebConfig,
 		layoutContentPageEditorWebConfig,
 		layoutSetPrototypeWebConfig,
-		layoutTaglib,
 		lockedItemsConfig,
 		loginWebConfig,
 		notificationWebConfig,
@@ -85,8 +81,6 @@ export default defineConfig({
 		portalSearchWebConfig,
 		portalSecurityScriptManagementWeb,
 		portalWorkflowKaleoDesignerWebConfig,
-		productNavigationControlMenuWebConfig,
-		productNavigationProductMenuWebConfig,
 		productNavigationUserPersonalBarWebConfig,
 		stableConfig,
 		stylebookConfig,
