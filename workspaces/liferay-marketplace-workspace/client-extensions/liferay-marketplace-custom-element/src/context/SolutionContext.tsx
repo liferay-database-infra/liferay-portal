@@ -64,6 +64,7 @@ export type TextVideoBlock = {
 	content: {
 		description: string;
 		title: string;
+		videoDescription: string;
 		videoUrl: string;
 	};
 	type: 'text-video-block';
@@ -87,6 +88,7 @@ export enum SolutionTypes {
 	SET_PRODUCT = 'SET_PRODUCT',
 	SET_PRODUCT_ID = 'SET_PRODUCT_ID',
 	SET_PROFILE = 'SET_PROFILE',
+	SET_TERMS_AND_CONDITIONS = 'SET_TERMS_AND_CONDITIONS',
 	SET_UPDATE_BLOCK = 'SET_UPDATE_BLOCK',
 }
 
@@ -120,6 +122,7 @@ type SolutionPayload = {
 		name: string;
 		tags: any[];
 	}>;
+	[SolutionTypes.SET_TERMS_AND_CONDITIONS]: boolean;
 	[SolutionTypes.SET_UPDATE_BLOCK]: {block: ContentBlock; index: number};
 };
 
@@ -157,6 +160,7 @@ export type SolutionInitialState = {
 	references: {
 		vocabulariesAndCategories: any;
 	};
+	termsAndConditions: boolean;
 };
 
 const solutionInitialState: SolutionInitialState = {
@@ -189,6 +193,7 @@ const solutionInitialState: SolutionInitialState = {
 		tags: [],
 	},
 	references: {vocabulariesAndCategories: {}},
+	termsAndConditions: false,
 };
 
 export type AppActions = ActionMap<SolutionPayload>[keyof ActionMap<
@@ -277,9 +282,7 @@ const reducer = (state: SolutionInitialState, action: AppActions) => {
 						headerVideoDescription: specificationsMap.get(
 							PRODUCT_SPECIFICATION_KEY.SOLUTION_HEADER_VIDEO_DESCRIPTION
 						),
-						headerVideoUrl: specificationsMap.get(
-							PRODUCT_SPECIFICATION_KEY.SOLUTION_HEADER_VIDEO_URL
-						),
+						headerVideoUrl,
 					},
 					type: 'embed-video-url',
 				} as HeaderContentTypeEmbeded;
@@ -481,6 +484,10 @@ const reducer = (state: SolutionInitialState, action: AppActions) => {
 				...state,
 				details: blocks,
 			};
+		}
+
+		case SolutionTypes.SET_TERMS_AND_CONDITIONS: {
+			return {...state, termsAndConditions: action.payload};
 		}
 
 		default:

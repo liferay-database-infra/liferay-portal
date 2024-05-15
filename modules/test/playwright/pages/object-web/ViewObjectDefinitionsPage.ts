@@ -83,6 +83,14 @@ export class ViewObjectDefinitionsPage {
 		await this.deleteObjectDefinitionOption.click();
 	}
 
+	async clickEditObjectDefinitionFDSLink(objectDefinitionLabel: string) {
+		await this.frontendDataSetEntries
+			.filter({
+				hasText: objectDefinitionLabel,
+			})
+			.click();
+	}
+
 	async createObjectFolder(objectFolderLabel: string) {
 		await this.addObjectFolderButton.click();
 		await this.objectFolderLabelInput.click();

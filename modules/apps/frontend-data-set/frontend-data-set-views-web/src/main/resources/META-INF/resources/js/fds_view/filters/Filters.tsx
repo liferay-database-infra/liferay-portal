@@ -15,12 +15,12 @@ import {InputLocalized} from 'frontend-js-components-web';
 import {fetch, openModal, sub} from 'frontend-js-web';
 import React, {useEffect, useState} from 'react';
 
+import {IFDSViewSectionProps} from '../../FDSView';
 import {FDSViewType} from '../../FDSViews';
 import OrderableTable from '../../components/OrderableTable';
 import ValidationFeedback from '../../components/ValidationFeedback';
 import {API_URL, OBJECT_RELATIONSHIP} from '../../utils/constants';
 import getAllPicklists from '../../utils/getAllPicklists';
-import getFields from '../../utils/getFields';
 import openDefaultFailureToast from '../../utils/openDefaultFailureToast';
 import openDefaultSuccessToast from '../../utils/openDefaultSuccessToast';
 import {
@@ -624,15 +624,12 @@ function AddFDSFilterModalContent({
 	);
 }
 
-interface IProps {
-	fdsFilterClientExtensions: IClientExtensionRenderer[];
-	fdsView: FDSViewType;
-	fdsViewsURL: string;
-	namespace: string;
-}
-
-function Filters({fdsFilterClientExtensions, fdsView, namespace}: IProps) {
-	const [fields, setFields] = useState<IField[]>([]);
+function Filters({
+	fdsFilterClientExtensions,
+	fdsView,
+	fieldTreeItems: fields,
+	namespace,
+}: IFDSViewSectionProps) {
 	const [filters, setFilters] = useState<IFilter[]>([]);
 
 	useEffect(() => {
@@ -688,12 +685,6 @@ function Filters({fdsFilterClientExtensions, fdsView, namespace}: IProps) {
 				})
 			);
 		};
-
-		getFields(fdsView).then((newFields) => {
-			if (newFields) {
-				setFields(newFields as IField[]);
-			}
-		});
 
 		getFilters();
 	}, [fdsView]);

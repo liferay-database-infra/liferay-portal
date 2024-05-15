@@ -33,7 +33,6 @@ import com.liferay.item.selector.criteria.info.item.criterion.InfoItemItemSelect
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanParamUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -51,6 +50,7 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -99,37 +99,6 @@ public class BlogsEditEntryDisplayContext {
 
 		_themeDisplay = (ThemeDisplay)httpServletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
-	}
-
-	public String getAssetCategorySelectorURL() {
-		RequestBackedPortletURLFactory requestBackedPortletURLFactory =
-			RequestBackedPortletURLFactoryUtil.create(_httpServletRequest);
-
-		InfoItemItemSelectorCriterion itemSelectorCriterion =
-			new InfoItemItemSelectorCriterion();
-
-		itemSelectorCriterion.setDesiredItemSelectorReturnTypes(
-			new InfoItemItemSelectorReturnType());
-		itemSelectorCriterion.setItemType(AssetCategory.class.getName());
-		itemSelectorCriterion.setMultiSelection(true);
-
-		return PortletURLBuilder.create(
-			_itemSelector.getItemSelectorURL(
-				requestBackedPortletURLFactory, _themeDisplay.getScopeGroup(),
-				_themeDisplay.getScopeGroupId(),
-				_liferayPortletResponse.getNamespace() +
-					"selectedAssetCategory",
-				itemSelectorCriterion)
-		).setParameter(
-			"selectedCategoryIds",
-			StringUtil.merge(_getAssetCategoryIds(), StringPool.COMMA)
-		).setParameter(
-			"vocabularyIds",
-			() -> ListUtil.toString(
-				_assetVocabularyLocalService.getGroupsVocabularies(
-					_getGroupIds()),
-				AssetVocabulary.VOCABULARY_ID_ACCESSOR)
-		).buildString();
 	}
 
 	public BlogsEntry getBlogsEntry() {
@@ -253,44 +222,47 @@ public class BlogsEditEntryDisplayContext {
 
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
-		if (FeatureFlagManagerUtil.isEnabled("LPD-11147")) {
-			long[] friendlyURLAssetCategoryIds = ParamUtil.getLongValues(
-				_httpServletRequest, "friendlyURLAssetCategoryIds");
+		long[] assetCategoryIds = _getFriendlyURLAssetCategoryIds();
 
-			for (long friendlyURLAssetCategoryId :
-					friendlyURLAssetCategoryIds) {
-
-				AssetCategory assetCategory =
-					AssetCategoryLocalServiceUtil.getCategory(
-						friendlyURLAssetCategoryId);
-
-				_populateJSONArray(jsonArray, assetCategory);
-			}
-
-			if (jsonArray.length() > 0) {
-				return jsonArray;
-			}
-		}
-
-		FriendlyURLEntry friendlyURLEntry = _getFriendlyURLEntry();
-
-		if (friendlyURLEntry == null) {
-			return jsonArray;
-		}
-
-		AssetEntry assetEntry = AssetEntryLocalServiceUtil.fetchEntry(
-			PortalUtil.getClassNameId(FriendlyURLEntry.class),
-			friendlyURLEntry.getFriendlyURLEntryId());
-
-		if (assetEntry == null) {
-			return jsonArray;
-		}
-
-		for (AssetCategory assetCategory : assetEntry.getCategories()) {
-			_populateJSONArray(jsonArray, assetCategory);
+		for (long assetCategoryId : assetCategoryIds) {
+			_populateJSONArray(
+				jsonArray,
+				AssetCategoryLocalServiceUtil.getCategory(assetCategoryId));
 		}
 
 		return jsonArray;
+	}
+
+	public String getFriendlyURLAssetCategorySelectorURL() {
+		RequestBackedPortletURLFactory requestBackedPortletURLFactory =
+			RequestBackedPortletURLFactoryUtil.create(_httpServletRequest);
+
+		InfoItemItemSelectorCriterion itemSelectorCriterion =
+			new InfoItemItemSelectorCriterion();
+
+		itemSelectorCriterion.setDesiredItemSelectorReturnTypes(
+			new InfoItemItemSelectorReturnType());
+		itemSelectorCriterion.setItemType(AssetCategory.class.getName());
+		itemSelectorCriterion.setMultiSelection(true);
+
+		return PortletURLBuilder.create(
+			_itemSelector.getItemSelectorURL(
+				requestBackedPortletURLFactory, _themeDisplay.getScopeGroup(),
+				_themeDisplay.getScopeGroupId(),
+				_liferayPortletResponse.getNamespace() +
+					"selectedAssetCategory",
+				itemSelectorCriterion)
+		).setParameter(
+			"selectedCategoryIds",
+			StringUtil.merge(
+				_getFriendlyURLAssetCategoryIds(), StringPool.COMMA)
+		).setParameter(
+			"vocabularyIds",
+			() -> ListUtil.toString(
+				_assetVocabularyLocalService.getGroupsVocabularies(
+					_getGroupIds()),
+				AssetVocabulary.VOCABULARY_ID_ACCESSOR)
+		).buildString();
 	}
 
 	public String getFriendlyURLSeparatorCompanyConfigurationURL()
@@ -601,11 +573,27 @@ public class BlogsEditEntryDisplayContext {
 		return _assetAutoTaggerConfiguration.isUpdateAutoTags();
 	}
 
-	private long[] _getAssetCategoryIds() {
+	private long[] _getFriendlyURLAssetCategoryIds() {
 		if (_assetCategoryIds == null) {
 			_assetCategoryIds = ParamUtil.getLongValues(
-				_httpServletRequest, "assetCategoryId");
+				_httpServletRequest, "friendlyURLAssetCategoryIds");
 		}
+
+		if (!ArrayUtil.isEmpty(_assetCategoryIds)) {
+			return _assetCategoryIds;
+		}
+
+		FriendlyURLEntry friendlyURLEntry = _getFriendlyURLEntry();
+
+		if (friendlyURLEntry == null) {
+			return new long[0];
+		}
+
+		AssetEntry assetEntry = AssetEntryLocalServiceUtil.fetchEntry(
+			PortalUtil.getClassNameId(FriendlyURLEntry.class),
+			friendlyURLEntry.getFriendlyURLEntryId());
+
+		_assetCategoryIds = assetEntry.getCategoryIds();
 
 		return _assetCategoryIds;
 	}

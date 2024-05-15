@@ -20,6 +20,7 @@
 					"indexed": true,
 					"layout": {
 						"contentDisplay": "FlexRow",
+						"justify": "Center",
 						"paddingBottom": 2,
 						"paddingLeft": 2,
 						"paddingRight": 2,
@@ -31,6 +32,9 @@
 				"pageElements": [
 					{
 						"definition": {
+							"cssClasses": [
+								"learn-article-nav-container"
+							],
 							"customCSS": ".[$FRAGMENT_CLASS$] > div {\n  display: flex;\n  height: 100%;\n}",
 							"customCSSViewports": [
 								{
@@ -60,14 +64,14 @@
 							],
 							"fragmentStyle": {
 								"marginRight": "3",
-								"maxWidth": "336px"
+								"maxWidth": "336px",
+								"width": "100%"
 							},
 							"fragmentViewports": [
 								{
 									"fragmentViewportStyle": {
 										"marginRight": "0",
-										"maxWidth": "100%",
-										"width": "100%"
+										"maxWidth": "100%"
 									},
 									"id": "landscapeMobile"
 								}
@@ -88,7 +92,6 @@
 							"indexed": true,
 							"layout": {
 								"contentDisplay": "FlexRow",
-								"justify": "Center",
 								"widthType": "Fixed"
 							}
 						},

@@ -8,7 +8,6 @@ package com.liferay.portal.search.rest.internal.resource.v1_0;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.Portlet;
@@ -22,12 +21,14 @@ import com.liferay.portal.kernel.service.PortletLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.constants.SearchContextAttributes;
 import com.liferay.portal.search.rest.configuration.SearchSuggestionsCompanyConfiguration;
 import com.liferay.portal.search.rest.dto.v1_0.Suggestion;
 import com.liferay.portal.search.rest.dto.v1_0.SuggestionsContributorConfiguration;
 import com.liferay.portal.search.rest.dto.v1_0.SuggestionsContributorResults;
+import com.liferay.portal.search.rest.internal.util.ScopeUtil;
 import com.liferay.portal.search.rest.resource.v1_0.SuggestionResource;
 import com.liferay.portal.search.suggestions.SuggestionsRetriever;
 import com.liferay.portal.search.web.constants.SearchBarPortletKeys;
@@ -75,8 +76,12 @@ public class SuggestionResourceImpl extends BaseSuggestionResourceImpl {
 			return Page.of(Collections.emptyList());
 		}
 
+		Layout layout = _layoutLocalService.getLayout(plid);
+
+		ThemeDisplay themeDisplay = _createThemeDisplay(currentURL, layout);
+
 		LiferayRenderRequest liferayRenderRequest = _createLiferayRenderRequest(
-			currentURL, plid);
+			layout, themeDisplay);
 
 		if (!StringUtil.startsWith(destinationFriendlyURL, CharPool.SLASH)) {
 			destinationFriendlyURL = StringPool.SLASH.concat(
@@ -90,9 +95,9 @@ public class SuggestionResourceImpl extends BaseSuggestionResourceImpl {
 					RenderResponseFactory.create(
 						contextHttpServletResponse, liferayRenderRequest),
 					_createSearchContext(
-						destinationFriendlyURL, _getGroupId(groupId),
-						keywordsParameterName, scope, search,
-						suggestionsContributorConfigurations)),
+						destinationFriendlyURL, groupId, keywordsParameterName,
+						scope, search, suggestionsContributorConfigurations,
+						themeDisplay)),
 				suggestionsContributorResult ->
 					new SuggestionsContributorResults() {
 						{
@@ -130,13 +135,11 @@ public class SuggestionResourceImpl extends BaseSuggestionResourceImpl {
 	}
 
 	private LiferayRenderRequest _createLiferayRenderRequest(
-			String currentURL, long plid)
+			Layout layout, ThemeDisplay themeDisplay)
 		throws Exception {
 
-		Layout layout = _layoutLocalService.getLayout(plid);
-
 		contextHttpServletRequest.setAttribute(
-			WebKeys.THEME_DISPLAY, _createThemeDisplay(currentURL, layout));
+			WebKeys.THEME_DISPLAY, themeDisplay);
 
 		Portlet portlet = _portletLocalService.getPortletById(
 			SearchBarPortletKeys.SEARCH_BAR);
@@ -164,10 +167,11 @@ public class SuggestionResourceImpl extends BaseSuggestionResourceImpl {
 	}
 
 	private SearchContext _createSearchContext(
-			String destinationFriendlyURL, long groupId,
+			String destinationFriendlyURL, Long groupId,
 			String keywordsParameterName, String scope, String search,
 			SuggestionsContributorConfiguration[]
-				suggestionsContributorConfigurations)
+				suggestionsContributorConfigurations,
+			ThemeDisplay themeDisplay)
 		throws Exception {
 
 		SearchContext searchContext = new SearchContext();
@@ -177,8 +181,13 @@ public class SuggestionResourceImpl extends BaseSuggestionResourceImpl {
 		searchContext.setAttribute(
 			"search.experiences.ip.address",
 			contextHttpServletRequest.getRemoteAddr());
-		searchContext.setAttribute(
-			"search.experiences.scope.group.id", groupId);
+
+		if (themeDisplay != null) {
+			searchContext.setAttribute(
+				"search.experiences.scope.group.id",
+				themeDisplay.getScopeGroupId());
+		}
+
 		searchContext.setAttribute(
 			"search.suggestions.contributor.configurations",
 			suggestionsContributorConfigurations);
@@ -188,10 +197,18 @@ public class SuggestionResourceImpl extends BaseSuggestionResourceImpl {
 		searchContext.setAttribute(
 			"search.suggestions.keywords.parameter.name",
 			keywordsParameterName);
+
 		searchContext.setCompanyId(contextCompany.getCompanyId());
 
-		if (!StringUtil.equals(scope, "everything")) {
+		if (StringUtil.equals(scope, "everything") ||
+			(Validator.isBlank(scope) && (groupId == null))) {
+		}
+		else if (StringUtil.equals(scope, "this-site") && (groupId != null)) {
 			searchContext.setGroupIds(new long[] {groupId});
+		}
+		else {
+			searchContext.setGroupIds(
+				ScopeUtil.toGroupIds(contextCompany.getCompanyId(), scope));
 		}
 
 		searchContext.setKeywords(search);
@@ -221,19 +238,6 @@ public class SuggestionResourceImpl extends BaseSuggestionResourceImpl {
 		themeDisplay.setUser(contextUser);
 
 		return themeDisplay;
-	}
-
-	private long _getGroupId(Long groupId) {
-		if (groupId != null) {
-			return groupId;
-		}
-
-		try {
-			return contextCompany.getGroupId();
-		}
-		catch (PortalException portalException) {
-			throw new RuntimeException(portalException);
-		}
 	}
 
 	@Reference

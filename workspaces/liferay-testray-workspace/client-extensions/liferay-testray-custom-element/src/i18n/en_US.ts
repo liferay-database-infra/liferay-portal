@@ -436,6 +436,7 @@ export default {
 	'total-test-cases': 'Total test cases',
 	'type': 'Type',
 	'type-is-a-required-field': 'Type is a required field',
+	'unable-to-find-more-than-one-run': 'Unable to find more than one run.',
 	'unarchive': 'Unarchive',
 	'unassign-myself': 'Unassign Myself',
 	'unassigned': 'Unassigned',

@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-package com.liferay.portal.tools.db.partition.migration.validator;
+package com.liferay.portal.tools.db.partition.migration.validator.util;
 
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.version.Version;
-import com.liferay.portal.tools.db.partition.migration.validator.util.DatabaseUtil;
+import com.liferay.portal.tools.db.partition.migration.validator.Company;
+import com.liferay.portal.tools.db.partition.migration.validator.LiferayDatabase;
+import com.liferay.portal.tools.db.partition.migration.validator.Release;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -20,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,59 +35,42 @@ import org.mockito.stubbing.Answer;
 /**
  * @author Luis Ortiz
  */
-public class LiferayDatabaseTest {
+public class DatabaseUtilTest {
 
 	@Before
 	public void setUp() throws SQLException {
-		_mockGetColumns(Collections.emptyList());
-		_mockGetCompanies(Collections.emptyList());
-		_mockGetCompanyIds(Collections.emptyList());
-		_mockGetCompanyInfos(Collections.emptyList());
+		_mockGetColumns(
+			Arrays.asList("Table1", "Company", "Table2", "Object_x_25000"));
+		_mockGetCompanies(Arrays.asList(_company1, _company2));
+		_mockGetCompanyIds(Collections.singletonList(25000L));
+		_mockGetCompanyInfos(Collections.singletonList(_COMPANY_ID));
 		_mockGetConnection(
 			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
 			RandomTestUtil.randomString());
-		_mockGetReleases(Collections.emptyList());
+		_mockGetReleases(Arrays.asList(_module1Release, _module2Release));
 		_mockGetTables(true);
 	}
 
 	@Test
-	public void testGetCompanies() throws Exception {
-		Company company1 = new Company(
-			RandomTestUtil.randomLong(), RandomTestUtil.randomString(),
-			RandomTestUtil.randomString(), RandomTestUtil.randomString());
-		Company company2 = new Company(
-			RandomTestUtil.randomLong(), RandomTestUtil.randomString(),
-			RandomTestUtil.randomString(), RandomTestUtil.randomString());
-
-		_mockGetCompanies(Arrays.asList(company1, company2));
-
+	public void testExportLiferayDatabaseWithDefaultCompany() throws Exception {
 		LiferayDatabase liferayDatabase = DatabaseUtil.exportLiferayDatabase(
 			_connection);
 
-		List<Company> companies = liferayDatabase.getCompanies();
-
-		Assert.assertEquals(companies.toString(), 2, companies.size());
-		Assert.assertEquals(company1, companies.get(0));
-		Assert.assertEquals(company2, companies.get(1));
+		_assert(liferayDatabase, true);
 	}
 
 	@Test
-	public void testGetExportedCompanyId() throws Exception {
-		List<Long> companyIds = new ArrayList<>();
+	public void testExportLiferayDatabaseWithMultipleCompanies()
+		throws Exception {
 
-		companyIds.add(RandomTestUtil.randomLong());
-
-		_testGetExportedCompanyId(
-			companyIds,
-			liferayDatabase -> Assert.assertEquals(
-				companyIds.get(0),
-				(Long)liferayDatabase.getExportedCompanyId()));
-
-		companyIds.add(RandomTestUtil.randomLong());
+		_mockGetCompanyInfos(
+			Arrays.asList(
+				RandomTestUtil.randomLong(), RandomTestUtil.randomLong()));
 
 		try {
-			_testGetExportedCompanyId(
-				companyIds, liferayDatabase -> Assert.fail());
+			DatabaseUtil.exportLiferayDatabase(_connection);
+
+			Assert.fail();
 		}
 		catch (Exception exception) {
 			Assert.assertTrue(
@@ -99,32 +83,32 @@ public class LiferayDatabaseTest {
 	}
 
 	@Test
-	public void testGetReleases() throws Exception {
-		Release module1Release = new Release(
-			Version.parseVersion("14.2.4"), "module1", 0, true);
-		Release module2Release = new Release(
-			Version.parseVersion("2.0.1"), "module2", 1, false);
+	public void testExportLiferayDatabaseWithNondefaultCompany()
+		throws Exception {
 
-		_mockGetReleases(Arrays.asList(module1Release, module2Release));
+		_mockGetTables(false);
 
 		LiferayDatabase liferayDatabase = DatabaseUtil.exportLiferayDatabase(
 			_connection);
+
+		_assert(liferayDatabase, false);
+	}
+
+	private void _assert(LiferayDatabase liferayDatabase, boolean isDefault) {
+		List<Company> companies = liferayDatabase.getCompanies();
+
+		Assert.assertEquals(companies.toString(), 2, companies.size());
+		Assert.assertEquals(_company1, companies.get(0));
+		Assert.assertEquals(_company2, companies.get(1));
+
+		Assert.assertEquals(
+			_COMPANY_ID, (Long)liferayDatabase.getExportedCompanyId());
 
 		List<Release> releases = liferayDatabase.getReleases();
 
 		Assert.assertEquals(releases.toString(), 2, releases.size());
-		Assert.assertEquals(module1Release, releases.get(0));
-		Assert.assertEquals(module2Release, releases.get(1));
-	}
-
-	@Test
-	public void testGetTableNames() throws Exception {
-		_mockGetColumns(
-			Arrays.asList("Table1", "Company", "Table2", "Object_x_25000"));
-		_mockGetCompanyIds(Collections.singletonList(25000L));
-
-		LiferayDatabase liferayDatabase = DatabaseUtil.exportLiferayDatabase(
-			_connection);
+		Assert.assertEquals(_module1Release, releases.get(0));
+		Assert.assertEquals(_module2Release, releases.get(1));
 
 		List<String> tableNames = liferayDatabase.getTableNames();
 
@@ -133,18 +117,9 @@ public class LiferayDatabaseTest {
 		Assert.assertFalse(tableNames.contains("Object_x_25000"));
 		Assert.assertTrue(tableNames.contains("Table1"));
 		Assert.assertTrue(tableNames.contains("Table2"));
-	}
 
-	@Test
-	public void testIsExportedCompanyDefault() throws Exception {
-		_testIsExportedCompanyDefault(
-			liferayDatabase -> Assert.assertFalse(
-				liferayDatabase.isExportedCompanyDefault()),
-			false);
-		_testIsExportedCompanyDefault(
-			liferayDatabase -> Assert.assertTrue(
-				liferayDatabase.isExportedCompanyDefault()),
-			true);
+		Assert.assertEquals(
+			isDefault, liferayDatabase.isExportedCompanyDefault());
 	}
 
 	private void _mockGetColumns(List<String> tableNames) throws SQLException {
@@ -750,23 +725,7 @@ public class LiferayDatabaseTest {
 		);
 	}
 
-	private void _testGetExportedCompanyId(
-			List<Long> companyIds, Consumer<LiferayDatabase> consumer)
-		throws Exception {
-
-		_mockGetCompanyInfos(companyIds);
-
-		consumer.accept(DatabaseUtil.exportLiferayDatabase(_connection));
-	}
-
-	private void _testIsExportedCompanyDefault(
-			Consumer<LiferayDatabase> consumer, boolean defaultPartition)
-		throws Exception {
-
-		_mockGetTables(defaultPartition);
-
-		consumer.accept(DatabaseUtil.exportLiferayDatabase(_connection));
-	}
+	private static final Long _COMPANY_ID = RandomTestUtil.randomLong();
 
 	private static final Connection _connection = Mockito.mock(
 		Connection.class);
@@ -774,5 +733,16 @@ public class LiferayDatabaseTest {
 		DatabaseMetaData.class);
 	private static final MockedStatic<DriverManager>
 		_driverManagerMockedStatic = Mockito.mockStatic(DriverManager.class);
+
+	private final Company _company1 = new Company(
+		RandomTestUtil.randomLong(), RandomTestUtil.randomString(),
+		RandomTestUtil.randomString(), RandomTestUtil.randomString());
+	private final Company _company2 = new Company(
+		RandomTestUtil.randomLong(), RandomTestUtil.randomString(),
+		RandomTestUtil.randomString(), RandomTestUtil.randomString());
+	private final Release _module1Release = new Release(
+		Version.parseVersion("14.2.4"), "module1", 0, true);
+	private final Release _module2Release = new Release(
+		Version.parseVersion("2.0.1"), "module2", 1, false);
 
 }

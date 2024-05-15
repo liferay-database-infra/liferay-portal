@@ -25,8 +25,6 @@ import {swapImageElements} from '../../../../constants';
 import {ACCEPT_FILE_TYPES} from '../../../Apps/AppCreationFlow/StorefrontPage/CustomizeAppStorefrontPage';
 import {MAX_IMAGE_QUANTITY, MAX_SIZE_5MBS} from '../../constants';
 
-const MAX_FILES = 5;
-
 enum ContentMediaType {
 	EMBED_VIDEO_URL = 'embed-video-url',
 	UPLOAD_IMAGES = 'upload-images',
@@ -43,6 +41,14 @@ const Header = () => {
 	] = useSolutionContext();
 
 	const handleUpload = (files: File[]) => {
+		if (
+			files.length +
+				(contentType as HeaderContentTypeImages).content?.headerImages
+					.length >
+			MAX_IMAGE_QUANTITY
+		) {
+			return onOpenChange(true);
+		}
 		if (contentType.type === ContentMediaType.UPLOAD_IMAGES) {
 			const totalImages =
 				(contentType.content.headerImages?.length || 0) + files.length;
@@ -268,7 +274,10 @@ const Header = () => {
 			{contentType.type === ContentMediaType.UPLOAD_IMAGES && (
 				<>
 					<Form.Label className="mb-4 mt-2" htmlFor="description">
-						{i18n.sub('add-up-to-x-images', MAX_FILES.toString())}
+						{i18n.sub(
+							'add-up-to-x-images',
+							MAX_IMAGE_QUANTITY.toString()
+						)}
 					</Form.Label>
 
 					{!!contentType.content.headerImages?.length && (
@@ -304,13 +313,13 @@ const Header = () => {
 						)}
 						disabled={
 							contentType.content.headerImages.length ===
-							MAX_FILES
+							MAX_IMAGE_QUANTITY
 						}
-						maxFiles={MAX_FILES}
+						maxFiles={MAX_IMAGE_QUANTITY}
 						maxSize={MAX_SIZE_5MBS}
 						multiple
 						onDropRejected={(fileList) => {
-							if (fileList.length > MAX_FILES) {
+							if (fileList.length > MAX_IMAGE_QUANTITY) {
 								onOpenChange(true);
 							}
 						}}
@@ -333,7 +342,7 @@ const Header = () => {
 					<ClayModal.Body className="pb-8">
 						{i18n.sub(
 							'you-cannot-upload-more-than-x-files',
-							MAX_FILES.toString()
+							MAX_IMAGE_QUANTITY.toString()
 						)}
 					</ClayModal.Body>
 				</ClayModal>

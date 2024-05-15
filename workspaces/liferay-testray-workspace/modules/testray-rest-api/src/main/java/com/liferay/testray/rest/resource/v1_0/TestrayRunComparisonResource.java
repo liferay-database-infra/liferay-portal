@@ -10,6 +10,9 @@ import com.liferay.portal.odata.filter.ExpressionConvert;
 import com.liferay.portal.odata.filter.FilterParserProvider;
 import com.liferay.portal.odata.sort.SortParserProvider;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
+import com.liferay.portal.vulcan.pagination.Page;
+import com.liferay.portal.vulcan.pagination.Pagination;
+import com.liferay.testray.rest.dto.v1_0.TestrayCaseResultComparison;
 import com.liferay.testray.rest.dto.v1_0.TestrayRunComparison;
 
 import java.util.Collections;
@@ -38,16 +41,30 @@ import org.osgi.annotation.versioning.ProviderType;
 @ProviderType
 public interface TestrayRunComparisonResource {
 
+	public Object getTestrayRunComparisonByTestrayRoutineIdTestrayRoutine(
+			Long testrayRoutineId)
+		throws Exception;
+
 	public TestrayRunComparison getTestrayRunComparison(
 			Long testrayRunId1, Long testrayRunId2, Filter filter)
 		throws Exception;
 
-	public TestrayRunComparison getTestrayRunComparisonDetail(
+	public TestrayRunComparison getTestrayRunComparisonRun(
 			Long testrayRunId1, Long testrayRunId2,
 			String testrayCaseResultError1, String testrayCaseResultError2,
 			String testrayCaseResultIssue1, String testrayCaseResultIssue2,
 			String testrayCaseResultStatus1, String testrayCaseResultStatus2,
 			Filter filter)
+		throws Exception;
+
+	public Page<TestrayCaseResultComparison>
+			getTestrayRunComparisonTestrayCaseResultComparisonsPage(
+				Long testrayRunId1, Long testrayRunId2,
+				String testrayCaseResultError1, String testrayCaseResultError2,
+				String testrayCaseResultIssue1, String testrayCaseResultIssue2,
+				String testrayCaseResultStatus1,
+				String testrayCaseResultStatus2, Filter filter,
+				Pagination pagination)
 		throws Exception;
 
 	public default void setContextAcceptLanguage(

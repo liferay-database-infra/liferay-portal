@@ -57,11 +57,11 @@ export class ObjectAdminApiHelper {
 	}
 
 	async postObjectFieldByExternalReferenceCode(
-		objectDefinitionExternalReferenceCode: string,
+		externalReferenceCode: string,
 		objectField: Partial<ObjectField>
-	) {
+	): Promise<ObjectField> {
 		return this.apiHelpers.post(
-			`${this.apiHelpers.baseUrl}${this.basePath}/object-definitions/by-external-reference-code/${objectDefinitionExternalReferenceCode}/object-fields`,
+			`${this.apiHelpers.baseUrl}${this.basePath}/object-definitions/by-external-reference-code/${externalReferenceCode}/object-fields`,
 			{data: objectField}
 		);
 	}

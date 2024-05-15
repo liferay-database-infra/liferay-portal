@@ -17,6 +17,7 @@ import {useMemo} from 'react';
 import AppToolbar from '../../../../../components/AppToolBar/AppToolBar';
 import Modal from '../../../../../components/Modal';
 import {useSolutionContext} from '../../../../../context/SolutionContext';
+import i18n from '../../../../../i18n';
 import usePublishSolutionHeader from '../../../hooks/usePublishSolutionHeader';
 import usePublishSolutionNavigation from '../../../hooks/usePublishSolutionNavigation';
 import usePublishSolutionSubmission from '../../../hooks/usePublishSolutionSubmission';
@@ -32,13 +33,17 @@ const PublishSolutionOutlet = () => {
 		activeIndex,
 		activeRoute,
 		id,
+		isLastStep,
 		onClickContinue,
 		onClickPrevious,
 		onExit,
 		publishSolutionSteps,
 	} = usePublishSolutionNavigation();
 
-	const {onSaveAsDraft} = usePublishSolutionSubmission(context, dispatch);
+	const {onSave, onSaveAsDraft} = usePublishSolutionSubmission(
+		context,
+		dispatch
+	);
 
 	const {observer, onOpenChange, open} = useModal();
 
@@ -99,7 +104,7 @@ const PublishSolutionOutlet = () => {
 								displayType="secondary"
 								onClick={onClickPrevious}
 							>
-								Back
+								{i18n.translate('back')}
 							</ClayButton>
 						)}
 
@@ -108,9 +113,17 @@ const PublishSolutionOutlet = () => {
 								parsedSchema ? !parsedSchema.success : false
 							}
 							displayType="primary"
-							onClick={onClickContinue}
+							onClick={async () => {
+								if (isLastStep) {
+									return onSave().then(onExit);
+								}
+
+								onClickContinue();
+							}}
 						>
-							Continue
+							{i18n.translate(
+								isLastStep ? 'submit-solution' : 'continue'
+							)}
 						</ClayButton>
 					</div>
 				</div>
@@ -123,14 +136,14 @@ const PublishSolutionOutlet = () => {
 							displayType="secondary"
 							onClick={() => onSaveAsDraft().then(onExit)}
 						>
-							Save as a draft & exit
+							{i18n.translate('save-as-a-draft-exit')}
 						</ClayButton>
 
 						<Link
 							className="btn btn-primary ml-2"
 							to="../solutions"
 						>
-							Exit
+							{i18n.translate('exit')}
 						</Link>
 					</>
 				}
@@ -140,9 +153,9 @@ const PublishSolutionOutlet = () => {
 				visible={open}
 			>
 				<p>
-					All progress and information related to the creation of the
-					solution will be lost unless you save the solution as a
-					draft, Do you still want to exit?
+					{i18n.translate(
+						'all-progress-and-information-related-to-the-creation-of-the-solution-will-be-lost-unless-you-save-the-solution-as-a-draft-do-you-still-want-to-exit'
+					)}
 				</p>
 			</Modal>
 		</>

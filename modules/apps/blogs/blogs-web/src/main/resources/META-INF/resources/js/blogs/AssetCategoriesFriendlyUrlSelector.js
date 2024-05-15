@@ -8,6 +8,7 @@ import ClayForm, {ClayInput} from '@clayui/form';
 import ClayMultiSelect from '@clayui/multi-select';
 import classnames from 'classnames';
 import {
+	getPortletNamespace,
 	normalizeFriendlyURL,
 	openCategorySelectionModal,
 } from 'frontend-js-web';
@@ -18,11 +19,14 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 	automaticURL: initialDisabled,
 	inputAddon = '',
 	portletNamespace,
-	selectCategoryURL,
+	selectCategoryURL: initialSelectCategoryURL,
 	selectedCategories = [],
 }) {
 	const [disabled, setDisabled] = useState(initialDisabled);
 	const [selectedItems, setSelectedItems] = useState(selectedCategories);
+	const [selectCategoryURL, setSelectCategoryURL] = useState(
+		initialSelectCategoryURL
+	);
 
 	const inputAddonNodeRef = useRef(
 		document.querySelector(
@@ -46,15 +50,8 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 	};
 
 	const handleItemsChange = (items) => {
-		const assetCategories = Object.entries(items).map(
-			([id, {label, title}]) => ({
-				label: label || title,
-				value: id,
-			})
-		);
-
 		const addedItems = getUnique(
-			assetCategories.filter(
+			items.filter(
 				(item) =>
 					!selectedItems.find(
 						(selectedItem) => selectedItem.value === item.value
@@ -65,9 +62,7 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 
 		const removedItems = selectedItems.filter(
 			(selectedItem) =>
-				!assetCategories.find(
-					(item) => item.value === selectedItem.value
-				)
+				!items.find((item) => item.value === selectedItem.value)
 		);
 
 		const current = [...selectedItems, ...addedItems].filter(
@@ -78,11 +73,32 @@ function AssetVocabulariesCategoriesFriendlyUrlSelector({
 		);
 
 		setSelectedItems(current);
+		setSelectCategoryURL(() => {
+			const url = new URL(initialSelectCategoryURL);
+
+			url.searchParams.set(
+				`${getPortletNamespace(
+					Liferay.PortletKeys.ITEM_SELECTOR
+				)}selectedCategoryIds`,
+				current.map(({value: categoryId}) => categoryId).join(',')
+			);
+
+			return url.href;
+		});
 	};
 
 	const handleSelectButtonClick = () => {
 		openCategorySelectionModal({
-			onSelect: handleItemsChange,
+			onSelect: (selectedCategories) => {
+				handleItemsChange(
+					Object.values(selectedCategories).map(
+						({categoryId, title}) => ({
+							label: title,
+							value: categoryId,
+						})
+					)
+				);
+			},
 			portletNamespace,
 			selectCategoryURL,
 		});

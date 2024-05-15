@@ -1,0 +1,52 @@
+.solution-preview {
+	&-container {
+		width: 600px;
+	}
+
+	&-header {
+		&-image {
+			border-radius: 4px;
+			height: 64px;
+			object-fit: contain;
+			overflow: hidden;
+			width: 110px;
+
+			&-icon {
+				color: #0b5fff;
+			}
+		}
+	}
+
+	&-profile {
+		&-logo {
+			height: 48px;
+			object-fit: contain;
+			width: 48px;
+		}
+
+		&-description-text {
+			font-size: 13px;
+		}
+
+		&-tags {
+			background-color: #e6ebf5;
+			border-radius: 4px;
+			color: #1c3667;
+			height: hug (24px) px;
+			padding: 4px 8px;
+			text-wrap: nowrap;
+			width: hug (252px) px;
+		}
+	}
+}
+
+.suport-link {
+	border-radius: 50%;
+	height: 40px;
+	width: 40px;
+
+	svg {
+		position: relative;
+		top: 2px;
+	}
+}

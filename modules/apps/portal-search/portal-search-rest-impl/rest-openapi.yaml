@@ -152,6 +152,10 @@ paths:
                   schema:
                       type: string
                 - in: query
+                  name: scope
+                  schema:
+                      type: string
+                - in: query
                   name: search
                   schema:
                       type: string
@@ -194,6 +198,9 @@ paths:
                   schema:
                       type: string
                 - in: query
+                  deprecated: true
+                  description:
+                      Deprecated as of Cavanaugh (7.4.x), replaced by scope
                   name: groupId
                   schema:
                       format: int64
