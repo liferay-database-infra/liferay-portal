@@ -84,10 +84,13 @@ public class CTMessageBusInterceptorTest {
 	@Test
 	public void testInterceptSubscriptionSenderMessage() throws Exception {
 		long companyId = TestPropsValues.getCompanyId();
+		long userId = TestPropsValues.getUserId();
 
 		SubscriptionSender subscriptionSender = new SubscriptionSender();
 
 		subscriptionSender.setCompanyId(companyId);
+		subscriptionSender.setCurrentUserId(userId);
+
 		subscriptionSender.setMailId(
 			CTMessageBusInterceptorTest.class.getName(), "test");
 
@@ -114,13 +117,16 @@ public class CTMessageBusInterceptorTest {
 		SubscriptionSender deserializedSubscriptionSender =
 			(SubscriptionSender)deserializedMessage.getPayload();
 
+		Assert.assertEquals(0, deserializedSubscriptionSender.getCompanyId());
+
 		Assert.assertEquals(
-			companyId, deserializedSubscriptionSender.getCompanyId());
+			userId, deserializedSubscriptionSender.getCurrentUserId());
 	}
 
 	@Test
 	public void testPublishSubscriptionSenderMessage() throws Exception {
 		long companyId = TestPropsValues.getCompanyId();
+		long userId = TestPropsValues.getUserId();
 
 		Message message = new Message();
 
@@ -129,6 +135,8 @@ public class CTMessageBusInterceptorTest {
 		SubscriptionSender subscriptionSender = new SubscriptionSender();
 
 		subscriptionSender.setCompanyId(companyId);
+		subscriptionSender.setCurrentUserId(userId);
+
 		subscriptionSender.setMailId(
 			CTMessageBusInterceptorTest.class.getName(), "test");
 
@@ -152,8 +160,10 @@ public class CTMessageBusInterceptorTest {
 		SubscriptionSender deserializedSubscriptionSender =
 			(SubscriptionSender)receivedMessage.getPayload();
 
+		Assert.assertEquals(0, deserializedSubscriptionSender.getCompanyId());
+
 		Assert.assertEquals(
-			companyId, deserializedSubscriptionSender.getCompanyId());
+			userId, deserializedSubscriptionSender.getCurrentUserId());
 
 		List<Message> messages = _ctMessageLocalService.getMessages(
 			_ctCollection.getCtCollectionId());
@@ -169,8 +179,10 @@ public class CTMessageBusInterceptorTest {
 		deserializedSubscriptionSender =
 			(SubscriptionSender)receivedMessage.getPayload();
 
+		Assert.assertEquals(0, deserializedSubscriptionSender.getCompanyId());
+
 		Assert.assertEquals(
-			companyId, deserializedSubscriptionSender.getCompanyId());
+			userId, deserializedSubscriptionSender.getCurrentUserId());
 
 		_ctCollectionLocalService.deleteCTCollection(_ctCollection);
 
