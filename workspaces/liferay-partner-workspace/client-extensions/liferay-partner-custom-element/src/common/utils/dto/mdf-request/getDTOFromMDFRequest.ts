@@ -16,7 +16,11 @@ export function getDTOFromMDFRequest(
 		additionalOption: mdfRequest.additionalOption,
 		claimPercent: mdfRequest.claimPercent,
 		companyName: mdfRequest.company?.name,
+		convertedTotalCostOfExpense: mdfRequest.convertedTotalCostOfExpense,
+		convertedTotalMDFRequestAmount:
+			mdfRequest.convertedTotalMDFRequestAmount,
 		currency: mdfRequest.currency,
+		currencyExchangeRate: mdfRequest.currencyExchangeRate,
 		emailAddress: mdfRequest.id
 			? mdfRequest.emailAddress
 			: Liferay.ThemeDisplay.getUserEmailAddress(),

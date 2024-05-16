@@ -20,6 +20,8 @@ export function getMDFRequestFromDTO(mdfRequest: MDFRequestDTO): MDFRequest {
 					assetsLiferayRequired,
 					audienceTarget,
 					broadcastChannel,
+					convertedMDFRequestAmount,
+					convertedTotalCostOfExpense,
 					creator,
 					cta,
 					dateCreated,
@@ -142,6 +144,8 @@ export function getMDFRequestFromDTO(mdfRequest: MDFRequestDTO): MDFRequest {
 							};
 						}) || [],
 					claimPercent: mdfRequest.claimPercent,
+					convertedMDFRequestAmount,
+					convertedTotalCostOfExpense,
 					dateCreated: dateCreated?.split('T')[0],
 					endDate: endDate?.split('T')[0],
 					externalReferenceCode,

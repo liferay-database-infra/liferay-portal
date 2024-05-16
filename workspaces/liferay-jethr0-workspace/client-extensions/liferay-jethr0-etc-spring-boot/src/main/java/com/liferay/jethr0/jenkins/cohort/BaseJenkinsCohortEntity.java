@@ -8,6 +8,10 @@ package com.liferay.jethr0.jenkins.cohort;
 import com.liferay.jethr0.entity.BaseEntity;
 import com.liferay.jethr0.jenkins.server.JenkinsServerEntity;
 import com.liferay.jethr0.job.JobEntity;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
+import com.liferay.jethr0.util.StringUtil;
+
+import java.net.URL;
 
 import java.util.Set;
 
@@ -44,6 +48,18 @@ public abstract class BaseJenkinsCohortEntity
 	}
 
 	@Override
+	public URL getEntityURL() {
+		return StringUtil.toURL(
+			StringUtil.combine(
+				Jethr0ContextUtil.getLiferayPortalURL(), "/#/jenkins-cohorts/",
+				getId()));
+	}
+
+	public int getJenkinsServerCount() {
+		return _jenkinsServerCount;
+	}
+
+	@Override
 	public Set<JenkinsServerEntity> getJenkinsServerEntities() {
 		return getRelatedEntities(JenkinsServerEntity.class);
 	}
@@ -57,7 +73,11 @@ public abstract class BaseJenkinsCohortEntity
 	public JSONObject getJSONObject() {
 		JSONObject jsonObject = super.getJSONObject();
 
-		jsonObject.put("name", getName());
+		jsonObject.put(
+			"jenkinsServerCount", getJenkinsServerCount()
+		).put(
+			"name", getName()
+		);
 
 		return jsonObject;
 	}
@@ -91,10 +111,15 @@ public abstract class BaseJenkinsCohortEntity
 		removeRelatedEntity(jobEntity);
 	}
 
+	public void setJenkinsServerCount(int jenkinsServerCount) {
+		_jenkinsServerCount = jenkinsServerCount;
+	}
+
 	@Override
 	public void setJSONObject(JSONObject jsonObject) {
 		super.setJSONObject(jsonObject);
 
+		_jenkinsServerCount = jsonObject.getInt("jenkinsServerCount");
 		_name = jsonObject.getString("name");
 	}
 
@@ -103,10 +128,19 @@ public abstract class BaseJenkinsCohortEntity
 		_name = name;
 	}
 
+	@Override
+	public void update() {
+		Set<JenkinsServerEntity> jenkinsServerEntities =
+			getJenkinsServerEntities();
+
+		setJenkinsServerCount(jenkinsServerEntities.size());
+	}
+
 	protected BaseJenkinsCohortEntity(JSONObject jsonObject) {
 		super(jsonObject);
 	}
 
+	private int _jenkinsServerCount;
 	private String _name;
 
 }

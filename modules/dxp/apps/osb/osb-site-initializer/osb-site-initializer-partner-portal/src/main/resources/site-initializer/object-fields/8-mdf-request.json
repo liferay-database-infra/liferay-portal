@@ -188,6 +188,19 @@
 		{
 			"DBType": "BigDecimal",
 			"businessType": "PrecisionDecimal",
+			"externalReferenceCode": "MDF-REQUEST-CONV-TOTAL-COST-EXP",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Converted Total Cost of Expense"
+			},
+			"name": "convertedTotalCostOfExpense",
+			"required": false,
+			"type": "BigDecimal"
+		},
+		{
+			"DBType": "BigDecimal",
+			"businessType": "PrecisionDecimal",
 			"externalReferenceCode": "b3f49a6f-1063-4cd9-777e-5d715234b492",
 			"indexed": true,
 			"indexedAsKeyword": false,
@@ -391,6 +404,32 @@
 			"name": "currency",
 			"required": false,
 			"type": "String"
+		},
+		{
+			"DBType": "BigDecimal",
+			"businessType": "PrecisionDecimal",
+			"externalReferenceCode": "MDF-REQUEST-CUR-EXCH-RATE",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Currency Exchange Rate"
+			},
+			"name": "currencyExchangeRate",
+			"required": false,
+			"type": "BigDecimal"
+		},
+		{
+			"DBType": "BigDecimal",
+			"businessType": "PrecisionDecimal",
+			"externalReferenceCode": "MDF-REQUEST-CONV-TOTAL-REQ-AMOUNT",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Converted Total MDF Requested Amount"
+			},
+			"name": "convertedTotalMDFRequestAmount",
+			"required": false,
+			"type": "BigDecimal"
 		},
 		{
 			"DBType": "Boolean",

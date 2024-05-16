@@ -82,14 +82,22 @@ const Activities = ({
 	useEffect(() => {
 		setFieldValue('maxDateActivity', maxDateActivity);
 		setFieldValue('minDateActivity', minDateActivity);
-		setFieldValue('totalCostOfExpense', totalCostOfExpense);
+		setFieldValue(
+			'convertedTotalCostOfExpense',
+			totalCostOfExpense / values.currencyExchangeRate
+		);
 		setFieldValue('totalMDFRequestAmount', totalMDFRequestAmount);
+		setFieldValue(
+			'convertedTotalMDFRequestAmount',
+			totalMDFRequestAmount / values.currencyExchangeRate
+		);
 	}, [
 		maxDateActivity,
 		minDateActivity,
 		setFieldValue,
 		totalCostOfExpense,
 		totalMDFRequestAmount,
+		values.currencyExchangeRate,
 	]);
 
 	const {isButtonClicked, setIsButtonClicked} = useSetTouchedOnForms(
@@ -124,6 +132,20 @@ const Activities = ({
 
 	const onContinueForm = () => {
 		if (currentActivityIndex === undefined) {
+			for (let index = 0; index < values.activities.length; index++) {
+				setFieldValue(
+					`activities[${index}].convertedTotalCostOfExpense`,
+					values.activities[index].totalCostOfExpense /
+						values.currencyExchangeRate
+				);
+
+				setFieldValue(
+					`activities[${index}].convertedMDFRequestAmount`,
+					values.activities[index].mdfRequestAmount /
+						values.currencyExchangeRate
+				);
+			}
+
 			onContinue?.(formikHelpers, StepType.REVIEW);
 
 			return;
@@ -195,6 +217,7 @@ const Activities = ({
 				<Form
 					claimPercent={values.claimPercent}
 					currency={values.currency}
+					currencyExchangeRate={values.currencyExchangeRate}
 					currentActivity={values.activities[currentActivityIndex]}
 					currentActivityIndex={currentActivityIndex}
 					isButtonClicked={isButtonClicked}

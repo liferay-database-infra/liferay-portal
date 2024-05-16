@@ -98,6 +98,9 @@ const MDFClaimManagerStatus = () => {
 						}}
 					>
 						<ClaimPaidModalContent
+							currencyExchangeRate={
+								mdfClaim?.currencyExchangeRate
+							}
 							onClose={onClose}
 							validationSchema={claimPaidSchema}
 						/>

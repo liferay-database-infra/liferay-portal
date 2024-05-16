@@ -130,9 +130,12 @@ export interface IQuickActions extends IBaseActions {
 	onClick: Function;
 }
 
-type TSorting = {
+export type TSort = {
+	active?: boolean;
+	default?: boolean;
 	direction?: 'asc' | 'desc';
 	key?: string;
+	label?: string;
 };
 
 type TViews = {
@@ -203,7 +206,7 @@ export interface IFrontendDataSetProps {
 	showPagination?: boolean;
 	showSearch?: boolean;
 	sidePanelId?: string;
-	sorts?: TSorting[];
+	sorts?: TSort[];
 	style?: 'default' | 'fluid' | 'stacked';
 	views: TViews[];
 	viewsTitle?: string;

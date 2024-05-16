@@ -8,6 +8,7 @@ package com.liferay.jethr0.jenkins.server;
 import com.liferay.jethr0.entity.BaseEntity;
 import com.liferay.jethr0.jenkins.cohort.JenkinsCohortEntity;
 import com.liferay.jethr0.jenkins.node.JenkinsNodeEntity;
+import com.liferay.jethr0.util.Jethr0ContextUtil;
 import com.liferay.jethr0.util.StringUtil;
 
 import java.net.URL;
@@ -64,6 +65,14 @@ public abstract class BaseJenkinsServerEntity
 	}
 
 	@Override
+	public URL getEntityURL() {
+		return StringUtil.toURL(
+			StringUtil.combine(
+				Jethr0ContextUtil.getLiferayPortalURL(), "/#/jenkins-servers/",
+				getId()));
+	}
+
+	@Override
 	public JenkinsCohortEntity getJenkinsCohortEntity() {
 		return _jenkinsCohortEntity;
 	}
@@ -71,6 +80,11 @@ public abstract class BaseJenkinsServerEntity
 	@Override
 	public long getJenkinsCohortEntityId() {
 		return _jenkinsCohortEntityId;
+	}
+
+	@Override
+	public int getJenkinsNodeCount() {
+		return _jenkinsNodeCount;
 	}
 
 	@Override
@@ -93,6 +107,8 @@ public abstract class BaseJenkinsServerEntity
 		JSONObject jsonObject = super.getJSONObject();
 
 		jsonObject.put(
+			"jenkinsNodeCount", getJenkinsNodeCount()
+		).put(
 			"jenkinsUserName", getJenkinsUserName()
 		).put(
 			"jenkinsUserPassword", getJenkinsUserPassword()
@@ -143,6 +159,11 @@ public abstract class BaseJenkinsServerEntity
 	}
 
 	@Override
+	public void setJenkinsNodeCount(int jenkinsNodeCount) {
+		_jenkinsNodeCount = jenkinsNodeCount;
+	}
+
+	@Override
 	public void setJenkinsUserName(String jenkinsUserName) {
 		_jenkinsUserName = jenkinsUserName;
 	}
@@ -158,8 +179,9 @@ public abstract class BaseJenkinsServerEntity
 
 		_jenkinsCohortEntityId = jsonObject.optLong(
 			"r_jenkinsCohortToJenkinsServers_c_jenkinsCohortId");
-		_jenkinsUserName = jsonObject.getString("jenkinsUserName");
-		_jenkinsUserPassword = jsonObject.getString("jenkinsUserPassword");
+		_jenkinsNodeCount = jsonObject.optInt("jenkinsNodeCount");
+		_jenkinsUserName = jsonObject.optString("jenkinsUserName");
+		_jenkinsUserPassword = jsonObject.optString("jenkinsUserPassword");
 		_name = jsonObject.optString("name");
 		_url = StringUtil.toURL(jsonObject.getString("url"));
 	}
@@ -198,6 +220,10 @@ public abstract class BaseJenkinsServerEntity
 
 			jenkinsNodeEntity.update(computerJSONObject);
 		}
+
+		Set<JenkinsNodeEntity> jenkinsNodeEntities = getJenkinsNodeEntities();
+
+		setJenkinsNodeCount(jenkinsNodeEntities.size());
 	}
 
 	protected BaseJenkinsServerEntity(JSONObject jsonObject) {
@@ -206,6 +232,7 @@ public abstract class BaseJenkinsServerEntity
 
 	private JenkinsCohortEntity _jenkinsCohortEntity;
 	private long _jenkinsCohortEntityId;
+	private int _jenkinsNodeCount;
 	private String _jenkinsUserName;
 	private String _jenkinsUserPassword;
 	private String _name;

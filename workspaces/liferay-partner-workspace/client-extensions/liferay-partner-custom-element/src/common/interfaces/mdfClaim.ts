@@ -10,7 +10,11 @@ import MDFClaimDocument from './mdfClaimDocument';
 
 export default interface MDFClaim extends Partial<LiferayObject> {
 	activities?: MDFClaimActivity[];
+	claimPaid?: number;
+	convertedClaimPaid?: number;
+	convertedTotalClaimAmount?: number;
 	currency: LiferayPicklist;
+	currencyExchangeRate: number;
 	externalReferenceCode?: string;
 	externalReferenceCodeSF?: string;
 	mdfClaimStatus: LiferayPicklist;

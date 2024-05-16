@@ -24,6 +24,7 @@ interface IProps {
 	budgets: MDFRequestBudget[];
 	claimPercent: number;
 	currency: LiferayPicklist;
+	currencyExchangeRate: number;
 	currentActivityIndex: number;
 	expenseEntries: React.OptionHTMLAttributes<HTMLOptionElement>[];
 	isButtonClicked: boolean;
