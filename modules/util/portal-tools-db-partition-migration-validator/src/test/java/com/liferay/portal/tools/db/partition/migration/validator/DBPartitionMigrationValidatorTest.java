@@ -5,7 +5,6 @@
 
 package com.liferay.portal.tools.db.partition.migration.validator;
 
-import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.version.Version;
@@ -20,8 +19,12 @@ import java.io.PrintStream;
 import java.security.Permission;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -68,27 +71,15 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 			boolean defaultPartition, List<Release> releases)
 		throws Exception {
 
-		if (companyInfoIds.size() > 1) {
-			JSONAssert.assertEquals(
-				"{\"exportedCompanyId\":null}", content, false);
-		}
-		else {
-			JSONAssert.assertEquals(
-				"{\"exportedCompanyId\": " + companyInfoIds.get(0) + "}",
-				content, false);
-		}
-
-		if (defaultPartition) {
-			JSONAssert.assertEquals(
-				"{\"exportedCompanyDefault\":true}", content, false);
-		}
-		else {
-			JSONAssert.assertEquals(
-				"{\"exportedCompanyDefault\":false}", content, false);
-		}
+		JSONAssert.assertEquals(
+			_getExportedCompanyIdOutput(companyInfoIds), content, false);
 
 		JSONAssert.assertEquals(
-			"{\"tableNames\":[\"Table1\",\"Table2\"]}", content, false);
+			_getExportedCompanyDefaultOutput(defaultPartition), content, false);
+
+		JSONAssert.assertEquals(
+			_getTableNamesOutput(Arrays.asList("Table1", "Table2")), content,
+			false);
 
 		JSONAssert.assertEquals(_getReleasesOutput(releases), content, false);
 
@@ -165,30 +156,50 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 	}
 
 	private String _getCompaniesOutput(List<Company> companies) {
-		StringBundler sb = new StringBundler();
-		int count = 0;
-
-		sb.append("{\"companies\":[");
+		JSONArray companiesJSONArray = new JSONArray();
 
 		for (Company company : companies) {
-			sb.append("{\"companyId\":");
-			sb.append(company.getCompanyId());
-			sb.append(",\"companyName\":\"");
-			sb.append(company.getCompanyName());
-			sb.append("\",\"virtualHostname\":\"");
-			sb.append(company.getVirtualHostname());
-			sb.append("\",\"webId\":\"");
-			sb.append(company.getWebId());
-			sb.append("\"}");
+			JSONObject companyJSONObject = new JSONObject();
 
-			if (++count < companies.size()) {
-				sb.append(",");
-			}
+			companyJSONObject.put(
+				"companyId", company.getCompanyId()
+			).put(
+				"companyName", company.getCompanyName()
+			).put(
+				"virtualHostname", company.getVirtualHostname()
+			).put(
+				"webId", company.getWebId()
+			);
+
+			companiesJSONArray.put(companyJSONObject);
 		}
 
-		sb.append("]}");
+		JSONObject outputJSONObject = new JSONObject();
 
-		return sb.toString();
+		outputJSONObject.put("companies", companiesJSONArray);
+
+		return outputJSONObject.toString();
+	}
+
+	private String _getExportedCompanyDefaultOutput(boolean defaultPartition) {
+		JSONObject outputJSONObject = new JSONObject();
+
+		outputJSONObject.put("exportedCompanyDefault", defaultPartition);
+
+		return outputJSONObject.toString();
+	}
+
+	private String _getExportedCompanyIdOutput(List<Long> companyInfoIds) {
+		JSONObject outputJSONObject = new JSONObject();
+
+		if (companyInfoIds.size() > 1) {
+			outputJSONObject.put("exportedCompanyId", (Collection<?>)null);
+		}
+		else {
+			outputJSONObject.put("exportedCompanyId", companyInfoIds.get(0));
+		}
+
+		return outputJSONObject.toString();
 	}
 
 	private String _getFileContent(File file) throws Exception {
@@ -208,54 +219,63 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 	}
 
 	private String _getReleasesOutput(List<Release> releases) {
-		StringBundler sb = new StringBundler();
-		int count = 0;
-
-		sb.append("{\"releases\":[");
+		JSONArray releasesJSONArray = new JSONArray();
 
 		for (Release release : releases) {
-			sb.append("{\"schemaVersion\":{\"major\":");
-			sb.append(
+			JSONObject releaseJSONObject = new JSONObject();
+
+			JSONObject schemaVersionJSONObject = new JSONObject();
+
+			schemaVersionJSONObject.put(
+				"major",
 				release.getSchemaVersion(
-				).getMajor());
-			sb.append(",\"micro\":");
-			sb.append(
+				).getMajor()
+			).put(
+				"micro",
 				release.getSchemaVersion(
-				).getMicro());
-			sb.append(",\"minor\":");
-			sb.append(
+				).getMicro()
+			).put(
+				"minor",
 				release.getSchemaVersion(
-				).getMinor());
-			sb.append(",\"qualifier\":");
+				).getMinor()
+			).put(
+				"qualifier",
+				release.getSchemaVersion(
+				).getQualifier()
+			);
 
-			if (release.getSchemaVersion(
-				).getQualifier(
-				).isEmpty()) {
+			releaseJSONObject.put(
+				"schemaVersion", schemaVersionJSONObject
+			).put(
+				"servletContextName", release.getServletContextName()
+			).put(
+				"state", release.getState()
+			).put(
+				"verified", release.getVerified()
+			);
 
-				sb.append("\"\"");
-			}
-			else {
-				sb.append(
-					release.getSchemaVersion(
-					).getQualifier());
-			}
-
-			sb.append("},\"servletContextName\":\"");
-			sb.append(release.getServletContextName());
-			sb.append("\",\"state\":");
-			sb.append(release.getState());
-			sb.append(",\"verified\":");
-			sb.append(release.getVerified() ? "true" : "false");
-			sb.append("}");
-
-			if (++count < releases.size()) {
-				sb.append(",");
-			}
+			releasesJSONArray.put(releaseJSONObject);
 		}
 
-		sb.append("]}");
+		JSONObject outputJSONObject = new JSONObject();
 
-		return sb.toString();
+		outputJSONObject.put("releases", releasesJSONArray);
+
+		return outputJSONObject.toString();
+	}
+
+	private String _getTableNamesOutput(List<String> tableNames) {
+		JSONArray tableNamesJSONArray = new JSONArray();
+
+		for (String tableName : tableNames) {
+			tableNamesJSONArray.put(tableName);
+		}
+
+		JSONObject tableNamesJSONObject = new JSONObject();
+
+		tableNamesJSONObject.put("tableNames", tableNamesJSONArray);
+
+		return tableNamesJSONObject.toString();
 	}
 
 	private void _mockDatabase(
