@@ -42,7 +42,7 @@
 			text-align: center;
 		}
 
-		.h4 {
+		h4 {
 			color: #9aa2a6;
 			font-size: 21px;
 			font-weight: 500;
@@ -107,7 +107,7 @@
 
 						<#foreach page in pages>
 							<div class="introduction">
-								<div class="h4">${page.title}</div>
+								<h4>${page.title}</h4>
 
 								<#foreach field in page.fields>
 

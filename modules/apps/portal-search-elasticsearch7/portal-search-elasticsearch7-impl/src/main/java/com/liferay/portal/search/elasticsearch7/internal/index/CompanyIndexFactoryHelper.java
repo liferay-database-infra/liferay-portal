@@ -85,6 +85,8 @@ public class CompanyIndexFactoryHelper {
 		String indexName, IndicesClient indicesClient, long companyId,
 		boolean resetBothIndexNames) {
 
+		_executeIndexContributorsBeforeRemove(indexName);
+
 		DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(
 			indexName);
 
@@ -225,7 +227,22 @@ public class CompanyIndexFactoryHelper {
 			_log.error(
 				StringBundler.concat(
 					"Unable to apply contributor ", indexContributor,
-					"to index ", indexName),
+					" after creating index ", indexName),
+				throwable);
+		}
+	}
+
+	private void _executeIndexContributorBeforeRemove(
+		IndexContributor indexContributor, String indexName) {
+
+		try {
+			indexContributor.onBeforeRemove(indexName);
+		}
+		catch (Throwable throwable) {
+			_log.error(
+				StringBundler.concat(
+					"Unable to apply contributor ", indexContributor,
+					" before deleting index ", indexName),
 				throwable);
 		}
 	}
@@ -235,6 +252,12 @@ public class CompanyIndexFactoryHelper {
 				_indexContributorServiceTrackerList) {
 
 			_executeIndexContributorAfterCreate(indexContributor, indexName);
+		}
+	}
+
+	private void _executeIndexContributorsBeforeRemove(String indexName) {
+		for (IndexContributor indexContributor : getIndexContributors()) {
+			_executeIndexContributorBeforeRemove(indexContributor, indexName);
 		}
 	}
 

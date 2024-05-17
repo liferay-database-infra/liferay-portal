@@ -96,7 +96,12 @@ public class ProjectTemplatesWorkspaceProductKeyTest
 					workspaceProjectDir, true, _gradleDistribution,
 					":modules:" + name + GRADLE_TASK_PATH_BUILD));
 
-			if (_liferayVersion.startsWith("7.0")) {
+			if (_liferayVersion.startsWith("20")) {
+				Assert.assertTrue(
+					gradleOutput.contains(
+						"release.dxp.bom:" + _liferayVersion));
+			}
+			else if (_liferayVersion.startsWith("7.0")) {
 				Assert.assertTrue(
 					gradleOutput.contains(
 						"release.dxp.bom:" + _liferayVersion));

@@ -58,6 +58,15 @@ public class LiferayOAuth2ClientConfigurationDefaultTest {
 	}
 
 	@Test
+	public void testGetAuthorizationFailure() {
+		expectedException.expect(IllegalArgumentException.class);
+		expectedException.expectMessage(
+			"Could not find ClientRegistration with id 'none'");
+
+		_liferayOAuth2AccessTokenManager.getAuthorization("none");
+	}
+
+	@Test
 	public void testGetAuthorizationSuccess() {
 		OAuth2AccessTokenResponse oAuth2AccessTokenResponse =
 			OAuth2AccessTokenResponse.withToken(
@@ -86,15 +95,6 @@ public class LiferayOAuth2ClientConfigurationDefaultTest {
 			expected,
 			_liferayOAuth2AccessTokenManager.getAuthorization(
 				"foo-baker-headless-server"));
-	}
-
-	@Test
-	public void testGetAuthorizationFailure() {
-		expectedException.expect(IllegalArgumentException.class);
-		expectedException.expectMessage(
-			"Could not find ClientRegistration with id 'none'");
-
-		_liferayOAuth2AccessTokenManager.getAuthorization("none");
 	}
 
 	@Rule

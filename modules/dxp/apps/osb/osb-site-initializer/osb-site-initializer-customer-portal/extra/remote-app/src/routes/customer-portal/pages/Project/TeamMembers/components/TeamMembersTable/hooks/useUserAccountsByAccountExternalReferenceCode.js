@@ -5,9 +5,13 @@
 
 import {NetworkStatus} from '@apollo/client';
 import {useEffect, useMemo, useState} from 'react';
+import {associateContactRoleNameByEmailByProject} from '~/common/services/liferay/rest/raysource/LicenseKeys';
 import useSearchTerm from '../../../../../../../../common/hooks/useSearchTerm';
 import {useGetUserAccountsByAccountExternalReferenceCode} from '../../../../../../../../common/services/liferay/graphql/user-accounts';
-import getRaysourceContactRoleName from '../utils/getRaysourceContactRoleName';
+import {
+	getRaysourceContactRoleName,
+	getRaysourceContactRoleNameURLParameter,
+} from '../utils/getRaysourceContactRoleName';
 import useDeleteUserAccount from './useDeleteUserAccount';
 import useSupportSeatsCount from './useSupportSeatsCount';
 import useUpdateUserAccount from './useUpdateUserAccount';
@@ -102,8 +106,9 @@ export default function useUserAccountsByAccountExternalReferenceCode(
 	});
 
 	const remove = (userAccount) => {
-		const contactRoleNames = userAccount.selectedAccountSummary.roleBriefs?.map(
-			(roleBrief) => getRaysourceContactRoleName(roleBrief.name)
+		const contactRoleNameURLParameters = userAccount.selectedAccountSummary.roleBriefs?.map(
+			(roleBrief) =>
+				getRaysourceContactRoleNameURLParameter(roleBrief.name)
 		);
 
 		deleteContactRoles({
@@ -116,45 +121,260 @@ export default function useUserAccountsByAccountExternalReferenceCode(
 				}),
 			variables: {
 				contactEmail: userAccount.emailAddress,
-				contactRoleNames: contactRoleNames.join('&'),
+				contactRoleNames: contactRoleNameURLParameters.join('&'),
 				externalReferenceCode,
 			},
 		});
 	};
 
-	const update = (userAccount, currentAccountRoles, newAccountRoleItem) => {
-		const newContactRoleName = getRaysourceContactRoleName(
+	const update = (
+		userAccount,
+		currentAccountRoles,
+		newAccountRoleItem,
+		provisioningServerAPI,
+		sessionId,
+		project,
+		associateUserAccountWithAccountRole,
+		setCurrentUserEditing
+	) => {
+		const newContactRoleNameURLParameter = getRaysourceContactRoleNameURLParameter(
 			newAccountRoleItem.raysourceName
 		);
 
-		const currentContactRolesName = currentAccountRoles.map((roleBrief) =>
-			getRaysourceContactRoleName(roleBrief.name)
+		const currentContactRoleNameURLParameters = currentAccountRoles.map(
+			(roleBrief) =>
+				getRaysourceContactRoleNameURLParameter(roleBrief.name)
 		);
 
-		updateContactRoles({
-			onCompleted: () =>
-				deleteContactRoles({
-					onCompleted: () =>
-						replaceAccountRole({
+		if (Array.isArray(newAccountRoleItem)) {
+			const hasConflictedRole = currentAccountRoles.some((currentRole) =>
+				newAccountRoleItem.some(
+					(newRole) => currentRole.name === newRole.label
+				)
+			);
+
+			if (!hasConflictedRole) {
+				newAccountRoleItem.map((accountRole) => {
+					const newAccountRoleRaysourceNameURLParameter = getRaysourceContactRoleNameURLParameter(
+						accountRole.raysourceName
+					);
+
+					updateContactRoles({
+						onCompleted: () =>
+							currentAccountRoles.map((currentAccountRole) => {
+								deleteContactRoles({
+									onCompleted: () =>
+										replaceAccountRole({
+											variables: {
+												currentAccountRoleId:
+													currentAccountRole.id,
+												emailAddress:
+													userAccount.emailAddress,
+												externalReferenceCode,
+												newAccountRoleId:
+													accountRole.value,
+											},
+										}),
+									variables: {
+										contactEmail: userAccount.emailAddress,
+										contactRoleNames: currentContactRoleNameURLParameters.join(
+											'&'
+										),
+										externalReferenceCode,
+									},
+								});
+							}),
+						variables: {
+							contactEmail: userAccount.emailAddress,
+							contactRoleName: newAccountRoleRaysourceNameURLParameter,
+							externalReferenceCode,
+						},
+					});
+				});
+			}
+
+			if (hasConflictedRole) {
+				const nonConflictingCurrentAccountRoles = currentAccountRoles.filter(
+					(currentRole) => {
+						return !newAccountRoleItem.some(
+							(newRole) => currentRole.name === newRole.label
+						);
+					}
+				);
+
+				const nonConflictingNewAccountRoleItem = newAccountRoleItem.filter(
+					(newRole) => {
+						return !currentAccountRoles.some(
+							(currentRole) => newRole.label === currentRole.name
+						);
+					}
+				);
+
+				const currentRaysourceContactRoleNameURLParameters = nonConflictingCurrentAccountRoles.map(
+					(roleBrief) =>
+						getRaysourceContactRoleNameURLParameter(roleBrief.name)
+				);
+
+				if (
+					nonConflictingNewAccountRoleItem.length &&
+					nonConflictingCurrentAccountRoles.length
+				) {
+					nonConflictingNewAccountRoleItem.map((accountRole) => {
+						const oldAccountRoleRaysourceNameURLParameter = getRaysourceContactRoleNameURLParameter(
+							accountRole.raysourceName
+						);
+
+						updateContactRoles({
+							onCompleted: () =>
+								nonConflictingCurrentAccountRoles.map(
+									(currentAccountRole) => {
+										deleteContactRoles({
+											onCompleted: () =>
+												replaceAccountRole({
+													variables: {
+														currentAccountRoleId:
+															currentAccountRole.id,
+														emailAddress:
+															userAccount.emailAddress,
+														externalReferenceCode,
+														newAccountRoleId:
+															accountRole.value,
+													},
+												}),
+											variables: {
+												contactEmail:
+													userAccount.emailAddress,
+												contactRoleNames: currentRaysourceContactRoleNameURLParameters.join(
+													'&'
+												),
+												externalReferenceCode,
+											},
+										});
+									}
+								),
 							variables: {
-								currentAccountRoleId: currentAccountRoles[0].id,
-								emailAddress: userAccount.emailAddress,
+								contactEmail: userAccount.emailAddress,
+								contactRoleName: oldAccountRoleRaysourceNameURLParameter,
 								externalReferenceCode,
-								newAccountRoleId: newAccountRoleItem.value,
 							},
-						}),
-					variables: {
-						contactEmail: userAccount.emailAddress,
-						contactRoleNames: currentContactRolesName.join('&'),
-						externalReferenceCode,
-					},
-				}),
-			variables: {
-				contactEmail: userAccount.emailAddress,
-				contactRoleName: newContactRoleName,
-				externalReferenceCode,
-			},
-		});
+						});
+					});
+				}
+
+				if (
+					!nonConflictingNewAccountRoleItem.length &&
+					nonConflictingCurrentAccountRoles.length
+				) {
+					newAccountRoleItem.map((accountRole) => {
+						nonConflictingCurrentAccountRoles.map(
+							(currentAccountRole) => {
+								deleteContactRoles({
+									onCompleted: () =>
+										replaceAccountRole({
+											variables: {
+												currentAccountRoleId:
+													currentAccountRole.id,
+												emailAddress:
+													userAccount.emailAddress,
+												externalReferenceCode,
+												newAccountRoleId:
+													accountRole.value,
+											},
+										}),
+									variables: {
+										contactEmail: userAccount.emailAddress,
+										contactRoleNames: currentRaysourceContactRoleNameURLParameters.join(
+											'&'
+										),
+										externalReferenceCode,
+									},
+								});
+							}
+						);
+					});
+				}
+
+				if (
+					nonConflictingNewAccountRoleItem.length &&
+					!nonConflictingCurrentAccountRoles.length
+				) {
+					const firstName = userAccount?.name.split(' ')[0];
+					const lastName = userAccount?.name.split(' ')[1];
+
+					nonConflictingNewAccountRoleItem?.map(
+						async (accountRole) => {
+							const context = {
+								displayErrors: true,
+								displayServerError: false,
+								displaySuccess: true,
+							};
+
+							const oldAccountRoleRaysourceName = getRaysourceContactRoleName(
+								accountRole.raysourceName
+							);
+
+							await associateContactRoleNameByEmailByProject({
+								accountKey: project.accountKey,
+								emailURI: encodeURI(userAccount.emailAddress),
+								firstName,
+								lastName,
+								provisioningServerAPI,
+								roleName: oldAccountRoleRaysourceName,
+								sessionId,
+							});
+
+							await associateUserAccountWithAccountRole({
+								context,
+								variables: {
+									accountKey: project.accountKey,
+									accountRoleId: accountRole.value,
+									emailAddress: encodeURI(
+										userAccount.emailAddress
+									),
+								},
+							});
+
+							if (setCurrentUserEditing) {
+								setCurrentUserEditing();
+							}
+						}
+					);
+				}
+			}
+		}
+
+		if (!Array.isArray(newAccountRoleItem)) {
+			updateContactRoles({
+				onCompleted: () =>
+					currentAccountRoles.map((currentAccountRole) => {
+						deleteContactRoles({
+							onCompleted: () =>
+								replaceAccountRole({
+									variables: {
+										currentAccountRoleId:
+											currentAccountRole.id,
+										emailAddress: userAccount.emailAddress,
+										externalReferenceCode,
+										newAccountRoleId:
+											newAccountRoleItem.value,
+									},
+								}),
+							variables: {
+								contactEmail: userAccount.emailAddress,
+								contactRoleNames: currentContactRoleNameURLParameters.join(
+									'&'
+								),
+								externalReferenceCode,
+							},
+						});
+					}),
+				variables: {
+					contactEmail: userAccount.emailAddress,
+					contactRoleName: newContactRoleNameURLParameter,
+					externalReferenceCode,
+				},
+			});
+		}
 	};
 
 	return [

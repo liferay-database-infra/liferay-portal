@@ -149,7 +149,7 @@ public interface BaseProjectTemplatesTestCase {
 		"gradle/wrapper/gradle-wrapper.properties"
 	};
 
-	public static final String GRADLE_WRAPPER_VERSION = "7.3.3";
+	public static final String GRADLE_WRAPPER_VERSION = "8.5";
 
 	public static final String MAVEN_GOAL_BUILD_REST = "rest-builder:build";
 
@@ -1125,7 +1125,10 @@ public interface BaseProjectTemplatesTestCase {
 	}
 
 	public default String getLiferayWorkspaceProduct(String liferayVersion) {
-		if (liferayVersion.startsWith("7.0")) {
+		if (liferayVersion.startsWith("20")) {
+			return "dxp-2024.q1.1";
+		}
+		else if (liferayVersion.startsWith("7.0")) {
 			return "dxp-7.0-sp17";
 		}
 		else if (liferayVersion.startsWith("7.1")) {
@@ -1426,7 +1429,9 @@ public interface BaseProjectTemplatesTestCase {
 			testExists(gradleProjectDir, "src/main/" + resourceFileName);
 		}
 
-		if (VersionUtil.getMinorVersion(liferayVersion) < 3) {
+		if ((VersionUtil.getMinorVersion(liferayVersion) < 3) ||
+			(VersionUtil.getMajorVersion(liferayVersion) > 7)) {
+
 			testContains(
 				gradleProjectDir, "build.gradle", DEPENDENCY_RELEASE_DXP_API);
 		}
@@ -1479,7 +1484,14 @@ public interface BaseProjectTemplatesTestCase {
 
 		String liferayProduct = "portal";
 
-		if (liferayVersion.startsWith("7.0")) {
+		if (liferayVersion.startsWith("20")) {
+			writeGradlePropertiesInWorkspace(
+				gradleWorkspaceDir,
+				"liferay.workspace.target.platform.version=2024.q1.1");
+
+			liferayProduct = "dxp";
+		}
+		else if (liferayVersion.startsWith("7.0")) {
 			writeGradlePropertiesInWorkspace(
 				gradleWorkspaceDir,
 				"liferay.workspace.target.platform.version=7.0.10.17");
@@ -1914,7 +1926,18 @@ public interface BaseProjectTemplatesTestCase {
 			File gradleProjectDir, String liferayVersion)
 		throws Exception {
 
-		if (liferayVersion.startsWith("7.0")) {
+		if (liferayVersion.startsWith("20") ||
+			liferayVersion.startsWith("7.4")) {
+
+			testContains(
+				gradleProjectDir, "src/main/webapp/WEB-INF/liferay-display.xml",
+				"liferay-display_7_4_0.dtd");
+
+			testContains(
+				gradleProjectDir, "src/main/webapp/WEB-INF/liferay-portlet.xml",
+				"liferay-portlet-app_7_4_0.dtd");
+		}
+		else if (liferayVersion.startsWith("7.0")) {
 			testContains(
 				gradleProjectDir, "src/main/webapp/WEB-INF/liferay-display.xml",
 				"liferay-display_7_0_0.dtd");
@@ -1949,15 +1972,6 @@ public interface BaseProjectTemplatesTestCase {
 			testContains(
 				gradleProjectDir, "src/main/webapp/WEB-INF/liferay-portlet.xml",
 				"liferay-portlet-app_7_3_0.dtd");
-		}
-		else if (liferayVersion.startsWith("7.4")) {
-			testContains(
-				gradleProjectDir, "src/main/webapp/WEB-INF/liferay-display.xml",
-				"liferay-display_7_4_0.dtd");
-
-			testContains(
-				gradleProjectDir, "src/main/webapp/WEB-INF/liferay-portlet.xml",
-				"liferay-portlet-app_7_4_0.dtd");
 		}
 	}
 

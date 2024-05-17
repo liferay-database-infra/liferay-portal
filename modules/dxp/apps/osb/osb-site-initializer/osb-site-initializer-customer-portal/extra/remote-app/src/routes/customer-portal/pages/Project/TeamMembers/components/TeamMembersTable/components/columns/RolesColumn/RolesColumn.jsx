@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {ClayTooltipProvider} from '@clayui/tooltip';
 import i18n from '../../../../../../../../../../common/I18n';
 import getKebabCase from '../../../../../../../../../../common/utils/getKebabCase';
 import RolesDropdown from './components/RolesDropdown';
@@ -16,6 +17,13 @@ const RolesColumn = ({
 	onClick,
 	supportSeatsCount,
 }) => {
+	const roleProductNames = currentRoleBriefName.map(
+		(roleBriefName, index) =>
+			`${index === 0 ? '' : ' '}${i18n.translate(
+				getKebabCase(roleBriefName)
+			)}`
+	);
+
 	return edit ? (
 		<RolesDropdown
 			accountRoles={accountRoles}
@@ -26,9 +34,13 @@ const RolesColumn = ({
 			supportSeatsCount={supportSeatsCount}
 		/>
 	) : (
-		<p className="m-0 text-truncate">
-			{i18n.translate(getKebabCase(currentRoleBriefName))}
-		</p>
+		<div className="d-flex">
+			<ClayTooltipProvider delay={100}>
+				<p className="m-0 pt-1 text-truncate" title={roleProductNames}>
+					{roleProductNames}
+				</p>
+			</ClayTooltipProvider>
+		</div>
 	);
 };
 

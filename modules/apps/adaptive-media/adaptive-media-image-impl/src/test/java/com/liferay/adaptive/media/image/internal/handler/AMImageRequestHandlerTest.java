@@ -96,7 +96,7 @@ public class AMImageRequestHandlerTest {
 		Mockito.when(
 			_amImageFinder.getAdaptiveMedias(Mockito.any(Function.class))
 		).thenThrow(
-			AMException.class
+			AMException.AMNotFound.class
 		);
 
 		_amImageRequestHandler.handleRequest(httpServletRequest);
@@ -147,7 +147,7 @@ public class AMImageRequestHandlerTest {
 		Mockito.when(
 			_pathInterpreter.interpretPath(Mockito.anyString())
 		).thenThrow(
-			AMRuntimeException.class
+			AMRuntimeException.IOException.class
 		);
 
 		HttpServletRequest httpServletRequest = Mockito.mock(
@@ -334,7 +334,7 @@ public class AMImageRequestHandlerTest {
 					return fileVersion.getContentStream(false);
 				}
 				catch (PortalException portalException) {
-					throw new AMRuntimeException(portalException);
+					throw new AMRuntimeException.IOException(portalException);
 				}
 			},
 			AMImageAttributeMapping.fromProperties(properties), null);
