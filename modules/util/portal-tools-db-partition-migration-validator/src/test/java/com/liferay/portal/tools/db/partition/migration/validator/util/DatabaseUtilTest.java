@@ -24,28 +24,26 @@ import org.junit.Test;
 /**
  * @author Luis Ortiz
  */
-public class DatabaseUtilTest {
+public class DatabaseUtilTest extends BaseTestCase {
 
 	@Before
 	public void setUp() throws SQLException {
-		DatabaseMockUtil.mockGetColumns(
+		mockGetColumns(
 			Arrays.asList("Table1", "Company", "Table2", "Object_x_25000"));
-		DatabaseMockUtil.mockGetCompanies(Arrays.asList(_company1, _company2));
-		DatabaseMockUtil.mockGetCompanyIds(Collections.singletonList(25000L));
-		DatabaseMockUtil.mockGetCompanyInfos(
-			Collections.singletonList(_COMPANY_ID));
-		DatabaseMockUtil.mockGetConnection(
+		mockGetCompanies(Arrays.asList(_company1, _company2));
+		mockGetCompanyIds(Collections.singletonList(25000L));
+		mockGetCompanyInfos(Collections.singletonList(_COMPANY_ID));
+		mockGetConnection(
 			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
 			RandomTestUtil.randomString());
-		DatabaseMockUtil.mockGetReleases(
-			Arrays.asList(_module1Release, _module2Release));
-		DatabaseMockUtil.mockGetTables(true);
+		mockGetReleases(Arrays.asList(_module1Release, _module2Release));
+		mockGetTables(true);
 	}
 
 	@Test
 	public void testExportLiferayDatabaseWithDefaultCompany() throws Exception {
 		LiferayDatabase liferayDatabase = DatabaseUtil.exportLiferayDatabase(
-			DatabaseMockUtil.getConnection());
+			getConnection());
 
 		_assert(liferayDatabase, true);
 	}
@@ -54,13 +52,12 @@ public class DatabaseUtilTest {
 	public void testExportLiferayDatabaseWithMultipleCompanies()
 		throws Exception {
 
-		DatabaseMockUtil.mockGetCompanyInfos(
+		mockGetCompanyInfos(
 			Arrays.asList(
 				RandomTestUtil.randomLong(), RandomTestUtil.randomLong()));
 
 		try {
-			DatabaseUtil.exportLiferayDatabase(
-				DatabaseMockUtil.getConnection());
+			DatabaseUtil.exportLiferayDatabase(getConnection());
 
 			Assert.fail();
 		}
@@ -78,10 +75,10 @@ public class DatabaseUtilTest {
 	public void testExportLiferayDatabaseWithNondefaultCompany()
 		throws Exception {
 
-		DatabaseMockUtil.mockGetTables(false);
+		mockGetTables(false);
 
 		LiferayDatabase liferayDatabase = DatabaseUtil.exportLiferayDatabase(
-			DatabaseMockUtil.getConnection());
+			getConnection());
 
 		_assert(liferayDatabase, false);
 	}

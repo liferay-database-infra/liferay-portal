@@ -26,15 +26,13 @@ import org.mockito.stubbing.Answer;
 /**
  * @author Luis Ortiz
  */
-public class DatabaseMockUtil {
+public abstract class BaseTestCase {
 
-	public static Connection getConnection() {
+	protected Connection getConnection() {
 		return _connection;
 	}
 
-	public static void mockGetColumns(List<String> tableNames)
-		throws SQLException {
-
+	protected void mockGetColumns(List<String> tableNames) throws SQLException {
 		ResultSet resultSet1 = Mockito.mock(ResultSet.class);
 
 		Mockito.when(
@@ -102,7 +100,7 @@ public class DatabaseMockUtil {
 		);
 	}
 
-	public static void mockGetCompanies(List<Company> companies)
+	protected void mockGetCompanies(List<Company> companies)
 		throws SQLException {
 
 		PreparedStatement preparedStatement = Mockito.mock(
@@ -234,7 +232,7 @@ public class DatabaseMockUtil {
 		);
 	}
 
-	public static void mockGetCompanyIds(List<Long> companyIds)
+	protected void mockGetCompanyIds(List<Long> companyIds)
 		throws SQLException {
 
 		PreparedStatement preparedStatement = Mockito.mock(
@@ -295,7 +293,7 @@ public class DatabaseMockUtil {
 		);
 	}
 
-	public static void mockGetCompanyInfos(List<Long> companyIds)
+	protected void mockGetCompanyInfos(List<Long> companyIds)
 		throws SQLException {
 
 		PreparedStatement preparedStatement = Mockito.mock(
@@ -356,8 +354,7 @@ public class DatabaseMockUtil {
 		);
 	}
 
-	public static void mockGetConnection(
-			String password, String url, String user)
+	protected void mockGetConnection(String password, String url, String user)
 		throws SQLException {
 
 		_driverManagerMockedStatic.when(
@@ -379,9 +376,7 @@ public class DatabaseMockUtil {
 		);
 	}
 
-	public static void mockGetReleases(List<Release> releases)
-		throws SQLException {
-
+	protected void mockGetReleases(List<Release> releases) throws SQLException {
 		PreparedStatement preparedStatement = Mockito.mock(
 			PreparedStatement.class);
 
@@ -512,9 +507,7 @@ public class DatabaseMockUtil {
 		);
 	}
 
-	public static void mockGetTables(boolean defaultPartition)
-		throws SQLException {
-
+	protected void mockGetTables(boolean defaultPartition) throws SQLException {
 		ResultSet resultSet = Mockito.mock(ResultSet.class);
 
 		Mockito.when(

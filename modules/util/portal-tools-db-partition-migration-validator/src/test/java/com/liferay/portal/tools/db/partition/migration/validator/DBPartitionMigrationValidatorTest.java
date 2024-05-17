@@ -9,7 +9,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.version.Version;
-import com.liferay.portal.tools.db.partition.migration.validator.util.DatabaseMockUtil;
+import com.liferay.portal.tools.db.partition.migration.validator.util.BaseTestCase;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -35,7 +35,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 /**
  * @author Luis Ortiz
  */
-public class DBPartitionMigrationValidatorTest {
+public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 
 	@Before
 	public void setUp() {
@@ -264,15 +264,15 @@ public class DBPartitionMigrationValidatorTest {
 			List<Release> releases, List<String> tableNames)
 		throws Exception {
 
-		DatabaseMockUtil.mockGetColumns(tableNames);
-		DatabaseMockUtil.mockGetCompanies(companies);
-		DatabaseMockUtil.mockGetCompanyIds(companyIds);
-		DatabaseMockUtil.mockGetCompanyInfos(companyInfoIds);
-		DatabaseMockUtil.mockGetConnection(
+		mockGetColumns(tableNames);
+		mockGetCompanies(companies);
+		mockGetCompanyIds(companyIds);
+		mockGetCompanyInfos(companyInfoIds);
+		mockGetConnection(
 			_PASSWORD, StringUtil.replace(_URL, "lportal", _SCHEMA_NAME),
 			_USER);
-		DatabaseMockUtil.mockGetReleases(releases);
-		DatabaseMockUtil.mockGetTables(defaultPartition);
+		mockGetReleases(releases);
+		mockGetTables(defaultPartition);
 	}
 
 	private static final String _PASSWORD = RandomTestUtil.randomString();
