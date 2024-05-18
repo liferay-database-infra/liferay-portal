@@ -30,7 +30,7 @@ public class BlogPostingEntityModel implements EntityModel {
 					"taxonomyCategoryIds", locale -> "assetCategoryIds")),
 			new CollectionEntityField(
 				new StringEntityField(
-					"keywords", locale -> "assetTagNames.raw")),
+					"keywords", locale -> "assetTagNames.lowercase")),
 			new ComplexEntityField("customFields", entityFields),
 			new DateTimeEntityField(
 				"dateCreated",

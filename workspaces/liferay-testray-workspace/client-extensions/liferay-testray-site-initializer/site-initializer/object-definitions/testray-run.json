@@ -1,4 +1,5 @@
 {
+	"enableIndexSearch": false,
 	"label": {
 		"en_US": "Testray Run"
 	},
@@ -82,6 +83,7 @@
 			"type": "String"
 		}
 	],
+	"panelCategoryKey": "control_panel.object",
 	"pluralLabel": {
 		"en_US": "Testray Runs"
 	},

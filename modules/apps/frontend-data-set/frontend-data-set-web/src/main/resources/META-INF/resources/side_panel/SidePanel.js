@@ -38,12 +38,14 @@ export default class SidePanel extends React.Component {
 			active: null,
 			closeButtonStyle: null,
 			currentURL: props.url || null,
+			disableHeader: props.disableHeader || false,
 			iframeHandlerModalId: subscribeModal(),
 			loading: true,
 			menuCoverTopDistance: 0,
 			moving: false,
 			onAfterSubmit: props.onAfterSubmit || null,
 			size: props.size || this.defaultSize,
+			title: props.title || undefined,
 			topDistance: 0,
 			visible: !!props.visible,
 			wrapper:
@@ -93,7 +95,9 @@ export default class SidePanel extends React.Component {
 
 		exposeSidePanel(this.props.id, () => ({
 			activeMenuItem: this.state.active,
+			disableHeader: this.state.disableHeader,
 			size: this.state.size,
+			title: this.state.title,
 			url: this.state.currentURL,
 			visible: this.state.visible,
 		}));
@@ -107,8 +111,10 @@ export default class SidePanel extends React.Component {
 		this.open(event.url, event.slug);
 
 		this.setState({
+			disableHeader: event.disableHeader,
 			onAfterSubmit: event.onSubmit || null,
 			size: event.size || this.defaultSize,
+			title: event.title,
 		});
 	}
 
@@ -382,21 +388,29 @@ export default class SidePanel extends React.Component {
 						/>
 					)}
 
-					<ClayButton
-						aria-label={Liferay.Language.get('close')}
-						className={classNames(
-							'fds-side-panel-close',
-							this.state.closeButtonStyle === 'simple' &&
-								'fds-side-panel-close-simple',
-							this.state.closeButtonStyle === 'menu' &&
-								'fds-side-panel-close-menu'
-						)}
-						displayType="monospaced"
-						onClick={() => this.close()}
-						title={Liferay.Language.get('close')}
-					>
-						<ClayIcon symbol="times" />
-					</ClayButton>
+					{!this.state.disableHeader && (
+						<div className="fds-side-panel-header">
+							<div className="fds-side-panel-title">
+								<h3 className="mb-0">{this.state.title}</h3>
+							</div>
+
+							<ClayButton
+								aria-label={Liferay.Language.get('close')}
+								className={classNames(
+									'fds-side-panel-close',
+									this.state.closeButtonStyle === 'simple' &&
+										'fds-side-panel-close-simple',
+									this.state.closeButtonStyle === 'menu' &&
+										'fds-side-panel-close-menu'
+								)}
+								displayType="monospaced"
+								onClick={() => this.close()}
+								title={Liferay.Language.get('close')}
+							>
+								<ClayIcon symbol="times" />
+							</ClayButton>
+						</div>
+					)}
 
 					<div className="tab-content">
 						<div className="loader">

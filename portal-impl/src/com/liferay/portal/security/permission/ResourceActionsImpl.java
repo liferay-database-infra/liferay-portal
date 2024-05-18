@@ -56,7 +56,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -66,6 +65,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -1123,7 +1123,7 @@ public class ResourceActionsImpl implements ResourceActions {
 
 				Set<String> modelResources =
 					_resourceReferences.computeIfAbsent(
-						portletName, key -> new HashSet<>());
+						portletName, key -> ConcurrentHashMap.newKeySet());
 
 				modelResources.add(modelName);
 
@@ -1131,7 +1131,7 @@ public class ResourceActionsImpl implements ResourceActions {
 
 				Set<String> portletResources =
 					_resourceReferences.computeIfAbsent(
-						modelName, key -> new HashSet<>());
+						modelName, key -> ConcurrentHashMap.newKeySet());
 
 				portletResources.add(portletName);
 
@@ -1348,15 +1348,18 @@ public class ResourceActionsImpl implements ResourceActions {
 	private static final ResourceActionsBag _dummyResourceActionsBag =
 		new ResourceActionsBag();
 
-	private final Map<String, Double> _modelResourceWeights = new HashMap<>();
-	private final Set<String> _organizationModelResources = new HashSet<>();
-	private final Set<String> _portalModelResources = new HashSet<>();
+	private final Map<String, Double> _modelResourceWeights =
+		new ConcurrentHashMap<>();
+	private final Set<String> _organizationModelResources =
+		ConcurrentHashMap.newKeySet();
+	private final Set<String> _portalModelResources =
+		ConcurrentHashMap.newKeySet();
 	private final Map<String, String> _portletRootModelResources =
-		new HashMap<>();
+		new ConcurrentHashMap<>();
 	private final Map<String, ResourceActionsBag> _resourceActionsBags =
-		new HashMap<>();
+		new ConcurrentHashMap<>();
 	private final Map<String, Set<String>> _resourceReferences =
-		new HashMap<>();
+		new ConcurrentHashMap<>();
 
 	private static class ResourceActionsBag {
 
@@ -1384,12 +1387,18 @@ public class ResourceActionsImpl implements ResourceActions {
 			return _supportsActions;
 		}
 
-		private final Set<String> _groupDefaultActions = new HashSet<>();
-		private final Set<String> _guestDefaultActions = new HashSet<>();
-		private final Set<String> _guestUnsupportedActions = new HashSet<>();
-		private final Set<String> _layoutManagerActions = new HashSet<>();
-		private final Set<String> _ownerDefaultActions = new HashSet<>();
-		private final Set<String> _supportsActions = new HashSet<>();
+		private final Set<String> _groupDefaultActions =
+			ConcurrentHashMap.newKeySet();
+		private final Set<String> _guestDefaultActions =
+			ConcurrentHashMap.newKeySet();
+		private final Set<String> _guestUnsupportedActions =
+			ConcurrentHashMap.newKeySet();
+		private final Set<String> _layoutManagerActions =
+			ConcurrentHashMap.newKeySet();
+		private final Set<String> _ownerDefaultActions =
+			ConcurrentHashMap.newKeySet();
+		private final Set<String> _supportsActions =
+			ConcurrentHashMap.newKeySet();
 
 	}
 

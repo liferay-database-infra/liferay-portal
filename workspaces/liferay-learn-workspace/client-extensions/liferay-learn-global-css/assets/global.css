@@ -736,6 +736,11 @@ pre[class*='language-'] {
 		border-color: var(--color-brand-primary-darken-1, #0053f0);
 	}
 
+	&:has(.subsection a) h4,
+	&:has(.subsection-wrapper a) .primary-heading-link {
+		color: var(--color-neutral-10);
+	}
+
 	a {
 		display: block;
 	}
@@ -913,6 +918,10 @@ pre[class*='language-'] {
 		&::before {
 			display: none !important;
 		}
+	}
+
+	.active.page-item {
+		z-index: 2;
 	}
 
 	.active.page-item .page-link,

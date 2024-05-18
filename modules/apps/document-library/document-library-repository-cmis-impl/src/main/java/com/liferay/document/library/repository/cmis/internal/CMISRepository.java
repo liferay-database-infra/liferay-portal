@@ -874,6 +874,13 @@ public class CMISRepository extends BaseCmisRepository {
 			"CMIS object is unfileable for id " + objectId);
 	}
 
+	@Override
+	public List<FileShortcut> getRepositoryFileShortcuts(long groupId)
+		throws PortalException {
+
+		return new ArrayList<>();
+	}
+
 	public Session getSession() throws PortalException {
 		Session session = null;
 

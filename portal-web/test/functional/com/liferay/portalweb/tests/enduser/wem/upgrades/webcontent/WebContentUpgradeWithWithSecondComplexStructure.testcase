@@ -139,18 +139,16 @@ definition {
 
 		NavItem.gotoStructures();
 
-		LexiconEntry.gotoEntryMenuItem(
-			menuItem = "Edit Default Values",
-			rowEntry = "WC Structure Name");
+		WebContentStructures.editStructureDefaultValuesCP(structureName = "WC Structure Name");
 
-		takeScreenshot();
+		AssertVisible(locator1 = "WCEditWebContent#SIDEBAR");
+
+		AssertVisible(locator1 = "Sidebar#FORM_BUILDER");
 
 		Type(
 			key_fieldFieldLabel = "Label UF Comunicado",
 			locator1 = "WCEditWebContent#TEXT_INPUT",
 			value1 = "Edited LabelUFComunicado Field");
-
-		takeScreenshot();
 
 		Type(
 			key_fieldFieldLabel = "Lista UF Comunicado",
@@ -163,9 +161,11 @@ definition {
 
 		NavItem.gotoStructures();
 
-		LexiconEntry.gotoEntryMenuItem(
-			menuItem = "Edit Default Values",
-			rowEntry = "WC Structure Name");
+		WebContentStructures.editStructureDefaultValuesCP(structureName = "WC Structure Name");
+
+		AssertVisible(locator1 = "WCEditWebContent#SIDEBAR");
+
+		AssertVisible(locator1 = "Sidebar#FORM_BUILDER");
 
 		AssertTextEquals.assertValue(
 			key_fieldFieldLabel = "Label UF Comunicado",

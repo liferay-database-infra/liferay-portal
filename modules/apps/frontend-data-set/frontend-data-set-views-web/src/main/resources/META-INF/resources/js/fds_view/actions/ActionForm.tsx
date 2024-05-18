@@ -164,7 +164,6 @@ const ActionForm = ({
 	const [titleTranslations, setTitleTranslations] = useState(
 		initialValues?.title_i18n ?? {}
 	);
-	const [titleValidationError, setTitleValidationError] = useState(false);
 	const [urlValidationError, setURLValidationError] = useState(false);
 
 	const [actionData, setActionData] = useState({
@@ -274,16 +273,12 @@ const ActionForm = ({
 	const validateForm = ({
 		labelTranslations,
 		permissionKey,
-		titleTranslations,
 		url,
 	}: {
 		labelTranslations: Partial<
 			Liferay.Language.FullyLocalizedValue<string>
 		>;
 		permissionKey: string;
-		titleTranslations: Partial<
-			Liferay.Language.FullyLocalizedValue<string>
-		>;
 		url: string;
 	}) => {
 		let valid = true;
@@ -293,12 +288,7 @@ const ActionForm = ({
 			(!permissionKey && actionData.type === ACTION_TYPE.HEADLESS) ||
 			!translationExists({
 				translations: labelTranslations,
-			}) ||
-			((actionData.type === ACTION_TYPE.MODAL ||
-				actionData.type === ACTION_TYPE.SIDEPANEL) &&
-				!translationExists({
-					translations: titleTranslations,
-				}))
+			})
 		) {
 			valid = false;
 		}
@@ -449,7 +439,6 @@ const ActionForm = ({
 									validateForm({
 										labelTranslations: translations,
 										permissionKey: actionData.permissionKey,
-										titleTranslations,
 										url: actionData.url,
 									});
 								}}
@@ -640,38 +629,28 @@ const ActionForm = ({
 						<ClayLayout.Row>
 							<ClayLayout.Col>
 								<InputLocalized
-									error={
-										titleValidationError
+									helpMessage={
+										actionData.type ===
+										ACTION_TYPE.SIDEPANEL
 											? Liferay.Language.get(
-													'this-field-is-required'
+													'side-panel-title-help'
 											  )
-											: undefined
+											: ''
 									}
 									id={titleFormElementId}
 									label={Liferay.Language.get('title')}
 									onChange={(translations) => {
 										setTitleTranslations(translations);
-
-										setTitleValidationError(
-											!translationExists({
-												translations,
-											})
-										);
-
-										validateForm({
-											labelTranslations,
-											permissionKey:
-												actionData.permissionKey,
-											titleTranslations: translations,
-											url: actionData.url,
-										});
 									}}
-									placeholder={Liferay.Language.get(
+									placeholder={
 										actionData.type === ACTION_TYPE.MODAL
-											? 'add-here-the-title-of-the-modal'
-											: 'add-here-the-title-of-the-side-panel'
-									)}
-									required
+											? Liferay.Language.get(
+													'add-the-title-of-the-modal'
+											  )
+											: Liferay.Language.get(
+													'add-the-title-of-the-side-panel'
+											  )
+									}
 									translations={titleTranslations}
 								/>
 							</ClayLayout.Col>
@@ -709,7 +688,6 @@ const ActionForm = ({
 												labelTranslations,
 												permissionKey:
 													actionData.permissionKey,
-												titleTranslations,
 												url,
 											});
 										}}
@@ -777,7 +755,6 @@ const ActionForm = ({
 										validateForm({
 											labelTranslations,
 											permissionKey,
-											titleTranslations,
 											url: actionData.url,
 										});
 									}}

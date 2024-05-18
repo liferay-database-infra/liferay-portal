@@ -385,6 +385,13 @@ public abstract class CMISRepositoryHandler
 		return _baseCmisRepository.getObjectPaths(objectId);
 	}
 
+	@Override
+	public List<FileShortcut> getRepositoryFileShortcuts(long groupId)
+		throws PortalException {
+
+		return _baseCmisRepository.getRepositoryFileShortcuts(groupId);
+	}
+
 	public abstract Session getSession() throws PortalException;
 
 	@Override

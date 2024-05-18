@@ -759,6 +759,14 @@ public class LiferayRepository
 	}
 
 	@Override
+	public List<FileShortcut> getRepositoryFileShortcuts(long groupId) {
+		List<DLFileShortcut> dlFileShortcuts =
+			dlFileShortcutService.getGroupFileShortcuts(groupId);
+
+		return RepositoryModelUtil.toFileShortcuts(dlFileShortcuts);
+	}
+
+	@Override
 	public void getSubfolderIds(List<Long> folderIds, long folderId)
 		throws PortalException {
 

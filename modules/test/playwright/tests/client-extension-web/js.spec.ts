@@ -6,19 +6,53 @@
 import {Page, expect, mergeTests} from '@playwright/test';
 
 import {pagesAdminPageTest} from '../../fixtures/PagesAdminPageTest';
+import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
+import {localizationSiteSettingsPageTest} from '../../fixtures/localizationSiteSettingsPageTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {PagesAdminPage} from '../../pages/layout-admin-web/PagesAdminPage';
+import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
 import getRandomString from '../../utils/getRandomString';
 import {clientExtensionsPageTest} from './fixtures/clientExtensionsPageTest';
 import {editJSClientExtensionsPageTest} from './fixtures/editJSClientExtensionsPageTest';
 import {ClientExtensionsPage} from './pages/ClientExtensionsPage';
 import {EditJSClientExtensionsPage} from './pages/EditJSClientExtensionsPage';
+import {ViewClientExtensionPage} from './pages/ViewClientExtensionPage';
+
+const SAMPLE = {
+	erc: 'LXC:liferay-sample-global-js-1',
+	name: 'Liferay Sample Global JS',
+	url: '/o/liferay-sample-global-js-1/global.7d2b9f54c4f8f75ba0c6.js',
+};
+
+export const testSample = mergeTests(loginTest());
+
+testSample(`${SAMPLE.name} is registered`, async ({page}) => {
+	const viewClientExtensionPage = new ViewClientExtensionPage(
+		page,
+		SAMPLE.erc
+	);
+
+	await viewClientExtensionPage.goto();
+
+	expect(viewClientExtensionPage.nameLocator).toHaveValue(SAMPLE.name);
+	expect(viewClientExtensionPage.fieldLocator('JavaScript URL')).toHaveValue(
+		SAMPLE.url
+	);
+});
+
+testSample(`${SAMPLE.name}'s .js file can be downloaded`, async ({page}) => {
+	const response = await page.goto(SAMPLE.url);
+
+	expect(response.status()).toBe(200);
+});
 
 export const test = mergeTests(
 	clientExtensionsPageTest,
+	editJSClientExtensionsPageTest,
+	isolatedSiteTest,
+	localizationSiteSettingsPageTest,
 	loginTest(),
-	pagesAdminPageTest,
-	editJSClientExtensionsPageTest
+	pagesAdminPageTest
 );
 
 test('Create a new JS client extension with a script element attribute', async ({
@@ -104,7 +138,7 @@ type TScriptAttribute = {
 	valueWhenInPage: string | null;
 };
 
-type TGlobalJSClientExtensionWithAttributes = {
+type TJSClientExtensionWithAttributes = {
 	clientExtensionName: string;
 	clientExtensionsPage: ClientExtensionsPage;
 	defaultSelectedLoadType?: string;
@@ -114,7 +148,7 @@ type TGlobalJSClientExtensionWithAttributes = {
 	scriptAttributes: TScriptAttribute[];
 };
 
-const testGlobalJSClientExtensionWithAttributes = async ({
+const testJSClientExtensionWithAttributes = async ({
 	clientExtensionName,
 	clientExtensionsPage,
 	defaultSelectedLoadType,
@@ -122,9 +156,9 @@ const testGlobalJSClientExtensionWithAttributes = async ({
 	page,
 	pagesAdminPage,
 	scriptAttributes,
-}: TGlobalJSClientExtensionWithAttributes) => {
+}: TJSClientExtensionWithAttributes) => {
 
-	// Create the Global JS Client Extension
+	// Create the JS Client Extension
 
 	await editJSClientExtensionsPage.goto();
 
@@ -140,7 +174,7 @@ const testGlobalJSClientExtensionWithAttributes = async ({
 
 	await editJSClientExtensionsPage.publish();
 
-	// Apply the Global JS client extension and assert its attributes
+	// Apply the JS client extension and assert its attributes
 
 	await pagesAdminPage.selectJavaScriptClientExtension(clientExtensionName);
 
@@ -171,7 +205,7 @@ const testGlobalJSClientExtensionWithAttributes = async ({
 	await clientExtensionsPage.deleteClientExtension(clientExtensionName);
 };
 
-test('GlobalJS client extension with async and defer attributes set to true', async ({
+test('JS client extension with async and defer attributes set to true', async ({
 	clientExtensionsPage,
 	editJSClientExtensionsPage,
 	page,
@@ -179,7 +213,7 @@ test('GlobalJS client extension with async and defer attributes set to true', as
 }) => {
 	const clientExtensionName = getRandomString();
 
-	await testGlobalJSClientExtensionWithAttributes({
+	await testJSClientExtensionWithAttributes({
 		clientExtensionName,
 		clientExtensionsPage,
 		defaultSelectedLoadType: 'async',
@@ -209,7 +243,7 @@ test('GlobalJS client extension with async and defer attributes set to true', as
 	});
 });
 
-test('GlobalJS client extension with async attribute set to true', async ({
+test('JS client extension with async attribute set to true', async ({
 	clientExtensionsPage,
 	editJSClientExtensionsPage,
 	page,
@@ -217,7 +251,7 @@ test('GlobalJS client extension with async attribute set to true', async ({
 }) => {
 	const clientExtensionName = getRandomString();
 
-	await testGlobalJSClientExtensionWithAttributes({
+	await testJSClientExtensionWithAttributes({
 		clientExtensionName,
 		clientExtensionsPage,
 		defaultSelectedLoadType: 'async',
@@ -241,7 +275,7 @@ test('GlobalJS client extension with async attribute set to true', async ({
 	});
 });
 
-test('GlobalJS client extension with defer attribute set to true', async ({
+test('JS client extension with defer attribute set to true', async ({
 	clientExtensionsPage,
 	editJSClientExtensionsPage,
 	page,
@@ -249,7 +283,7 @@ test('GlobalJS client extension with defer attribute set to true', async ({
 }) => {
 	const clientExtensionName = getRandomString();
 
-	await testGlobalJSClientExtensionWithAttributes({
+	await testJSClientExtensionWithAttributes({
 		clientExtensionName,
 		clientExtensionsPage,
 		defaultSelectedLoadType: 'defer',
@@ -273,7 +307,7 @@ test('GlobalJS client extension with defer attribute set to true', async ({
 	});
 });
 
-test('GlobalJS client extension with async and defer attributes set to false and data-senna-track and type are overridden', async ({
+test('JS client extension with async and defer attributes set to false and data-senna-track and type are overridden', async ({
 	clientExtensionsPage,
 	editJSClientExtensionsPage,
 	page,
@@ -281,7 +315,7 @@ test('GlobalJS client extension with async and defer attributes set to false and
 }) => {
 	const clientExtensionName = getRandomString();
 
-	await testGlobalJSClientExtensionWithAttributes({
+	await testJSClientExtensionWithAttributes({
 		clientExtensionName,
 		clientExtensionsPage,
 		editJSClientExtensionsPage,
@@ -319,5 +353,85 @@ test('GlobalJS client extension with async and defer attributes set to false and
 				valueWhenInPage: 'module',
 			},
 		],
+	});
+});
+
+test('JS client extension can be created with name translations while having a language configuration for the site settings', async ({
+	clientExtensionsPage,
+	editJSClientExtensionsPage,
+	localizationSiteSettingsPage,
+	page,
+	site,
+}) => {
+	await test.step('Set spanish as default language for the site', async () => {
+		await localizationSiteSettingsPage.setDefaultCustomLanguage(
+			'Spanish (Spain)',
+			site.friendlyUrlPath
+		);
+	});
+
+	const englishName = getRandomString();
+	const spanishName = getRandomString();
+
+	await test.step('Create a JS client extension with english and spanish translations', async () => {
+		await editJSClientExtensionsPage.goto();
+
+		await expect(
+			page.getByLabel('Current translation is English', {exact: false})
+		).toBeVisible();
+
+		await editJSClientExtensionsPage.nameInput.fill(englishName);
+
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: page.getByRole('menuitem', {name: 'spanish'}),
+			trigger: page.getByRole('button', {
+				exact: false,
+				name: 'Current translation',
+			}),
+		});
+
+		await expect(
+			page.getByLabel('Current translation is Spanish', {exact: false})
+		).toBeVisible();
+
+		await editJSClientExtensionsPage.nameInput.fill(spanishName);
+
+		await editJSClientExtensionsPage.javaScriptURLInput.fill(
+			'https://www.example.com/script.js'
+		);
+
+		await editJSClientExtensionsPage.publish();
+	});
+
+	await test.step('Assert the name translations for the new JS client extension', async () => {
+		await page.getByRole('link', {name: englishName}).click();
+
+		await expect(
+			page.getByLabel('Current translation is English', {exact: false})
+		).toBeVisible();
+
+		await expect(editJSClientExtensionsPage.nameInput).toHaveValue(
+			englishName
+		);
+
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: page.getByRole('menuitem', {name: 'spanish'}),
+			trigger: page.getByRole('button', {
+				exact: false,
+				name: 'Current translation',
+			}),
+		});
+
+		await expect(editJSClientExtensionsPage.nameInput).toHaveValue(
+			spanishName
+		);
+	});
+
+	await test.step('Delete the JS client extension', async () => {
+		await clientExtensionsPage.goto();
+
+		await clientExtensionsPage.deleteClientExtension(englishName);
 	});
 });

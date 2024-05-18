@@ -1,4 +1,5 @@
 {
+	"enableIndexSearch": false,
 	"label": {
 		"en_US": "Testray Build"
 	},
@@ -140,6 +141,7 @@
 			"type": "Boolean"
 		}
 	],
+	"panelCategoryKey": "control_panel.object",
 	"pluralLabel": {
 		"en_US": "Testray Builds"
 	},

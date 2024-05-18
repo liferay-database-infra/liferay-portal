@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.testray.rest.dto.v1_0.TestrayCache;
 import com.liferay.testray.rest.manager.TestrayManager;
@@ -78,12 +79,19 @@ public class TestrayManagerImpl implements TestrayManager {
 
 	@Override
 	public void processArchive(
-			long companyId, byte[] bytes, ServiceContext serviceContext,
-			long userId)
+			long companyId, byte[] bytes, String fileName,
+			ServiceContext serviceContext, long userId)
 		throws Exception {
 
+		long startTime = System.currentTimeMillis();
+
+		String dueStatus = "successful";
 		Path tempDirectoryPath = null;
 		Path tempFilePath = null;
+
+		TestrayCache testrayCache = new TestrayCache();
+
+		loadTestrayCache(companyId, testrayCache, userId);
 
 		try {
 			tempDirectoryPath = Files.createTempDirectory(null);
@@ -104,10 +112,6 @@ public class TestrayManagerImpl implements TestrayManager {
 			DocumentBuilder documentBuilder =
 				documentBuilderFactory.newDocumentBuilder();
 
-			TestrayCache testrayCache = new TestrayCache();
-
-			loadTestrayCache(companyId, testrayCache, userId);
-
 			for (File file : tempDirectoryFile.listFiles()) {
 				if (_log.isInfoEnabled()) {
 					_log.info("Processing " + file.getName());
@@ -117,16 +121,23 @@ public class TestrayManagerImpl implements TestrayManager {
 					Document document = documentBuilder.parse(file);
 
 					processDocument(
-						companyId, document, serviceContext, testrayCache,
-						userId);
+						companyId, document, null, 0, serviceContext,
+						testrayCache, userId);
 				}
 				catch (Exception exception) {
+					dueStatus = "failed";
+
 					_log.error(exception);
 				}
 				finally {
 					file.delete();
 				}
 			}
+		}
+		catch (Exception exception) {
+			dueStatus = "failed";
+
+			_log.error(exception);
 		}
 		finally {
 			if (tempDirectoryPath != null) {
@@ -136,40 +147,97 @@ public class TestrayManagerImpl implements TestrayManager {
 			if (tempFilePath != null) {
 				Files.deleteIfExists(tempFilePath);
 			}
+
+			_addTestrayTestSuite(
+				testrayCache.getTestrayBuildId(),
+				testrayCache.getTestrayCaseResultAmount(), dueStatus,
+				System.currentTimeMillis() - startTime, fileName, bytes.length,
+				serviceContext, testrayCache, userId);
 		}
 	}
 
 	@Override
 	public void processDocument(
-			long companyId, Document document, ServiceContext serviceContext,
-			TestrayCache testrayCache, long userId)
+			long companyId, Document document, String fileName, long fileSize,
+			ServiceContext serviceContext, TestrayCache testrayCache,
+			long userId)
 		throws Exception {
 
-		Element element = document.getDocumentElement();
+		long startTime = System.currentTimeMillis();
 
-		Map<String, String> propertiesMap = _getPropertiesMap(element);
+		String dueStatus = "successful";
 
-		long testrayProjectId = _getTestrayProjectId(
-			companyId, serviceContext, testrayCache,
-			propertiesMap.get("testray.project.name"), userId);
+		try {
+			Element element = document.getDocumentElement();
 
-		long testrayRoutineId = _getTestrayRoutineId(
-			companyId, serviceContext, testrayCache, testrayProjectId,
-			propertiesMap.get("testray.build.type"), userId);
+			Map<String, String> propertiesMap = _getPropertiesMap(element);
 
-		long testrayBuildId = _getTestrayBuildId(
-			companyId, propertiesMap, serviceContext,
-			propertiesMap.get("testray.build.name"), testrayCache,
-			testrayProjectId, testrayRoutineId, userId);
+			long testrayProjectId = _getTestrayProjectId(
+				companyId, serviceContext, testrayCache,
+				propertiesMap.get("testray.project.name"), userId);
 
-		long testrayRunId = _getTestrayRunId(
-			companyId, element, serviceContext, propertiesMap, testrayBuildId,
-			testrayCache, propertiesMap.get("testray.run.id"), userId);
+			long testrayRoutineId = _getTestrayRoutineId(
+				companyId, serviceContext, testrayCache, testrayProjectId,
+				propertiesMap.get("testray.build.type"), userId);
 
-		_addTestrayCases(
-			companyId, element, serviceContext,
-			propertiesMap.get("testray.build.date"), testrayBuildId,
-			testrayCache, testrayProjectId, testrayRunId, userId);
+			long testrayBuildId = _getTestrayBuildId(
+				companyId, propertiesMap, serviceContext,
+				propertiesMap.get("testray.build.name"), testrayCache,
+				testrayProjectId, testrayRoutineId, userId);
+
+			testrayCache.setTestrayBuildId(testrayBuildId);
+
+			long testrayRunId = _getTestrayRunId(
+				companyId, element, serviceContext, propertiesMap,
+				testrayBuildId, testrayCache,
+				propertiesMap.get("testray.run.id"), userId);
+
+			_addTestrayCases(
+				companyId, element, serviceContext,
+				propertiesMap.get("testray.build.date"), testrayBuildId,
+				testrayCache, testrayProjectId, testrayRunId, userId);
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+
+			dueStatus = "failed";
+
+			throw exception;
+		}
+		finally {
+			if (fileName != null) {
+				_addTestrayTestSuite(
+					testrayCache.getTestrayBuildId(),
+					testrayCache.getTestrayCaseResultAmount(), dueStatus,
+					System.currentTimeMillis() - startTime, fileName, fileSize,
+					serviceContext, testrayCache, userId);
+			}
+		}
+	}
+
+	private void _addDefaultFactors(
+			long companyId, ServiceContext serviceContext,
+			TestrayCache testrayCache, long testrayRoutineId, long userId)
+		throws Exception {
+
+		List<Map<String, Serializable>> valuesList = _getValuesList(
+			companyId,
+			"externalReferenceCode in ('TRFCAT-001', 'TRFCAT-002', " +
+				"'TRFCAT-003', 'TRFCAT-004', 'TRFCAT-009')",
+			"FactorCategory", testrayCache, userId);
+
+		if (ListUtil.isNotEmpty(valuesList)) {
+			for (Map<String, Serializable> values : valuesList) {
+				_addObjectEntry(
+					"Factor", serviceContext, testrayCache, userId,
+					HashMapBuilder.<String, Serializable>put(
+						"r_factorCategoryToFactors_c_factorCategoryId",
+						GetterUtil.getLong(values.get("c_factorCategoryId"))
+					).put(
+						"r_routineToFactors_c_routineId", testrayRoutineId
+					).build());
+			}
+		}
 	}
 
 	private ObjectEntry _addObjectEntry(
@@ -274,11 +342,15 @@ public class TestrayManagerImpl implements TestrayManager {
 			testrayCache.addObjectEntryId(
 				objectEntryIdsKey, objectEntry.getObjectEntryId());
 
+			testrayCache.incrementTestrayCaseResultAmount();
+
 			return;
 		}
 
 		_updateObjectEntry(
 			testrayCaseResultId, serviceContext, userId, properties);
+
+		testrayCache.incrementTestrayCaseResultAmount();
 	}
 
 	private JSONArray _addTestrayAttachments(Node testcaseNode)
@@ -344,7 +416,9 @@ public class TestrayManagerImpl implements TestrayManager {
 			companyId,
 			StringBundler.concat(
 				"projectId eq '", testrayProjectId, "' and name eq '",
-				testrayCaseName, "'"),
+				StringUtil.removeChar(
+					StringUtil.replace(testrayCaseName, '\'', "''"), '\\'),
+				"'"),
 			objectEntryIdsKey, "Case", testrayCache, userId);
 
 		long testrayTeamId = _getTestrayTeamId(
@@ -436,8 +510,7 @@ public class TestrayManagerImpl implements TestrayManager {
 
 	private void _addTestrayFactor(
 			ServiceContext serviceContext, TestrayCache testrayCache,
-			long testrayFactorCategoryId, String testrayFactorCategoryName,
-			long testrayFactorOptionId, String testrayFactorOptionName,
+			long testrayFactorCategoryId, long testrayFactorOptionId,
 			long testrayRunId, long userId)
 		throws Exception {
 
@@ -451,10 +524,30 @@ public class TestrayManagerImpl implements TestrayManager {
 				testrayFactorOptionId
 			).put(
 				"r_runToFactors_c_runId", testrayRunId
+			).build());
+	}
+
+	private void _addTestrayTestSuite(
+			long buildId, long caseResultAmount, String dueStatus,
+			long executionTime, String fileName, long fileSize,
+			ServiceContext serviceContext, TestrayCache testrayCache,
+			long userId)
+		throws Exception {
+
+		_addObjectEntry(
+			"TestSuite", serviceContext, testrayCache, userId,
+			HashMapBuilder.<String, Serializable>put(
+				"caseResultAmount", caseResultAmount
 			).put(
-				"testrayFactorCategoryName", testrayFactorCategoryName
+				"dueStatus", dueStatus
 			).put(
-				"testrayFactorOptionName", testrayFactorOptionName
+				"executionTime", executionTime
+			).put(
+				"fileName", fileName
+			).put(
+				"fileSize", fileSize
+			).put(
+				"r_buildToTestSuite_c_buildId", buildId
 			).build());
 	}
 
@@ -874,6 +967,9 @@ public class TestrayManagerImpl implements TestrayManager {
 
 		testrayCache.addObjectEntryId(objectEntryIdsKey, testrayRoutineId);
 
+		_addDefaultFactors(
+			companyId, serviceContext, testrayCache, testrayRoutineId, userId);
+
 		return testrayRoutineId;
 	}
 
@@ -908,8 +1004,7 @@ public class TestrayManagerImpl implements TestrayManager {
 
 			_addTestrayFactor(
 				serviceContext, testrayCache, testrayFactorCategoryId,
-				testrayFactorCategoryName, testrayFactorOptionId,
-				testrayFactorOptionName, testrayRunId, userId);
+				testrayFactorOptionId, testrayRunId, userId);
 
 			sb.append(testrayFactorCategoryId);
 			sb.append(testrayFactorOptionId);

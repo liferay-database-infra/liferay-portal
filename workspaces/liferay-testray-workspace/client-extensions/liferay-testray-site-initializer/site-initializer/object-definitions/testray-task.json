@@ -1,4 +1,5 @@
 {
+	"enableIndexSearch": false,
 	"label": {
 		"en_US": "Testray Task"
 	},
@@ -14,17 +15,6 @@
 			"name": "name",
 			"required": true,
 			"type": "String"
-		},
-		{
-			"DBType": "Long",
-			"indexed": true,
-			"indexedAsKeyword": false,
-			"label": {
-				"en_US": "Dispatch Trigger ID"
-			},
-			"name": "dispatchTriggerId",
-			"required": false,
-			"type": "Long"
 		},
 		{
 			"DBType": "String",

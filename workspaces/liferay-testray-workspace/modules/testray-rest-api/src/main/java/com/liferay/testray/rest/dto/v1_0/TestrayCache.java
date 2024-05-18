@@ -36,9 +36,27 @@ public class TestrayCache {
 		return _objectEntryIds.get(key);
 	}
 
+	public long getTestrayBuildId() {
+		return _testrayBuildId;
+	}
+
+	public long getTestrayCaseResultAmount() {
+		return _testrayCaseResultAmount;
+	}
+
+	public void incrementTestrayCaseResultAmount() {
+		_testrayCaseResultAmount++;
+	}
+
+	public void setTestrayBuildId(long testrayBuildId) {
+		_testrayBuildId = testrayBuildId;
+	}
+
 	private final Map<String, ObjectDefinition> _objectDefinitions =
 		new HashMap<>();
 	private final Map<String, Long> _objectEntryIds = new HashMap<>();
+	private long _testrayBuildId;
+	private long _testrayCaseResultAmount;
 	private long _testrayRunNumber = 1;
 
 }
