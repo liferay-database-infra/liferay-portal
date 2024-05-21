@@ -29,11 +29,11 @@
 	"main": "index.es.js",
 	"name": "frontend-js-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix",
 		"test": "liferay-npm-scripts test",
 		"watch": "liferay-npm-scripts webpack --watch"
 	},
-	"version": "5.0.107"
+	"version": "5.0.108"
 }

@@ -5,9 +5,9 @@
 	"main": "js/index.ts",
 	"name": "@liferay/frontend-js-codemirror-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "1.0.2"
+	"version": "1.0.3"
 }

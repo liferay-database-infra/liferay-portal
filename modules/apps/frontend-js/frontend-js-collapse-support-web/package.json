@@ -6,9 +6,9 @@
 	"name": "frontend-js-collapse-support-web",
 	"private": true,
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "2.0.19"
+	"version": "2.0.20"
 }

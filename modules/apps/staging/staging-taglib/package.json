@@ -12,9 +12,9 @@
 	"main": "js/index.js",
 	"name": "staging-taglib",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "8.0.13"
+	"version": "8.0.14"
 }

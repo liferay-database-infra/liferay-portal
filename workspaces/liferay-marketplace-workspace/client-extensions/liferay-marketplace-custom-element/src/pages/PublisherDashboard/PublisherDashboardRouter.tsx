@@ -4,7 +4,7 @@
  */
 
 import {useEffect} from 'react';
-import {HashRouter, Route, Routes} from 'react-router-dom';
+import {HashRouter, Outlet, Route, Routes} from 'react-router-dom';
 
 import SolutionContextProvider from '../../context/SolutionContext';
 import withProviders from '../../hoc/withProviders';
@@ -90,30 +90,47 @@ const PublisherDashboardRouter = () => {
 					<Route element={<Accounts />} path="accounts" />
 					<Route element={<Members />} path="members" />
 					<Route element={<Projects />} path="projects" />
-
-					<Route path="solutions">
-						<Route element={<Solutions />} index />
-						<Route element={<SolutionsDetails />} path=":appId" />
-					</Route>
+					<Route element={<Solutions />} path="solutions" />
 				</Route>
 
-				<Route
-					element={
-						<SolutionContextProvider
-							catalogId={catalogId as number}
+				<Route path="solutions">
+					<Route
+						element={
+							<SolutionContextProvider
+								catalogId={catalogId as number}
+							>
+								<Outlet />
+							</SolutionContextProvider>
+						}
+						path=":productId?"
+					>
+						<Route
+							element={
+								<PublishedDashboardOutlet
+									accountsSearch={accountsSearch}
+									catalogId={catalogId}
+								/>
+							}
 						>
-							<PublishSolutionOutlet />
-						</SolutionContextProvider>
-					}
-					path="solutions/:id?/publisher"
-				>
-					<Route element={<Create />} path="" />
-					<Route element={<CompanyProfile />} path="company" />
-					<Route element={<ContactUs />} path="contact" />
-					<Route element={<Details />} path="details" />
-					<Route element={<Header />} path="header" />
-					<Route element={<Profile />} path="profile" />
-					<Route element={<Submit />} path="submit" />
+							<Route element={<SolutionsDetails />} index />
+						</Route>
+
+						<Route
+							element={<PublishSolutionOutlet />}
+							path="publisher"
+						>
+							<Route element={<Create />} path="" />
+							<Route
+								element={<CompanyProfile />}
+								path="company"
+							/>
+							<Route element={<ContactUs />} path="contact" />
+							<Route element={<Details />} path="details" />
+							<Route element={<Header />} path="header" />
+							<Route element={<Profile />} path="profile" />
+							<Route element={<Submit />} path="submit" />
+						</Route>
+					</Route>
 				</Route>
 			</Routes>
 		</HashRouter>

@@ -23,9 +23,9 @@
 	"main": "js/index.js",
 	"name": "portal-search-admin-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "4.0.63"
+	"version": "4.0.64"
 }

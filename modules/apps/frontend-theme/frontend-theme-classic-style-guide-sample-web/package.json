@@ -7,9 +7,9 @@
 	"main": "js/App.js",
 	"name": "frontend-theme-classic-style-guide-sample-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "2.0.66"
+	"version": "2.0.67"
 }

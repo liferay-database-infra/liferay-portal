@@ -18,7 +18,11 @@ import DOMPurify from 'dompurify';
 import en_US from '../../../../../../i18n/en_US';
 import {ContentReview} from '../../components/ContentReview';
 
-const Submit = () => {
+type SubmitProps = {
+	readOnly?: boolean;
+};
+
+const Submit: React.FC<SubmitProps> = ({readOnly = false}) => {
 	const [context, dispatch] = useSolutionContext();
 
 	const {
@@ -32,30 +36,37 @@ const Submit = () => {
 
 	return (
 		<div className="mb-4 solutions-form-header">
-			<span className="align-items-center d-flex">
-				<h2 className="mb-0 mr-3">
-					{i18n.translate('solution-submission')}
-				</h2>
-				<Tooltip
-					tooltip={i18n.translate('more-info')}
-					tooltipText={i18n.translate('more-info')}
-				/>
-			</span>
+			{!readOnly && (
+				<>
+					<span className="align-items-center d-flex">
+						<h2 className="mb-0 mr-3">
+							{i18n.translate('solution-submission')}
+						</h2>
 
-			<ContentReview.Separator className="mb-5 mt-2" />
+						<Tooltip
+							tooltip={i18n.translate('more-info')}
+							tooltipText={i18n.translate('more-info')}
+						/>
+					</span>
+
+					<ContentReview.Separator className="mb-5 mt-2" />
+				</>
+			)}
 
 			<ContentReview>
 				<ContentReview.Section>
-					<ContentReview.Header as="h2" path="../profile">
-						<div className="align-items-center d-flex">
-							<img
-								alt=""
-								className="mr-4 solution-preview-profile-logo"
-								src={profile.file.preview}
-							/>
-							<h1 className="mb-0">{profile.name}</h1>
-						</div>
-					</ContentReview.Header>
+					{!readOnly && (
+						<ContentReview.Header as="h2" path="../profile">
+							<div className="align-items-center d-flex">
+								<img
+									alt=""
+									className="mr-4 solution-preview-profile-logo"
+									src={profile.file.preview}
+								/>
+								<h1 className="mb-0">{profile.name}</h1>
+							</div>
+						</ContentReview.Header>
+					)}
 					<ContentReview.Paragraph
 						title={i18n.translate('description')}
 					>
@@ -94,7 +105,10 @@ const Submit = () => {
 				<ContentReview.Separator />
 
 				<ContentReview.Section>
-					<ContentReview.Header as="h2" path="../header">
+					<ContentReview.Header
+						as="h2"
+						path={readOnly ? '' : '../header'}
+					>
 						{i18n.translate('header')}
 					</ContentReview.Header>
 					<ContentReview.Paragraph
@@ -150,9 +164,13 @@ const Submit = () => {
 
 				{!!details.length && (
 					<ContentReview.Section>
-						<ContentReview.Header as="h2" path="../details">
+						<ContentReview.Header
+							as="h2"
+							path={readOnly ? '' : '../details'}
+						>
 							{i18n.translate('solution-details')}
 						</ContentReview.Header>
+
 						{details.map((block, index) => (
 							<ContentReview.Block
 								key={index}
@@ -181,7 +199,7 @@ const Submit = () => {
 								</ContentReview.Paragraph>
 
 								{block.type === 'text-images-block' &&
-									block.content.files.map(
+									block.content.files?.map(
 										(file, fileIndex) => (
 											<ContentReview.ImageInfo
 												icon="document-image"
@@ -207,13 +225,13 @@ const Submit = () => {
 					</ContentReview.Section>
 				)}
 
-				<ContentReview.Separator />
+				{!!details.length && <ContentReview.Separator />}
 
 				<ContentReview.Section>
 					<ContentReview.Header
 						as="h2"
 						className="mb-0"
-						path="../company"
+						path={readOnly ? '' : '../company'}
 					>
 						{i18n.translate('company-profile')}
 					</ContentReview.Header>
@@ -257,7 +275,7 @@ const Submit = () => {
 					<ContentReview.Header
 						as="h2"
 						className="mb-0"
-						path="../contact"
+						path={readOnly ? '' : '../contact'}
 					>
 						{i18n.translate('contact-us')}
 					</ContentReview.Header>
@@ -270,39 +288,42 @@ const Submit = () => {
 				</ContentReview.Section>
 			</ContentReview>
 
-			<div className="d-flex my-5">
-				<ClayCheckbox
-					checked={termsAndConditions}
-					onChange={(event) => {
-						dispatch({
-							payload: event.target.checked,
-							type: SolutionTypes.SET_TERMS_AND_CONDITIONS,
-						});
-					}}
-				/>
-				<p className="ml-4">
-					<b>Attention: this cannot be undone.</b> I am aware I cannot
-					edit any data or information regarding this solution
-					submission until Liferay completes its review process and I
-					agree with the Liferay Marketplace&nbsp;
-					<a
-						href="https://www.liferay.com/it/legal/marketplace-terms-of-service"
-						rel="noopener"
-						target="_blank"
-					>
-						terms
-					</a>
-					&nbsp;and&nbsp;
-					<a
-						href="https://www.liferay.com/privacy-policy"
-						rel="noopener"
-						target="_blank"
-					>
-						privacy
-					</a>
-					&nbsp;
-				</p>
-			</div>
+			{!readOnly && (
+				<div className="d-flex my-5">
+					<ClayCheckbox
+						checked={termsAndConditions}
+						onChange={(event) => {
+							dispatch({
+								payload: event.target.checked,
+								type: SolutionTypes.SET_TERMS_AND_CONDITIONS,
+							});
+						}}
+					/>
+
+					<p className="ml-4">
+						<b>Attention: this cannot be undone.</b> I am aware I
+						cannot edit any data or information regarding this
+						solution submission until Liferay completes its review
+						process and I agree with the Liferay Marketplace&nbsp;
+						<a
+							href="https://www.liferay.com/it/legal/marketplace-terms-of-service"
+							rel="noopener"
+							target="_blank"
+						>
+							terms
+						</a>
+						&nbsp;and&nbsp;
+						<a
+							href="https://www.liferay.com/privacy-policy"
+							rel="noopener"
+							target="_blank"
+						>
+							privacy
+						</a>
+						&nbsp;
+					</p>
+				</div>
+			)}
 		</div>
 	);
 };

@@ -15,9 +15,9 @@
 	"main": "js/index.js",
 	"name": "adaptive-media-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "5.0.80"
+	"version": "5.0.81"
 }

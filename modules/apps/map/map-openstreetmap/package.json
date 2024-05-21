@@ -7,7 +7,7 @@
 	"name": "@liferay/map-openstreetmap",
 	"private": true,
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},

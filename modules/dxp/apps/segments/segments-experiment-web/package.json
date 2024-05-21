@@ -32,10 +32,10 @@
 	"name": "segments-experiment-web",
 	"private": true,
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix",
 		"test": "liferay-npm-scripts test"
 	},
-	"version": "3.0.90"
+	"version": "3.0.91"
 }

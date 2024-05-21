@@ -25,10 +25,10 @@
 	"main": "js/index.ts",
 	"name": "layout-admin-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix",
 		"test": "liferay-npm-scripts test"
 	},
-	"version": "5.0.172"
+	"version": "5.0.173"
 }

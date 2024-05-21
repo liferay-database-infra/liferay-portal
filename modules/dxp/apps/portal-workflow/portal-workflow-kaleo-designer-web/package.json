@@ -39,10 +39,10 @@
 	"main": "designer/js/index.js",
 	"name": "portal-workflow-kaleo-designer-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix",
 		"test": "liferay-npm-scripts test"
 	},
-	"version": "5.0.131"
+	"version": "5.0.132"
 }

@@ -14,9 +14,9 @@
 	"main": "js/App.js",
 	"name": "@liferay/frontend-theme-dialect-style-guide-sample-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "2.0.58"
+	"version": "2.0.59"
 }

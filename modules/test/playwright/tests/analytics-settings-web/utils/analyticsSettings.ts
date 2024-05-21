@@ -6,6 +6,8 @@
 import {expect} from '@playwright/test';
 
 import {liferayConfig} from '../../../liferay.config';
+import {createChannel} from '../../osb-faro-web/utils/channel';
+import {createDataSource} from '../../osb-faro-web/utils/dataSource';
 
 export async function acceptsCookiesBanner(page) {
 	const cookiesBannerButton = page.getByRole('button', {name: 'Accept All'});
@@ -76,7 +78,27 @@ export async function syncAllContacts(page) {
 	await page.getByRole('button', {exact: true, name: 'Next'}).click();
 }
 
-export async function syncSite(page) {
+export async function syncAnalyticsCloud(page, propertyName) {
+	await createChannel(page, propertyName);
+
+	await createDataSource(page);
+
+	await goToAnalyticsCloudInstanceSettings(page);
+
+	await acceptsCookiesBanner(page);
+
+	await disconnectFromAnalyticsCloud(page);
+
+	await connectToAnalyticsCloud(page);
+
+	await syncSite(page, propertyName);
+
+	await syncAllContacts(page);
+
+	await page.getByRole('button', {name: 'Finish'}).click();
+}
+
+export async function syncSite(page, propertyName) {
 	await expect(
 		page.getByRole('heading', {name: 'Property Assignment'})
 	).toBeVisible({
@@ -86,6 +108,14 @@ export async function syncSite(page) {
 	const wizard = page.getByTestId('VIEW_WIZARD_MODE');
 
 	await expect(wizard.getByText('Available Properties')).toBeVisible({
+		timeout: 100 * 1000,
+	});
+
+	await page.getByPlaceholder('Search').fill(propertyName);
+
+	await page.getByRole('button', {name: 'Search'}).click();
+
+	await expect(page.getByRole('cell', {name: propertyName})).toBeVisible({
 		timeout: 100 * 1000,
 	});
 

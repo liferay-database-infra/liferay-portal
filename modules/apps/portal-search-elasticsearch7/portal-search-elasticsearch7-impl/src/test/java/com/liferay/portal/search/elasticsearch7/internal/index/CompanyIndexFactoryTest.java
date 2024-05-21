@@ -17,10 +17,9 @@ import com.liferay.portal.search.elasticsearch7.internal.configuration.Elasticse
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchFixture;
 import com.liferay.portal.search.elasticsearch7.internal.connection.IndexName;
 import com.liferay.portal.search.elasticsearch7.internal.document.SingleFieldFixture;
-import com.liferay.portal.search.elasticsearch7.internal.index.constants.LiferayTypeMappingsConstants;
 import com.liferay.portal.search.elasticsearch7.internal.query.QueryBuilderFactories;
 import com.liferay.portal.search.elasticsearch7.internal.util.ResourceUtil;
-import com.liferay.portal.search.spi.model.index.contributor.IndexContributor;
+import com.liferay.portal.search.spi.index.listener.CompanyIndexListener;
 import com.liferay.portal.search.spi.settings.IndexSettingsContributor;
 import com.liferay.portal.search.spi.settings.IndexSettingsHelper;
 import com.liferay.portal.search.spi.settings.TypeMappingsHelper;
@@ -122,8 +121,7 @@ public class CompanyIndexFactoryTest {
 
 		_singleFieldFixture = new SingleFieldFixture(
 			_elasticsearchFixture.getRestHighLevelClient(),
-			new IndexName(_companyIndexFactoryFixture.getIndexName()),
-			LiferayTypeMappingsConstants.LIFERAY_DOCUMENT_TYPE);
+			new IndexName(_companyIndexFactoryFixture.getIndexName()));
 
 		_singleFieldFixture.setQueryBuilderFactory(QueryBuilderFactories.MATCH);
 	}
@@ -199,6 +197,85 @@ public class CompanyIndexFactoryTest {
 	}
 
 	@Test
+	public void testCompanyIndexListeners() throws Exception {
+		ReflectionTestUtil.setFieldValue(
+			_companyIndexFactoryFixture, "_indexName", "other");
+
+		ReflectionTestUtil.setFieldValue(
+			_companyIndexFactoryFixture.getCompanyIndexFactoryHelper(),
+			"_companyIndexListenerServiceTrackerList",
+			ServiceTrackerListFactory.open(
+				_bundleContext, CompanyIndexListener.class, null,
+				new ServiceTrackerCustomizer
+					<CompanyIndexListener, CompanyIndexListener>() {
+
+					@Override
+					public CompanyIndexListener addingService(
+						ServiceReference<CompanyIndexListener>
+							serviceReference) {
+
+						return null;
+					}
+
+					@Override
+					public void modifiedService(
+						ServiceReference<CompanyIndexListener> serviceReference,
+						CompanyIndexListener companyIndexListener) {
+					}
+
+					@Override
+					public void removedService(
+						ServiceReference<CompanyIndexListener> serviceReference,
+						CompanyIndexListener companyIndexListener) {
+					}
+
+				}));
+
+		addCompanyIndexListener(
+			new CompanyIndexListener() {
+
+				@Override
+				public void onAfterCreate(String indexName) {
+					_companyIndexFactoryFixture.createIndices();
+				}
+
+				@Override
+				public void onBeforeDelete(String indexName) {
+					_companyIndexFactoryFixture.deleteIndices();
+				}
+
+			});
+
+		createIndices();
+
+		_assertHasIndex(_companyIndexFactoryFixture.getIndexName());
+
+		deleteIndices();
+
+		_assertNoIndex(_companyIndexFactoryFixture.getIndexName());
+	}
+
+	@Test
+	public void testCompanyIndexListenersThrowsException() throws Exception {
+		addCompanyIndexListener(
+			new CompanyIndexListener() {
+
+				@Override
+				public void onAfterCreate(String indexName) {
+					throw new RuntimeException();
+				}
+
+				@Override
+				public void onBeforeDelete(String indexName) {
+					throw new RuntimeException();
+				}
+
+			});
+
+		createIndices();
+	}
+
+	@Test
 	public void testCreateIndicesWithBlankStrings() throws Exception {
 		Mockito.when(
 			_elasticsearchConfigurationWrapper.additionalIndexConfigurations()
@@ -250,6 +327,26 @@ public class CompanyIndexFactoryTest {
 	}
 
 	@Test
+	public void testExecuteCompanyIndexListenerOnBeforeDelete()
+		throws Exception {
+
+		CompanyIndexListener companyIndexListener = Mockito.mock(
+			CompanyIndexListener.class);
+
+		addCompanyIndexListener(companyIndexListener);
+
+		createIndices();
+
+		deleteIndices();
+
+		Mockito.verify(
+			companyIndexListener, Mockito.times(1)
+		).onBeforeDelete(
+			Mockito.anyString()
+		);
+	}
+
+	@Test
 	public void testIndexConfigurations() throws Exception {
 		Mockito.when(
 			_elasticsearchConfigurationWrapper.indexNumberOfReplicas()
@@ -269,84 +366,6 @@ public class CompanyIndexFactoryTest {
 
 		Assert.assertEquals("1", settings.get("index.number_of_replicas"));
 		Assert.assertEquals("2", settings.get("index.number_of_shards"));
-	}
-
-	@Test
-	public void testIndexContributors() throws Exception {
-		ReflectionTestUtil.setFieldValue(
-			_companyIndexFactoryFixture, "_indexName", "other");
-
-		ReflectionTestUtil.setFieldValue(
-			_companyIndexFactoryFixture.getCompanyIndexFactoryHelper(),
-			"_indexContributorServiceTrackerList",
-			ServiceTrackerListFactory.open(
-				_bundleContext, IndexContributor.class, null,
-				new ServiceTrackerCustomizer
-					<IndexContributor, IndexContributor>() {
-
-					@Override
-					public IndexContributor addingService(
-						ServiceReference<IndexContributor> serviceReference) {
-
-						return null;
-					}
-
-					@Override
-					public void modifiedService(
-						ServiceReference<IndexContributor> serviceReference,
-						IndexContributor indexContributor) {
-					}
-
-					@Override
-					public void removedService(
-						ServiceReference<IndexContributor> serviceReference,
-						IndexContributor indexContributor) {
-					}
-
-				}));
-
-		addIndexContributor(
-			new IndexContributor() {
-
-				@Override
-				public void onAfterCreate(String indexName) {
-					_companyIndexFactoryFixture.createIndices();
-				}
-
-				@Override
-				public void onBeforeRemove(String indexName) {
-					_companyIndexFactoryFixture.deleteIndices();
-				}
-
-			});
-
-		createIndices();
-
-		_assertHasIndex(_companyIndexFactoryFixture.getIndexName());
-
-		deleteIndices();
-
-		_assertNoIndex(_companyIndexFactoryFixture.getIndexName());
-	}
-
-	@Test
-	public void testIndexContributorsThrowsException() throws Exception {
-		addIndexContributor(
-			new IndexContributor() {
-
-				@Override
-				public void onAfterCreate(String indexName) {
-					throw new RuntimeException();
-				}
-
-				@Override
-				public void onBeforeRemove(String indexName) {
-					throw new RuntimeException();
-				}
-
-			});
-
-		createIndices();
 	}
 
 	@Test
@@ -538,10 +557,12 @@ public class CompanyIndexFactoryTest {
 	@Rule
 	public TestName testName = new TestName();
 
-	protected void addIndexContributor(IndexContributor indexContributor) {
+	protected void addCompanyIndexListener(
+		CompanyIndexListener companyIndexListener) {
+
 		_serviceRegistrations.add(
 			_bundleContext.registerService(
-				IndexContributor.class, indexContributor, null));
+				CompanyIndexListener.class, companyIndexListener, null));
 	}
 
 	protected void assertAnalyzer(String field, String analyzer)
@@ -551,8 +572,7 @@ public class CompanyIndexFactoryTest {
 			_elasticsearchFixture.getRestHighLevelClient();
 
 		FieldMappingAssert.assertAnalyzer(
-			analyzer, field, LiferayTypeMappingsConstants.LIFERAY_DOCUMENT_TYPE,
-			_companyIndexFactoryFixture.getIndexName(),
+			analyzer, field, _companyIndexFactoryFixture.getIndexName(),
 			restHighLevelClient.indices());
 	}
 
@@ -561,8 +581,7 @@ public class CompanyIndexFactoryTest {
 			_elasticsearchFixture.getRestHighLevelClient();
 
 		FieldMappingAssert.assertType(
-			type, field, LiferayTypeMappingsConstants.LIFERAY_DOCUMENT_TYPE,
-			_companyIndexFactoryFixture.getIndexName(),
+			type, field, _companyIndexFactoryFixture.getIndexName(),
 			restHighLevelClient.indices());
 	}
 

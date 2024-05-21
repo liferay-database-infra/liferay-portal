@@ -34,11 +34,11 @@
 	"name": "@liferay/commerce-shop-by-diagram-web",
 	"private": true,
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"coverage": "liferay-npm-scripts test --coverage --silent --verbose",
 		"format": "liferay-npm-scripts fix",
 		"test": "liferay-npm-scripts test --passWithNoTests"
 	},
-	"version": "1.0.89"
+	"version": "1.0.90"
 }

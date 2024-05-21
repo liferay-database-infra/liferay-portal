@@ -5,10 +5,10 @@
 	"main": "init.js",
 	"name": "frontend-js-spa-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix",
 		"test": "liferay-npm-scripts test"
 	},
-	"version": "5.0.49"
+	"version": "5.0.50"
 }

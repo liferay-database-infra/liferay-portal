@@ -14,7 +14,10 @@ import Modal from '../../../../components/Modal';
 import OrderStatus from '../../../../components/OrderStatus';
 import Table from '../../../../components/Table/Table';
 import TableKebabButton from '../../../../components/Table/TableButtons/TableKebabButton';
-import {PRODUCT_WORKFLOW_STATUS_CODE} from '../../../../enums/Product';
+import {
+	PRODUCT_WORKFLOW_STATUS_CODE,
+	PRODUCT_WORKFLOW_STATUS_LABEL,
+} from '../../../../enums/Product';
 import i18n from '../../../../i18n';
 import {Liferay} from '../../../../liferay/liferay';
 import HeadlessCommerceAdminCatalogImpl from '../../../../services/rest/HeadlessCommerceAdminCatalog';
@@ -132,7 +135,7 @@ const PublishedSolutionsTable: React.FC<PublishedSolutionsTableProps> = ({
 								</span>
 							</div>
 						),
-						title: 'Name',
+						title: i18n.translate('name'),
 					},
 					{
 						key: 'solutionType',
@@ -150,14 +153,18 @@ const PublishedSolutionsTable: React.FC<PublishedSolutionsTableProps> = ({
 						key: 'workflowStatusInfo',
 						render: (workflowStatusInfo) => (
 							<OrderStatus orderStatus={workflowStatusInfo.label}>
-								{workflowStatusInfo.label}
+								{
+									PRODUCT_WORKFLOW_STATUS_LABEL[
+										workflowStatusInfo.code as keyof typeof PRODUCT_WORKFLOW_STATUS_LABEL
+									]
+								}
 							</OrderStatus>
 						),
-						title: 'Status',
+						title: i18n.translate('status'),
 					},
 				]}
 				hasKebabButton
-				onClickRow={({id}) => navigate(`${id}`)}
+				onClickRow={({productId}) => navigate(`${productId}`)}
 				rows={items}
 			/>
 

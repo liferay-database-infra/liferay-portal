@@ -5,9 +5,9 @@
 	"main": "js/index.js",
 	"name": "dynamic-data-lists-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "6.0.91"
+	"version": "6.0.92"
 }

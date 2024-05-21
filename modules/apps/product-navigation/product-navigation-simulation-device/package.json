@@ -14,7 +14,7 @@
 	"main": "js/index.js",
 	"name": "product-navigation-simulation-device",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},

@@ -11,9 +11,9 @@
 	"main": "js/index.ts",
 	"name": "commerce-product-content-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "4.0.117"
+	"version": "4.0.118"
 }

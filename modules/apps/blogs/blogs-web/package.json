@@ -17,9 +17,9 @@
 	"main": "js/index.js",
 	"name": "blogs-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "6.0.123"
+	"version": "6.0.124"
 }

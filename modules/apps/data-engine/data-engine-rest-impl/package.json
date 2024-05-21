@@ -3,9 +3,9 @@
 	"name": "data-engine-rest-impl",
 	"private": true,
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "3.0.109"
+	"version": "3.0.110"
 }

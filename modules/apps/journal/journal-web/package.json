@@ -26,10 +26,10 @@
 	"main": "js/index.js",
 	"name": "journal-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix",
 		"test": "liferay-npm-scripts test"
 	},
-	"version": "5.0.169"
+	"version": "5.0.170"
 }

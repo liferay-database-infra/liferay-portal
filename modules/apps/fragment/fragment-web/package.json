@@ -23,10 +23,10 @@
 	"main": "js/index.js",
 	"name": "fragment-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix",
 		"test": "liferay-npm-scripts test"
 	},
-	"version": "4.0.108"
+	"version": "4.0.109"
 }

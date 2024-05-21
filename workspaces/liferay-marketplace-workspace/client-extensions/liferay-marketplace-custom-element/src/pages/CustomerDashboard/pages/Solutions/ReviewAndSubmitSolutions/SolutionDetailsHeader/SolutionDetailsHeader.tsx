@@ -3,12 +3,16 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
 import classNames from 'classnames';
-import {useMemo} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {
+	PRODUCT_WORKFLOW_STATUS_CODE,
+	PRODUCT_WORKFLOW_STATUS_LABEL,
+} from '../../../../../../enums/Product';
 import i18n from '../../../../../../i18n';
 import {
 	getProductVersionFromSpecifications,
@@ -16,30 +20,15 @@ import {
 	showAppImage,
 } from '../../../../../../utils/util';
 
-type SolutionDetailsHeader = {
-	selectedSolution: {
-		images: ProductAttachment[];
-		name: {
-			en_US: string;
-		};
-		productSpecifications: ProductSpecification[];
-		workflowStatusInfo: {
-			code: number;
-			label: string;
-			label_i18n: string;
-		};
-	};
-};
-const SolutionsDetailsHeader = ({selectedSolution}: SolutionDetailsHeader) => {
+const SolutionsDetailsHeader = ({product}: {product?: Product}) => {
 	const navigate = useNavigate();
 
-	const thumbnail = getThumbnailByProductAttachment(selectedSolution?.images);
-	const appVersion = useMemo(
-		() =>
-			getProductVersionFromSpecifications(
-				selectedSolution?.productSpecifications ?? []
-			),
-		[selectedSolution?.productSpecifications]
+	if (!product) {
+		return null;
+	}
+
+	const appVersion = getProductVersionFromSpecifications(
+		product.productSpecifications ?? []
 	);
 
 	return (
@@ -52,19 +41,31 @@ const SolutionsDetailsHeader = ({selectedSolution}: SolutionDetailsHeader) => {
 				<ClayIcon className="mr-2" symbol="order-arrow-left" />
 				<h5 className="mt-1">{i18n.translate('back-to-solutions')}</h5>
 			</ClayButton>
+
+			{product.workflowStatusInfo.code ===
+				PRODUCT_WORKFLOW_STATUS_CODE.PENDING && (
+				<ClayAlert className="my-4" displayType="info">
+					{i18n.translate(
+						'this-submission-is-currently-under-review-by-liferay-once-the-process-is-complete-the-solution-will-be-published-automatically-to-the-marketplace-meanwhile-any-information-or-data-from-this-solution-submission-cannot-be-updated'
+					)}
+				</ClayAlert>
+			)}
+
 			<div className="align-items-center d-flex justify-content-between mb-4 mt-4">
 				<div className="align-items-center d-flex solution-details-page-header-left-container">
 					<div>
 						<img
 							alt="App Logo"
 							className="solution-details-page-icon"
-							src={showAppImage(thumbnail)}
+							src={showAppImage(
+								getThumbnailByProductAttachment(product.images)
+							)}
 						/>
 					</div>
 
 					<div>
 						<span className="solution-details-page-header-title">
-							{selectedSolution.name?.en_US}
+							{product.name?.en_US}
 						</span>
 
 						<div className="align-items-center d-flex solution-details-page-header-subtitle-container">
@@ -73,26 +74,32 @@ const SolutionsDetailsHeader = ({selectedSolution}: SolutionDetailsHeader) => {
 									{appVersion}
 								</span>
 							)}
+
 							<ClayIcon
 								className={classNames(
 									'solution-details-page-header-subtitle-icon',
 									{
 										'solution-details-page-header-subtitle-icon-hidden':
-											selectedSolution.workflowStatusInfo
-												.label === 'draft',
+											product.workflowStatusInfo.label ===
+											'draft',
 										'solution-details-page-header-subtitle-icon-pending':
-											selectedSolution.workflowStatusInfo
-												.label === 'pending',
+											product.workflowStatusInfo.label ===
+											'pending',
 										'solution-details-page-header-subtitle-icon-published':
-											selectedSolution.workflowStatusInfo
-												.label === 'approved',
+											product.workflowStatusInfo.label ===
+											'approved',
 									}
 								)}
 								symbol="circle"
 							/>
 
 							<span className="solution-details-page-header-subtitle-text">
-								{selectedSolution.workflowStatusInfo.label_i18n}
+								{
+									PRODUCT_WORKFLOW_STATUS_LABEL[
+										product.workflowStatusInfo
+											.code as keyof typeof PRODUCT_WORKFLOW_STATUS_LABEL
+									]
+								}
 							</span>
 						</div>
 					</div>

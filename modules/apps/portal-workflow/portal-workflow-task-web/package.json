@@ -5,9 +5,9 @@
 	"main": "js/index.js",
 	"name": "portal-workflow-task-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "5.0.69"
+	"version": "5.0.70"
 }

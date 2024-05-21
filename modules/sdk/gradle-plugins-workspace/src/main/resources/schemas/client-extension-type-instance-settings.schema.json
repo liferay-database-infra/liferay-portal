@@ -2287,6 +2287,22 @@
 			"title": "Message Digest Crypto Hash Provider Configuration"
 		},
 		{
+			"properties": {
+				"defaultPermissions": {
+					"title": "Default Permissions",
+					"type": "string"
+				},
+				"pid": {
+					"const": "com.liferay.portal.defaultpermissions.configuration.PortalDefaultPermissionsCompanyConfiguration",
+					"title": "Default Permissions Configuration"
+				}
+			},
+			"required": [
+				"pid"
+			],
+			"title": "Default Permissions Configuration"
+		},
+		{
 			"description": "Enables CORS for matching URLs in the portal.",
 			"properties": {
 				"enabled": {
@@ -3878,6 +3894,7 @@
 				"com.liferay.object.configuration.ObjectConfiguration",
 				"com.liferay.portal.crypto.hash.provider.bcrypt.internal.configuration.BCryptCryptoHashProviderConfiguration",
 				"com.liferay.portal.crypto.hash.provider.message.digest.internal.configuration.MessageDigestCryptoHashProviderConfiguration",
+				"com.liferay.portal.defaultpermissions.configuration.PortalDefaultPermissionsCompanyConfiguration",
 				"com.liferay.portal.remote.cors.configuration.PortalCORSConfiguration",
 				"com.liferay.portal.search.elasticsearch7.configuration.DeepPaginationConfiguration",
 				"com.liferay.portal.search.internal.configuration.SiteActivityAsahConfiguration",

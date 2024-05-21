@@ -12,16 +12,19 @@ type VideoThumbnailProps = {
 
 const getThumbnail = (videoURL: string) => {
 	if (!videoURL?.startsWith('https://')) {
-		return;
+		return '';
 	}
 
-	const url = new URL(videoURL) as URL;
+	try {
+		const url = new URL(videoURL);
 
-	if (url.hostname.includes('youtube.com')) {
-		const videoId = url.searchParams.get('v');
+		if (url && url.hostname.includes('youtube.com')) {
+			const videoId = url.searchParams.get('v');
 
-		return videoId ? `https://img.youtube.com/vi/${videoId}/0.jpg` : '';
+			return videoId ? `https://img.youtube.com/vi/${videoId}/0.jpg` : '';
+		}
 	}
+	catch {}
 
 	return '';
 };
@@ -55,6 +58,7 @@ const VideoThumbnail: React.FC<VideoThumbnailProps> = ({videoURL}) => {
 					className="video-preview"
 					src={getThumbnail(videoURL)}
 				/>
+
 				<ClayIcon
 					aria-label="video thumbnail empty"
 					className="video-thumbnail-play-symbol"

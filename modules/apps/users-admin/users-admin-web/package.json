@@ -9,9 +9,9 @@
 	"main": "js/index.js",
 	"name": "users-admin-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "11.0.10"
+	"version": "11.0.11"
 }

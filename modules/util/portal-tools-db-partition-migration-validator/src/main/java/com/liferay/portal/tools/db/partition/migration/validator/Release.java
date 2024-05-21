@@ -9,6 +9,8 @@ import com.liferay.portal.kernel.version.Version;
 
 import java.util.Objects;
 
+import org.json.JSONObject;
+
 /**
  * @author Luis Ortiz
  */
@@ -85,6 +87,30 @@ public class Release {
 
 	public void setVerified(boolean verified) {
 		_verified = verified;
+	}
+
+	@Override
+	public String toString() {
+		return new JSONObject(
+		).put(
+			"schemaVersion",
+			new JSONObject(
+			).put(
+				"major", _schemaVersion.getMajor()
+			).put(
+				"micro", _schemaVersion.getMicro()
+			).put(
+				"minor", _schemaVersion.getMinor()
+			).put(
+				"qualifier", _schemaVersion.getQualifier()
+			)
+		).put(
+			"servletContextName", _servletContextName
+		).put(
+			"state", _state
+		).put(
+			"verified", _verified
+		).toString();
 	}
 
 	private Version _schemaVersion;

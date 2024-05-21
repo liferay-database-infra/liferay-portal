@@ -38,9 +38,9 @@
 	"main": "publications/js/index.js",
 	"name": "change-tracking-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "2.0.127"
+	"version": "2.0.128"
 }

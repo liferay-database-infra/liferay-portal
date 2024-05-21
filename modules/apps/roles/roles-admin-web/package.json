@@ -12,9 +12,9 @@
 	"main": "js/index.js",
 	"name": "roles-admin-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "5.0.102"
+	"version": "5.0.103"
 }

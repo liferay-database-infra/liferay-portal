@@ -19,9 +19,9 @@
 	"main": "js/index.js",
 	"name": "sharing-web",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "3.0.65"
+	"version": "3.0.66"
 }

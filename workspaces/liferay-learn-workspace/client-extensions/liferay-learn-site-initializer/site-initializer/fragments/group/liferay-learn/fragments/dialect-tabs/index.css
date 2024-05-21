@@ -21,3 +21,20 @@
 		}
 	}
 }
+
+.page-tabs {
+	.d-md-none {
+		display: none;
+	}
+
+	.nav-segment,
+	.navbar-collapse {
+		display: flex;
+		justify-content: center;
+	}
+
+	.navbar-collapse-absolute.navbar-expand-md .navbar-collapse {
+		position: relative;
+		z-index: 1;
+	}
+}

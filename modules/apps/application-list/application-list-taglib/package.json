@@ -2,7 +2,7 @@
 	"main": "js/index.ts",
 	"name": "@liferay/application-list-taglib",
 	"scripts": {
-		"build": "liferay-npm-scripts build",
+		"build": "node-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
