@@ -39,6 +39,12 @@ public class DBResourceUtil {
 			"/com/liferay/portal/tools/sql/dependencies/indexes.sql");
 	}
 
+	public static String getPortalSequencesSQL() {
+		return StringUtil.read(
+			DBResourceUtil.class,
+			"/com/liferay/portal/tools/sql/dependencies/sequences.sql");
+	}
+
 	public static String getPortalTablesSQL() {
 		return StringUtil.read(
 			DBResourceUtil.class,
