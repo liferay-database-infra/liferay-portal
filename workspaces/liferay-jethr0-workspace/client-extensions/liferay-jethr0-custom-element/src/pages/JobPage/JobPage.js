@@ -142,6 +142,12 @@ function JobInformation({job}) {
 				/>
 
 				<Jethr0InformationField
+					fieldLabel="Job Blessed"
+					fieldType="BOOLEAN"
+					fieldValue={job.blessed}
+				/>
+
+				<Jethr0InformationField
 					fieldLabel="Job State"
 					fieldType="STRING"
 					fieldValue={job.state.name}

@@ -2369,14 +2369,7 @@ public class GraphQLServletExtender {
 					continue;
 				}
 
-				String message = graphQLError.getMessage();
-
-				if (message.contains("SecurityException")) {
-					processedErrors.add(
-						_getExtendedGraphQLError(
-							graphQLError, Response.Status.UNAUTHORIZED));
-				}
-				else if (_isForbiddenException(graphQLError)) {
+				if (_isForbiddenException(graphQLError)) {
 					processedErrors.add(
 						_getExtendedGraphQLError(
 							graphQLError, Response.Status.FORBIDDEN));
@@ -2422,6 +2415,19 @@ public class GraphQLServletExtender {
 			).build();
 		}
 
+		private Throwable _getThrowable(GraphQLError graphQLError) {
+			ExceptionWhileDataFetching exceptionWhileDataFetching =
+				(ExceptionWhileDataFetching)graphQLError;
+
+			Throwable throwable = exceptionWhileDataFetching.getException();
+
+			if (throwable instanceof InvocationTargetException) {
+				return throwable.getCause();
+			}
+
+			return throwable;
+		}
+
 		private boolean _isClientErrorException(GraphQLError graphQLError) {
 			if (graphQLError instanceof ExceptionWhileDataFetching) {
 				ExceptionWhileDataFetching exceptionWhileDataFetching =
@@ -2451,13 +2457,10 @@ public class GraphQLServletExtender {
 				return false;
 			}
 
-			ExceptionWhileDataFetching exceptionWhileDataFetching =
-				(ExceptionWhileDataFetching)graphQLError;
+			Throwable throwable = _getThrowable(graphQLError);
 
-			Throwable throwable = exceptionWhileDataFetching.getException();
-
-			if ((throwable != null) &&
-				(throwable.getCause() instanceof ForbiddenException)) {
+			if (throwable instanceof ForbiddenException ||
+				throwable instanceof SecurityException) {
 
 				return true;
 			}
@@ -2470,16 +2473,11 @@ public class GraphQLServletExtender {
 				return false;
 			}
 
-			ExceptionWhileDataFetching exceptionWhileDataFetching =
-				(ExceptionWhileDataFetching)graphQLError;
+			Throwable throwable = _getThrowable(graphQLError);
 
-			Throwable throwable = exceptionWhileDataFetching.getException();
-
-			if ((throwable != null) &&
-				(throwable.getCause() instanceof NotFoundException ||
-				 throwable.getCause() instanceof NoSuchModelException ||
-				 throwable.getCause() instanceof
-					 PrincipalException.MustHavePermission)) {
+			if (throwable instanceof NoSuchModelException ||
+				throwable instanceof NotFoundException ||
+				throwable instanceof PrincipalException.MustHavePermission) {
 
 				return true;
 			}

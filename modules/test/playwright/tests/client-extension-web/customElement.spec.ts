@@ -7,11 +7,12 @@ import {Page, expect, mergeTests} from '@playwright/test';
 
 import {isolatedLayoutTest} from '../../fixtures/isolatedLayoutTest';
 import {loginTest} from '../../fixtures/loginTest';
-import {PageEditorPage} from './pages/PageEditorPage';
+import {pageEditorPagesTest} from '../../fixtures/pageEditorPagesTest';
 import {ViewClientExtensionPage} from './pages/ViewClientExtensionPage';
 
 export const test = mergeTests(
 	isolatedLayoutTest({publish: false}),
+	pageEditorPagesTest,
 	loginTest()
 );
 
@@ -69,13 +70,11 @@ for (const sample of SAMPLES) {
 	test(`${sample.name} can be added to a page and is rendered`, async ({
 		layout,
 		page,
+		pageEditorPage,
 	}) => {
-		const pageEditorPage = new PageEditorPage(page, layout);
-
-		await pageEditorPage.goto();
-		await pageEditorPage.edit();
+		await pageEditorPage.goto(layout);
 		await pageEditorPage.addWidget('Client Extensions', sample.name);
-		await pageEditorPage.publish();
+		await pageEditorPage.publishPage();
 
 		expect(page.locator(sample.htmlElementName)).toBeVisible();
 		expect(sample.renderTestLocator(page)).toBeVisible();

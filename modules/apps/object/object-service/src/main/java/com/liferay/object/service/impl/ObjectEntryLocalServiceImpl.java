@@ -3883,8 +3883,10 @@ public class ObjectEntryLocalServiceImpl
 				preparedStatement.setString(index, String.valueOf(value));
 			}
 			else {
+				String valueString = String.valueOf(value);
+
 				preparedStatement.setClob(
-					index, new StringReader(String.valueOf(value)));
+					index, new StringReader(valueString), valueString.length());
 			}
 		}
 		else if ((sqlType == Types.DATE) || (sqlType == Types.TIMESTAMP)) {
@@ -4276,7 +4278,7 @@ public class ObjectEntryLocalServiceImpl
 
 		if ((maximumFileSize > 0) && (fileSize > maximumFileSize)) {
 			throw new ObjectEntryValuesException.ExceedsMaxFileSize(
-				maximumFileSize, objectFieldName);
+				maximumFileSize / (1024 * 1024), objectFieldName);
 		}
 	}
 

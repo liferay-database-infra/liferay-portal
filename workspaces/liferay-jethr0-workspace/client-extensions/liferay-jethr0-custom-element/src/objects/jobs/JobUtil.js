@@ -23,12 +23,6 @@ export async function createJob({data, redirect}) {
 
 	const jobsResult = JSON.parse(await jobsResponse.text());
 
-	await liferayRequest({
-		headers,
-		method: 'PUT',
-		urlPath: `/o/c/jobs/${jobsResult.id}/object-actions/Jethr0EtcSpringBootAddJob`,
-	});
-
 	if (jobsResult && redirect) {
 		redirect(jobsResult);
 	}
@@ -65,8 +59,9 @@ export async function getJobById({id, setJob}) {
 						}
 					}
 				}
-				jobs(filter: \\"id eq '${id}'\\") {
+				jobs (filter: \\"id eq '${id}'\\") {
 					items {
+						blessed
 						dateCreated
 						dateModified
 						id
@@ -186,8 +181,9 @@ export async function getJobsPage({
 	const response = await liferayRequest({
 		graphqlQuery: `{
 			c {
-				jobs(filter: \\"${filter}\\", page: ${page}, pageSize: ${pageSize}) {
+				jobs (filter: \\"${filter}\\", page: ${page}, pageSize: ${pageSize}) {
 					items {
+						blessed
 						dateCreated
 						dateModified
 						id

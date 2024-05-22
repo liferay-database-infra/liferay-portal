@@ -329,14 +329,16 @@ public class ObjectDefinitionResourceImpl
 					serviceBuilderObjectField.getObjectFieldId());
 		}
 
-		for (ObjectField objectField : objectDefinition.getObjectFields()) {
-			if (StringUtil.equals(
-					objectField.getBusinessTypeAsString(),
-					ObjectFieldConstants.BUSINESS_TYPE_RELATIONSHIP)) {
+		if (objectDefinition.getObjectFields() != null) {
+			for (ObjectField objectField : objectDefinition.getObjectFields()) {
+				if (StringUtil.equals(
+						objectField.getBusinessTypeAsString(),
+						ObjectFieldConstants.BUSINESS_TYPE_RELATIONSHIP)) {
 
-				_addObjectRelationship(
-					objectDefinition.getDefaultLanguageId(), objectField,
-					serviceBuilderObjectDefinition);
+					_addObjectRelationship(
+						objectDefinition.getDefaultLanguageId(), objectField,
+						serviceBuilderObjectDefinition);
+				}
 			}
 		}
 

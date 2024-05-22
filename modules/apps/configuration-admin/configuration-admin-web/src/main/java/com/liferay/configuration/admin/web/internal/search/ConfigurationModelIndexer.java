@@ -50,10 +50,12 @@ import com.liferay.portal.search.index.IndexStatusManager;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.portlet.PortletException;
@@ -365,6 +367,8 @@ public class ConfigurationModelIndexer
 
 	@Override
 	protected void doReindex(String[] ids) throws Exception {
+		Set<Document> documents = new HashSet<>();
+
 		Map<String, ConfigurationModel> configurationModels =
 			_configurationModelRetriever.getConfigurationModels(
 				ExtendedObjectClassDefinition.Scope.SYSTEM, null);
@@ -372,8 +376,11 @@ public class ConfigurationModelIndexer
 		for (ConfigurationModel configurationModel :
 				configurationModels.values()) {
 
-			doReindex(configurationModel);
+			documents.add(getDocument(configurationModel));
 		}
+
+		_indexWriterHelper.updateDocuments(
+			CompanyConstants.SYSTEM, documents, false);
 	}
 
 	private static void _initialize(String osgiServiceIdentifier)

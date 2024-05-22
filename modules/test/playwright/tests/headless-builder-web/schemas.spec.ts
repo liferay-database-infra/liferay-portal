@@ -7,6 +7,8 @@ import {expect, mergeTests} from '@playwright/test';
 
 import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
 import {loginTest} from '../../fixtures/loginTest';
+import {expectElementToHaveClass} from '../../utils/expectElementToHaveClass';
+import {expectElementToNotHaveClass} from '../../utils/expectElementToNotHaveClass';
 import {headlessBuilderPagesTest} from './fixtures/headlessBuilderPagesTest';
 
 export const testFeatureFlagsEnabled = mergeTests(
@@ -24,6 +26,160 @@ export const testFeatureFlagsDisabled = mergeTests(
 	}),
 	loginTest()
 );
+
+const objectDefinitionData = {
+	active: true,
+	externalReferenceCode: `objectDefinition`,
+	label: {
+		en_US: `objectDefinition`,
+	},
+	name: `ObjectDefinition`,
+	objectFields: [
+		{
+			DBType: 'String',
+			businessType: 'Text',
+			externalReferenceCode: 'ObjectFieldERC',
+			indexed: true,
+			indexedAsKeyword: false,
+			indexedLanguageId: 'en_US',
+			label: {
+				en_US: 'Object Field',
+			},
+			listTypeDefinitionId: 0,
+			name: 'objectField',
+			required: false,
+			state: false,
+			system: false,
+			type: 'String',
+		},
+	],
+	pluralLabel: {
+		en_US: `objectDefinitions`,
+	},
+	portlet: true,
+	scope: 'company',
+	status: {
+		code: 0,
+	},
+};
+
+const objectDefinition1Data = {
+	active: true,
+	externalReferenceCode: `customObjectDefinition1`,
+	label: {
+		en_US: `objectDefinition1`,
+	},
+	name: `ObjectDefinition1`,
+	objectFields: [
+		{
+			DBType: 'String',
+			businessType: 'Text',
+			externalReferenceCode: 'ObjectField1ERC',
+			indexed: true,
+			indexedAsKeyword: false,
+			indexedLanguageId: 'en_US',
+			label: {
+				en_US: 'Object Field',
+			},
+			listTypeDefinitionId: 0,
+			name: 'objectField',
+			required: false,
+			state: false,
+			system: false,
+			type: 'String',
+		},
+	],
+	objectRelationships: [
+		{
+			deletionType: 'cascade',
+			externalReferenceCode: 'modifiable-system',
+			label: {
+				en_US: 'Test Modifiable System Object',
+			},
+			name: 'testModifiableSystem',
+			objectDefinitionExternalReferenceCode1: 'customObjectDefinition1',
+			objectDefinitionExternalReferenceCode2: 'L_API_APPLICATION',
+			objectDefinitionName2: 'APIApplication',
+			parameterObjectFieldId: 0,
+			parameterObjectFieldName: '',
+			reverse: false,
+			system: false,
+			type: 'oneToMany',
+		},
+		{
+			deletionType: 'cascade',
+			externalReferenceCode: 'unmodifiable-system',
+			label: {
+				en_US: 'Test Unmodifiable System Object',
+			},
+			name: 'testUnmodifiableSystem',
+			objectDefinitionExternalReferenceCode1: 'customObjectDefinition1',
+			objectDefinitionExternalReferenceCode2: 'L_ORGANIZATION',
+			objectDefinitionName2: 'Organization',
+			parameterObjectFieldId: 0,
+			parameterObjectFieldName: '',
+			reverse: false,
+			system: false,
+			type: 'oneToMany',
+		},
+		{
+			deletionType: 'cascade',
+			externalReferenceCode: 'unmodifiable-system-allowed',
+			label: {
+				en_US: 'Test Unmodifiable Allowed System Object',
+			},
+			name: 'testUnmodifiableSystemAllowed',
+			objectDefinitionExternalReferenceCode1: 'objectDefinition1',
+			objectDefinitionExternalReferenceCode2: 'L_ACCOUNT',
+			objectDefinitionName2: 'AccountEntry',
+			parameterObjectFieldId: 0,
+			parameterObjectFieldName: '',
+			reverse: false,
+			system: false,
+			type: 'oneToMany',
+		},
+		{
+			deletionType: 'cascade',
+			externalReferenceCode: 'custom',
+			label: {
+				en_US: 'Test Custom Object',
+			},
+			name: 'testCustom',
+			objectDefinitionExternalReferenceCode1: 'customObjectDefinition1',
+			objectDefinitionExternalReferenceCode2: 'customObjectDefinition',
+			objectDefinitionName2: 'objectDefinition',
+			parameterObjectFieldId: 0,
+			parameterObjectFieldName: '',
+			reverse: false,
+			system: false,
+			type: 'oneToMany',
+		},
+	],
+	pluralLabel: {
+		en_US: `objectDefinitions1`,
+	},
+	portlet: true,
+	scope: 'company',
+	status: {
+		code: 0,
+	},
+};
+
+const applicationData = {
+	apiApplicationToAPISchemas: [
+		{
+			description: 'API Application Schema',
+			externalReferenceCode: 'api-application-schema',
+			mainObjectDefinitionERC: 'L_API_APPLICATION',
+			name: 'API Application Schema',
+		},
+	],
+	applicationStatus: 'published',
+	baseURL: 'basic-application',
+	description: 'Test API Application',
+	externalReferenceCode: 'basic-application',
+	title: 'Basic application',
+};
 
 testFeatureFlagsDisabled(
 	'can see all available object defitions on schema creation',
@@ -124,61 +280,15 @@ testFeatureFlagsDisabled(
 );
 
 testFeatureFlagsDisabled(
-	'can see whitelisted object definitions on schema creation',
+	'can see allowed object definitions on schema creation',
 	async ({apiHelpers, applicationPage, headlessBuilderPage}) => {
 		const objectDefinition =
-			await apiHelpers.objectAdmin.postObjectDefinition({
-				active: true,
-				externalReferenceCode: `objectDefinition`,
-				label: {
-					en_US: `objectDefinition`,
-				},
-				name: `ObjectDefinition`,
-				objectFields: [
-					{
-						DBType: 'String',
-						businessType: 'Text',
-						externalReferenceCode: 'ObjectFieldERC',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: 'en_US',
-						label: {
-							en_US: 'Object Field',
-						},
-						listTypeDefinitionId: 0,
-						name: 'objectField',
-						required: false,
-						state: false,
-						system: false,
-						type: 'String',
-					},
-				],
-				pluralLabel: {
-					en_US: `objectDefinitions`,
-				},
-				portlet: true,
-				scope: 'company',
-				status: {
-					code: 0,
-				},
-			});
+			await apiHelpers.objectAdmin.postObjectDefinition(
+				objectDefinitionData
+			);
 
 		const application = await apiHelpers.objectEntry.postObjectEntry(
-			{
-				apiApplicationToAPISchemas: [
-					{
-						description: 'API Application Schema',
-						externalReferenceCode: 'api-application-schema',
-						mainObjectDefinitionERC: 'L_API_APPLICATION',
-						name: 'API Application Schema',
-					},
-				],
-				applicationStatus: 'published',
-				baseURL: 'basic-application',
-				description: 'Test API Application',
-				externalReferenceCode: 'basic-application',
-				title: 'Basic application',
-			},
+			applicationData,
 			'headless-builder/applications'
 		);
 
@@ -188,19 +298,22 @@ testFeatureFlagsDisabled(
 		await applicationPage.addSchemaButton.click();
 		await applicationPage.schemaObjectDefinitionSelector.click();
 
-		expect(
-			(
-				await applicationPage.page.getByRole('menu').allInnerTexts()
-			)[0].split('\n')
-		).toEqual([
-			'APISort',
-			'APIFilter',
-			'APIEndpoint',
-			'APIProperty',
-			'APISchema',
+		const objectDefinitionDropdownOptions = (
+			await applicationPage.page.getByRole('menu').allInnerTexts()
+		)[0].split('\n');
+
+		expect(objectDefinitionDropdownOptions).not.toContain(['Organization']);
+
+		for (const expectedObjectDefinition of [
 			'APIApplication',
 			'ObjectDefinition',
-		]);
+		]) {
+			expect(
+				objectDefinitionDropdownOptions.includes(
+					expectedObjectDefinition
+				)
+			).toBeTruthy();
+		}
 
 		await apiHelpers.objectEntry.deleteObjectEntryByExternalReferenceCode(
 			'headless-builder/applications',
@@ -214,53 +327,76 @@ testFeatureFlagsDisabled(
 );
 
 testFeatureFlagsEnabled(
-	'can see whitelisted object definitions on schema creation with feature flag',
+	'can see allowed object definitions on schema creation with feature flag',
 	async ({apiHelpers, applicationPage, headlessBuilderPage}) => {
 		const objectDefinition =
-			await apiHelpers.objectAdmin.postObjectDefinition({
-				active: true,
-				externalReferenceCode: `objectDefinition`,
-				label: {
-					en_US: `objectDefinition`,
-				},
-				name: `ObjectDefinition`,
-				objectFields: [
-					{
-						DBType: 'String',
-						businessType: 'Text',
-						externalReferenceCode: 'ObjectFieldERC',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: 'en_US',
-						label: {
-							en_US: 'Object Field',
-						},
-						listTypeDefinitionId: 0,
-						name: 'objectField',
-						required: false,
-						state: false,
-						system: false,
-						type: 'String',
-					},
-				],
-				pluralLabel: {
-					en_US: `objectDefinitions`,
-				},
-				portlet: true,
-				scope: 'company',
-				status: {
-					code: 0,
-				},
-			});
+			await apiHelpers.objectAdmin.postObjectDefinition(
+				objectDefinitionData
+			);
+
+		const application = await apiHelpers.objectEntry.postObjectEntry(
+			applicationData,
+			'headless-builder/applications'
+		);
+
+		await headlessBuilderPage.goto();
+		await headlessBuilderPage.goToEditApplication(application.title);
+		await applicationPage.goToSchemasTab();
+		await applicationPage.addSchemaButton.click();
+		await applicationPage.schemaObjectDefinitionSelector.click();
+
+		const objectDefinitionDropdownOptions = (
+			await applicationPage.page.getByRole('menu').allInnerTexts()
+		)[0].split('\n');
+
+		expect(objectDefinitionDropdownOptions).not.toContain(['Organization']);
+
+		for (const expectedObjectDefinition of [
+			'AccountEntry',
+			'APIApplication',
+			'ObjectDefinition',
+			'User',
+		]) {
+			expect(
+				objectDefinitionDropdownOptions.includes(
+					expectedObjectDefinition
+				)
+			).toBeTruthy();
+		}
+
+		await apiHelpers.objectEntry.deleteObjectEntryByExternalReferenceCode(
+			'headless-builder/applications',
+			application.externalReferenceCode
+		);
+
+		await apiHelpers.objectAdmin.deleteObjectDefinition(
+			objectDefinition.id
+		);
+	}
+);
+
+testFeatureFlagsDisabled(
+	'check related objects enablement without feature flag',
+	async ({apiHelpers, applicationPage, headlessBuilderPage, schemaPage}) => {
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postObjectDefinition(
+				objectDefinitionData
+			);
+
+		const objectDefinition1 =
+			await apiHelpers.objectAdmin.postObjectDefinition(
+				objectDefinition1Data
+			);
 
 		const application = await apiHelpers.objectEntry.postObjectEntry(
 			{
 				apiApplicationToAPISchemas: [
 					{
-						description: 'API Application Schema',
+						description: 'objectDefinition1 Schema',
 						externalReferenceCode: 'api-application-schema',
-						mainObjectDefinitionERC: 'L_API_APPLICATION',
-						name: 'API Application Schema',
+						mainObjectDefinitionERC:
+							objectDefinition1.externalReferenceCode,
+						name: 'ObjectDefinition1 Schema',
 					},
 				],
 				applicationStatus: 'published',
@@ -275,32 +411,226 @@ testFeatureFlagsEnabled(
 		await headlessBuilderPage.goto();
 		await headlessBuilderPage.goToEditApplication(application.title);
 		await applicationPage.goToSchemasTab();
-		await applicationPage.addSchemaButton.click();
-		await applicationPage.schemaObjectDefinitionSelector.click();
+		await schemaPage.goTo('ObjectDefinition1 Schema');
+		await schemaPage.goToPropertiesTab();
+
+		// Assert that principal object properties are enabled
 
 		expect(
-			(
-				await applicationPage.page.getByRole('menu').allInnerTexts()
-			)[0].split('\n')
-		).toEqual([
-			'AccountEntry',
-			'User',
-			'APISort',
-			'APIFilter',
-			'APIEndpoint',
-			'APIProperty',
-			'APISchema',
-			'APIApplication',
-			'ObjectDefinition',
-		]);
+			await schemaPage.page.getByLabel('Add Author Property')
+		).toBeEnabled();
+
+		await schemaPage.page
+			.getByRole('button', {name: 'View Related Objects'})
+			.click();
+
+		// Assert that unmodifiable system object properties are disabled
+
+		await schemaPage.page
+			.getByRole('button', {name: 'Organization'})
+			.click();
+		await expectElementToHaveClass(
+			await schemaPage.page
+				.getByRole('button', {name: 'Organization'})
+				.locator('..')
+				.getByLabel('Test Unmodifiable System Object')
+				.getByLabel('Add Author Property')
+				.getByText('Author'),
+			'disabled'
+		);
+
+		// Assert that unmodifiable allowed system object properties are disabled without FF
+
+		await schemaPage.page.getByRole('button', {name: 'Account'}).click();
+		await expectElementToHaveClass(
+			await schemaPage.page
+				.getByRole('button', {name: 'Account'})
+				.locator('..')
+				.getByLabel('Test Unmodifiable Allowed System Object')
+				.getByLabel('Add Author Property')
+				.getByText('Author'),
+			'disabled'
+		);
+
+		// Assert that modifiable system object properties are enabled
+
+		await schemaPage.page
+			.getByRole('button', {name: 'API Application'})
+			.click();
+		expectElementToNotHaveClass(
+			await schemaPage.page
+				.getByRole('button', {name: 'API Application'})
+				.locator('..')
+				.getByLabel('Test Modifiable System Object')
+				.getByLabel('Add Author Property')
+				.getByText('Author'),
+			'disabled'
+		);
+
+		// Assert that custom object properties are enabled
+
+		await schemaPage.page
+			.getByRole('button', {name: 'ObjectDefinition'})
+			.click();
+		expectElementToNotHaveClass(
+			await schemaPage.page
+				.getByRole('button', {name: 'ObjectDefinition'})
+				.locator('..')
+				.getByLabel('Test Custom Object')
+				.getByLabel('Add Author Property')
+				.getByText('Author'),
+			'disabled'
+		);
 
 		await apiHelpers.objectEntry.deleteObjectEntryByExternalReferenceCode(
 			'headless-builder/applications',
 			application.externalReferenceCode
 		);
 
+		objectDefinition1.objectRelationships.forEach(
+			async (objectRelationship) => {
+				await apiHelpers.objectAdmin.deleteObjectRelationship(
+					objectRelationship.id
+				);
+			}
+		);
+
 		await apiHelpers.objectAdmin.deleteObjectDefinition(
 			objectDefinition.id
+		);
+
+		await apiHelpers.objectAdmin.deleteObjectDefinition(
+			objectDefinition1.id
+		);
+	}
+);
+
+testFeatureFlagsEnabled(
+	'check related objects enablement with feature flag',
+	async ({apiHelpers, applicationPage, headlessBuilderPage, schemaPage}) => {
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postObjectDefinition(
+				objectDefinitionData
+			);
+
+		const objectDefinition1 =
+			await apiHelpers.objectAdmin.postObjectDefinition(
+				objectDefinition1Data
+			);
+
+		const application = await apiHelpers.objectEntry.postObjectEntry(
+			{
+				apiApplicationToAPISchemas: [
+					{
+						description: 'objectDefinition1 Schema',
+						externalReferenceCode: 'api-application-schema',
+						mainObjectDefinitionERC:
+							objectDefinition1.externalReferenceCode,
+						name: 'ObjectDefinition1 Schema',
+					},
+				],
+				applicationStatus: 'published',
+				baseURL: 'basic-application',
+				description: 'Test API Application',
+				externalReferenceCode: 'basic-application',
+				title: 'Basic application',
+			},
+			'headless-builder/applications'
+		);
+
+		await headlessBuilderPage.goto();
+		await headlessBuilderPage.goToEditApplication(application.title);
+		await applicationPage.goToSchemasTab();
+		await schemaPage.goTo('ObjectDefinition1 Schema');
+		await schemaPage.goToPropertiesTab();
+
+		// Assert that principal object properties are enabled
+
+		await expect(
+			await schemaPage.page.getByLabel('Add Author Property')
+		).toBeEnabled();
+
+		await schemaPage.page
+			.getByRole('button', {name: 'View Related Objects'})
+			.click();
+
+		// Assert that unmodifiable system object properties are disabled
+
+		await schemaPage.page
+			.getByRole('button', {name: 'Organization'})
+			.click();
+		await expectElementToHaveClass(
+			await schemaPage.page
+				.getByRole('button', {name: 'Organization'})
+				.locator('..')
+				.getByLabel('Test Unmodifiable System Object')
+				.getByLabel('Add Author Property')
+				.getByText('Author'),
+			'disabled'
+		);
+
+		// Assert that unmodifiable allowed system object properties are enabled with FF
+
+		await schemaPage.page.getByRole('button', {name: 'Account'}).click();
+		expectElementToNotHaveClass(
+			await schemaPage.page
+				.getByRole('button', {name: 'Account'})
+				.locator('..')
+				.getByLabel('Test Unmodifiable Allowed System Object')
+				.getByLabel('Add Author Property')
+				.getByText('Author'),
+			'disabled'
+		);
+
+		// Assert that modifiable system object properties are enabled
+
+		await schemaPage.page
+			.getByRole('button', {name: 'API Application'})
+			.click();
+		expectElementToNotHaveClass(
+			await schemaPage.page
+				.getByRole('button', {name: 'API Application'})
+				.locator('..')
+				.getByLabel('Test Modifiable System Object')
+				.getByLabel('Add Author Property')
+				.getByText('Author'),
+			'disabled'
+		);
+
+		// Assert that custom obejct properties are enabled
+
+		await schemaPage.page
+			.getByRole('button', {name: 'ObjectDefinition'})
+			.click();
+		await expectElementToNotHaveClass(
+			await schemaPage.page
+				.getByRole('button', {name: 'ObjectDefinition'})
+				.locator('..')
+				.getByLabel('Test Custom Object')
+				.getByLabel('Add Author Property')
+				.getByText('Author'),
+			'disabled'
+		);
+
+		await apiHelpers.objectEntry.deleteObjectEntryByExternalReferenceCode(
+			'headless-builder/applications',
+			application.externalReferenceCode
+		);
+
+		objectDefinition1.objectRelationships.forEach(
+			async (objectRelationship) => {
+				await apiHelpers.objectAdmin.deleteObjectRelationship(
+					objectRelationship.id
+				);
+			}
+		);
+
+		await apiHelpers.objectAdmin.deleteObjectDefinition(
+			objectDefinition.id
+		);
+
+		await apiHelpers.objectAdmin.deleteObjectDefinition(
+			objectDefinition1.id
 		);
 	}
 );

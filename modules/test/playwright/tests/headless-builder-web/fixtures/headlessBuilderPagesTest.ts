@@ -6,18 +6,23 @@
 import {FeatureFlagsOptions} from '../../../fixtures/featureFlagsTest';
 import {ApplicationPage} from '../pages/ApplicationPage';
 import {HeadlessBuilderPage} from '../pages/HeadlessBuilderPage';
+import {SchemaPage} from '../pages/SchemaPage';
 import {headlessBuilderTest} from './headlessBuilderTest';
 
 const headlessBuilderPagesTest = (featureFlags?: FeatureFlagsOptions) =>
 	headlessBuilderTest(featureFlags).extend<{
 		applicationPage: ApplicationPage;
 		headlessBuilderPage: HeadlessBuilderPage;
+		schemaPage: SchemaPage;
 	}>({
 		applicationPage: async ({page}, use) => {
 			await use(new ApplicationPage(page));
 		},
 		headlessBuilderPage: async ({page}, use) => {
 			await use(new HeadlessBuilderPage(page));
+		},
+		schemaPage: async ({page}, use) => {
+			await use(new SchemaPage(page));
 		},
 	});
 

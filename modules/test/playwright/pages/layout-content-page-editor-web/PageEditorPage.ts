@@ -7,14 +7,12 @@
 
 import {Locator, Page, expect} from '@playwright/test';
 
-import {liferayConfig} from '../../../liferay.config';
-import {SegmentEditorPage} from '../../../pages/segments-web/SegmentEditorPage';
-import fillAndClickOutside from '../../../utils/fillAndClickOutside';
-import getRandomString from '../../../utils/getRandomString';
-import {waitForSuccessAlert} from '../../../utils/waitForSuccessAlert';
-import getPageDefinition from '../utils/getPageDefinition';
-
-type FragmentSet = 'Layout Elements';
+import {liferayConfig} from '../../liferay.config';
+import getPageDefinition from '../../tests/layout-content-page-editor-web/utils/getPageDefinition';
+import fillAndClickOutside from '../../utils/fillAndClickOutside';
+import getRandomString from '../../utils/getRandomString';
+import {waitForSuccessAlert} from '../../utils/waitForSuccessAlert';
+import {SegmentEditorPage} from '../segments-web/SegmentEditorPage';
 
 export class PageEditorPage {
 	readonly page: Page;
@@ -41,7 +39,13 @@ export class PageEditorPage {
 		this.segmentEditorPage = new SegmentEditorPage(page);
 	}
 
-	async addFragment(setName: FragmentSet, name: string) {
+	async goto(layout: Layout, siteUrl?: Site['friendlyUrlPath']) {
+		await this.page.goto(
+			`/web${siteUrl || '/guest'}${layout.friendlyUrlPath}?p_l_mode=edit`
+		);
+	}
+
+	async addFragment(setName: string, name: string) {
 		await this.goToSidebarTab('Fragments and Widgets');
 
 		const header = this.page.getByRole('menuitem', {
@@ -54,10 +58,38 @@ export class PageEditorPage {
 		);
 
 		if (!isOpen) {
-			await this.experienceSelector.click();
+			await header.click();
 		}
 
 		await this.page.getByLabel(`Add ${name}`).focus();
+
+		await this.page.keyboard.press('Enter');
+		await this.page.keyboard.press('Enter');
+
+		await this.waitForChangesSaved();
+	}
+
+	async addWidget(category: string, name: string) {
+		await this.goToSidebarTab('Fragments and Widgets');
+
+		await this.page
+			.getByRole('tab', {exact: true, name: 'Widgets'})
+			.click();
+
+		const header = this.page.getByRole('menuitem', {
+			exact: true,
+			name: category,
+		});
+
+		const isOpen = await header.evaluate(
+			(element) => element.getAttribute('aria-expanded') === 'true'
+		);
+
+		if (!isOpen) {
+			await header.click();
+		}
+
+		await this.page.getByLabel(`Add ${name}`).first().focus();
 
 		await this.page.keyboard.press('Enter');
 		await this.page.keyboard.press('Enter');
@@ -206,7 +238,7 @@ export class PageEditorPage {
 
 		// Go to edit mode of page
 
-		await this.goToEditMode(layout, site.friendlyUrlPath);
+		await this.goto(layout, site.friendlyUrlPath);
 	}
 
 	async deleteExperience(name: string) {
@@ -388,12 +420,6 @@ export class PageEditorPage {
 
 	async goToConfigurationTab(tab: ConfigurationTab) {
 		await this.page.getByRole('tab', {exact: true, name: tab}).click();
-	}
-
-	async goToEditMode(layout: Layout, siteUrl?: Site['friendlyUrlPath']) {
-		await this.page.goto(
-			`/web${siteUrl || '/guest'}${layout.friendlyUrlPath}?p_l_mode=edit`
-		);
 	}
 
 	async goToSidebarTab(tab: SidebarTab) {
