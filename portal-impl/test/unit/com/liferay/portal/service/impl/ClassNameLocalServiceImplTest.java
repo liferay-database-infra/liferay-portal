@@ -72,7 +72,7 @@ public class ClassNameLocalServiceImplTest {
 
 		_assertLaziness(
 			() -> {
-				Supplier<long[]> classNameIds =
+				Supplier<long[]> classNameIdsSupplier =
 					_classNameLocalServiceImpl.getClassNameIdsSupplier(
 						new String[] {"wrong.value"});
 
@@ -82,7 +82,7 @@ public class ClassNameLocalServiceImplTest {
 					Mockito.anyLong()
 				);
 
-				classNameIds.get();
+				classNameIdsSupplier.get();
 			});
 	}
 
@@ -96,7 +96,7 @@ public class ClassNameLocalServiceImplTest {
 
 		_assertLaziness(
 			() -> {
-				Supplier<Long> classNameId =
+				Supplier<Long> classNameIdSupplier =
 					_classNameLocalServiceImpl.getClassNameIdSupplier(
 						"wrong.value");
 
@@ -106,7 +106,7 @@ public class ClassNameLocalServiceImplTest {
 					Mockito.anyLong()
 				);
 
-				classNameId.get();
+				classNameIdSupplier.get();
 			});
 	}
 

@@ -76,7 +76,7 @@ public class AssetEntityAnalyticsBatchEngineTaskItemDelegate
 
 	@Activate
 	protected void activate() {
-		_classNameIds = _classNameLocalService.getClassNameIdsSupplier(
+		_classNameIdsSupplier = _classNameLocalService.getClassNameIdsSupplier(
 			new String[] {
 				"com.liferay.document.library.kernel.model.DLFileEntry",
 				"com.liferay.blogs.model.BlogsEntry",
@@ -94,7 +94,7 @@ public class AssetEntityAnalyticsBatchEngineTaskItemDelegate
 
 		return predicate.and(
 			AssetEntryTable.INSTANCE.classNameId.in(
-				ArrayUtil.toLongArray(_classNameIds.get())));
+				ArrayUtil.toLongArray(_classNameIdsSupplier.get())));
 	}
 
 	private DSLQuery _createCountDSLQuery(
@@ -133,7 +133,7 @@ public class AssetEntityAnalyticsBatchEngineTaskItemDelegate
 	@Reference
 	private AssetEntryLocalService _assetEntryLocalService;
 
-	private Supplier<long[]> _classNameIds;
+	private Supplier<long[]> _classNameIdsSupplier;
 
 	@Reference
 	private ClassNameLocalService _classNameLocalService;
