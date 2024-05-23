@@ -71,7 +71,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -1203,44 +1202,6 @@ public class ResourcePermissionLocalServiceImpl
 			portlet.getCompanyId(), portlet.getRootPortletId(), guestRole,
 			ownerRole, siteMemberRole, guestPortletActions,
 			ownerPortletActionIds, groupPortletActionIds);
-
-		String rootModelResource =
-			ResourceActionsUtil.getPortletRootModelResource(
-				portlet.getRootPortletId());
-
-		List<String> modelResources =
-			ResourceActionsUtil.getPortletModelResources(
-				portlet.getRootPortletId());
-
-		for (String modelResource : modelResources) {
-			if (Validator.isBlank(modelResource)) {
-				continue;
-			}
-
-			validate(modelResource, false);
-
-			List<String> groupModelActionIds = null;
-
-			if (Objects.equals(rootModelResource, modelResource)) {
-				groupModelActionIds =
-					ResourceActionsUtil.getModelResourceGroupDefaultActions(
-						rootModelResource);
-			}
-
-			List<String> guestModelActionIds =
-				ResourceActionsUtil.getModelResourceGuestDefaultActions(
-					modelResource);
-
-			List<String> ownerModelActionIds =
-				ResourceActionsUtil.getModelResourceActions(modelResource);
-
-			filterOwnerActions(modelResource, ownerModelActionIds);
-
-			_initPortletDefaultPermissions(
-				portlet.getCompanyId(), modelResource, guestRole, ownerRole,
-				siteMemberRole, guestModelActionIds, ownerModelActionIds,
-				groupModelActionIds);
-		}
 	}
 
 	/**
@@ -1278,6 +1239,48 @@ public class ResourcePermissionLocalServiceImpl
 		}
 
 		_roleLocalService.deleteRole(fromRoleId);
+	}
+
+	@Override
+	public void populateDefaultModelResourcePermissions(
+			long companyId, Collection<String> modelResources)
+		throws PortalException {
+
+		Role guestRole = _roleLocalService.getRole(
+			companyId, RoleConstants.GUEST);
+		Role ownerRole = _roleLocalService.getRole(
+			companyId, RoleConstants.OWNER);
+		Role siteMemberRole = _roleLocalService.getRole(
+			companyId, RoleConstants.SITE_MEMBER);
+
+		for (String modelResource : modelResources) {
+			if (Validator.isBlank(modelResource)) {
+				continue;
+			}
+
+			validate(modelResource, false);
+
+			List<String> groupModelActionIds = null;
+
+			if (ResourceActionsUtil.isRootModelResource(modelResource)) {
+				groupModelActionIds =
+					ResourceActionsUtil.getModelResourceGroupDefaultActions(
+						modelResource);
+			}
+
+			List<String> guestModelActionIds =
+				ResourceActionsUtil.getModelResourceGuestDefaultActions(
+					modelResource);
+
+			List<String> ownerModelActionIds =
+				ResourceActionsUtil.getModelResourceActions(modelResource);
+
+			filterOwnerActions(modelResource, ownerModelActionIds);
+
+			_initPortletDefaultPermissions(
+				companyId, modelResource, guestRole, ownerRole, siteMemberRole,
+				guestModelActionIds, ownerModelActionIds, groupModelActionIds);
+		}
 	}
 
 	/**

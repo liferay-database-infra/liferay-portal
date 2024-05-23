@@ -13,6 +13,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.ResourceActionsException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -21,6 +22,7 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.ResourceAction;
+import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.role.RoleConstants;
@@ -29,10 +31,12 @@ import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupServiceUtil;
 import com.liferay.portal.kernel.service.PortletLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalServiceUtil;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
@@ -455,11 +459,7 @@ public class ResourceActionsImpl implements ResourceActions {
 		}
 
 		if (checkResourceActions) {
-			for (String modelResourceName : modelResourceNames) {
-				_checkResourceActions(
-					getModelResourceActions(modelResourceName),
-					modelResourceName);
-			}
+			_checkModelResourcesResourceActions(modelResourceNames);
 		}
 	}
 
@@ -483,10 +483,7 @@ public class ResourceActionsImpl implements ResourceActions {
 
 		_readModelResources(document.getRootElement(), modelResourceNames);
 
-		for (String modelResourceName : modelResourceNames) {
-			_checkResourceActions(
-				getModelResourceActions(modelResourceName), modelResourceName);
-		}
+		_checkModelResourcesResourceActions(modelResourceNames);
 	}
 
 	@Override
@@ -603,7 +600,7 @@ public class ResourceActionsImpl implements ResourceActions {
 	}
 
 	@Override
-	public void removeModelResources(Document document) {
+	public void removeModelResources(Document document) throws PortalException {
 		Element rootElement = document.getRootElement();
 
 		for (Element modelResourceElement :
@@ -664,6 +661,14 @@ public class ResourceActionsImpl implements ResourceActions {
 			_modelResourceWeights.remove(modelName);
 
 			_portalModelResources.remove(modelName);
+
+			String permissionName = modelName;
+
+			companyLocalService.forEachCompanyId(
+				companyId ->
+					resourcePermissionLocalService.deleteResourcePermissions(
+						companyId, permissionName,
+						ResourceConstants.SCOPE_INDIVIDUAL, permissionName));
 		}
 	}
 
@@ -690,11 +695,17 @@ public class ResourceActionsImpl implements ResourceActions {
 		}
 	}
 
+	@BeanReference(type = CompanyLocalService.class)
+	protected CompanyLocalService companyLocalService;
+
 	@BeanReference(type = PortletLocalService.class)
 	protected PortletLocalService portletLocalService;
 
 	@BeanReference(type = ResourceActionLocalService.class)
 	protected ResourceActionLocalService resourceActionLocalService;
+
+	@BeanReference(type = ResourcePermissionLocalService.class)
+	protected ResourcePermissionLocalService resourcePermissionLocalService;
 
 	@BeanReference(type = RoleLocalService.class)
 	protected RoleLocalService roleLocalService;
@@ -734,6 +745,30 @@ public class ResourceActionsImpl implements ResourceActions {
 			if (guestUnsupportedActions.contains(actionId)) {
 				iterator.remove();
 			}
+		}
+	}
+
+	private void _checkModelResourcesResourceActions(
+		Set<String> modelResourceNames) {
+
+		try {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					for (String modelResourceName : modelResourceNames) {
+						resourceActionLocalService.checkResourceActions(
+							modelResourceName,
+							getModelResourceActions(modelResourceName));
+					}
+				});
+
+			companyLocalService.forEachCompanyId(
+				companyId ->
+					resourcePermissionLocalService.
+						populateDefaultModelResourcePermissions(
+							companyId, modelResourceNames));
+		}
+		catch (Exception exception) {
+			throw new RuntimeException(exception);
 		}
 	}
 

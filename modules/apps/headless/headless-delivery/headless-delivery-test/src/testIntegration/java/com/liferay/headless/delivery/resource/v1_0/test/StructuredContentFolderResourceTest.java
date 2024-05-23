@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.Inject;
+import com.liferay.portal.util.PropsValues;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -335,7 +336,7 @@ public class StructuredContentFolderResourceTest
 			StructuredContentFolderResource.builder();
 
 		structuredContentFolderResource = builder.authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).parameters(

@@ -25,15 +25,13 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 import com.liferay.segments.asah.rest.client.dto.v1_0.ExperimentRun;
 import com.liferay.segments.asah.rest.client.http.HttpInvoker;
@@ -99,9 +97,7 @@ public abstract class BaseExperimentRunResourceTestCase {
 		ExperimentRunResource.Builder builder = ExperimentRunResource.builder();
 
 		experimentRunResource = builder.authentication(
-			"test@liferay.com",
-			GetterUtil.getString(
-				PropsUtil.get(PropsKeys.DEFAULT_ADMIN_PASSWORD), "test")
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).build();
@@ -637,9 +633,7 @@ public abstract class BaseExperimentRunResourceTestCase {
 		httpInvoker.httpMethod(HttpInvoker.HttpMethod.POST);
 		httpInvoker.path("http://localhost:8080/o/graphql");
 		httpInvoker.userNameAndPassword(
-			"test@liferay.com:" +
-				GetterUtil.getString(
-					PropsUtil.get(PropsKeys.DEFAULT_ADMIN_PASSWORD), "test"));
+			"test@liferay.com:" + PropsValues.DEFAULT_ADMIN_PASSWORD);
 
 		HttpInvoker.HttpResponse httpResponse = httpInvoker.invoke();
 

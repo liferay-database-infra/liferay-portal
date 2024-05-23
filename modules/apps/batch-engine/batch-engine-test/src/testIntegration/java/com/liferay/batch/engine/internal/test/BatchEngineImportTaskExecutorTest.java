@@ -40,6 +40,7 @@ import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
+import com.liferay.portal.util.PropsValues;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
@@ -450,7 +451,7 @@ public class BatchEngineImportTaskExecutorTest
 
 		AccountResource accountResource = AccountResource.builder(
 		).authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).build();

@@ -55,6 +55,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
+import com.liferay.portal.util.PropsValues;
 import com.liferay.ratings.kernel.service.RatingsEntryLocalService;
 
 import java.io.File;
@@ -454,7 +455,8 @@ public class DocumentResourceTest extends BaseDocumentResourceTestCase {
 
 		httpInvoker.httpMethod(HttpInvoker.HttpMethod.GET);
 		httpInvoker.path(url);
-		httpInvoker.userNameAndPassword("test@liferay.com:test");
+		httpInvoker.userNameAndPassword(
+			"test@liferay.com:" + PropsValues.DEFAULT_ADMIN_PASSWORD);
 
 		HttpInvoker.HttpResponse httpResponse = httpInvoker.invoke();
 

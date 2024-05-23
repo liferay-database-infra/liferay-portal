@@ -29,15 +29,13 @@ import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
 import java.lang.reflect.Method;
@@ -99,9 +97,7 @@ public abstract class BaseWorkflowTaskAssignableUsersResourceTestCase {
 			WorkflowTaskAssignableUsersResource.builder();
 
 		workflowTaskAssignableUsersResource = builder.authentication(
-			"test@liferay.com",
-			GetterUtil.getString(
-				PropsUtil.get(PropsKeys.DEFAULT_ADMIN_PASSWORD), "test")
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).build();
@@ -589,9 +585,7 @@ public abstract class BaseWorkflowTaskAssignableUsersResourceTestCase {
 		httpInvoker.httpMethod(HttpInvoker.HttpMethod.POST);
 		httpInvoker.path("http://localhost:8080/o/graphql");
 		httpInvoker.userNameAndPassword(
-			"test@liferay.com:" +
-				GetterUtil.getString(
-					PropsUtil.get(PropsKeys.DEFAULT_ADMIN_PASSWORD), "test"));
+			"test@liferay.com:" + PropsValues.DEFAULT_ADMIN_PASSWORD);
 
 		HttpInvoker.HttpResponse httpResponse = httpInvoker.invoke();
 

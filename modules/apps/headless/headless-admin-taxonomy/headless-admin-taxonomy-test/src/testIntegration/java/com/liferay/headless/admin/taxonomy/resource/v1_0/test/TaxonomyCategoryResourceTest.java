@@ -44,6 +44,7 @@ import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
+import com.liferay.portal.util.PropsValues;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -673,7 +674,7 @@ public class TaxonomyCategoryResourceTest
 			TaxonomyCategoryResource.builder();
 
 		taxonomyCategoryResource = builder.authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).parameters(

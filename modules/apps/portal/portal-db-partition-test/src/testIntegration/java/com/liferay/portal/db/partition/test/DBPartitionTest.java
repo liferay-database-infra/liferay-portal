@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
 
 import javax.sql.DataSource;
 
@@ -494,6 +495,29 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 	}
 
 	@Test
+	public void testGetClassNameIdsSupplier() throws Exception {
+		_assertClassNameIds(
+			classNameIds -> {
+				for (long classNameId :
+						_classNameLocalService.getClassNameIdsSupplier(
+							new String[] {"class.name.test"}
+						).get()) {
+
+					classNameIds.add(classNameId);
+				}
+			});
+	}
+
+	@Test
+	public void testGetClassNameIdSupplier() throws Exception {
+		_assertClassNameIds(
+			classNameIds -> classNameIds.add(
+				_classNameLocalService.getClassNameIdSupplier(
+					"class.name.test"
+				).get()));
+	}
+
+	@Test
 	public void testGetResourceAction() throws Exception {
 		Set<ResourceAction> resourceActions = new CopyOnWriteArraySet<>();
 
@@ -655,6 +679,27 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 		private volatile List<Long> _companyIds = new CopyOnWriteArrayList<>();
 
+	}
+
+	private void _assertClassNameIds(Consumer<Set<Long>> consumer)
+		throws Exception {
+
+		Set<Long> classNameIds = Collections.synchronizedSet(
+			Collections.newSetFromMap(new IdentityHashMap<>()));
+
+		try {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> consumer.accept(classNameIds));
+
+			Assert.assertEquals(
+				classNameIds.toString(),
+				companyLocalService.getCompaniesCount(), classNameIds.size());
+		}
+		finally {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> _classNameLocalService.deleteClassName(
+					_classNameLocalService.fetchClassName("class.name.test")));
+		}
 	}
 
 	private static final String _CLASS_NAME = DBPartitionTest.class.getName();

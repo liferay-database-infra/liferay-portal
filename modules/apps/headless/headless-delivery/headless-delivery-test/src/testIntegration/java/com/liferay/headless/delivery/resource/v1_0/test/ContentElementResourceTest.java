@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.odata.entity.EntityField;
+import com.liferay.portal.util.PropsValues;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,7 +59,7 @@ public class ContentElementResourceTest
 			ContentElementResource.builder();
 
 		contentElementResource = builder.authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).parameters(

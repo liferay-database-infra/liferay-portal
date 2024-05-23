@@ -10,6 +10,7 @@ import com.liferay.headless.admin.workflow.client.resource.v1_0.WorkflowDefiniti
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.util.PropsValues;
 
 /**
  * @author Rafael Praxedes
@@ -29,7 +30,7 @@ public class WorkflowDefinitionTestUtil {
 
 		WorkflowDefinitionResource workflowDefinitionResource =
 			builder.authentication(
-				"test@liferay.com", "test"
+				"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 			).locale(
 				LocaleUtil.getDefault()
 			).build();

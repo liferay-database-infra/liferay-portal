@@ -84,6 +84,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.SynchronousMailTestRule;
+import com.liferay.portal.util.PropsValues;
 
 import java.io.InputStream;
 
@@ -1041,7 +1042,7 @@ public class StructuredContentResourceTest
 			StructuredContentResource.builder();
 
 		return builder.authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			locale
 		).header(
@@ -1771,7 +1772,7 @@ public class StructuredContentResourceTest
 
 		StructuredContentResource frenchStructuredContentResource =
 			builder.authentication(
-				"test@liferay.com", "test"
+				"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 			).locale(
 				LocaleUtil.FRANCE
 			).build();

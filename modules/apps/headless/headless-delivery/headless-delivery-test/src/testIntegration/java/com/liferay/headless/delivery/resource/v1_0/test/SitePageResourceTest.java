@@ -109,6 +109,7 @@ import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
+import com.liferay.portal.util.PropsValues;
 import com.liferay.segments.constants.SegmentsEntryConstants;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
 import com.liferay.segments.model.SegmentsEntry;
@@ -156,7 +157,7 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 		SitePageResource.Builder builder = SitePageResource.builder();
 
 		sitePageResource = builder.authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).header(
 			"X-Liferay-Accept-All-Languages", "true"
 		).locale(

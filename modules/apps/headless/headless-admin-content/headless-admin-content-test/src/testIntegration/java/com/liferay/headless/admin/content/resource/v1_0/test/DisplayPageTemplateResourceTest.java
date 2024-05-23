@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.test.rule.Inject;
+import com.liferay.portal.util.PropsValues;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -99,7 +100,7 @@ public class DisplayPageTemplateResourceTest
 
 		displayPageTemplateResource = DisplayPageTemplateResource.builder(
 		).authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).parameters(
@@ -122,7 +123,7 @@ public class DisplayPageTemplateResourceTest
 
 		displayPageTemplateResource = DisplayPageTemplateResource.builder(
 		).authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).parameters(

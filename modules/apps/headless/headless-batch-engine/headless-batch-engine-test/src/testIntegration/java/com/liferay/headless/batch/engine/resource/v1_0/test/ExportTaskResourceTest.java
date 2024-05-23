@@ -40,6 +40,7 @@ import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.util.PropsValues;
 
 import java.io.InputStream;
 
@@ -232,7 +233,7 @@ public class ExportTaskResourceTest {
 		ExportTaskResource.Builder builder = ExportTaskResource.builder();
 
 		ExportTaskResource exportTaskResource = builder.authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).header(
 			HttpHeaders.ACCEPT, ContentTypes.APPLICATION_JSON
 		).build();
@@ -246,7 +247,7 @@ public class ExportTaskResourceTest {
 			exportTaskResource);
 
 		exportTaskResource = builder.authentication(
-			"test@able.com", "test"
+			"test@able.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).endpoint(
 			"www.able.com:8080", "http"
 		).header(
@@ -316,7 +317,7 @@ public class ExportTaskResourceTest {
 		ExportTaskResource.Builder builder = ExportTaskResource.builder();
 
 		ExportTaskResource exportTaskResource = builder.authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).header(
 			HttpHeaders.ACCEPT, ContentTypes.APPLICATION_JSON
 		).build();
@@ -335,7 +336,7 @@ public class ExportTaskResourceTest {
 		String json = null;
 
 		exportTaskResource = builder.authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).header(
 			HttpHeaders.ACCEPT, ContentTypes.APPLICATION_OCTET_STREAM
 		).build();
@@ -372,7 +373,7 @@ public class ExportTaskResourceTest {
 
 		ImportTaskResource importTaskResource = ImportTaskResource.builder(
 		).authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).header(
 			HttpHeaders.ACCEPT, ContentTypes.APPLICATION_JSON
 		).header(

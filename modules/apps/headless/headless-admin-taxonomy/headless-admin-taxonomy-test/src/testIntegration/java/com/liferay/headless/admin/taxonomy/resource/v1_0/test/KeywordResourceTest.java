@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.util.PropsValues;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +44,7 @@ public class KeywordResourceTest extends BaseKeywordResourceTestCase {
 
 		keywordResource = KeywordResource.builder(
 		).authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).parameters(
@@ -68,7 +69,7 @@ public class KeywordResourceTest extends BaseKeywordResourceTestCase {
 
 		keywordResource = KeywordResource.builder(
 		).authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).parameters(
@@ -160,7 +161,7 @@ public class KeywordResourceTest extends BaseKeywordResourceTestCase {
 
 		keywordResource = KeywordResource.builder(
 		).authentication(
-			"test@liferay.com", "test"
+			"test@liferay.com", PropsValues.DEFAULT_ADMIN_PASSWORD
 		).locale(
 			LocaleUtil.getDefault()
 		).parameters(

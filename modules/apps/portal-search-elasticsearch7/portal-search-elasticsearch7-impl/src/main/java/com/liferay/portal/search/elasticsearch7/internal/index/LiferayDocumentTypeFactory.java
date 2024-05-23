@@ -17,7 +17,7 @@ import com.liferay.portal.search.elasticsearch7.internal.index.constants.IndexSe
 import com.liferay.portal.search.elasticsearch7.internal.index.constants.LiferayTypeMappingsConstants;
 import com.liferay.portal.search.elasticsearch7.internal.settings.SettingsBuilder;
 import com.liferay.portal.search.elasticsearch7.internal.util.ResourceUtil;
-import com.liferay.portal.search.elasticsearch7.settings.TypeMappingsHelper;
+import com.liferay.portal.search.spi.index.configuration.contributor.helper.TypeMappingsHelper;
 
 import java.io.IOException;
 
@@ -33,39 +33,20 @@ import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.client.indices.PutMappingRequest;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.compress.CompressedXContent;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xcontent.XContentType;
 
 /**
  * @author André de Oliveira
  */
-public class LiferayDocumentTypeFactory
-	implements com.liferay.portal.search.spi.settings.TypeMappingsHelper,
-			   TypeMappingsHelper {
+public class LiferayDocumentTypeFactory implements TypeMappingsHelper {
 
 	public LiferayDocumentTypeFactory(
-		IndicesClient indicesClient, JSONFactory jsonFactory) {
+		String indexName, IndicesClient indicesClient,
+		JSONFactory jsonFactory) {
 
+		_indexName = indexName;
 		_indicesClient = indicesClient;
 		_jsonFactory = jsonFactory;
-	}
-
-	@Override
-	public void addTypeMappings(String indexName, String source) {
-		PutMappingRequest putMappingRequest = new PutMappingRequest(indexName);
-
-		putMappingRequest.source(
-			_mergeDynamicTemplates(source, indexName), XContentType.JSON);
-
-		try {
-			ActionResponse actionResponse = _indicesClient.putMapping(
-				putMappingRequest, RequestOptions.DEFAULT);
-
-			SearchLogHelperUtil.logActionResponse(_log, actionResponse);
-		}
-		catch (IOException ioException) {
-			throw new RuntimeException(ioException);
-		}
 	}
 
 	public void createLiferayDocumentTypeMappings(
@@ -84,20 +65,8 @@ public class LiferayDocumentTypeFactory
 			mappingsJSONObject.toString(), XContentType.JSON);
 	}
 
-	public void createOptionalDefaultTypeMappings(String indexName) {
-		String name = StringUtil.replace(
-			LiferayTypeMappingsConstants.
-				LIFERAY_DOCUMENT_TYPE_MAPPING_FILE_NAME,
-			".json", "-optional-defaults.json");
-
-		String optionalDefaultTypeMappings = ResourceUtil.getResourceAsString(
-			getClass(), name);
-
-		addTypeMappings(indexName, optionalDefaultTypeMappings);
-	}
-
-	public void createRequiredDefaultAnalyzers(Settings.Builder builder) {
-		SettingsBuilder settingsBuilder = new SettingsBuilder(builder);
+	public void createRequiredDefaultAnalyzers(
+		SettingsBuilder settingsBuilder) {
 
 		String requiredDefaultAnalyzers = ResourceUtil.getResourceAsString(
 			getClass(), IndexSettingsConstants.INDEX_SETTINGS_FILE_NAME);
@@ -115,6 +84,36 @@ public class LiferayDocumentTypeFactory
 
 		createLiferayDocumentTypeMappings(
 			createIndexRequest, requiredDefaultMappings);
+	}
+
+	public void putDefaultTypeMappingTemplate() {
+		String name = StringUtil.replace(
+			LiferayTypeMappingsConstants.
+				LIFERAY_DOCUMENT_TYPE_MAPPING_FILE_NAME,
+			".json", "-default-template.json");
+
+		String defaultTypeMappingTemplate = ResourceUtil.getResourceAsString(
+			getClass(), name);
+
+		putTypeMappings(defaultTypeMappingTemplate);
+	}
+
+	@Override
+	public void putTypeMappings(String source) {
+		PutMappingRequest putMappingRequest = new PutMappingRequest(_indexName);
+
+		putMappingRequest.source(
+			_mergeDynamicTemplates(source, _indexName), XContentType.JSON);
+
+		try {
+			ActionResponse actionResponse = _indicesClient.putMapping(
+				putMappingRequest, RequestOptions.DEFAULT);
+
+			SearchLogHelperUtil.logActionResponse(_log, actionResponse);
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
 	}
 
 	protected JSONObject createJSONObject(String mappings) {
@@ -246,6 +245,7 @@ public class LiferayDocumentTypeFactory
 	private static final Log _log = LogFactoryUtil.getLog(
 		LiferayDocumentTypeFactory.class);
 
+	private final String _indexName;
 	private final IndicesClient _indicesClient;
 	private final JSONFactory _jsonFactory;
 

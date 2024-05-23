@@ -15,6 +15,7 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.constants.TestDataConstants;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
 
@@ -109,7 +110,8 @@ public class BlogPostingImageResourceTest
 
 		httpInvoker.httpMethod(HttpInvoker.HttpMethod.GET);
 		httpInvoker.path(url);
-		httpInvoker.userNameAndPassword("test@liferay.com:test");
+		httpInvoker.userNameAndPassword(
+			"test@liferay.com:" + PropsValues.DEFAULT_ADMIN_PASSWORD);
 
 		HttpInvoker.HttpResponse httpResponse = httpInvoker.invoke();
 
