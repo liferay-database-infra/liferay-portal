@@ -252,8 +252,21 @@ public class FDSViewFragmentRenderer implements FragmentRenderer {
 
 		FragmentEntryLink fragmentEntryLink =
 			fragmentRendererContext.getFragmentEntryLink();
+
 		Map<String, Object> fdsViewObjectEntryProperties =
 			fdsViewObjectEntry.getProperties();
+
+		String objectEntryERC = String.valueOf(
+			fdsViewObjectEntryProperties.get(
+				"r_fdsEntryFDSViewRelationship_c_fdsEntryERC"));
+
+		String objectDefinitionName = "FDSEntry";
+
+		if (FeatureFlagManagerUtil.isEnabled("LPD-15729")) {
+			objectEntryERC = fdsViewObjectEntry.getExternalReferenceCode();
+
+			objectDefinitionName = "FDSView";
+		}
 
 		Set<ObjectEntry> fdsFieldObjectEntries = _getFDSFieldObjectEntries(
 			fdsViewObjectDefinition, fdsViewObjectEntry);
@@ -264,12 +277,10 @@ public class FDSViewFragmentRenderer implements FragmentRenderer {
 				"apiURL",
 				_getAPIURL(
 					_getObjectEntry(
-						fragmentEntryLink.getCompanyId(),
-						String.valueOf(
-							fdsViewObjectEntryProperties.get(
-								"r_fdsEntryFDSViewRelationship_c_fdsEntryERC")),
+						fragmentEntryLink.getCompanyId(), objectEntryERC,
 						_objectDefinitionLocalService.fetchObjectDefinition(
-							fragmentEntryLink.getCompanyId(), "FDSEntry")),
+							fragmentEntryLink.getCompanyId(),
+							objectDefinitionName)),
 					fdsFieldObjectEntries, httpServletRequest)
 			).put(
 				"creationMenu",

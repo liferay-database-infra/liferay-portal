@@ -7,23 +7,24 @@ import ClayBadge from '@clayui/badge';
 import ClayButton from '@clayui/button';
 import ClayDropDown from '@clayui/drop-down';
 import ClayForm, {ClayInput} from '@clayui/form';
-import ClayLayout from '@clayui/layout';
 import ClayModal from '@clayui/modal';
 import {FrontendDataSet} from '@liferay/frontend-data-set-web';
 import classNames from 'classnames';
 import {fetch, navigate, openModal} from 'frontend-js-web';
-import fuzzy from 'fuzzy';
 import React, {useState} from 'react';
 
 import '../css/FDSEntries.scss';
 import {FDSViewType} from './FDSViews';
 import RequiredMark from './components/RequiredMark';
 import ValidationFeedback from './components/ValidationFeedback';
+import RESTApplicationDropdownItem from './components/rest/RESTApplicationDropdownItem';
+import RESTApplicationDropdownMenu from './components/rest/RESTApplicationDropdownMenu';
+import RESTEndpointDropdownMenu from './components/rest/RESTEndpointDropdownMenu';
+import RESTSchemaDropdownMenu from './components/rest/RESTSchemaDropdownMenu';
 import {
 	ALLOWED_ENDPOINTS_PARAMETERS,
 	API_URL,
 	FDS_DEFAULT_PROPS,
-	FUZZY_OPTIONS,
 	OBJECT_RELATIONSHIP,
 } from './utils/constants';
 import openDefaultFailureToast from './utils/openDefaultFailureToast';
@@ -51,209 +52,11 @@ type FDSEntryType = {
 	restSchema: string;
 };
 
-const RESTApplicationItem = ({
-	query,
-	restApplication,
-}: {
-	query: string;
-	restApplication: string;
-}) => {
-	const fuzzyMatch = fuzzy.match(query, restApplication, FUZZY_OPTIONS);
-
-	return (
-		<ClayLayout.ContentRow>
-			{fuzzyMatch ? (
-				<span
-					dangerouslySetInnerHTML={{
-						__html: fuzzyMatch.rendered,
-					}}
-				/>
-			) : (
-				<span>{restApplication}</span>
-			)}
-		</ClayLayout.ContentRow>
-	);
-};
-
 const ViewsCountTableCell = ({itemData}: {itemData: FDSEntryType}) => {
 	const count = itemData[OBJECT_RELATIONSHIP.FDS_ENTRY_FDS_VIEW].length;
 
 	return (
 		<ClayBadge displayType={!count ? 'warning' : 'info'} label={count} />
-	);
-};
-
-const RestApplicationDropdownMenu = ({
-	onItemClick,
-	restApplications: initialRESTApplications,
-}: {
-	onItemClick: Function;
-	restApplications: Array<string>;
-}) => {
-	const [restApplications, setRESTApplications] = useState<Array<string>>(
-		initialRESTApplications || []
-	);
-	const [query, setQuery] = useState('');
-
-	const onSearch = (query: string) => {
-		setQuery(query);
-
-		const regexp = new RegExp(query, 'i');
-
-		setRESTApplications(
-			query
-				? initialRESTApplications.filter((restApplication) =>
-						restApplication.match(regexp)
-				  ) || []
-				: initialRESTApplications
-		);
-	};
-
-	return (
-		<>
-			<ClayDropDown.Search
-				aria-label={Liferay.Language.get('search')}
-				onChange={onSearch}
-				value={query}
-			/>
-
-			<ClayDropDown.ItemList items={restApplications} role="listbox">
-				{(item: string) => (
-					<ClayDropDown.Item
-						key={item}
-						onClick={() => onItemClick(item)}
-						roleItem="option"
-					>
-						<RESTApplicationItem
-							query={query}
-							restApplication={item}
-						/>
-					</ClayDropDown.Item>
-				)}
-			</ClayDropDown.ItemList>
-		</>
-	);
-};
-
-const RestSchemaDropdownMenu = ({
-	onItemClick,
-	restSchemas: initialRESTSchemas,
-}: {
-	onItemClick: Function;
-	restSchemas: Array<string>;
-}) => {
-	const [restSchemas, setRESTSchemas] = useState<Array<string>>(
-		initialRESTSchemas
-	);
-	const [query, setQuery] = useState('');
-
-	const onSearch = (query: string) => {
-		setQuery(query);
-
-		const regexp = new RegExp(query, 'i');
-
-		setRESTSchemas(
-			query
-				? initialRESTSchemas.filter((restSchema) => {
-						return restSchema.match(regexp);
-				  }) || []
-				: initialRESTSchemas
-		);
-	};
-
-	return (
-		<>
-			<ClayDropDown.Search
-				aria-label={Liferay.Language.get('search')}
-				onChange={onSearch}
-				value={query}
-			/>
-
-			<ClayDropDown.ItemList items={restSchemas} role="listbox">
-				{(item: string) => {
-					const fuzzymatch = fuzzy.match(query, item, FUZZY_OPTIONS);
-
-					return (
-						<ClayDropDown.Item
-							key={item}
-							onClick={() => onItemClick(item)}
-							roleItem="option"
-						>
-							{fuzzymatch ? (
-								<span
-									dangerouslySetInnerHTML={{
-										__html: fuzzymatch.rendered,
-									}}
-								/>
-							) : (
-								item
-							)}
-						</ClayDropDown.Item>
-					);
-				}}
-			</ClayDropDown.ItemList>
-		</>
-	);
-};
-
-const RestEndpointDropdownMenu = ({
-	onItemClick,
-	restEndpoints: initialRESTEndpoints,
-}: {
-	onItemClick: Function;
-	restEndpoints: Array<string>;
-}) => {
-	const [restEndpoints, setRESTEndpoints] = useState<Array<string>>(
-		initialRESTEndpoints || []
-	);
-	const [query, setQuery] = useState('');
-
-	const onSearch = (query: string) => {
-		setQuery(query);
-
-		const regexp = new RegExp(query, 'i');
-
-		setRESTEndpoints(
-			query
-				? initialRESTEndpoints.filter((restEndpoint) => {
-						return restEndpoint.match(regexp);
-				  }) || []
-				: initialRESTEndpoints
-		);
-	};
-
-	return (
-		<>
-			<ClayDropDown.Search
-				aria-label={Liferay.Language.get('search')}
-				onChange={onSearch}
-				value={query}
-			/>
-
-			<ClayDropDown.ItemList items={restEndpoints} role="listbox">
-				{(item: string) => {
-					const fuzzymatch = fuzzy.match(query, item, FUZZY_OPTIONS);
-
-					return (
-						<ClayDropDown.Item
-							key={item}
-							onClick={() => onItemClick(item)}
-							roleItem="option"
-						>
-							{fuzzymatch ? (
-								<span
-									dangerouslySetInnerHTML={{
-										__html: fuzzymatch.rendered,
-									}}
-								/>
-							) : (
-								item
-							)}
-						</ClayDropDown.Item>
-					);
-				}}
-			</ClayDropDown.ItemList>
-		</>
 	);
 };
 
@@ -516,7 +319,7 @@ const AddFDSEntryModalContent = ({
 					id={`${namespace}restApplicationsSelect`}
 				>
 					{selectedRESTApplication ? (
-						<RESTApplicationItem
+						<RESTApplicationDropdownItem
 							query=""
 							restApplication={selectedRESTApplication}
 						/>
@@ -526,7 +329,7 @@ const AddFDSEntryModalContent = ({
 				</ClayButton>
 			}
 		>
-			<RestApplicationDropdownMenu
+			<RESTApplicationDropdownMenu
 				onItemClick={(item: string) => {
 					setSelectedRESTApplication(item);
 
@@ -556,7 +359,7 @@ const AddFDSEntryModalContent = ({
 				</ClayButton>
 			}
 		>
-			<RestSchemaDropdownMenu
+			<RESTSchemaDropdownMenu
 				onItemClick={(item: string) => {
 					setSelectedRESTSchema(item);
 
@@ -593,7 +396,7 @@ const AddFDSEntryModalContent = ({
 				</ClayButton>
 			}
 		>
-			<RestEndpointDropdownMenu
+			<RESTEndpointDropdownMenu
 				onItemClick={(item: string) => {
 					setSelectedRESTEndpoint(item);
 

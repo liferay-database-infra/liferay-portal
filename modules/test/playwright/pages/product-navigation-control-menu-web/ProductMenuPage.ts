@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-// @ts-ignore
-
 import {Locator, Page} from '@playwright/test';
 
 export class ProductMenuPage {
+	readonly configurationButton: Locator;
 	readonly contentAndDataButton: Locator;
 	readonly formsButton: Locator;
 	readonly page: Page;
@@ -15,10 +14,15 @@ export class ProductMenuPage {
 	readonly productMenuButton: Locator;
 	readonly productMenuHeader: Locator;
 	readonly siteBuilderButton: Locator;
+	readonly siteSettingsButton: Locator;
 	readonly webContentButton: Locator;
 
 	constructor(page: Page) {
 		this.page = page;
+		this.configurationButton = page.getByRole('menuitem', {
+			exact: true,
+			name: 'Configuration',
+		});
 		this.contentAndDataButton = page.getByRole('menuitem', {
 			name: 'Content & Data',
 		});
@@ -34,6 +38,10 @@ export class ProductMenuPage {
 		this.siteBuilderButton = page.getByRole('menuitem', {
 			name: 'Site Builder',
 		});
+		this.siteSettingsButton = page.getByRole('menuitem', {
+			exact: true,
+			name: 'Site Settings',
+		});
 		this.webContentButton = page.getByRole('menuitem', {
 			name: 'Web Content',
 		});
@@ -42,6 +50,11 @@ export class ProductMenuPage {
 	async goToForms() {
 		await this.contentAndDataButton.click();
 		await this.formsButton.click();
+	}
+
+	async goToSiteSettings() {
+		await this.configurationButton.click();
+		await this.siteSettingsButton.click();
 	}
 
 	async goToWebContent() {

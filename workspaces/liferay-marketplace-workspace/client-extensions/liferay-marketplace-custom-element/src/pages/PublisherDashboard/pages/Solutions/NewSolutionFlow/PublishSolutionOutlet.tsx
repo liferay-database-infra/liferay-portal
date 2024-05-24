@@ -32,7 +32,6 @@ const PublishSolutionOutlet = () => {
 	const {
 		activeIndex,
 		activeRoute,
-		id,
 		isLastStep,
 		onClickContinue,
 		onClickPrevious,
@@ -57,6 +56,8 @@ const PublishSolutionOutlet = () => {
 		return null;
 	}, [activeRoute, context]);
 
+	const isDisabled = parsedSchema ? !parsedSchema.success : false;
+
 	return (
 		<>
 			<AppToolbar
@@ -76,7 +77,7 @@ const PublishSolutionOutlet = () => {
 					onClick: () => alert('Preview...'),
 				}}
 				saveAsDraftProps={{
-					disabled: activeIndex < (id ? 1 : 2),
+					disabled: isDisabled,
 					onClick: onSaveAsDraft,
 				}}
 			/>
@@ -109,9 +110,7 @@ const PublishSolutionOutlet = () => {
 						)}
 
 						<ClayButton
-							disabled={
-								parsedSchema ? !parsedSchema.success : false
-							}
+							disabled={isDisabled}
 							displayType="primary"
 							onClick={async () => {
 								if (isLastStep) {

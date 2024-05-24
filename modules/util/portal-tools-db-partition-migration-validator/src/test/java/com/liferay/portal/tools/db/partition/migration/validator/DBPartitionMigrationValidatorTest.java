@@ -5,6 +5,8 @@
 
 package com.liferay.portal.tools.db.partition.migration.validator;
 
+import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.version.Version;
@@ -15,6 +17,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.PrintStream;
+
+import java.net.URL;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import java.security.Permission;
 
@@ -84,8 +91,104 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 			false);
 	}
 
+	@Test
+	public void testValidateFailure() throws Exception {
+		String[] messages = {
+			"[ERROR] Company ID 3007447931789165977 already exists in the " +
+				"target database",
+			"[ERROR] Module com.liferay.address.impl needs to be verified in " +
+				"the source database before the migration",
+			"[ERROR] Module com.liferay.comment.page.comments.web has a " +
+				"failed release state in the source database",
+			"[ERROR] Module com.liferay.exportimport.service needs to be " +
+				"installed in the source database before the migration",
+			"[ERROR] Module com.liferay.knowledge.base.web needs to be " +
+				"upgraded in the target database before the migration",
+			"[ERROR] Module com.liferay.organizations.service has a failed " +
+				"release state in the target database",
+			"[ERROR] Module com.liferay.organizations.service needs to be " +
+				"verified in the target database before the migration",
+			"[ERROR] Module com.liferay.wiki.web needs to be upgraded in the " +
+				"source database before the migration",
+			"[WARN] Company name Liferay DXP already exists in the target " +
+				"database. You must set a different value in " +
+					"DBPartitionInsertVirtualInstanceConfiguration.config.",
+			"[WARN] Module com.liferay.asset.publisher.web is not present in " +
+				"the source database",
+			"[WARN] Module com.liferay.license.manager.web is not present in " +
+				"the target database",
+			"[WARN] Table CommercePriceList is not present in the source " +
+				"database",
+			"[WARN] Table DDMTemplate is not present in the target database",
+			"[WARN] Virtual host localhost already exists in the target " +
+				"database. You must set a different value in " +
+					"DBPartitionInsertVirtualInstanceConfiguration.config.",
+			"[WARN] Web ID liferay.com already exists in the target " +
+				"database. You must set a different value in " +
+					"DBPartitionInsertVirtualInstanceConfiguration.config."
+		};
+
+		_testValidate(
+			"source-failure.json", "target-failure.json",
+			runtimeException -> {
+				Assert.assertEquals("1", runtimeException.getMessage());
+
+				String string = _outByteArrayOutputStream.toString();
+
+				for (String message : messages) {
+					Assert.assertTrue(string.contains(message));
+				}
+			},
+			() -> {
+			});
+	}
+
+	@Test
+	public void testValidateSuccess() throws Exception {
+		_testValidate(
+			"source-success.json", "target-success.json",
+			runtimeException -> Assert.assertEquals(
+				"0", runtimeException.getMessage()),
+			() -> {
+				Assert.assertTrue(
+					_errByteArrayOutputStream.toString(
+					).isEmpty());
+				Assert.assertTrue(
+					_outByteArrayOutputStream.toString(
+					).isEmpty());
+			});
+	}
+
+	@Test
+	public void testValidateTargetNondefaultPartition() throws Exception {
+		_testValidate(
+			"source-success.json", "target-nondefault.json",
+			runtimeException -> {
+				Assert.assertEquals("1", runtimeException.getMessage());
+				Assert.assertTrue(
+					_errByteArrayOutputStream.toString(
+					).contains(
+						"Target is not the default partition"
+					));
+				Assert.assertTrue(
+					_outByteArrayOutputStream.toString(
+					).isEmpty());
+			},
+			() -> {
+			});
+	}
+
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+	private String _getPathString(String fileName) throws Exception {
+		URL url = DBPartitionMigrationValidatorTest.class.getResource(
+			"dependencies/" + fileName);
+
+		Path path = Paths.get(url.toURI());
+
+		return path.toString();
+	}
 
 	private void _mockDatabase(
 			List<Company> companies, List<Long> companyIds,
@@ -130,8 +233,6 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 			new Company(
 				RandomTestUtil.randomLong(), RandomTestUtil.randomString(),
 				RandomTestUtil.randomString(), RandomTestUtil.randomString()));
-		List<Long> companyInfoIds = Arrays.asList(
-			RandomTestUtil.randomLong(), RandomTestUtil.randomLong());
 		String password = RandomTestUtil.randomString();
 		List<Release> releases = Arrays.asList(
 			new Release(Version.parseVersion("14.2.4"), "module1", 0, true),
@@ -141,7 +242,7 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		String user = RandomTestUtil.randomString();
 
 		_mockDatabase(
-			companies, companyIds, companyInfoIds, defaultPartition, password,
+			companies, companyIds, companyIds, defaultPartition, password,
 			releases, schemaName,
 			Arrays.asList(
 				"Company", "Object_x_" + companyIds.get(0), "Table1", "Table2"),
@@ -158,7 +259,7 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 				});
 		}
 		catch (RuntimeException runtimeException) {
-			if (companyInfoIds.size() > 1) {
+			if (companyIds.size() > 1) {
 				Assert.assertTrue(
 					_errByteArrayOutputStream.toString(
 					).contains(
@@ -198,8 +299,8 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 
 		Long exportedCompanyId = null;
 
-		if (companyInfoIds.size() == 1) {
-			exportedCompanyId = companyInfoIds.get(0);
+		if (companyIds.size() == 1) {
+			exportedCompanyId = companyIds.get(0);
 		}
 
 		JSONAssert.assertEquals(
@@ -221,6 +322,27 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 				"tableNames", new JSONArray(Arrays.asList("Table1", "Table2"))
 			).toString(),
 			content, false);
+	}
+
+	private void _testValidate(
+			String sourceFileName, String targetFileName,
+			UnsafeConsumer<RuntimeException, Exception> unsafeConsumer,
+			UnsafeRunnable<Exception> unsafeRunnable)
+		throws Exception {
+
+		try {
+			DBPartitionMigrationValidator.main(
+				new String[] {
+					"--source-file", _getPathString(sourceFileName),
+					"--target-file", _getPathString(targetFileName),
+					"--validate"
+				});
+		}
+		catch (RuntimeException runtimeException) {
+			unsafeConsumer.accept(runtimeException);
+		}
+
+		unsafeRunnable.run();
 	}
 
 	private final ByteArrayOutputStream _errByteArrayOutputStream =

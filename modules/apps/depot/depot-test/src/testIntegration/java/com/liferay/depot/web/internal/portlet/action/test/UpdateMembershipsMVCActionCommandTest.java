@@ -13,19 +13,28 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Contact;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.OrganizationLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.portlet.MockLiferayPortletActionRequest;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.rule.SynchronousDestinationTestRule;
+import com.liferay.portal.kernel.test.util.OrganizationTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
@@ -47,6 +56,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import javax.portlet.ActionRequest;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -89,6 +100,7 @@ public class UpdateMembershipsMVCActionCommandTest {
 	public void testProcessActionWithAddGroupDepotIds() throws Exception {
 		_mvcActionCommand.processAction(
 			new MockActionRequest(
+				PermissionThreadLocal.getPermissionChecker(),
 				_companyLocalService.getCompany(TestPropsValues.getCompanyId()),
 				_groupLocalService.getGroup(TestPropsValues.getGroupId()),
 				_user, new long[] {_depotEntry.getGroupId()}, null),
@@ -109,33 +121,59 @@ public class UpdateMembershipsMVCActionCommandTest {
 		Assert.assertTrue(found);
 	}
 
+	@Test(expected = PrincipalException.MustHavePermission.class)
+	public void testProcessActionWithAddGroupDepotIdsWithoutPermissions()
+		throws Exception {
+
+		Organization organization = OrganizationTestUtil.addOrganization();
+
+		User organizationOwnerUser = UserTestUtil.addOrganizationOwnerUser(
+			organization);
+
+		PermissionChecker permissionChecker =
+			PermissionCheckerFactoryUtil.create(organizationOwnerUser);
+
+		PermissionChecker originalPermissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		PermissionThreadLocal.setPermissionChecker(permissionChecker);
+
+		String originalName = PrincipalThreadLocal.getName();
+
+		PrincipalThreadLocal.setName(organizationOwnerUser.getUserId());
+
+		try {
+			ReflectionTestUtil.invoke(
+				_mvcActionCommand, "_validateGroups",
+				new Class<?>[] {ActionRequest.class},
+				new MockActionRequest(
+					permissionChecker,
+					_companyLocalService.getCompany(
+						TestPropsValues.getCompanyId()),
+					_groupLocalService.getGroup(TestPropsValues.getGroupId()),
+					organizationOwnerUser,
+					new long[] {_depotEntry.getGroupId()}, null));
+		}
+		finally {
+			PrincipalThreadLocal.setName(originalName);
+
+			PermissionThreadLocal.setPermissionChecker(
+				originalPermissionChecker);
+
+			_userLocalService.deleteUser(organizationOwnerUser);
+
+			_organizationLocalService.deleteOrganization(organization);
+		}
+	}
+
 	@Test
 	public void testProcessActionWithDeleteGroupDepotIds() throws Exception {
-		Contact contact = _user.getContact();
-
 		Set<Long> groupIds = new HashSet<>(
 			Collections.singleton(_user.getGroupId()));
 
 		groupIds.add(_depotEntry.getGroupId());
 
-		Calendar birthdayCal = CalendarFactoryUtil.getCalendar();
-
-		birthdayCal.setTime(_user.getBirthday());
-
-		_userLocalService.updateUser(
-			_user.getUserId(), _user.getPassword(), null, null,
-			_user.isPasswordReset(), null, null, _user.getScreenName(),
-			_user.getEmailAddress(), true, null, _user.getLanguageId(),
-			_user.getTimeZoneId(), _user.getGreeting(), _user.getComments(),
-			_user.getFirstName(), _user.getMiddleName(), _user.getLastName(),
-			contact.getPrefixListTypeId(), contact.getSuffixListTypeId(),
-			_user.isMale(), birthdayCal.get(Calendar.MONTH),
-			birthdayCal.get(Calendar.DATE), birthdayCal.get(Calendar.YEAR),
-			contact.getSmsSn(), contact.getFacebookSn(), contact.getJabberSn(),
-			contact.getSkypeSn(), contact.getTwitterSn(), _user.getJobTitle(),
-			ArrayUtil.toLongArray(groupIds), _user.getOrganizationIds(), null,
-			null, _user.getUserGroupIds(),
-			ServiceContextTestUtil.getServiceContext());
+		_updateUser(groupIds, _user);
 
 		Role role = _roleLocalService.getRole(
 			_depotEntry.getCompanyId(),
@@ -147,6 +185,7 @@ public class UpdateMembershipsMVCActionCommandTest {
 
 		_mvcActionCommand.processAction(
 			new MockActionRequest(
+				PermissionThreadLocal.getPermissionChecker(),
 				_companyLocalService.getCompany(TestPropsValues.getCompanyId()),
 				_groupLocalService.getGroup(TestPropsValues.getGroupId()),
 				_user, null, new long[] {_depotEntry.getGroupId()}),
@@ -172,6 +211,65 @@ public class UpdateMembershipsMVCActionCommandTest {
 				_user.getUserId(), _depotEntry.getGroupId()));
 	}
 
+	@Test(expected = PrincipalException.MustHavePermission.class)
+	public void testProcessActionWithDeleteGroupDepotIdsWithoutPermissions()
+		throws Exception {
+
+		Organization organization = OrganizationTestUtil.addOrganization();
+
+		User organizationOwnerUser = UserTestUtil.addOrganizationOwnerUser(
+			organization);
+
+		PermissionChecker permissionChecker =
+			PermissionCheckerFactoryUtil.create(organizationOwnerUser);
+
+		PermissionChecker originalPermissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		PermissionThreadLocal.setPermissionChecker(permissionChecker);
+
+		String originalName = PrincipalThreadLocal.getName();
+
+		PrincipalThreadLocal.setName(organizationOwnerUser.getUserId());
+
+		try {
+			Set<Long> groupIds = new HashSet<>(
+				Collections.singleton(organizationOwnerUser.getGroupId()));
+
+			groupIds.add(_depotEntry.getGroupId());
+
+			_updateUser(groupIds, organizationOwnerUser);
+
+			Role role = _roleLocalService.getRole(
+				_depotEntry.getCompanyId(), RoleConstants.ORGANIZATION_OWNER);
+
+			_userGroupRoleLocalService.addUserGroupRoles(
+				organizationOwnerUser.getUserId(), _depotEntry.getGroupId(),
+				new long[] {role.getRoleId()});
+
+			ReflectionTestUtil.invoke(
+				_mvcActionCommand, "_validateGroups",
+				new Class<?>[] {ActionRequest.class},
+				new MockActionRequest(
+					permissionChecker,
+					_companyLocalService.getCompany(
+						TestPropsValues.getCompanyId()),
+					_groupLocalService.getGroup(TestPropsValues.getGroupId()),
+					organizationOwnerUser, null,
+					new long[] {_depotEntry.getGroupId()}));
+		}
+		finally {
+			PrincipalThreadLocal.setName(originalName);
+
+			PermissionThreadLocal.setPermissionChecker(
+				originalPermissionChecker);
+
+			_userLocalService.deleteUser(organizationOwnerUser);
+
+			_organizationLocalService.deleteOrganization(organization);
+		}
+	}
+
 	@Test
 	public void testProcessActionWithNullParameters() throws Exception {
 		long[] initialGroupIds = _userLocalService.getGroupPrimaryKeys(
@@ -179,6 +277,7 @@ public class UpdateMembershipsMVCActionCommandTest {
 
 		_mvcActionCommand.processAction(
 			new MockActionRequest(
+				PermissionThreadLocal.getPermissionChecker(),
 				_companyLocalService.getCompany(TestPropsValues.getCompanyId()),
 				_groupLocalService.getGroup(TestPropsValues.getGroupId()),
 				_user, null, null),
@@ -190,6 +289,29 @@ public class UpdateMembershipsMVCActionCommandTest {
 		Assert.assertEquals(
 			Arrays.toString(actualGroupIds), initialGroupIds.length,
 			actualGroupIds.length);
+	}
+
+	private void _updateUser(Set<Long> groupIds, User user) throws Exception {
+		Contact contact = user.getContact();
+
+		Calendar birthdayCal = CalendarFactoryUtil.getCalendar();
+
+		birthdayCal.setTime(user.getBirthday());
+
+		_userLocalService.updateUser(
+			user.getUserId(), user.getPassword(), null, null,
+			user.isPasswordReset(), null, null, user.getScreenName(),
+			user.getEmailAddress(), true, null, user.getLanguageId(),
+			user.getTimeZoneId(), user.getGreeting(), user.getComments(),
+			user.getFirstName(), user.getMiddleName(), user.getLastName(),
+			contact.getPrefixListTypeId(), contact.getSuffixListTypeId(),
+			user.isFemale(), birthdayCal.get(Calendar.MONTH),
+			birthdayCal.get(Calendar.DATE), birthdayCal.get(Calendar.YEAR),
+			contact.getSmsSn(), contact.getFacebookSn(), contact.getJabberSn(),
+			contact.getSkypeSn(), contact.getTwitterSn(), user.getJobTitle(),
+			ArrayUtil.toLongArray(groupIds), user.getOrganizationIds(), null,
+			null, user.getUserGroupIds(),
+			ServiceContextTestUtil.getServiceContext());
 	}
 
 	@Inject
@@ -211,6 +333,9 @@ public class UpdateMembershipsMVCActionCommandTest {
 	private MVCActionCommand _mvcActionCommand;
 
 	@Inject
+	private OrganizationLocalService _organizationLocalService;
+
+	@Inject
 	private RoleLocalService _roleLocalService;
 
 	@DeleteAfterTestRun
@@ -226,9 +351,10 @@ public class UpdateMembershipsMVCActionCommandTest {
 		extends MockLiferayPortletActionRequest {
 
 		public MockActionRequest(
-			Company company, Group group, User user, long[] addDepotGroupIds,
-			long[] deleteGroupIds) {
+			PermissionChecker permissionChecker, Company company, Group group,
+			User user, long[] addDepotGroupIds, long[] deleteGroupIds) {
 
+			_permissionChecker = permissionChecker;
 			_company = company;
 			_group = group;
 			_user = user;
@@ -313,8 +439,7 @@ public class UpdateMembershipsMVCActionCommandTest {
 			ThemeDisplay themeDisplay = new ThemeDisplay();
 
 			themeDisplay.setCompany(_company);
-			themeDisplay.setPermissionChecker(
-				PermissionCheckerFactoryUtil.create(TestPropsValues.getUser()));
+			themeDisplay.setPermissionChecker(_permissionChecker);
 			themeDisplay.setScopeGroupId(_group.getGroupId());
 			themeDisplay.setUser(_user);
 
@@ -324,6 +449,7 @@ public class UpdateMembershipsMVCActionCommandTest {
 		private final Company _company;
 		private final Group _group;
 		private final Map<String, String[]> _parameters;
+		private final PermissionChecker _permissionChecker;
 		private final User _user;
 
 	}

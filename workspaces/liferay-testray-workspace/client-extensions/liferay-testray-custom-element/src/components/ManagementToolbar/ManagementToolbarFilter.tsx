@@ -21,7 +21,7 @@ import useSWR from 'swr';
 import {ListViewContext, ListViewTypes} from '~/context/ListViewContext';
 import SearchBuilder from '~/core/SearchBuilder';
 import useFormActions from '~/hooks/useFormActions';
-import useQueryParams from '~/hooks/useQueryParams';
+import useUpdateUrlParams from '~/hooks/useUpdateUrlParams';
 import i18n from '~/i18n';
 import {FilterSchema} from '~/schema/filter';
 import fetcher from '~/services/fetcher';
@@ -55,7 +55,7 @@ const FilterBody: React.FC<FilterBodyProps> = ({
 	setIsVisible,
 }) => {
 	const [filter, setFilter] = useState('');
-	const {updateUrlParams} = useQueryParams();
+	const updateUrlParams = useUpdateUrlParams();
 
 	const inputRef = useRef<HTMLInputElement>(null);
 
@@ -291,6 +291,7 @@ const FilterBody: React.FC<FilterBodyProps> = ({
 						filterSchema={filterSchema?.name as string}
 						form={form}
 						isLoading={isLoading}
+						onApply={onApply}
 						onChange={onChange}
 					/>
 				</div>

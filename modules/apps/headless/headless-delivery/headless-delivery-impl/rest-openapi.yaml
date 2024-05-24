@@ -1575,6 +1575,67 @@ components:
             required:
                 - name
             type: object
+        DocumentShortcut:
+            description:
+                Represents a document shortcut.
+            properties:
+                actions:
+                    additionalProperties:
+                        additionalProperties:
+                            type: string
+                        type: object
+                    # @review
+                    description:
+                        Block of actions allowed by the user making the request.
+                    readOnly: true
+                    type: object
+                assetLibraryKey:
+                    # @review
+                    description:
+                        The key of the asset library to which the document shortcut is scoped.
+                    readOnly: true
+                    type: string
+                dateCreated:
+                    description:
+                        The document shortcut's creation date.
+                    format: date-time
+                    readOnly: true
+                    type: string
+                dateModified:
+                    description:
+                        The last time a field of the document shortcut changed.
+                    format: date-time
+                    readOnly: true
+                    type: string
+                folderId:
+                    description:
+                        The document shortcut's folder ID.
+                    format: int64
+                    readOnly: true
+                    type: integer
+                id:
+                    description:
+                        The document shortcut's ID.
+                    format: int64
+                    readOnly: true
+                    type: integer
+                siteId:
+                    description:
+                        The ID of the site to which this document shortcut is scoped.
+                    format: int64
+                    readOnly: true
+                    type: integer
+                targetDocumentId:
+                    description:
+                        The ID of the document to which this shortcut is scoped.
+                    format: int64
+                    readOnly: true
+                    type: integer
+                title:
+                    description:
+                        The title of the document to which this shortcut is scoped.
+                    type: string
+            type: object
         Experience:
             description:
                 # @review
@@ -8426,6 +8487,40 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/DocumentFolder"
             tags: ["DocumentFolder"]
+    "/document-shortcuts/{documentShortcutId}":
+        get:
+            description:
+                Retrieves the document shortcut.
+            operationId: getDocumentShortcut
+            parameters:
+                - in: path
+                  name: documentShortcutId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+                - in: query
+                  name: fields
+                  schema:
+                      type: string
+                - in: query
+                  name: nestedFields
+                  schema:
+                      type: string
+                - in: query
+                  name: restrictFields
+                  schema:
+                      type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/DocumentShortcut"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/DocumentShortcut"
+            tags: ["DocumentShortcut"]
     "/documents/{documentId}":
         delete:
             description:

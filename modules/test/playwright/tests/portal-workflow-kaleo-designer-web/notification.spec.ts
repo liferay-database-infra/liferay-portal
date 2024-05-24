@@ -91,7 +91,7 @@ test('cannot see scripted recipient option when script management configuration 
 		workflowDefinitionName
 	);
 
-	await nodePropertiesSidebarPage.dragTaskNodeToDiagram();
+	await nodePropertiesSidebarPage.dragNodeToDiagram('Task', 200, 200);
 
 	await nodePropertiesSidebarPage.addNotificationButton.click();
 
@@ -114,7 +114,7 @@ test('cannot save a workflow definition with a scripted recipient notification w
 		workflowDefinitionName
 	);
 
-	await nodePropertiesSidebarPage.dragTaskNodeToDiagram();
+	await nodePropertiesSidebarPage.dragNodeToDiagram('Task', 200, 200);
 
 	await nodePropertiesSidebarPage.nodeLabelInput.fill('Notification Node');
 
@@ -151,7 +151,7 @@ test('create a notification using role type', async ({
 		workflowDefinitionName
 	);
 
-	await diagramViewPage.clickReviewNodeLink();
+	await diagramViewPage.clickNode('review');
 
 	await nodePropertiesSidebarPage.deleteNotifications();
 
@@ -159,7 +159,7 @@ test('create a notification using role type', async ({
 
 	await processBuilderPage.switchToSourceViewAndBackToDiagram();
 
-	await diagramViewPage.clickReviewNodeLink();
+	await diagramViewPage.clickNode('review');
 
 	const notificationEntry = processBuilderPage.page.getByRole('link', {
 		name: 'Role Type Notification',
@@ -182,7 +182,7 @@ test('create a notification using role type', async ({
 		workflowDefinitionName
 	);
 
-	await diagramViewPage.clickReviewNodeLink();
+	await diagramViewPage.clickNode('review');
 
 	await expect(notificationEntry).toBeVisible();
 

@@ -1151,6 +1151,15 @@ public class ObjectEntryResourceTest {
 			_escape(
 				String.format(
 					"%s/%s eq '%s'", _objectRelationship1.getName(),
+					StringUtil.removeFirst(
+						_objectDefinition1.getPKObjectFieldName(), "c_"),
+					_objectEntry1.getPrimaryKey())),
+			_objectDefinition1);
+		_assertFilterString(
+			_OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_1,
+			_escape(
+				String.format(
+					"%s/%s eq '%s'", _objectRelationship1.getName(),
 					_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2)),
 			_objectDefinition1);
 		_assertFilterString(

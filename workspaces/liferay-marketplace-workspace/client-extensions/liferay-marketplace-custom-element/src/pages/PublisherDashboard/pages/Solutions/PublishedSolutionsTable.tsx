@@ -21,10 +21,6 @@ import {
 import i18n from '../../../../i18n';
 import {Liferay} from '../../../../liferay/liferay';
 import HeadlessCommerceAdminCatalogImpl from '../../../../services/rest/HeadlessCommerceAdminCatalog';
-import {
-	getThumbnailByProductAttachment,
-	showAppImage,
-} from '../../../../utils/util';
 import {formatDate} from '../../PublisherDashboardPageUtil';
 
 type PublishedSolutionsTableProps = {
@@ -120,14 +116,12 @@ const PublishedSolutionsTable: React.FC<PublishedSolutionsTableProps> = ({
 				columns={[
 					{
 						key: 'name',
-						render: (name, {images}) => (
+						render: (name, {thumbnail}) => (
 							<div style={{width: 200}}>
 								<img
 									alt="App Image"
 									className="app-details-page-table-icon"
-									src={showAppImage(
-										getThumbnailByProductAttachment(images)
-									)}
+									src={thumbnail}
 								/>
 
 								<span className="font-weight-semi-bold ml-2">

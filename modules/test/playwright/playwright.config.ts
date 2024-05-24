@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {defineConfig} from '@playwright/test';
+import {defineConfig, devices} from '@playwright/test';
 
 import {wemSiteSetup, wemSiteTeardown} from './setup/wem-site/config';
 import {config as accountAdminWebConfig} from './tests/account-admin-web/config';
@@ -20,8 +20,10 @@ import {config as dispatchWebConfig} from './tests/dispatch-web/config';
 import {config as documentLibraryWebConfig} from './tests/document-library-web/config';
 import {config as dynamicDataMappingFormWebConfig} from './tests/dynamic-data-mapping-form-web/config';
 import {config as exportImportWebConfig} from './tests/export-import-web/config';
+import {config as featureFlagWebConfig} from './tests/feature-flag-web/config';
 import {config as frontendDataSetViewsWebConfig} from './tests/frontend-data-set-views-web/config';
 import {config as frontendDataSetWebConfig} from './tests/frontend-data-set-web/config';
+import {config as frontendJsSpaWebConfig} from './tests/frontend-js-spa-web/config';
 import {config as headlessBuilderImplConfig} from './tests/headless-builder-impl/config';
 import {config as headlessBuilderWebConfig} from './tests/headless-builder-web/config';
 import {config as journalWebConfig} from './tests/journal-web/config';
@@ -68,8 +70,10 @@ export default defineConfig({
 		documentLibraryWebConfig,
 		dynamicDataMappingFormWebConfig,
 		exportImportWebConfig,
+		featureFlagWebConfig,
 		frontendDataSetViewsWebConfig,
 		frontendDataSetWebConfig,
+		frontendJsSpaWebConfig,
 		headlessBuilderImplConfig,
 		headlessBuilderWebConfig,
 		journalWebConfig,
@@ -113,6 +117,7 @@ export default defineConfig({
 	testDir: './tests',
 	timeout: 90 * 1000,
 	use: {
+		...devices['Desktop Chrome'],
 		baseURL: process.env.PORTAL_URL
 			? process.env.PORTAL_URL
 			: 'http://localhost:8080',

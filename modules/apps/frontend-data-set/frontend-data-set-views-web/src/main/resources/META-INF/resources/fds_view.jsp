@@ -20,13 +20,13 @@ renderResponse.setTitle(ParamUtil.getString(request, "fdsViewLabel"));
 	module="{FDSView} from frontend-data-set-views-web"
 	props='<%=
 		HashMapBuilder.<String, Object>put(
+			"backURL", fdsViewsURL
+		).put(
 			"fdsClientExtensionCellRenderers", fdsViewsDisplayContext.getFDSCellRendererCETsJSONArray()
 		).put(
 			"fdsFilterClientExtensions", fdsViewsDisplayContext.getFDSFilterCETsJSONArray()
 		).put(
 			"fdsViewId", ParamUtil.getString(request, "fdsViewId")
-		).put(
-			"fdsViewsURL", fdsViewsURL
 		).put(
 			"namespace", liferayPortletResponse.getNamespace()
 		).put(

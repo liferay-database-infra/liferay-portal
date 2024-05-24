@@ -16,7 +16,7 @@ import {
 } from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {KeyedMutator} from 'swr';
-import useQueryParams from '~/hooks/useQueryParams';
+import useUpdateUrlParams from '~/hooks/useUpdateUrlParams';
 
 import ListViewContextProvider, {
 	AppActions,
@@ -110,7 +110,8 @@ const ListView: React.FC<ListViewProps> = ({
 	variables,
 }) => {
 	const [listViewContext, dispatch] = useContext(ListViewContext);
-	const {updateUrlParams} = useQueryParams();
+	const updateUrlParams = useUpdateUrlParams();
+
 	const [searchParams] = useSearchParams();
 
 	const currentPage = searchParams.get('page');
@@ -325,23 +326,20 @@ const ListView: React.FC<ListViewProps> = ({
 				type: ListViewTypes.SET_CUSTOM_FILTER_FIELDS,
 			});
 		}
+	}, [customFilterFields, dispatch]);
 
+	const checkAllRows = itemsMemoized.every((item) =>
+		selectedRows.includes(onSelectRowNormalizer(item))
+	);
+
+	useEffect(() => {
 		if (tableProps.rowSelectable) {
 			dispatch({
-				payload: itemsMemoized.every((item) =>
-					selectedRows.includes(onSelectRowNormalizer(item))
-				),
+				payload: checkAllRows,
 				type: ListViewTypes.SET_CHECKED_ALL_ROWS,
 			});
 		}
-	}, [
-		customFilterFields,
-		dispatch,
-		itemsMemoized,
-		onSelectRowNormalizer,
-		selectedRows,
-		tableProps.rowSelectable,
-	]);
+	}, [checkAllRows, dispatch, tableProps.rowSelectable]);
 
 	useEffect(() => {
 		if (managementToolbarProps.applyFilters) {

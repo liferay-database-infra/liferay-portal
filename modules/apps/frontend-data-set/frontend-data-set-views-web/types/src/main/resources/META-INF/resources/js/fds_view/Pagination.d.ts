@@ -7,8 +7,8 @@
 
 import {IFDSViewSectionProps} from '../FDSView';
 declare function Pagination({
+	backURL,
 	fdsView,
-	fdsViewsURL,
 	namespace,
 	onFDSViewUpdate,
 }: IFDSViewSectionProps): JSX.Element;

@@ -4,7 +4,9 @@
  */
 
 import {Dispatch} from 'react';
+import {useLocation, useNavigate, useParams} from 'react-router-dom';
 
+import {UploadedFile} from '../../../components/FileList/FileList';
 import {
 	AppActions,
 	SolutionInitialState,
@@ -24,6 +26,56 @@ import {getTemporaryProductIdForSpefication} from '../../../utils/util';
 
 type ProductConfig = {
 	isDraft: boolean;
+};
+
+const addOrUpdateImages = async (
+	images: UploadedFile[],
+	tag: string,
+	product: Product,
+	priorityInitialValue: number
+) => {
+	let priority = priorityInitialValue;
+	for (const image of images) {
+		priority++;
+
+		if (!image.changed && image.uploaded) {
+			continue;
+		}
+
+		const uploadedProductImage = product?.images?.find(
+			(uploadedImage) => uploadedImage.externalReferenceCode === image.id
+		);
+
+		const imageMetadata = {
+			...(uploadedProductImage && {
+				fileEntryId: uploadedProductImage.fileEntryId,
+				id: uploadedProductImage.id,
+			}),
+			...(image?.file && {
+				attachment: base64ToText(
+					(await fileToBase64(image.file)) as string
+				),
+			}),
+			externalReferenceCode: image.id,
+			galleryEnabled: false,
+			neverExpire: true,
+			priority,
+			tags: [tag],
+			title: {
+				en_US: image.imageDescription || image.file.name,
+			},
+		};
+
+		await headlessCommerceAdminCatalogImpl.createProductImageByExternalReferenceCodeAxios(
+			product?.externalReferenceCode,
+			imageMetadata,
+			(progress) => {
+				image.changed = false;
+				image.progress = progress;
+				image.uploaded = progress === 100;
+			}
+		);
+	}
 };
 
 const updateSpecification = async (
@@ -79,6 +131,10 @@ const usePublishSolutionSubmission = (
 	context: SolutionInitialState,
 	dispatch: Dispatch<AppActions>
 ) => {
+	const {productId} = useParams();
+	const location = useLocation();
+	const navigate = useNavigate();
+
 	const syncProfile = async (config: ProductConfig) => {
 		const {
 			_product,
@@ -106,6 +162,24 @@ const usePublishSolutionSubmission = (
 			: PRODUCT_WORKFLOW_STATUS_CODE.PENDING;
 
 		if (_product) {
+			if (file && (!file?.uploaded || file?.changed)) {
+				await headlessCommerceAdminCatalogImpl.createProductImageByExternalReferenceCodeAxios(
+					_product.externalReferenceCode,
+					{
+						attachment: base64ToText(
+							(await fileToBase64(file.file)) as string
+						),
+						galleryEnabled: false,
+						neverExpire: true,
+						priority: 0,
+						tags: [PRODUCT_TAGS.SOLUTION_PROFILE_APP_ICON],
+						title: {
+							en_US: file.fileName,
+						},
+					}
+				);
+			}
+
 			await headlessCommerceAdminCatalogImpl.updateProduct(
 				_product.productId as number,
 				{
@@ -143,7 +217,7 @@ const usePublishSolutionSubmission = (
 					galleryEnabled: false,
 					neverExpire: true,
 					priority: 0,
-					tags: [PRODUCT_TAGS.APP_ICON],
+					tags: [PRODUCT_TAGS.SOLUTION_PROFILE_APP_ICON],
 					title: {
 						en_US: file.fileName,
 					},
@@ -197,36 +271,12 @@ const usePublishSolutionSubmission = (
 		// Process Upload Images, priority starts in 1 to not conflict with
 		// the app icon defined as priority 0
 
-		let priority = 0;
-		for (const headerImage of headerImages) {
-			priority++;
-
-			if (headerImage.uploaded) {
-				continue;
-			}
-
-			await headlessCommerceAdminCatalogImpl.createProductImageByExternalReferenceCodeAxios(
-				product.externalReferenceCode,
-				{
-					attachment: base64ToText(
-						(await fileToBase64(headerImage.file)) as string
-					),
-					galleryEnabled: false,
-					neverExpire: true,
-					priority,
-					tags: [PRODUCT_TAGS.SOLUTION_HEADER],
-					title: {
-						en_US:
-							headerImage.imageDescription ||
-							headerImage.file.name,
-					},
-				},
-				(progress) => {
-					headerImage.progress = progress;
-					headerImage.uploaded = progress === 100;
-				}
-			);
-		}
+		await addOrUpdateImages(
+			headerImages,
+			PRODUCT_TAGS.SOLUTION_HEADER,
+			product,
+			0
+		);
 	};
 
 	const syncCompanyProfileAndContactUs = async (product: Product) => {
@@ -265,37 +315,14 @@ const usePublishSolutionSubmission = (
 
 			const files = block.content.files;
 
-			let priority =
+			await addOrUpdateImages(
+				files,
+				PRODUCT_TAGS.SOLUTION_DETAILS,
+				product,
 				context.header.contentType.type === 'upload-images'
 					? context.header.contentType.content.headerImages.length
-					: 0;
-			for (const file of files) {
-				priority++;
-
-				if (file.uploaded) {
-					continue;
-				}
-				await headlessCommerceAdminCatalogImpl.createProductImageByExternalReferenceCodeAxios(
-					product.externalReferenceCode,
-					{
-						attachment: base64ToText(
-							(await fileToBase64(file.file)) as string
-						),
-						externalReferenceCode: file.id,
-						galleryEnabled: false,
-						neverExpire: true,
-						priority,
-						tags: [PRODUCT_TAGS.SOLUTION_DETAILS],
-						title: {
-							en_US: file.fileName,
-						},
-					},
-					(progress) => {
-						file.progress = progress;
-						file.uploaded = progress === 100;
-					}
-				);
-			}
+					: 0
+			);
 		}
 
 		const newBlocks = blocks.map((block) => {
@@ -332,8 +359,10 @@ const usePublishSolutionSubmission = (
 	const onSaveSolution = async (config: ProductConfig) => {
 		dispatch({payload: true, type: SolutionTypes.SET_LOADING});
 
+		let product;
+
 		try {
-			const product = await syncProfile(config);
+			product = await syncProfile(config);
 
 			for (const sync of [
 				deleteReferences,
@@ -347,13 +376,14 @@ const usePublishSolutionSubmission = (
 		catch (error) {
 			console.error(error);
 		}
-		finally {
-			dispatch({payload: false, type: SolutionTypes.SET_LOADING});
-		}
+
+		dispatch({payload: false, type: SolutionTypes.SET_LOADING});
+
+		return product;
 	};
 
 	const onSaveAsDraft = async () => {
-		await onSaveSolution({isDraft: true});
+		const product = await onSaveSolution({isDraft: true});
 
 		Liferay.Util.openToast({
 			message: i18n.sub('x-saved-as-a-draft-successfully', [
@@ -362,6 +392,15 @@ const usePublishSolutionSubmission = (
 			title: '',
 			type: 'info',
 		});
+
+		if (!productId) {
+			navigate(
+				location.pathname.replace(
+					'/publisher/',
+					`/${product.productId}/publisher/`
+				)
+			);
+		}
 	};
 
 	const onSave = async () => {

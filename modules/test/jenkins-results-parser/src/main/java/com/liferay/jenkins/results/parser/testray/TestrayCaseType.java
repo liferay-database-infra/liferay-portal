@@ -12,13 +12,8 @@ import org.json.JSONObject;
  */
 public class TestrayCaseType {
 
-	public TestrayCaseType(TestrayServer testrayServer, JSONObject jsonObject) {
-		_testrayServer = testrayServer;
-		_jsonObject = jsonObject;
-	}
-
 	public Long getID() {
-		return _jsonObject.getLong("testrayCaseTypeId");
+		return _jsonObject.getLong("id");
 	}
 
 	public String getName() {
@@ -27,6 +22,13 @@ public class TestrayCaseType {
 
 	public TestrayServer getTestrayServer() {
 		return _testrayServer;
+	}
+
+	protected TestrayCaseType(
+		TestrayServer testrayServer, JSONObject jsonObject) {
+
+		_testrayServer = testrayServer;
+		_jsonObject = jsonObject;
 	}
 
 	private final JSONObject _jsonObject;

@@ -47,6 +47,7 @@ import TaskHeaderActions from './TaskHeaderActions';
 
 type OutletContext = {
 	data: {
+		projectId: string;
 		testrayTask: TestrayTask & {
 			actions: {
 				[key: string]: string;
@@ -62,15 +63,13 @@ const ShortcutIcon = () => (
 
 const TestFlowTasks = () => {
 	const {
-		data: {testrayTask, testrayTaskUser},
+		data: {projectId, testrayTask, testrayTaskUser},
 		revalidate: {revalidateSubtask},
 	} = useOutletContext<OutletContext>();
 	const {actions, completeModal, forceRefetch} = useSubtasksActions();
 	const {taskId} = useParams();
 	const {updateItemFromList} = useMutate();
 	const [isLoading, setIsLoading] = useState(false);
-
-	const projectId = String(testrayTask.build?.project?.id);
 
 	const [{myUserAccount}] = useContext(TestrayContext);
 
@@ -111,8 +110,9 @@ const TestFlowTasks = () => {
 		const subtasksWithDifferentAssignedUsers = subtasks
 			?.filter(
 				(subtask) =>
+					subtask?.user?.id.toString() &&
 					subtask?.user?.id.toString() !==
-						Liferay.ThemeDisplay.getUserId() || !subtask?.user?.id
+						Liferay.ThemeDisplay.getUserId()
 			)
 			?.map((subtask) => ({
 				text: i18n.sub(
@@ -449,7 +449,7 @@ const TestFlowTasks = () => {
 									)
 								}
 								primaryButtonProps={{
-									disabled: !!alerts.length && isLoading,
+									disabled: !!alerts.length,
 									loading: isLoading,
 									title: i18n.translate('merge-subtasks'),
 								}}

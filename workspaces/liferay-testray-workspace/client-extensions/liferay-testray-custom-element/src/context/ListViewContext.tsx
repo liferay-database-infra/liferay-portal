@@ -7,7 +7,7 @@
 import {ReactNode, createContext, useEffect, useReducer} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import TestrayStorage, {STORAGE_KEYS} from '~/core/Storage';
-import useQueryParams from '~/hooks/useQueryParams';
+import useFilterUrlParams from '~/hooks/useFilterUrlParams';
 import useStorage from '~/hooks/useStorage';
 import {ActionMap, SortDirection, SortOption} from '~/types';
 import {getUniqueList, safeJSONParse} from '~/util';
@@ -383,7 +383,7 @@ const ListViewContextProvider: React.FC<
 		id,
 	});
 
-	const {filterInitialContext} = useQueryParams(state.customFilterFields);
+	const {filterInitialContext} = useFilterUrlParams(state.customFilterFields);
 
 	return (
 		<ListViewContext.Provider
