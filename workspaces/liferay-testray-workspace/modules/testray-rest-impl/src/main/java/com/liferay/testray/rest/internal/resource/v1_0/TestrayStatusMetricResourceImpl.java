@@ -6,7 +6,10 @@
 package com.liferay.testray.rest.internal.resource.v1_0;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.pagination.Page;
@@ -20,11 +23,15 @@ import com.liferay.testray.rest.dto.v1_0.TestrayTeamMetric;
 import com.liferay.testray.rest.internal.util.TestrayUtil;
 import com.liferay.testray.rest.resource.v1_0.TestrayStatusMetricResource;
 
+import java.net.URI;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
 
 /**
@@ -385,7 +392,7 @@ public class TestrayStatusMetricResourceImpl
 				Long testrayTeamId, Pagination pagination)
 		throws Exception {
 
-		StringBundler sb = new StringBundler(34);
+		StringBundler sb = new StringBundler(35);
 
 		sb.append("select count(cr.dueStatus_) as total, sum(case when ");
 		sb.append("cr.dueStatus_ = 'blocked' then 1 else 0 end) as blocked, ");
@@ -412,7 +419,8 @@ public class TestrayStatusMetricResourceImpl
 		sb.append("b2.r_routineToBuilds_c_routineId = r.c_routineId_ and ");
 		sb.append("b2.dueDate_ = (select max(b3.dueDate_) from ");
 		sb.append("O_[%COMPANY_ID%]_Build b3 where ");
-		sb.append("b3.r_routineToBuilds_c_routineId = r.c_routineId_)) ");
+		sb.append("b3.r_routineToBuilds_c_routineId = r.c_routineId_) limit ");
+		sb.append("1) ");
 
 		List<Object> params = new ArrayList<>();
 
@@ -457,6 +465,44 @@ public class TestrayStatusMetricResourceImpl
 				value -> {
 					TestrayRoutineMetric testrayRoutineMetric =
 						new TestrayRoutineMetric();
+
+					if (ListUtil.fromArray(
+							contextUser.getRoleIds()
+						).contains(
+							_roleLocalService.getRole(
+								contextUser.getCompanyId(),
+								"Testray Administrator"
+							).getRoleId()
+						)) {
+
+						URI baseURI = contextUriInfo.getBaseUri();
+
+						testrayRoutineMetric.setActions(
+							new HashMap<>(
+								HashMapBuilder.put(
+									"delete",
+									HashMapBuilder.put(
+										"href",
+										baseURI.getScheme() + "://" +
+											baseURI.getAuthority() +
+												"/o/c/routines/" +
+													value.get("c_routineId_")
+									).put(
+										"method", "DELETE"
+									).build()
+								).put(
+									"update",
+									HashMapBuilder.put(
+										"href",
+										baseURI.getScheme() + "://" +
+											baseURI.getAuthority() +
+												"/o/c/routines/" +
+													value.get("c_routineId_")
+									).put(
+										"method", "PUT"
+									).build()
+								).build()));
+					}
 
 					if (value.get("dueDate_") != null) {
 						testrayRoutineMetric.setTestrayBuildDueDate(
@@ -510,5 +556,8 @@ public class TestrayStatusMetricResourceImpl
 
 		return sb.toString();
 	}
+
+	@Reference
+	private RoleLocalService _roleLocalService;
 
 }

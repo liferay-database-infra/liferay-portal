@@ -178,6 +178,8 @@ export default function ChangeTrackingRenderView({
 		view: VIEW_UNIFIED,
 	});
 
+	const currentContentType = state.contentType;
+
 	useEffect(() => {
 		setLoading(true);
 
@@ -236,6 +238,7 @@ export default function ChangeTrackingRenderView({
 
 				if (
 					newState.view === VIEW_UNIFIED &&
+					currentContentType !== CONTENT_TYPE_WORKFLOW &&
 					((newState.contentType === CONTENT_TYPE_RENDER &&
 						!Object.prototype.hasOwnProperty.call(
 							json,
@@ -275,6 +278,7 @@ export default function ChangeTrackingRenderView({
 			});
 	}, [
 		childEntries,
+		currentContentType,
 		dataURL,
 		parentEntries,
 		refresh,
@@ -681,6 +685,31 @@ export default function ChangeTrackingRenderView({
 		);
 	};
 
+	const openWorkflowAssignModal = (href, label, modalHeight) => {
+		Liferay.Util.openModal({
+			center: true,
+			customEvents: [
+				{
+					name: `${namespace}workflowTaskUpdated`,
+					onEvent() {
+						const iframe = document.querySelector(
+							'.liferay-modal iframe'
+						);
+
+						iframe.contentWindow.location.reload();
+
+						setShowWorkflowSuccessMessage(true);
+					},
+				},
+			],
+			height: modalHeight,
+			onOpen: () => setShowWorkflowSuccessMessage(false),
+			size: 'lg',
+			title: label,
+			url: href,
+		});
+	};
+
 	const renderWorkflowView = () => {
 		if (
 			state.contentType === CONTENT_TYPE_WORKFLOW &&
@@ -691,6 +720,7 @@ export default function ChangeTrackingRenderView({
 		) {
 			return (
 				<ChangeTrackingWorkflowView
+					openWorkflowAssignModal={openWorkflowAssignModal}
 					workflowData={state.renderData.workflowData}
 				/>
 			);
@@ -820,28 +850,11 @@ export default function ChangeTrackingRenderView({
 			workflowActionsDropdownItems.push({
 				label: workflowAction.label,
 				onClick: () =>
-					Liferay.Util.openModal({
-						center: true,
-						customEvents: [
-							{
-								name: `${namespace}workflowTaskUpdated`,
-								onEvent() {
-									const iframe = document.querySelector(
-										'.liferay-modal iframe'
-									);
-
-									iframe.contentWindow.location.reload();
-
-									setShowWorkflowSuccessMessage(true);
-								},
-							},
-						],
-						height: workflowAction.modalHeight,
-						onOpen: () => setShowWorkflowSuccessMessage(false),
-						size: 'lg',
-						title: workflowAction.label,
-						url: workflowAction.href,
-					}),
+					openWorkflowAssignModal(
+						workflowAction.href,
+						workflowAction.label,
+						workflowAction.modalHeight
+					),
 				symbolLeft: 'workflow',
 			});
 		});
@@ -1175,6 +1188,7 @@ export default function ChangeTrackingRenderView({
 
 		return (
 			<ClayTable
+				borderless
 				className={classNames('publications-render-view', {
 					'publications-table':
 						state.contentType === CONTENT_TYPE_PARENTS ||
@@ -1184,6 +1198,7 @@ export default function ChangeTrackingRenderView({
 					state.contentType === CONTENT_TYPE_PARENTS ||
 					state.contentType === CONTENT_TYPE_CHILDREN
 				}
+				striped={state.contentType !== CONTENT_TYPE_WORKFLOW}
 			>
 				<ClayTable.Head>{renderToolbar()}</ClayTable.Head>
 
@@ -1236,9 +1251,11 @@ export default function ChangeTrackingRenderView({
 						getTableRows(state.children)}
 
 					{state.contentType === CONTENT_TYPE_WORKFLOW && (
-						<td className="publications-render-view-content">
-							{renderWorkflowView()}
-						</td>
+						<tr>
+							<td className="publications-render-view-content">
+								{renderWorkflowView()}
+							</td>
+						</tr>
 					)}
 				</ClayTable.Body>
 			</ClayTable>

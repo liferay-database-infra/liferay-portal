@@ -10,13 +10,13 @@ import React, {useState} from 'react';
 
 import {WorkflowStatusLabel} from '../components/WorkflowStatusLabel';
 
-export default function ChangeTrackingWorkflowView({workflowData}) {
+export default function ChangeTrackingWorkflowView({
+	openWorkflowAssignModal,
+	workflowData,
+}) {
 	const MAX_ITEMS_TO_SHOW = 10;
 
 	const [next, setNext] = useState(MAX_ITEMS_TO_SHOW);
-
-	const workflowActivities = JSON.parse(workflowData.activities);
-	const workflowCommentsURL = JSON.parse(workflowData.comments);
 
 	return (
 		<div>
@@ -24,6 +24,7 @@ export default function ChangeTrackingWorkflowView({workflowData}) {
 				borderless
 				className="publications-render-table table table-autofit table-nowrap"
 				hover={false}
+				striped
 			>
 				<ClayTable.Head />
 
@@ -47,6 +48,24 @@ export default function ChangeTrackingWorkflowView({workflowData}) {
 
 						<ClayTable.Cell className="table-cell-expand">
 							{workflowData.assignedTo}
+
+							{workflowData.assignButton && (
+								<ClayButton
+									className="ml-2"
+									displayType="secondary"
+									onClick={() =>
+										openWorkflowAssignModal(
+											workflowData.assignButton.href,
+											workflowData.assignButton.label,
+											workflowData.assignButton
+												.modalHeight
+										)
+									}
+									size="xs"
+								>
+									{workflowData.assignButton.label}
+								</ClayButton>
+							)}
 						</ClayTable.Cell>
 					</ClayTable.Row>
 
@@ -100,56 +119,64 @@ export default function ChangeTrackingWorkflowView({workflowData}) {
 						<ClayTable.Cell className="table-cell-expand">
 							<a
 								href={Liferay.Util.escape(
-									workflowCommentsURL.url
+									workflowData.comments.url
 								)}
 							>
-								{workflowCommentsURL.title}
+								{workflowData.comments.title}
 							</a>
 						</ClayTable.Cell>
 					</ClayTable.Row>
 				</ClayTable.Body>
 			</ClayTable>
 
-			<ClayTable borderless className="mt-n3">
-				<ClayTable.Row>
-					<ClayPanel
-						borderless
-						className="mb-0"
-						collapsable
-						displayTitle={
-							<ClayPanel.Title>
-								<b> {Liferay.Language.get('activities')} </b>
-							</ClayPanel.Title>
-						}
-						displayType="primary"
-						showCollapseIcon={true}
-					>
-						<th className="bg-white">
-							{Liferay.Language.get('activity-description')}
-						</th>
+			<ClayPanel
+				borderless="true"
+				className="mb-0"
+				collapsable
+				displayTitle={
+					<ClayPanel.Title>
+						<b> {Liferay.Language.get('activities')} </b>
+					</ClayPanel.Title>
+				}
+				displayType="primary"
+				showCollapseIcon={true}
+			>
+				<ClayTable borderless className="mt-n3">
+					<ClayTable.Head>
+						<ClayTable.Row>
+							<ClayTable.Cell headingCell headingTitle>
+								{Liferay.Language.get('activity-description')}
+							</ClayTable.Cell>
 
-						<th className="bg-white">
-							{Liferay.Language.get('date')}
-						</th>
+							<ClayTable.Cell headingCell headingTitle>
+								{Liferay.Language.get('date')}
+							</ClayTable.Cell>
+						</ClayTable.Row>
+					</ClayTable.Head>
 
-						{Object.keys(workflowActivities)
+					<ClayTable.Body>
+						{Object.keys(workflowData.activities)
 							.reverse()
 							.slice(0, next)
 							?.map((id) => (
-								<tr key={id}>
-									<td className="bg-white">
-										{workflowActivities[id].description}
+								<ClayTable.Row key={id}>
+									<ClayTable.Cell className="bg-white">
+										{
+											workflowData.activities[id]
+												.description
+										}
 										&nbsp;
-										{workflowActivities[id].comment}
-									</td>
+										{workflowData.activities[id].comment}
+									</ClayTable.Cell>
 
-									<td className="bg-white">
-										{workflowActivities[id].createDate}
-									</td>
-								</tr>
+									<ClayTable.Cell className="bg-white">
+										{workflowData.activities[id].createDate}
+									</ClayTable.Cell>
+								</ClayTable.Row>
 							))}
 
-						{next < Object.keys(workflowActivities)?.length && (
+						{next <
+							Object.keys(workflowData.activities)?.length && (
 							<ClayButton
 								borderless
 								onClick={() =>
@@ -159,9 +186,9 @@ export default function ChangeTrackingWorkflowView({workflowData}) {
 								{Liferay.Language.get('view-more')}
 							</ClayButton>
 						)}
-					</ClayPanel>
-				</ClayTable.Row>
-			</ClayTable>
+					</ClayTable.Body>
+				</ClayTable>
+			</ClayPanel>
 		</div>
 	);
 }

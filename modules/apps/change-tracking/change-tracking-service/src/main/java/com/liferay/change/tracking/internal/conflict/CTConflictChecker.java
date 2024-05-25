@@ -145,6 +145,8 @@ public class CTConflictChecker<T extends CTModel<T>> {
 			connection, ctPersistence, conflictInfos, primaryKeyName);
 
 		if (_modificationCTEntries != null) {
+			_checkCTEntries(ctPersistence, conflictInfos);
+
 			_checkModifications(
 				connection, ctPersistence, conflictInfos, primaryKeyName);
 		}
@@ -161,8 +163,6 @@ public class CTConflictChecker<T extends CTModel<T>> {
 		}
 
 		_checkMissingRequirements(connection, ctPersistence, conflictInfos);
-
-		_checkCTEntries(ctPersistence, conflictInfos);
 
 		return conflictInfos;
 	}
@@ -313,7 +313,7 @@ public class CTConflictChecker<T extends CTModel<T>> {
 			return;
 		}
 
-		for (CTEntry ctEntry : _ctEntries) {
+		for (CTEntry ctEntry : _modificationCTEntries.values()) {
 			if (ctEntryConflictHelper.hasModificationConflict(
 					ctEntry, _targetCTCollectionId)) {
 
@@ -397,9 +397,7 @@ public class CTConflictChecker<T extends CTModel<T>> {
 			List<ConflictInfo> conflictInfos)
 		throws PortalException {
 
-		if (!_ctEntryLocalService.hasCTEntries(
-				_sourceCTCollectionId, _modelClassNameId)) {
-
+		if (_ctEntries.isEmpty()) {
 			return;
 		}
 
@@ -631,10 +629,7 @@ public class CTConflictChecker<T extends CTModel<T>> {
 		Set<Long> verifyPrimaryKeys = new HashSet<>();
 		Set<Long> ignorablePrimaryKeys = new HashSet<>();
 
-		for (CTEntry ctEntry :
-				_ctEntryLocalService.getCTEntries(
-					_sourceCTCollectionId, _modelClassNameId)) {
-
+		for (CTEntry ctEntry : _ctEntries) {
 			if (ctEntry.getChangeType() !=
 					CTConstants.CT_CHANGE_TYPE_ADDITION) {
 
