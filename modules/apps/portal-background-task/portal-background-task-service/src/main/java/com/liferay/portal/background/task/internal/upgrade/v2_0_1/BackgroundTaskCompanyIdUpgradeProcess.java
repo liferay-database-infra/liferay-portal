@@ -39,8 +39,8 @@ public class BackgroundTaskCompanyIdUpgradeProcess extends UpgradeProcess {
 	protected void doUpgrade() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
 			processConcurrently(
-				"Select backgroundTaskId,taskContextMap from BackgroundTask",
-				"Update BackgroundTask set taskContextMap = ? where " +
+				"select backgroundTaskId, taskContextMap from BackgroundTask",
+				"update BackgroundTask set taskContextMap = ? where " +
 					"backgroundTaskId = ?",
 				resultSet -> new Object[] {
 					resultSet.getLong("backgroundTaskId"),
