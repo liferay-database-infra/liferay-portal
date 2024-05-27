@@ -50,8 +50,6 @@ public class BackgroundTaskCompanyIdUpgradeProcess extends UpgradeProcess {
 					String taskContextMapValue = (String)values[1];
 
 					if (taskContextMapValue != null) {
-						long backgroundTaskId = (Long)values[0];
-
 						ObjectMapper mapper = new ObjectMapper();
 
 						Map<String, Serializable> taskContextMap =
@@ -65,7 +63,7 @@ public class BackgroundTaskCompanyIdUpgradeProcess extends UpgradeProcess {
 
 						preparedStatement.setString(1, taskContextMapValue);
 
-						preparedStatement.setLong(2, backgroundTaskId);
+						preparedStatement.setLong(2, (Long)values[0]);
 
 						preparedStatement.addBatch();
 					}
