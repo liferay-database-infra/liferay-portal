@@ -8,15 +8,17 @@ import {expect, mergeTests} from '@playwright/test';
 import {collectionsPagesTest} from '../../fixtures/CollectionsPageTest';
 import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
 import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
+import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {pageEditorPagesTest} from '../../fixtures/pageEditorPagesTest';
 import {wemSiteTest} from '../../fixtures/wemSiteTest';
 import getRandomString from '../../utils/getRandomString';
 import getCollectionDefinition from './utils/getCollectionDefinition';
 import getCollectionItemDefinition from './utils/getCollectionItemDefinition';
+import getFragmentDefinition from './utils/getFragmentDefinition';
 import getPageDefinition from './utils/getPageDefinition';
 
-export const test = mergeTests(
+const test = mergeTests(
 	apiHelpersTest,
 	wemSiteTest,
 	collectionsPagesTest,
@@ -26,6 +28,8 @@ export const test = mergeTests(
 	loginTest(),
 	pageEditorPagesTest
 );
+
+const testWithIsolatedSite = mergeTests(test, isolatedSiteTest);
 
 test('allows adding a Collection Display with a manual collection into another Collection Display with Recent Content', async ({
 	apiHelpers,
@@ -102,4 +106,192 @@ test('allows adding a Collection Display with a manual collection into another C
 	}
 
 	await apiHelpers.jsonWebServicesLayout.deleteLayout(layout.id);
+});
+
+testWithIsolatedSite(
+	'checks the error message when trying to drag a fragment to an unmapped collection',
+	async ({apiHelpers, page, pageEditorPage, site}) => {
+		const collectionDefinition = getCollectionDefinition({
+			id: getRandomString(),
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([collectionDefinition]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await page
+			.getByRole('menuitem', {
+				name: 'Add Button',
+			})
+			.dragTo(page.getByText('No Collection Selected Yet'));
+
+		await expect(page.locator('.alert-danger')).toHaveText(
+			'Error:Fragments cannot be placed inside an unmapped collection display fragment.'
+		);
+	}
+);
+
+test('checks Content Flags, Content Ratings and Content Display are compatible with Collection Display', async ({
+	apiHelpers,
+	collectionsPage,
+	page,
+	pageEditorPage,
+	wemSite,
+}) => {
+
+	// Create definition for a collection mapped to Animals collection with Content Flags, Content Ratings and Display Content fragments.
+
+	const collectionName = 'Animals';
+
+	const animalsClassPK = await collectionsPage.getCollectionClassPK(
+		collectionName,
+		wemSite.friendlyUrlPath
+	);
+
+	const animalsCollection = getCollectionItemDefinition(getRandomString(), [
+		getFragmentDefinition(
+			getRandomString(),
+			'com.liferay.fragment.internal.renderer.ContentFlagsFragmentRenderer'
+		),
+		getFragmentDefinition(
+			getRandomString(),
+			'com.liferay.fragment.internal.renderer.ContentRatingsFragmentRenderer'
+		),
+		getFragmentDefinition(
+			getRandomString(),
+			'com.liferay.fragment.internal.renderer.ContentObjectFragmentRenderer'
+		),
+	]);
+
+	const collectionDefinition = getCollectionDefinition({
+		classPK: animalsClassPK,
+		id: getRandomString(),
+		pageElements: [animalsCollection],
+	});
+
+	// Create a content page and go to edit mode
+
+	const layout = await apiHelpers.headlessDelivery.createSitePage({
+		pageDefinition: getPageDefinition([collectionDefinition]),
+		siteId: wemSite.id,
+		title: getRandomString(),
+	});
+
+	// Go to edit mode of the created
+
+	await pageEditorPage.goto(layout, wemSite.friendlyUrlPath);
+
+	// Check that the Content Display shows the content in each item
+
+	await expect(
+		await page.locator('.page-editor').getByText('Content', {exact: true})
+	).toHaveCount(2);
+	await expect(page.getByText('Animal 01 content')).toBeVisible();
+	await expect(page.getByText('Animal 02 content')).toBeVisible();
+
+	// Check that the Content Ratings is shown in each item and the Field input has the corresponding name
+
+	const voteItem = await page.getByLabel('Vote', {exact: true});
+
+	await expect(voteItem).toHaveCount(2);
+
+	await voteItem.first().click();
+
+	await expect(page.getByPlaceholder('No Item Selected')).toHaveValue(
+		'Animal 01 - Dogs and Cats categories'
+	);
+
+	await voteItem.nth(1).click();
+
+	await expect(page.getByPlaceholder('No Item Selected')).toHaveValue(
+		'Animal 02 - Dogs category'
+	);
+
+	// Check that the Content Flags is shown in each item and the Field input has the corresponding name
+
+	const reportItem = await page.locator('.taglib-flags');
+
+	await expect(reportItem).toHaveCount(2);
+
+	await reportItem.first().click();
+
+	await expect(page.getByPlaceholder('No Item Selected')).toHaveValue(
+		'Animal 01 - Dogs and Cats categories'
+	);
+
+	await reportItem.nth(1).click();
+
+	await expect(page.getByPlaceholder('No Item Selected')).toHaveValue(
+		'Animal 02 - Dogs category'
+	);
+});
+
+test('modifies inline text on all collection items', async ({
+	apiHelpers,
+	collectionsPage,
+	page,
+	pageEditorPage,
+	wemSite,
+}) => {
+
+	// Create definition for a collection mapped to Animals collection
+
+	const collectionName = 'Animals';
+
+	const animalsClassPK = await collectionsPage.getCollectionClassPK(
+		collectionName,
+		wemSite.friendlyUrlPath
+	);
+
+	const headingId = getRandomString();
+
+	const animalsCollection = getCollectionItemDefinition(getRandomString(), [
+		getFragmentDefinition(headingId, 'BASIC_COMPONENT-heading'),
+	]);
+
+	const collectionDefinition = getCollectionDefinition({
+		classPK: animalsClassPK,
+		id: getRandomString(),
+		pageElements: [animalsCollection],
+	});
+
+	// Create a content page and go to edit mode
+
+	const layout = await apiHelpers.headlessDelivery.createSitePage({
+		pageDefinition: getPageDefinition([collectionDefinition]),
+		siteId: wemSite.id,
+		title: getRandomString(),
+	});
+
+	await pageEditorPage.goto(layout, wemSite.friendlyUrlPath);
+
+	// Go to Page Contents panel and edit inline text
+
+	await pageEditorPage.goToSidebarTab('Page Content');
+
+	await page.getByLabel('Edit Text Heading Example').click();
+
+	const editable = pageEditorPage.getEditable(headingId, 'element-text');
+
+	await editable.locator('.cke_editable_inline').waitFor();
+
+	// Clear current content and fill with new one
+
+	await page.keyboard.press('Control+KeyA');
+	await page.keyboard.press('Backspace');
+
+	await page.keyboard.type('New Content');
+	await page.locator('body').click();
+
+	await pageEditorPage.waitForChangesSaved();
+
+	// Check that the inline text changes in all items of the collection
+
+	await expect(
+		await page.locator('.page-editor').getByText('New Content')
+	).toHaveCount(2);
 });

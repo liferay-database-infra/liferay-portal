@@ -19,10 +19,19 @@ apply plugin: "com.liferay.source.formatter"
 apply plugin: "java-library"
 apply plugin: "org.springframework.boot"
 
+bootRun {
+	environment "EXTERNAL_LIFERAY_TRIAL_OAUTH2_HEADLESS_SERVER_CLIENT_ID", "myclientid"
+	environment "EXTERNAL_LIFERAY_TRIAL_OAUTH2_HEADLESS_SERVER_CLIENT_SECRET", "myclientsecret"
+	environment "EXTERNAL_LIFERAY_TRIAL_OAUTH2_HEADLESS_SERVER_HOME_PAGE_URI", "myhomepageuri"
+	environment "EXTERNAL_LIFERAY_TRIAL_OAUTH2_TOKEN_URI", "mytokenuri"
+	environment "EXTERNAL_LIFERAY_TRIAL_OAUTH2_USER_AGENT_CLIENT_ID", "not-available"
+}
+
 dependencies {
 	implementation group: "com.liferay", name: "com.liferay.client.extension.util.spring.boot", version: "latest.release"
 	implementation group: "com.liferay", name: "com.liferay.headless.admin.user.client", version: "4.0.50"
 	implementation group: "com.liferay", name: "com.liferay.headless.portal.instances.client", version: "latest.release"
+	implementation group: "com.liferay", name: "com.liferay.notification.rest.client", version: "latest.release"
 	implementation group: "com.liferay", name: "com.liferay.petra.string", version: "latest.release"
 	implementation group: "com.liferay", name: "org.apache.commons.logging", version: "1.2.LIFERAY-PATCHED-2"
 	implementation group: "com.liferay.commerce", name: "com.liferay.headless.commerce.admin.catalog.client", version: "4.0.48"

@@ -326,6 +326,16 @@ public class StructuredContentResourceTest
 
 	@Override
 	@Test
+	public void testGetContentStructureStructuredContentsPage()
+		throws Exception {
+
+		super.testGetContentStructureStructuredContentsPage();
+
+		_testGetContentStructureStructuredContentsPageWithFilter();
+	}
+
+	@Override
+	@Test
 	public void testGetSiteStructuredContentsPage() throws Exception {
 		super.testGetSiteStructuredContentsPage();
 
@@ -718,38 +728,7 @@ public class StructuredContentResourceTest
 
 	@Override
 	protected StructuredContent randomStructuredContent() throws Exception {
-		StructuredContent structuredContent = super.randomStructuredContent();
-
-		structuredContent.setContentFields(
-			new ContentField[] {
-				new ContentField() {
-					{
-						contentFieldValue = new ContentFieldValue() {
-							{
-								data = RandomTestUtil.randomString(10);
-							}
-						};
-						name = "Foo";
-					}
-				}
-			});
-		structuredContent.setContentStructureId(
-			_useDepotDDMStructureStructureId ?
-				_depotDDMStructure.getStructureId() :
-					_ddmStructure.getStructureId());
-		structuredContent.setRelatedContents(
-			new RelatedContent[] {
-				new RelatedContent() {
-					{
-						contentType = "BlogPosting";
-						id = _blogsEntry.getEntryId();
-					}
-				}
-			});
-		structuredContent.setStructuredContentFolderId(
-			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
-
-		return structuredContent;
+		return _randomStructuredContent(RandomTestUtil.randomString(10));
 	}
 
 	@Override
@@ -1447,6 +1426,44 @@ public class StructuredContentResourceTest
 		return structuredContent;
 	}
 
+	private StructuredContent _randomStructuredContent(
+			String contentFieldValueData)
+		throws Exception {
+
+		StructuredContent structuredContent = super.randomStructuredContent();
+
+		structuredContent.setContentFields(
+			new ContentField[] {
+				new ContentField() {
+					{
+						contentFieldValue = new ContentFieldValue() {
+							{
+								data = contentFieldValueData;
+							}
+						};
+						name = "Foo";
+					}
+				}
+			});
+		structuredContent.setContentStructureId(
+			_useDepotDDMStructureStructureId ?
+				_depotDDMStructure.getStructureId() :
+					_ddmStructure.getStructureId());
+		structuredContent.setRelatedContents(
+			new RelatedContent[] {
+				new RelatedContent() {
+					{
+						contentType = "BlogPosting";
+						id = _blogsEntry.getEntryId();
+					}
+				}
+			});
+		structuredContent.setStructuredContentFolderId(
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
+
+		return structuredContent;
+	}
+
 	private String _read(String fileName) throws Exception {
 		Class<?> clazz = getClass();
 
@@ -1454,6 +1471,60 @@ public class StructuredContentResourceTest
 			"dependencies/" + fileName);
 
 		return StringUtil.read(inputStream);
+	}
+
+	private void _testGetContentStructureStructuredContentsPageWithFilter()
+		throws Exception {
+
+		Long contentStructureId =
+			testGetContentStructureStructuredContentsPage_getContentStructureId();
+
+		StructuredContent structuredContent1 = _randomStructuredContent(
+			"first second");
+		StructuredContent structuredContent2 = _randomStructuredContent(
+			"second");
+
+		testGetContentStructureStructuredContentsPage_addStructuredContent(
+			contentStructureId, structuredContent1);
+		testGetContentStructureStructuredContentsPage_addStructuredContent(
+			contentStructureId, structuredContent2);
+
+		Page<StructuredContent> page =
+			structuredContentResource.getContentStructureStructuredContentsPage(
+				contentStructureId, null, null, "contentFields/Foo eq 'second'",
+				Pagination.of(1, 10), null);
+
+		Assert.assertEquals(1, page.getTotalCount());
+
+		List<StructuredContent> items =
+			(List<StructuredContent>)page.getItems();
+
+		assertEquals(structuredContent2, items.get(0));
+
+		page =
+			structuredContentResource.getContentStructureStructuredContentsPage(
+				contentStructureId, null, null,
+				"contains(contentFields/Foo,'first')", Pagination.of(1, 10),
+				null);
+
+		Assert.assertEquals(1, page.getTotalCount());
+
+		items = (List<StructuredContent>)page.getItems();
+
+		assertEquals(structuredContent1, items.get(0));
+
+		page =
+			structuredContentResource.getContentStructureStructuredContentsPage(
+				contentStructureId, null, null,
+				"contains(contentFields/Foo,'second')", Pagination.of(1, 10),
+				null);
+
+		Assert.assertEquals(2, page.getTotalCount());
+
+		items = (List<StructuredContent>)page.getItems();
+
+		assertEqualsIgnoringOrder(
+			Arrays.asList(structuredContent1, structuredContent2), items);
 	}
 
 	private void _testGetSiteStructuredContentsPageByDefaultPriority()

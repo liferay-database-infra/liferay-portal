@@ -7,7 +7,7 @@
 	<description/>
 	<groupId>com.liferay</groupId>
 	<artifactId>com.liferay.portal.tools.rest.builder</artifactId>
-	<version>1.0.351</version>
+	<version>1.0.353</version>
 	<goalPrefix>rest-builder</goalPrefix>
 	<isolatedRealm>false</isolatedRealm>
 	<inheritedByDefault>true</inheritedByDefault>
@@ -73,7 +73,7 @@
 			<groupId>com.liferay</groupId>
 			<artifactId>org.freemarker</artifactId>
 			<type>jar</type>
-			<version>2.3.32.LIFERAY-PATCHED-1</version>
+			<version>2.3.32.LIFERAY-PATCHED-2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.liferay</groupId>

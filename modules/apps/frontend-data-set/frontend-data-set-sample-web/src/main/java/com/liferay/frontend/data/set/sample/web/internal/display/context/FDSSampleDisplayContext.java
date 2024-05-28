@@ -12,12 +12,16 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.GroupConstants;
+import com.liferay.portal.kernel.portlet.LiferayWindowState;
+import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.Arrays;
 import java.util.List;
+
+import javax.portlet.RenderResponse;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -27,7 +31,11 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class FDSSampleDisplayContext {
 
-	public FDSSampleDisplayContext(HttpServletRequest httpServletRequest) {
+	public FDSSampleDisplayContext(
+		HttpServletRequest httpServletRequest, RenderResponse renderResponse) {
+
+		_renderResponse = renderResponse;
+
 		_fdsRequestHelper = new FDSRequestHelper(httpServletRequest);
 	}
 
@@ -61,6 +69,53 @@ public class FDSSampleDisplayContext {
 		String portalURL = company.getPortalURL(
 			GroupConstants.DEFAULT_PARENT_GROUP_ID);
 
+		FDSActionDropdownItem sidePanel1FDSActionDropdownItem =
+			new FDSActionDropdownItem(
+				PortletURLBuilder.createRenderURL(
+					_renderResponse
+				).setMVCRenderCommandName(
+					"/side_panel/empty"
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildString(),
+				"rectangle-split", "open-side-panel-no-title",
+				"Side Panel With Action Title", null, null, "sidePanel");
+
+		sidePanel1FDSActionDropdownItem.putData("disableHeader", false);
+		sidePanel1FDSActionDropdownItem.putData(
+			"title", "Side Panel Title Provided by Action");
+
+		FDSActionDropdownItem sidePanel2FDSActionDropdownItem =
+			new FDSActionDropdownItem(
+				PortletURLBuilder.createRenderURL(
+					_renderResponse
+				).setMVCRenderCommandName(
+					"/side_panel/full"
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildString(),
+				"rectangle-split", "open-side-panel-title",
+				"Side Panel With Action and Content Title", null, null,
+				"sidePanel");
+
+		sidePanel2FDSActionDropdownItem.putData("disableHeader", false);
+		sidePanel2FDSActionDropdownItem.putData(
+			"title", "Side Panel Title Provided by Action");
+
+		FDSActionDropdownItem sidePanel3FDSActionDropdownItem =
+			new FDSActionDropdownItem(
+				PortletURLBuilder.createRenderURL(
+					_renderResponse
+				).setMVCRenderCommandName(
+					"/side_panel/full"
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildString(),
+				"rectangle-split", "open-side-panel-title",
+				"Side Panel With Content Title", null, null, "sidePanel");
+
+		sidePanel3FDSActionDropdownItem.putData("disableHeader", true);
+
 		return Arrays.asList(
 			new FDSActionDropdownItem(
 				null, "view", "sampleMessage", "Sample View", null, null, null),
@@ -80,6 +135,18 @@ public class FDSSampleDisplayContext {
 				"http://localhost", "times-circle",
 				"asyncErrorConnectionRefused", "Async Connection Refused",
 				"get", null, "async"),
+			sidePanel1FDSActionDropdownItem, sidePanel2FDSActionDropdownItem,
+			sidePanel3FDSActionDropdownItem,
+			new FDSActionDropdownItem(
+				PortletURLBuilder.createRenderURL(
+					_renderResponse
+				).setMVCRenderCommandName(
+					"/side_panel/empty"
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildString(),
+				"rectangle-split", "open-side-panel-without-title",
+				"Side Panel With No Title", null, null, "sidePanel"),
 			new FDSActionDropdownItem(
 				portalURL + "/abc", "staging", "asyncErrorResourceNotFound",
 				"Async Resource Not Found", "get", null, "async"),
@@ -91,5 +158,6 @@ public class FDSSampleDisplayContext {
 	}
 
 	private final FDSRequestHelper _fdsRequestHelper;
+	private final RenderResponse _renderResponse;
 
 }

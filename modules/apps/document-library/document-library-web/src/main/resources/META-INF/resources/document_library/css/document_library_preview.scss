@@ -10,20 +10,31 @@
 	text-align: center;
 }
 
-.sidebar-preview {
-	.sidebar-panel {
-		background-color: #fff;
-	}
+.document-libray-preview-container {
+	display: inline-block;
+	position: relative;
+	width: 100%;
 
-	@include media-breakpoint-up(sm) {
-		.panel {
-			border-color: transparent;
+	.sidebar-preview {
+		height: 100%;
+		position: absolute;
+		right: 0;
+		transform: translateX(0);
+
+		.sidebar-panel {
+			background-color: #fff;
 		}
-	}
 
-	&.contextual-sidebar {
-		overflow-y: scroll;
-		top: auto;
-		z-index: 1;
+		@include media-breakpoint-up(sm) {
+			.panel {
+				border-color: transparent;
+			}
+		}
+
+		&.contextual-sidebar {
+			overflow-y: scroll;
+			top: auto;
+			z-index: 1;
+		}
 	}
 }

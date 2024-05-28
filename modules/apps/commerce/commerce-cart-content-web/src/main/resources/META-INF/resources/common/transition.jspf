@@ -1,0 +1,25 @@
+<%--
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+--%>
+
+<portlet:actionURL name="/commerce_open_order_content/edit_commerce_order" var="editCommerceOrderURL" />
+
+<aui:form action="<%= editCommerceOrderURL %>" method="post" name="transitionFm">
+	<aui:input id="transitionCommerceOrderId" name="commerceOrderId" type="hidden" value="" />
+	<aui:input name="workflowTaskId" type="hidden" value="" />
+	<aui:input name="transitionName" type="hidden" value="" />
+
+	<div class="hide" id="<portlet:namespace />transitionComments">
+		<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
+		<aui:input name="<%= Constants.CMD %>" type="hidden" value="transition" />
+
+		<aui:input cols="55" name="comment" placeholder="comment" rows="1" type="textarea" />
+	</div>
+</aui:form>
+
+<liferay-frontend:component
+	module="{cartTransition} from commerce-cart-content-web"
+/>

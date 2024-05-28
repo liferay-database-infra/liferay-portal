@@ -6,7 +6,6 @@
 package com.liferay.marketplace;
 
 import com.liferay.client.extension.util.spring.boot.LiferayOAuth2AccessTokenManager;
-import com.liferay.headless.commerce.admin.order.client.dto.v1_0.CustomField;
 import com.liferay.headless.commerce.admin.order.client.dto.v1_0.Order;
 import com.liferay.headless.commerce.admin.order.client.pagination.Page;
 import com.liferay.headless.commerce.admin.order.client.pagination.Pagination;
@@ -14,10 +13,14 @@ import com.liferay.headless.commerce.admin.order.client.resource.v1_0.OrderResou
 import com.liferay.headless.portal.instances.client.dto.v1_0.Admin;
 import com.liferay.headless.portal.instances.client.dto.v1_0.PortalInstance;
 import com.liferay.headless.portal.instances.client.resource.v1_0.PortalInstanceResource;
+import com.liferay.marketplace.service.ConsoleService;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 
 import java.net.URL;
 
-import java.util.Date;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+
 import java.util.Map;
 import java.util.Objects;
 
@@ -28,11 +31,15 @@ import org.apache.http.HttpHeaders;
 import org.json.JSONObject;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -42,136 +49,244 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class TrialRestController extends BaseRestController {
 
+	@DeleteMapping("{orderId}")
+	public void delete(@RequestParam String orderId) throws Exception {
+		_consoleService.deleteProject(orderId);
+
+		_deletePortalInstance(orderId);
+	}
+
 	@PostMapping("provisioning")
 	public void postProvisioning(
 			@AuthenticationPrincipal Jwt jwt, @RequestBody String json)
 		throws Exception {
 
-		_initResourceBuilders();
-
-		Order order = new Order();
-
 		JSONObject jsonObject = new JSONObject(json);
 
-		long classPK = jsonObject.getLong("classPK");
+		long orderId = jsonObject.getLong("classPK");
 
 		if (_log.isInfoEnabled()) {
-			_log.info("Provision order " + classPK);
+			_log.info("Provisioning order " + orderId);
 		}
-
-		order.setId(() -> classPK);
 
 		JSONObject modelDTOOrderJSONObject = jsonObject.getJSONObject(
 			"modelDTOOrder");
 
-		String accountId = modelDTOOrderJSONObject.getString("accountId");
+		OrderResource orderResource = _getOrderResource();
 
-		if (_hasAccountOrders(accountId)) {
+		Page<Order> ordersPage = orderResource.getOrdersPage(
+			"",
+			"accountId/any(x:(x eq " +
+				modelDTOOrderJSONObject.getString("accountId") +
+					")) and orderTypeExternalReferenceCode eq 'SOLUTIONS7'",
+			Pagination.of(1, 1), "");
+
+		if (ordersPage.getTotalCount() > 1) {
 			_log.error(
-				"Account " + accountId + " already has a provisioned order");
+				"Account " + modelDTOOrderJSONObject.getString("accountId") +
+					" already has a provisioned order");
 
-			order.setOrderStatus(() -> _ORDER_STATUS_CANCELLED);
-
-			_orderResource.patchOrder(order.getId(), order);
+			_updateOrder(null, orderId, _ORDER_STATUS_CANCELLED);
 
 			return;
 		}
 
-		order.setOrderStatus(() -> _ORDER_STATUS_PROCESSING);
+		com.liferay.headless.portal.instances.client.pagination.Page
+			<PortalInstance> portalInstancesPage = _getPortalInstancesPage();
 
-		_orderResource.patchOrder(order.getId(), order);
+		if (portalInstancesPage.getTotalCount() ==
+				_TRIAL_MAX_INSTANCES_IN_PROGRESS) {
 
-		Map<String, String> customFields =
-			(Map<String, String>)new CustomField();
+			_log.error("Order is on hold");
 
-		customFields.put("Site Initializer", "com.liferay.blank");
-		customFields.put(
-			"trial-expires-in",
-			new Date(
-			).toString());
+			_updateOrder(null, orderId, _ORDER_STATUS_ON_HOLD);
+
+			return;
+		}
+
+		_updateOrder(null, orderId, _ORDER_STATUS_PROCESSING);
 
 		PortalInstance portalInstance = _postPortalInstance(
 			jwt, modelDTOOrderJSONObject.getString("creatorEmailAddress"),
-			order.getId());
+			orderId);
 
-		customFields.put("trial-virtualhost", portalInstance.getVirtualHost());
+		try {
+			_consoleService.setUpProject(
+				portalInstance.getVirtualHost(), orderId);
+		}
+		catch (Exception exception) {
+			_log.error(
+				"Unable to set up project for order " + orderId + ":",
+				exception);
 
-		order.setCustomFields(() -> customFields);
+			_deletePortalInstance(String.valueOf(orderId));
 
-		order.setOrderStatus(() -> _ORDER_STATUS_COMPLETED);
+			_updateOrder(
+				HashMapBuilder.put(
+					"trial-error", exception.toString()
+				).put(
+					"trial-error-date",
+					ZonedDateTime.now(
+					).format(
+						DateTimeFormatter.ISO_INSTANT
+					)
+				).put(
+					"trial-virtualhost", portalInstance.getVirtualHost()
+				).build(),
+				orderId, _ORDER_STATUS_CANCELLED);
 
-		_orderResource.patchOrder(order.getId(), order);
+			return;
+		}
+
+		_updateOrder(
+			HashMapBuilder.put(
+				"trial-end-date",
+				ZonedDateTime.now(
+				).plusDays(
+					7
+				).format(
+					DateTimeFormatter.ISO_INSTANT
+				)
+			).put(
+				"trial-start-date",
+				ZonedDateTime.now(
+				).format(
+					DateTimeFormatter.ISO_INSTANT
+				)
+			).put(
+				"trial-virtualhost", portalInstance.getVirtualHost()
+			).build(),
+			orderId, _ORDER_STATUS_COMPLETED);
+
+		_postNotificationQueueEntry(
+			modelDTOOrderJSONObject.getString("creatorEmailAddress"),
+			portalInstance.getVirtualHost(),
+			jwt.getClaim(
+				"username"
+			).toString());
 	}
 
-	private boolean _hasAccountOrders(String accountId) throws Exception {
+	@GetMapping("availability")
+	protected String getAvailability() throws Exception {
+		com.liferay.headless.portal.instances.client.pagination.Page
+			<PortalInstance> page = _getPortalInstancesPage();
 
-		// TODO Make this a single query
+		return new JSONObject(
+		).put(
+			"active", _TRIAL_MAX_INSTANCES_IN_PROGRESS > page.getTotalCount()
+		).put(
+			"available", _TRIAL_MAX_INSTANCES_IN_PROGRESS - page.getTotalCount()
+		).put(
+			"max", _TRIAL_MAX_INSTANCES_IN_PROGRESS
+		).toString();
+	}
 
-		Page<Order> ordersPage = _orderResource.getOrdersPage(
-			"", "accountId/any(x:(x eq " + accountId + "))",
-			Pagination.of(-1, -1), "");
+	private void _deletePortalInstance(String orderId) throws Exception {
+		PortalInstanceResource portalInstanceResource =
+			_getPortalInstanceResource();
 
-		for (Order order : ordersPage.getItems()) {
+		com.liferay.headless.portal.instances.client.pagination.Page
+			<PortalInstance> page =
+				portalInstanceResource.getPortalInstancesPage(true);
+
+		for (PortalInstance portalInstance : page.getItems()) {
 			if (Objects.equals(
-					order.getOrderTypeExternalReferenceCode(), "SOLUTIONS7")) {
+					portalInstance.getVirtualHost(),
+					orderId + "." + _trialDXPDomain)) {
 
-				return true;
+				portalInstanceResource.deletePortalInstance(
+					portalInstance.getPortalInstanceId());
+
+				break;
 			}
 		}
 
-		return false;
+		if (_log.isInfoEnabled()) {
+			_log.info("Portal instance deleted for order " + orderId);
+		}
 	}
 
-	private void _initResourceBuilders() throws Exception {
-		String authorization =
-			_liferayOAuth2AccessTokenManager.getAuthorization(
-				"liferay-marketplace-etc-spring-boot-oauth-application-" +
-					"headless-server");
+	private OrderResource _getOrderResource() throws Exception {
 		URL liferayDXPURL = new URL(
 			lxcDXPServerProtocol + "://" + lxcDXPMainDomain);
 
-		_orderResource = OrderResource.builder(
+		return OrderResource.builder(
 		).endpoint(
 			liferayDXPURL
 		).header(
-			HttpHeaders.AUTHORIZATION, authorization
+			HttpHeaders.AUTHORIZATION,
+			_liferayOAuth2AccessTokenManager.getAuthorization(
+				"liferay-marketplace-etc-spring-boot-oauth-application-" +
+					"headless-server")
 		).build();
+	}
 
-		_portalInstanceResource = PortalInstanceResource.builder(
+	private PortalInstanceResource _getPortalInstanceResource()
+		throws Exception {
+
+		return PortalInstanceResource.builder(
 		).endpoint(
-			liferayDXPURL
+			_externalLiferayTrialURI
 		).header(
-			HttpHeaders.AUTHORIZATION, authorization
+			HttpHeaders.AUTHORIZATION,
+			_liferayOAuth2AccessTokenManager.getAuthorization(
+				"external-liferay-trial")
 		).build();
+	}
+
+	private com.liferay.headless.portal.instances.client.pagination.Page
+		<PortalInstance> _getPortalInstancesPage() throws Exception {
+
+		PortalInstanceResource portalInstanceResource =
+			_getPortalInstanceResource();
+
+		return portalInstanceResource.getPortalInstancesPage(true);
+	}
+
+	private void _postNotificationQueueEntry(
+			String emailAddress, String hostname, String name)
+		throws Exception {
+
+		// TODO
+
+		if (_log.isInfoEnabled()) {
+			_log.info("Email address " + emailAddress);
+			_log.info("Hostname " + hostname);
+			_log.info("Name " + name);
+		}
 	}
 
 	private PortalInstance _postPortalInstance(
 			Jwt jwt, String emailAddress, long orderId)
 		throws Exception {
 
+		PortalInstanceResource portalInstanceResource =
+			_getPortalInstanceResource();
+
 		PortalInstance portalInstance = new PortalInstance();
 
-		portalInstance.setAdmin(
-			() -> new Admin() {
-				{
-					setEmailAddress(() -> emailAddress);
-					setFamilyName(
-						() -> String.valueOf(jwt.getClaim("username")));
-					setGivenName(
-						() -> String.valueOf(jwt.getClaim("username")));
-				}
-			});
+		Admin admin = new Admin();
 
-		String domain = "tryitnow-" + orderId + ".us.demo.lxc.liferay.com";
+		admin.setEmailAddress(() -> emailAddress);
+		admin.setFamilyName(
+			() -> jwt.getClaim(
+				"username"
+			).toString());
+		admin.setGivenName(
+			() -> jwt.getClaim(
+				"username"
+			).toString());
 
-		portalInstance.setDomain(() -> domain);
+		portalInstance.setAdmin(() -> admin);
+
+		portalInstance.setDomain(() -> "lxc.app");
+
+		String domain = orderId + "." + _trialDXPDomain;
+
 		portalInstance.setPortalInstanceId(() -> domain);
-
-		portalInstance.setSiteInitializerKey(
-			() -> "com.liferay.site.initializer.welcome");
 		portalInstance.setVirtualHost(() -> domain);
 
-		portalInstance = _portalInstanceResource.postPortalInstance(
+		portalInstance = portalInstanceResource.postPortalInstance(
 			portalInstance);
 
 		if (_log.isInfoEnabled()) {
@@ -181,19 +296,45 @@ public class TrialRestController extends BaseRestController {
 		return portalInstance;
 	}
 
+	private void _updateOrder(
+			Map<String, ?> customFields, long orderId, int orderStatus)
+		throws Exception {
+
+		OrderResource orderResource = _getOrderResource();
+
+		orderResource.patchOrder(
+			orderId,
+			new Order() {
+				{
+					setCustomFields(() -> customFields);
+					setOrderStatus(() -> orderStatus);
+				}
+			});
+	}
+
 	private static final int _ORDER_STATUS_CANCELLED = 8;
 
 	private static final int _ORDER_STATUS_COMPLETED = 0;
 
+	private static final int _ORDER_STATUS_ON_HOLD = 20;
+
 	private static final int _ORDER_STATUS_PROCESSING = 10;
+
+	private static final int _TRIAL_MAX_INSTANCES_IN_PROGRESS = 50;
 
 	private static final Log _log = LogFactory.getLog(
 		TrialRestController.class);
 
 	@Autowired
+	private ConsoleService _consoleService;
+
+	@Value("${external.liferay.trial.oauth2.headless.server.home.page.uri}")
+	private URL _externalLiferayTrialURI;
+
+	@Autowired
 	private LiferayOAuth2AccessTokenManager _liferayOAuth2AccessTokenManager;
 
-	private OrderResource _orderResource;
-	private PortalInstanceResource _portalInstanceResource;
+	@Value("${liferay.marketplace.trial.dxp.domain}")
+	private String _trialDXPDomain;
 
 }
