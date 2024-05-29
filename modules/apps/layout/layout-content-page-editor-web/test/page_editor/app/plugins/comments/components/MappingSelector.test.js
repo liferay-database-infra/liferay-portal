@@ -4,6 +4,7 @@
  */
 
 import {State} from '@liferay/frontend-js-state-web';
+import userEvent from '@testing-library/user-event';
 
 import '@testing-library/jest-dom/extend-expect';
 import {
@@ -13,6 +14,7 @@ import {
 	getByText,
 	queryByText,
 	render,
+	screen,
 } from '@testing-library/react';
 import React from 'react';
 
@@ -115,7 +117,7 @@ jest.mock(
 				},
 			])
 		),
-		getStructureRelationships: jest.fn(() =>
+		getInfoItemRelationships: jest.fn(() =>
 			Promise.resolve([
 				{classNameId: 'relationship-1', label: 'Relationship 1'},
 				{classNameId: 'relationship-2', label: 'Relationship 2'},
@@ -384,5 +386,41 @@ describe('MappingSelector', () => {
 		expect(
 			getByText(document.body, 'Mapped Item Subtype')
 		).toBeInTheDocument();
+	});
+
+	it('allows selecting relationship in display pages', async () => {
+		Liferay.FeatureFlags['LPD-20213'] = true;
+
+		config.layoutType = LAYOUT_TYPES.display;
+
+		renderMappingSelector({});
+
+		const sourceSelect = screen.getByLabelText('source');
+
+		userEvent.selectOptions(sourceSelect, 'relationship');
+		fireEvent.change(sourceSelect);
+
+		expect(
+			screen.getByRole('option', {name: 'relationship'}).selected
+		).toBe(true);
+
+		Liferay.FeatureFlags['LPD-20213'] = false;
+	});
+
+	it('shows a new select for relationships when selecting that source', async () => {
+		Liferay.FeatureFlags['LPD-20213'] = true;
+
+		config.layoutType = LAYOUT_TYPES.display;
+
+		renderMappingSelector({});
+
+		const sourceSelect = screen.getByLabelText('source');
+
+		userEvent.selectOptions(sourceSelect, 'relationship');
+		fireEvent.change(sourceSelect);
+
+		expect(screen.getByLabelText('relationship')).toBeInTheDocument();
+
+		Liferay.FeatureFlags['LPD-20213'] = false;
 	});
 });

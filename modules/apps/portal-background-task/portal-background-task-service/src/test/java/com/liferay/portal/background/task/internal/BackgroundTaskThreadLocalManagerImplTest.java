@@ -31,6 +31,7 @@ public class BackgroundTaskThreadLocalManagerImplTest
 	@Test
 	public void testDeserializeThreadLocals() {
 		backgroundTaskThreadLocalManagerImpl.deserializeThreadLocals(
+			COMPANY_ID,
 			HashMapBuilder.<String, Serializable>put(
 				BackgroundTaskThreadLocalManagerImpl.KEY_THREAD_LOCAL_VALUES,
 				initializeThreadLocalValues()
@@ -66,7 +67,7 @@ public class BackgroundTaskThreadLocalManagerImplTest
 	@Test
 	public void testSetThreadLocalValues() {
 		backgroundTaskThreadLocalManagerImpl.setThreadLocalValues(
-			initializeThreadLocalValues());
+			COMPANY_ID, initializeThreadLocalValues());
 
 		assertThreadLocalValues();
 	}

@@ -5,7 +5,16 @@
 
 package com.liferay.jenkins.results.parser.testray;
 
+import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
+
+import java.io.IOException;
+
+import java.net.MalformedURLException;
 import java.net.URL;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import org.json.JSONObject;
 
@@ -14,22 +23,74 @@ import org.json.JSONObject;
  */
 public class TestrayProject {
 
+	public static final String[] FIELD_NAMES = {
+		"dateCreated", "dateModified", "description", "id", "name"
+	};
+
 	public TestrayProductVersion createTestrayProductVersion(
 		String testrayProductVersionName) {
 
-		return null;
+		TestrayProductVersion testrayProductVersion =
+			getTestrayProductVersionByName(testrayProductVersionName);
+
+		if (testrayProductVersion != null) {
+			return testrayProductVersion;
+		}
+
+		JSONObject requestJSONObject = new JSONObject();
+
+		requestJSONObject.put(
+			"name", testrayProductVersionName
+		).put(
+			"r_projectToProductVersions_c_projectId", getID()
+		);
+
+		try {
+			return TestrayFactory.newTestrayProductVersion(
+				this,
+				new JSONObject(
+					_testrayServer.requestPost(
+						"/o/c/productversions", requestJSONObject.toString())));
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
 	}
 
 	public TestrayRoutine createTestrayRoutine(String testrayRoutineName) {
-		return null;
+		TestrayRoutine testrayRoutine = getTestrayRoutineByName(
+			testrayRoutineName);
+
+		if (testrayRoutine != null) {
+			return testrayRoutine;
+		}
+
+		JSONObject requestJSONObject = new JSONObject();
+
+		requestJSONObject.put(
+			"name", testrayRoutineName
+		).put(
+			"r_routineToProjects_c_projectId", getID()
+		);
+
+		try {
+			return TestrayFactory.newTestrayRoutine(
+				this,
+				new JSONObject(
+					_testrayServer.requestPost(
+						"/o/c/routines", requestJSONObject.toString())));
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
 	}
 
 	public String getDescription() {
-		return null;
+		return _jsonObject.optString("description");
 	}
 
 	public long getID() {
-		return -1;
+		return _jsonObject.getLong("id");
 	}
 
 	public JSONObject getJSONObject() {
@@ -37,35 +98,209 @@ public class TestrayProject {
 	}
 
 	public String getName() {
+		return _jsonObject.getString("name");
+	}
+
+	public TestrayComponent getTestrayComponentByID(long componentID) {
+		for (TestrayComponent testrayComponent : getTestrayComponents()) {
+			if (Objects.equals(componentID, testrayComponent.getID())) {
+				return testrayComponent;
+			}
+		}
+
 		return null;
+	}
+
+	public TestrayComponent getTestrayComponentByName(String componentName) {
+		for (TestrayComponent testrayComponent : getTestrayComponents()) {
+			if (Objects.equals(componentName, testrayComponent.getName())) {
+				return testrayComponent;
+			}
+		}
+
+		return null;
+	}
+
+	public List<TestrayComponent> getTestrayComponents() {
+		if (_testrayComponents != null) {
+			return _testrayComponents;
+		}
+
+		_testrayComponents = new ArrayList<>();
+
+		String filterString = JenkinsResultsParserUtil.combine(
+			"r_projectToComponents_c_projectId eq '", String.valueOf(getID()),
+			"'");
+
+		try {
+			List<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
+				"components", TestrayComponent.FIELD_NAMES, filterString, -1,
+				25);
+
+			for (JSONObject entityJSONObject : entityJSONObjects) {
+				_testrayComponents.add(
+					TestrayFactory.newTestrayComponent(this, entityJSONObject));
+			}
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
+
+		return _testrayComponents;
 	}
 
 	public TestrayProductVersion getTestrayProductVersionByID(
 		long productVersionID) {
 
-		return null;
+		String filterString = JenkinsResultsParserUtil.combine(
+			"id eq '", String.valueOf(productVersionID), "' and ",
+			"r_projectToProductVersions_c_projectId eq '",
+			String.valueOf(getID()), "'");
+
+		try {
+			List<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
+				"productversions", TestrayProductVersion.FIELD_NAMES,
+				filterString, 1, 1);
+
+			if (entityJSONObjects.isEmpty()) {
+				return null;
+			}
+
+			return TestrayFactory.newTestrayProductVersion(
+				this, entityJSONObjects.get(0));
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
 	}
 
 	public TestrayProductVersion getTestrayProductVersionByName(
 		String productVersionName) {
 
-		return null;
+		String filterString = JenkinsResultsParserUtil.combine(
+			"name eq '", productVersionName, "' and ",
+			"r_projectToProductVersions_c_projectId eq '",
+			String.valueOf(getID()), "'");
+
+		try {
+			List<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
+				"productVersions", TestrayProductVersion.FIELD_NAMES,
+				filterString, 1, 1);
+
+			if (entityJSONObjects.isEmpty()) {
+				return null;
+			}
+
+			return TestrayFactory.newTestrayProductVersion(
+				this, entityJSONObjects.get(0));
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
 	}
 
 	public TestrayRoutine getTestrayRoutineByID(long routineID) {
-		return null;
+		String filterString = JenkinsResultsParserUtil.combine(
+			"id eq '", String.valueOf(routineID), "'");
+
+		try {
+			List<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
+				"routines", TestrayRoutine.FIELD_NAMES, filterString, 1, 1);
+
+			if (entityJSONObjects.isEmpty()) {
+				return null;
+			}
+
+			return TestrayFactory.newTestrayRoutine(
+				this, entityJSONObjects.get(0));
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
 	}
 
 	public TestrayRoutine getTestrayRoutineByName(String routineName) {
-		return null;
+		String filterString = JenkinsResultsParserUtil.combine(
+			"name eq '", routineName, "' and ",
+			"r_routineToProjects_c_projectId eq '", String.valueOf(getID()),
+			"'");
+
+		try {
+			List<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
+				"routines", TestrayRoutine.FIELD_NAMES, filterString, 1, 1);
+
+			if (entityJSONObjects.isEmpty()) {
+				return null;
+			}
+
+			return TestrayFactory.newTestrayRoutine(
+				this, entityJSONObjects.get(0));
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
 	}
 
 	public TestrayServer getTestrayServer() {
 		return _testrayServer;
 	}
 
-	public URL getURL() {
+	public TestrayTeam getTestrayTeamByID(long componentID) {
+		for (TestrayTeam testrayTeam : getTestrayTeams()) {
+			if (componentID == testrayTeam.getID()) {
+				return testrayTeam;
+			}
+		}
+
 		return null;
+	}
+
+	public TestrayTeam getTestrayTeamByName(String teamName) {
+		for (TestrayTeam testrayTeam : getTestrayTeams()) {
+			if (Objects.equals(teamName, testrayTeam.getName())) {
+				return testrayTeam;
+			}
+		}
+
+		return null;
+	}
+
+	public List<TestrayTeam> getTestrayTeams() {
+		if (_testrayTeams != null) {
+			return _testrayTeams;
+		}
+
+		_testrayTeams = new ArrayList<>();
+
+		String filterString = JenkinsResultsParserUtil.combine(
+			"r_projectToTeams_c_projectId eq '", String.valueOf(getID()), "'");
+
+		try {
+			List<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
+				"teams", TestrayTeam.FIELD_NAMES, filterString, -1, 25);
+
+			for (JSONObject entityJSONObject : entityJSONObjects) {
+				_testrayTeams.add(
+					TestrayFactory.newTestrayTeam(this, entityJSONObject));
+			}
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
+
+		return _testrayTeams;
+	}
+
+	public URL getURL() {
+		try {
+			return new URL(
+				JenkinsResultsParserUtil.combine(
+					String.valueOf(_testrayServer.getURL()), "/#/project/",
+					String.valueOf(getID()), "/routines"));
+		}
+		catch (MalformedURLException malformedURLException) {
+			throw new RuntimeException(malformedURLException);
+		}
 	}
 
 	protected TestrayProject(
@@ -76,6 +311,8 @@ public class TestrayProject {
 	}
 
 	private final JSONObject _jsonObject;
+	private List<TestrayComponent> _testrayComponents;
 	private final TestrayServer _testrayServer;
+	private List<TestrayTeam> _testrayTeams;
 
 }

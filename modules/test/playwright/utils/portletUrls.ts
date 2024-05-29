@@ -6,6 +6,8 @@ export const PORTLET_URLS = {
 	blogs: '/~/control_panel/manage?p_p_id=com_liferay_blogs_web_portlet_BlogsAdminPortlet',
 	collections:
 		'/~/control_panel/manage?p_p_id=com_liferay_asset_list_web_portlet_AssetListPortlet',
+	contentDashboard:
+		'/~/control_panel/manage?p_p_id=com_liferay_content_dashboard_web_portlet_ContentDashboardAdminPortlet',
 	displayPageTemplates:
 		'/~/control_panel/manage?p_p_id=com_liferay_layout_page_template_admin_web_portlet_LayoutPageTemplatesPortlet&_com_liferay_layout_page_template_admin_web_portlet_LayoutPageTemplatesPortlet_tabs1=display-page-templates',
 	documentLibrary:
@@ -40,6 +42,8 @@ export const PORTLET_URLS = {
 	styleBooks: '/~/control_panel/manage/-/style_books/style_books',
 	utilityPages:
 		'/~/control_panel/manage?p_p_id=com_liferay_layout_admin_web_portlet_GroupPagesPortlet&_com_liferay_layout_admin_web_portlet_GroupPagesPortlet_tabs1=utility-pages',
+	wikiAdmin:
+		'/~/control_panel/manage?p_p_id=com_liferay_wiki_web_portlet_WikiAdminPortlet',
 	workflow:
 		'/~/control_panel/manage?p_p_id=com_liferay_portal_workflow_web_internal_portlet_SiteAdministrationWorkflowPortlet',
 };

@@ -351,7 +351,9 @@ const filterSchema = {
 					},
 				],
 			}),
-			baseFilters.issues,
+			overrides(baseFilters.issues, {
+				operator: 'contains',
+			}),
 			overrides(baseFilters.erros, {
 				operator: 'contains',
 			}),
@@ -381,6 +383,11 @@ const filterSchema = {
 			},
 			overrides(baseFilters.routine, {
 				name: 'buildToCaseResult/routineId',
+				type: 'multiselect',
+			}),
+			overrides(baseFilters.team, {
+				name:
+					'caseToCaseResult/componentToCases/r_teamToComponents_c_teamId',
 				type: 'multiselect',
 			}),
 			overrides(baseFilters.assignee, {

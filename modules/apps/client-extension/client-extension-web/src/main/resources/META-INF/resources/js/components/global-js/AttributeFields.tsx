@@ -78,12 +78,13 @@ export default function AttributeFields({
 					<ClayInput
 						aria-describedby={`${nameId}fieldFeedback`}
 						aria-required={true}
+						data-testid={`testId_${index}`}
 						defaultValue={name}
 						disabled={disabled}
 						id={nameId}
 						onChange={(event) => {
 							const value = event.target.value
-								.split(' ')
+								.split(/\s/)
 								.join('');
 
 							if (value.toLowerCase() === 'src') {

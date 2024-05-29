@@ -19,7 +19,7 @@ import getPageDefinition from './utils/getPageDefinition';
 
 const OBJECT_DEFINITION_PATH = 'object-admin/v1.0/object-definitions';
 
-export const test = mergeTests(
+const test = mergeTests(
 	apiHelpersTest,
 	isolatedSiteTest,
 	featureFlagsTest({

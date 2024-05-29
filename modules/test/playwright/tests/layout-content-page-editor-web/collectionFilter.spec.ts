@@ -38,7 +38,7 @@ const FRAGMENT_FIELDS = [
 	},
 ];
 
-export const test = mergeTests(
+const test = mergeTests(
 	apiHelpersTest,
 	collectionsPagesTest,
 	featureFlagsTest({
@@ -51,7 +51,7 @@ export const test = mergeTests(
 	wemSiteTest
 );
 
-export const testWithIsolatedSite = mergeTests(
+const testWithIsolatedSite = mergeTests(
 	apiHelpersTest,
 	collectionsPagesTest,
 	featureFlagsTest({

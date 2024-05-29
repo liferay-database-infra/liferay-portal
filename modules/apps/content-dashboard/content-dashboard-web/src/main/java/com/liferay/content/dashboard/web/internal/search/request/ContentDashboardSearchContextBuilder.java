@@ -10,6 +10,10 @@ import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.asset.kernel.model.AssetVocabularyConstants;
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
+import com.liferay.content.dashboard.item.action.exception.ContentDashboardItemActionException;
+import com.liferay.content.dashboard.item.filter.ContentDashboardItemFilter;
+import com.liferay.content.dashboard.item.filter.provider.ContentDashboardItemFilterProvider;
+import com.liferay.content.dashboard.web.internal.item.filter.ContentDashboardItemFilterProviderRegistry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalServiceUtil;
 import com.liferay.petra.function.transform.TransformUtil;
@@ -53,11 +57,15 @@ public class ContentDashboardSearchContextBuilder {
 	public ContentDashboardSearchContextBuilder(
 		HttpServletRequest httpServletRequest,
 		AssetCategoryLocalService assetCategoryLocalService,
-		AssetVocabularyLocalService assetVocabularyLocalService) {
+		AssetVocabularyLocalService assetVocabularyLocalService,
+		ContentDashboardItemFilterProviderRegistry
+			contentDashboardItemFilterProviderRegistry) {
 
 		_httpServletRequest = httpServletRequest;
 		_assetCategoryLocalService = assetCategoryLocalService;
 		_assetVocabularyLocalService = assetVocabularyLocalService;
+		_contentDashboardItemFilterProviderRegistry =
+			contentDashboardItemFilterProviderRegistry;
 	}
 
 	public SearchContext build() {
@@ -84,7 +92,6 @@ public class ContentDashboardSearchContextBuilder {
 				ParamUtil.getStringValues(_httpServletRequest, "assetTagId"),
 				ParamUtil.getLongValues(_httpServletRequest, "authorIds"),
 				PortalUtil.getCompanyId(_httpServletRequest),
-				ParamUtil.getStringValues(_httpServletRequest, "fileExtension"),
 				ParamUtil.getString(_httpServletRequest, "reviewDate")));
 
 		String[] contentDashboardItemSubtypePayloads =
@@ -258,8 +265,7 @@ public class ContentDashboardSearchContextBuilder {
 
 	private BooleanClause[] _getBooleanClauses(
 		AssetCategoryIds assetCategoryIds, String[] assetTagNames,
-		long[] authorIds, long companyId, String[] fileExtensions,
-		String reviewDate) {
+		long[] authorIds, long companyId, String reviewDate) {
 
 		BooleanQueryImpl booleanQueryImpl = new BooleanQueryImpl();
 
@@ -270,12 +276,42 @@ public class ContentDashboardSearchContextBuilder {
 					_getAssetCategoryIdsFilter(assetCategoryIds),
 					_getAssetTagNamesFilter(assetTagNames),
 					_getAuthorIdsFilter(authorIds),
-					_getFileExtensionsFilter(fileExtensions),
 					_getGoogleDriveShortcutFilter(companyId),
 					_getReviewDateFilter(reviewDate))) {
 
 			if (filter != null) {
 				booleanFilter.add(filter, BooleanClauseOccur.MUST);
+			}
+		}
+
+		for (ContentDashboardItemFilterProvider
+				contentDashboardItemFilterProvider :
+					_contentDashboardItemFilterProviderRegistry.
+						getContentDashboardItemFilterProviders()) {
+
+			if (!contentDashboardItemFilterProvider.isShow(
+					_httpServletRequest)) {
+
+				continue;
+			}
+
+			try {
+				ContentDashboardItemFilter contentDashboardItemFilter =
+					contentDashboardItemFilterProvider.
+						getContentDashboardItemFilter(_httpServletRequest);
+
+				Filter filter = contentDashboardItemFilter.getFilter();
+
+				if (filter != null) {
+					booleanFilter.add(filter, BooleanClauseOccur.MUST);
+				}
+			}
+			catch (ContentDashboardItemActionException
+						contentDashboardItemActionException) {
+
+				if (_log.isDebugEnabled()) {
+					_log.debug(contentDashboardItemActionException);
+				}
 			}
 		}
 
@@ -285,20 +321,6 @@ public class ContentDashboardSearchContextBuilder {
 			BooleanClauseFactoryUtil.create(
 				booleanQueryImpl, BooleanClauseOccur.MUST.getName())
 		};
-	}
-
-	private Filter _getFileExtensionsFilter(String[] fileExtensions) {
-		if (ArrayUtil.isEmpty(fileExtensions)) {
-			return null;
-		}
-
-		TermsFilter termsFilter = new TermsFilter("fileExtension");
-
-		for (String fileExtension : fileExtensions) {
-			termsFilter.addValue(fileExtension);
-		}
-
-		return termsFilter;
 	}
 
 	private Filter _getGoogleDriveShortcutFilter(long companyId) {
@@ -359,6 +381,8 @@ public class ContentDashboardSearchContextBuilder {
 
 	private final AssetCategoryLocalService _assetCategoryLocalService;
 	private final AssetVocabularyLocalService _assetVocabularyLocalService;
+	private final ContentDashboardItemFilterProviderRegistry
+		_contentDashboardItemFilterProviderRegistry;
 	private Integer _end;
 	private final HttpServletRequest _httpServletRequest;
 	private Sort[] _sort;

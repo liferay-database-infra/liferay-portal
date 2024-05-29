@@ -45,7 +45,13 @@ public class TestrayFactory {
 	public static TestrayAttachment newTestrayAttachment(
 		TestrayCaseResult testrayCaseResult, String name, String key) {
 
-		return new DefaultTestrayAttachment(testrayCaseResult, name, key);
+		return newTestrayAttachment(testrayCaseResult, name, key, null);
+	}
+
+	public static TestrayAttachment newTestrayAttachment(
+		TestrayCaseResult testrayCaseResult, String name, String key, URL url) {
+
+		return new DefaultTestrayAttachment(testrayCaseResult, name, key, url);
 	}
 
 	public static TestrayAttachmentRecorder newTestrayAttachmentRecorder(
@@ -181,6 +187,12 @@ public class TestrayFactory {
 		return new TestrayCaseType(testrayServer, jsonObject);
 	}
 
+	public static TestrayComponent newTestrayComponent(
+		TestrayProject testrayProject, JSONObject jsonObject) {
+
+		return new TestrayComponent(testrayProject, jsonObject);
+	}
+
 	public static TestrayProductVersion newTestrayProductVersion(
 		TestrayProject testrayProject, JSONObject jsonObject) {
 
@@ -280,6 +292,12 @@ public class TestrayFactory {
 		_testrayServers.put(testrayServerURL, testrayServer);
 
 		return testrayServer;
+	}
+
+	public static TestrayTeam newTestrayTeam(
+		TestrayProject testrayProject, JSONObject jsonObject) {
+
+		return new TestrayTeam(testrayProject, jsonObject);
 	}
 
 	public static TopLevelBuildTestrayCaseResult
