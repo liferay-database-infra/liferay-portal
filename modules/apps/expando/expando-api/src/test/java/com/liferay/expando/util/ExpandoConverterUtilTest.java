@@ -6,10 +6,18 @@
 package com.liferay.expando.util;
 
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
+import com.liferay.portal.kernel.test.RandomTestUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
+import java.io.Serializable;
+
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -25,6 +33,13 @@ public class ExpandoConverterUtilTest {
 	@Rule
 	public static final LiferayUnitTestRule liferayUnitTestRule =
 		LiferayUnitTestRule.INSTANCE;
+
+	@Test
+	public void testGetAttributeFromEmptyStringArray() {
+		Assert.assertNull(
+			ExpandoConverterUtil.getAttributeFromStringArray(
+				ExpandoColumnConstants.DATE_ARRAY, new String[0]));
+	}
 
 	@Test
 	public void testGetDateArrayAttributeFromString() {
@@ -88,6 +103,44 @@ public class ExpandoConverterUtilTest {
 				ExpandoColumnConstants.DATE, expectedTimeStrings);
 
 		Assert.assertEquals(expectedTime, actualDate.getTime());
+	}
+
+	@Test
+	public void testGetStringFromStringLocalizedAttribute() {
+		Locale defaultLocale = LocaleUtil.getDefault();
+
+		Locale nondefaultLocale = LocaleUtil.BRAZIL;
+
+		if (defaultLocale.equals(nondefaultLocale)) {
+			nondefaultLocale = LocaleUtil.GERMANY;
+		}
+
+		Assert.assertEquals(
+			"hello",
+			ExpandoConverterUtil.getStringFromAttribute(
+				ExpandoColumnConstants.STRING_LOCALIZED,
+				HashMapBuilder.put(
+					defaultLocale, "hello"
+				).put(
+					nondefaultLocale, RandomTestUtil.randomString()
+				).build()));
+	}
+
+	@Test
+	public void testGetStringLocalizedAttributeFromStringArray() {
+		String[] stringArray = {"hello", RandomTestUtil.randomString()};
+
+		Serializable attribute =
+			ExpandoConverterUtil.getAttributeFromStringArray(
+				ExpandoColumnConstants.STRING_LOCALIZED, stringArray);
+
+		Assert.assertTrue(attribute instanceof HashMap);
+
+		Map<Locale, String> map = (HashMap<Locale, String>)attribute;
+
+		Assert.assertEquals(map.toString(), 1, map.size());
+
+		Assert.assertEquals("hello", map.get(LocaleUtil.getDefault()));
 	}
 
 }

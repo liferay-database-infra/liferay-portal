@@ -4,52 +4,40 @@
  */
 
 const getYearlyTerms = ({endDate, startDate}) => {
-	const yearStartDate = new Date(startDate).getFullYear();
-	const yearEndDate = new Date(endDate).getFullYear();
+	endDate = new Date(endDate);
+	startDate = new Date(startDate);
 
-	if (yearStartDate + 1 < yearEndDate) {
-		const yearDateSplitted = new Array(yearEndDate - yearStartDate + 1)
-			.fill()
-			.map((_, index, array) => {
-				const currentYear = yearStartDate + index;
-				const yearNumEndDate = currentYear + 1;
+	const endDateYear = endDate.getFullYear();
+	const startDateYear = startDate.getFullYear();
+	const yearlyTerms = [];
 
-				const yearNumStartDate = new Date(startDate).setFullYear(
-					currentYear
-				);
-
-				const daysEndDate = new Date(startDate).getDate();
-				const monthsEndDate = new Date(startDate).getMonth();
-				const hasLastElement = index + 1 === array.length;
-
-				if (hasLastElement) {
-					const lastTermStartDate = new Date(yearNumStartDate);
-
-					if (lastTermStartDate > new Date(endDate)) {
-						return null;
-					}
-
-					return {
-						endDate: new Date(endDate),
-						startDate: lastTermStartDate,
-					};
-				}
-
-				return {
-					endDate: new Date(
-						yearNumEndDate,
-						monthsEndDate,
-						daysEndDate - 1
-					),
-					startDate: new Date(yearNumStartDate),
-				};
-			})
-			.filter((item) => item);
-
-		return yearDateSplitted;
+	if (startDateYear + 1 >= endDateYear) {
+		return [{endDate, startDate}];
 	}
 
-	return [{endDate: new Date(endDate), startDate: new Date(startDate)}];
+	for (let year = startDateYear; year <= endDateYear; year++) {
+		let endDateIterationYear = new Date(
+			year + 1,
+			startDate.getMonth(),
+			startDate.getDate() - 1
+		);
+		const startDateIterationYear = new Date(startDate.setFullYear(year));
+
+		if (startDateIterationYear > endDate) {
+			break;
+		}
+
+		if (endDateIterationYear > endDate) {
+			endDateIterationYear = endDate;
+		}
+
+		yearlyTerms.push({
+			endDate: endDateIterationYear,
+			startDate: startDateIterationYear,
+		});
+	}
+
+	return yearlyTerms;
 };
 
 export {getYearlyTerms};

@@ -429,6 +429,74 @@ public class LayoutSetPrototypePropagationTest
 	}
 
 	@Test
+	public void testMasterPageTemplateThemeSettingsAfterLayoutPropagation()
+		throws Exception {
+
+		LayoutSet prototypePrivateLayoutSet =
+			_layoutSetPrototypeGroup.getPrivateLayoutSet();
+
+		prototypePrivateLayoutSet.setThemeId(_THEME_ID);
+
+		LayoutSetLocalServiceUtil.updateLayoutSet(prototypePrivateLayoutSet);
+
+		LayoutSet prototypePublicLayoutSet =
+			_layoutSetPrototypeGroup.getPublicLayoutSet();
+
+		prototypePublicLayoutSet.setThemeId(_THEME_ID);
+
+		LayoutSetLocalServiceUtil.updateLayoutSet(prototypePublicLayoutSet);
+
+		_layoutSetPrototype =
+			LayoutSetPrototypeLocalServiceUtil.fetchLayoutSetPrototype(
+				_layoutSetPrototype.getLayoutSetPrototypeId());
+
+		_layoutSetPrototype.setModifiedDate(new Date());
+
+		_layoutSetPrototype =
+			LayoutSetPrototypeLocalServiceUtil.updateLayoutSetPrototype(
+				_layoutSetPrototype);
+
+		Layout siteTemplateMasterLayout = LayoutTestUtil.addTypeContentLayout(
+			_layoutSetPrototypeGroup, true, false);
+
+		Layout siteTemplateLayoutFromMasterLayout =
+			LayoutTestUtil.addTypeContentLayout(
+				_layoutSetPrototypeGroup, true, false,
+				siteTemplateMasterLayout.getPlid());
+
+		propagateChanges(group);
+
+		Layout siteMasterLayout = LayoutLocalServiceUtil.getFriendlyURLLayout(
+			group.getGroupId(), false,
+			siteTemplateMasterLayout.getFriendlyURL());
+
+		Assert.assertEquals(
+			siteMasterLayout.getTheme(
+			).getThemeId(),
+			siteTemplateMasterLayout.getTheme(
+			).getThemeId());
+		Assert.assertEquals(
+			siteMasterLayout.getTheme(
+			).getThemeId(),
+			_THEME_ID);
+
+		Layout siteLayoutFromMasterLayout =
+			LayoutLocalServiceUtil.getFriendlyURLLayout(
+				group.getGroupId(), false,
+				siteTemplateLayoutFromMasterLayout.getFriendlyURL());
+
+		Assert.assertEquals(
+			siteLayoutFromMasterLayout.getTheme(
+			).getThemeId(),
+			siteTemplateLayoutFromMasterLayout.getTheme(
+			).getThemeId());
+		Assert.assertEquals(
+			siteLayoutFromMasterLayout.getTheme(
+			).getThemeId(),
+			_THEME_ID);
+	}
+
+	@Test
 	public void testPortletDataPropagationWithLinkDisabled() throws Exception {
 		doTestPortletDataPropagation(false);
 	}
@@ -671,6 +739,42 @@ public class LayoutSetPrototypePropagationTest
 		_layoutSetPrototypeHelper.resetPrototype(
 			LayoutSetLocalServiceUtil.getLayoutSet(
 				userGroup.getGroupId(), true));
+	}
+
+	@Test
+	public void testThemeSettingsAfterLayoutPropagation() throws Exception {
+		LayoutSet prototypePrivateLayoutSet =
+			_layoutSetPrototypeGroup.getPrivateLayoutSet();
+
+		prototypePrivateLayoutSet.setThemeId(_THEME_ID);
+
+		prototypePrivateLayoutSet = LayoutSetLocalServiceUtil.updateLayoutSet(
+			prototypePrivateLayoutSet);
+
+		LayoutSet prototypePublicLayoutSet =
+			_layoutSetPrototypeGroup.getPublicLayoutSet();
+
+		prototypePublicLayoutSet.setThemeId(_THEME_ID);
+
+		LayoutSetLocalServiceUtil.updateLayoutSet(prototypePublicLayoutSet);
+
+		_layoutSetPrototype =
+			LayoutSetPrototypeLocalServiceUtil.fetchLayoutSetPrototype(
+				_layoutSetPrototype.getLayoutSetPrototypeId());
+
+		_layoutSetPrototype.setModifiedDate(new Date());
+
+		_layoutSetPrototype =
+			LayoutSetPrototypeLocalServiceUtil.updateLayoutSetPrototype(
+				_layoutSetPrototype);
+
+		propagateChanges(group);
+
+		LayoutSet propagatedLayoutSet = group.getPrivateLayoutSet();
+
+		Assert.assertEquals(
+			prototypePrivateLayoutSet.getThemeId(),
+			propagatedLayoutSet.getThemeId());
 	}
 
 	@Test
@@ -1140,6 +1244,8 @@ public class LayoutSetPrototypePropagationTest
 		Assert.assertEquals(
 			expectedValue, jxPortletPreferences.getValue(key, null));
 	}
+
+	private static final String _THEME_ID = "minium_WAR_miniumtheme";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		LayoutSetPrototypePropagationTest.class);

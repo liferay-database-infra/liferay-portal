@@ -31,16 +31,13 @@ export async function disconnectFromAnalyticsCloud(page) {
 	if (await disconnectButton.isVisible()) {
 		await disconnectButton.click();
 
-		const diconnectConfirmationModal = page.getByLabel(
-			'Disconnecting Data Source'
-		);
+		const confirmationModal = page.getByLabel('Disconnecting Data Source');
 
-		const diconnectConfirmationButton =
-			diconnectConfirmationModal.getByRole('button', {
-				name: 'Disconnect',
-			});
+		const confirmationButton = confirmationModal.getByRole('button', {
+			name: 'Disconnect',
+		});
 
-		await diconnectConfirmationButton.click();
+		await confirmationButton.click();
 	}
 }
 
@@ -58,6 +55,24 @@ export async function goToAnalyticsCloudInstanceSettings(page) {
 	await expect(page.getByText('Analytics Cloud Token')).toBeVisible({
 		timeout: 100 * 1000,
 	});
+}
+
+export async function navigateToSitePage(page, siteName, pageName) {
+	const pageNameURL = pageName.replace(/ /g, '-').toLowerCase();
+
+	if (siteName) {
+		const siteNameURL = siteName.replace(/ /g, '-').toLowerCase();
+
+		await page.goto(
+			`${liferayConfig.environment.baseUrl}/web/${siteNameURL}/` +
+				`${pageNameURL}`
+		);
+	}
+	else {
+		await page.goto(
+			`${liferayConfig.environment.baseUrl}/web/guest/${pageNameURL}`
+		);
+	}
 }
 
 export async function syncAllContacts(page) {

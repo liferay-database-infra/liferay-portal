@@ -60,7 +60,7 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 
 		User user = _userLocalService.getUser(userId);
 
-		_validate(groupId, name, type);
+		_validate(groupId, name, parentLayoutPageTemplateCollectionId, type);
 
 		long layoutPageTemplateId = counterLocalService.increment();
 
@@ -116,7 +116,8 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 				null, userId, sourceLayoutPageTemplateCollection.getGroupId(),
 				layoutParentPageTemplateCollectionId,
 				getUniqueLayoutPageTemplateCollectionName(
-					groupId, sourceLayoutPageTemplateCollection.getName(),
+					groupId, layoutParentPageTemplateCollectionId,
+					sourceLayoutPageTemplateCollection.getName(),
 					sourceLayoutPageTemplateCollection.getType()),
 				sourceLayoutPageTemplateCollection.getDescription(),
 				sourceLayoutPageTemplateCollection.getType(), serviceContext);
@@ -265,11 +266,12 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 	}
 
 	@Override
-	public LayoutPageTemplateCollection fetchLayoutPageTemplateCollectionByName(
-		long groupId, String name, int type) {
+	public LayoutPageTemplateCollection fetchLayoutPageTemplateCollection(
+		long groupId, String name, long parentLayoutPageTemplateCollectionId,
+		int type) {
 
-		return layoutPageTemplateCollectionPersistence.fetchByG_N_T(
-			groupId, name, type);
+		return layoutPageTemplateCollectionPersistence.fetchByG_P_N_T(
+			groupId, parentLayoutPageTemplateCollectionId, name, type);
 	}
 
 	@Override
@@ -349,7 +351,8 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 
 	@Override
 	public String getUniqueLayoutPageTemplateCollectionName(
-		long groupId, String sourceName, int type) {
+		long groupId, long layoutPageTemplateCollectionId, String sourceName,
+		int type) {
 
 		String copy = _language.get(LocaleUtil.getSiteDefault(), "copy");
 
@@ -357,8 +360,8 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 
 		for (int i = 1;; i++) {
 			LayoutPageTemplateCollection layoutPageTemplateCollection =
-				layoutPageTemplateCollectionPersistence.fetchByG_N_T(
-					groupId, name, type);
+				layoutPageTemplateCollectionPersistence.fetchByG_P_N_T(
+					groupId, layoutPageTemplateCollectionId, name, type);
 
 			if (layoutPageTemplateCollection == null) {
 				break;
@@ -409,6 +412,8 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 		if (!Objects.equals(layoutPageTemplateCollection.getName(), name)) {
 			_validate(
 				layoutPageTemplateCollection.getGroupId(), name,
+				layoutPageTemplateCollection.
+					getParentLayoutPageTemplateCollectionId(),
 				layoutPageTemplateCollection.getType());
 		}
 
@@ -435,6 +440,8 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 		if (!Objects.equals(layoutPageTemplateCollection.getName(), name)) {
 			_validate(
 				layoutPageTemplateCollection.getGroupId(), name,
+				layoutPageTemplateCollection.
+					getParentLayoutPageTemplateCollectionId(),
 				layoutPageTemplateCollection.getType());
 		}
 
@@ -477,7 +484,9 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 		}
 	}
 
-	private void _validate(long groupId, String name, int type)
+	private void _validate(
+			long groupId, String name, long parentLayoutPageTemplateCollection,
+			int type)
 		throws PortalException {
 
 		if (Validator.isNull(name)) {
@@ -494,8 +503,8 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 		}
 
 		LayoutPageTemplateCollection layoutPageTemplateCollection =
-			layoutPageTemplateCollectionPersistence.fetchByG_N_T(
-				groupId, name, type);
+			layoutPageTemplateCollectionPersistence.fetchByG_P_N_T(
+				groupId, parentLayoutPageTemplateCollection, name, type);
 
 		if (layoutPageTemplateCollection != null) {
 			throw new DuplicateLayoutPageTemplateCollectionException(name);

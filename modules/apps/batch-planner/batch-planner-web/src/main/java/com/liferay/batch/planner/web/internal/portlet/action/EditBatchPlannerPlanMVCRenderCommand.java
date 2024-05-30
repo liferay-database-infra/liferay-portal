@@ -92,9 +92,13 @@ public class EditBatchPlannerPlanMVCRenderCommand implements MVCRenderCommand {
 
 			internalClassNameKeyCategories.put(
 				entityClassName,
-				_getInternalClassNameKeyCategory(
-					FrameworkUtil.getBundle(
-						vulcanBatchEngineTaskItemDelegate.getClass())));
+				String.format(
+					"%s (%s - %s)",
+					vulcanBatchEngineTaskItemDelegate.getResourceName(),
+					vulcanBatchEngineTaskItemDelegate.getVersion(),
+					_getInternalClassNameKeyCategory(
+						FrameworkUtil.getBundle(
+							vulcanBatchEngineTaskItemDelegate.getClass()))));
 		}
 
 		return internalClassNameKeyCategories;

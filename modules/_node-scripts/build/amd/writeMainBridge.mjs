@@ -3,18 +3,13 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
 import {BUILD_RESOURCES_PATH} from '../../util/constants.mjs';
+import hashPathForVariable from './util/hashPathForVariable.mjs';
 
-export default async function writeAMD2ESMBridges(
-	projectDescription,
-	projectWebContextPath
-) {
-	const filePath = path.join(BUILD_RESOURCES_PATH, 'index.js');
-
+export default async function writeMainBridge(projectDescription, projectWebContextPath) {
 	const {name, version} = projectDescription;
 
 	//
@@ -28,35 +23,30 @@ export default async function writeAMD2ESMBridges(
 	// level appears under `/o/js/resolved-module/...`.
 	//
 
-	const rootDir = name.startsWith('@') ? '../../../..' : '../../..';
+	const importPath = getPathToRoot(name) + projectWebContextPath + '/__liferay__/index.js';
 
-	const importPath = `${rootDir}${projectWebContextPath}/__liferay__/index.js`;
-
-	const hashedModulePath = hashPathForVariable(importPath);
+	const hashedImportPath = hashPathForVariable(importPath);
 
 	const code = `
-import * as ${hashedModulePath} from "${importPath}";
+import * as ${hashedImportPath} from "${importPath}";
 
 Liferay.Loader.define(
 	"${name}@${version}/index",
-	['module'], 
+	['module'],
 	function (module) {
-		module.exports = ${hashedModulePath};
+		module.exports = ${hashedImportPath};
 	}
 );
 `;
+
+	// Write file
+
+	const filePath = path.join(BUILD_RESOURCES_PATH, 'index.js');
 
 	await fs.mkdir(path.dirname(filePath), {recursive: true});
 	await fs.writeFile(filePath, code, 'utf-8');
 }
 
-function hashPathForVariable(filePath) {
-	const normalizedFilePath = filePath.split(path.sep).join('');
-
-	// Prefixing the string with 'a' since variables can't start with an integer
-
-	return (
-		'a' +
-		crypto.createHash('sha256').update(normalizedFilePath).digest('hex')
-	);
+function getPathToRoot(projectName) {
+	return projectName.startsWith('@') ? '../../../..' : '../../..';
 }

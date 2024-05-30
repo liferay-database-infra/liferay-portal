@@ -10,6 +10,8 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -19,6 +21,8 @@ import java.io.Serializable;
 import java.text.DateFormat;
 
 import java.util.Date;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * @author Edward Han
@@ -150,6 +154,11 @@ public class ExpandoConverterUtil {
 		else if (type == ExpandoColumnConstants.STRING) {
 			return attribute[0];
 		}
+		else if (type == ExpandoColumnConstants.STRING_LOCALIZED) {
+			return new HashMapBuilder<>().put(
+				LocaleUtil.getDefault(), attribute[0]
+			).build();
+		}
 
 		return attribute;
 	}
@@ -191,6 +200,11 @@ public class ExpandoConverterUtil {
 		else if (type == ExpandoColumnConstants.DATE_ARRAY) {
 			return StringUtil.merge(
 				ArrayUtil.toStringArray((Date[])attribute, _getDateFormat()));
+		}
+		else if (type == ExpandoColumnConstants.STRING_LOCALIZED) {
+			Map<Locale, String> values = (Map<Locale, String>)attribute;
+
+			return values.get(LocaleUtil.getDefault());
 		}
 
 		return attribute.toString();

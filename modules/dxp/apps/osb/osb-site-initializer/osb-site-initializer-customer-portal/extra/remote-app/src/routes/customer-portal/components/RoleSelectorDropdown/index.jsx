@@ -11,6 +11,7 @@ import {ClayTooltipProvider} from '@clayui/tooltip';
 import {Fragment, useMemo, useState} from 'react';
 import i18n from '~/common/I18n';
 import getKebabCase from '~/common/utils/getKebabCase';
+import {useOnboarding} from '~/routes/onboarding/context';
 import {useCustomerPortal} from '../../context';
 import RadioRoles from '../RadioRoles';
 
@@ -29,7 +30,14 @@ const RoleSelectorDropdown = ({
 	);
 	const [active, setActive] = useState(false);
 
-	const [{project}] = useCustomerPortal();
+	const projectPortal = useCustomerPortal();
+	const projectOnboarding = useOnboarding();
+
+	const project = useMemo(
+		() => projectPortal?.[0].project || projectOnboarding?.[0].project,
+		[projectOnboarding, projectPortal]
+	);
+
 	const isPartnerProject = project?.partner;
 
 	const handleOnClick = (accountRoleItems) => {
@@ -207,7 +215,7 @@ const RoleSelectorDropdown = ({
 												getKebabCase(role.label)
 											)
 												? i18n.translate(
-													getKebabCase(role.label)
+														getKebabCase(role.label)
 												  )
 												: role.label}
 										</ClayCheckbox>
@@ -239,8 +247,9 @@ const RoleSelectorDropdown = ({
 									).filter((role) => role.active);
 
 									if (
-										accountRoleActiveItem[0].label ===
-										selectedAccountRoleName[0]
+										selectedAccountRoleName.includes(
+											accountRoleActiveItem[0].label
+										)
 									) {
 										setAtLeastOneFieldIsFilled(false);
 									} else {
@@ -253,7 +262,7 @@ const RoleSelectorDropdown = ({
 							>
 								{i18n.translate(getKebabCase(accountRole.label))
 									? i18n.translate(
-										getKebabCase(accountRole.label)
+											getKebabCase(accountRole.label)
 									  )
 									: accountRole.label}
 							</RadioRoles>

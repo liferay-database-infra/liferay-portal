@@ -9,11 +9,14 @@ import * as path from 'path';
 import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
 import {documentLibraryPagesTest} from '../../fixtures/documentLibraryPages.fixtures';
 import {loginTest} from '../../fixtures/loginTest';
+import {productMenuPageTest} from '../../fixtures/productMenuPageTest';
+import getRandomString from '../../utils/getRandomString';
 import {exportImportPagesTest} from './fixtures/exportImportPagesTest';
 
 export const test = mergeTests(
 	apiHelpersTest,
 	documentLibraryPagesTest,
+	productMenuPageTest,
 	exportImportPagesTest,
 	loginTest()
 );
@@ -40,4 +43,36 @@ test('can import a folder with document type restrictions and workflow', async (
 	await apiHelpers.headlessDelivery.deleteSiteDocumentsFolderByExternalReferenceCode(
 		'LPS-205933'
 	);
+});
+
+test('can import a lar file selecting some items to import', async ({
+	exportImportPage,
+}) => {
+	await exportImportPage.goToExport();
+
+	const exportName = 'MyExport-' + getRandomString();
+
+	await exportImportPage.createNewExportProcess(exportName);
+
+	await expect(
+		exportImportPage.page
+			.getByText(exportName)
+			.locator('../..')
+			.getByText('Successful')
+	).toBeVisible();
+
+	const exportFilePath = await exportImportPage.downloadExportProcess(
+		exportName
+	);
+
+	await exportImportPage.goToImport();
+
+	await exportImportPage.createNewImportProcess(exportFilePath);
+
+	await expect(
+		exportImportPage.page
+			.getByText(exportName)
+			.locator('../../..')
+			.getByText('Successful')
+	).toBeVisible();
 });
