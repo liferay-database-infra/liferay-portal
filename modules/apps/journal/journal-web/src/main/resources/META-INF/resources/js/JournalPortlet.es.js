@@ -13,6 +13,7 @@ import {
 
 import {LocaleChangedHandler} from './LocaleChangedHandler.es';
 import initializeLock from './initializeLock';
+import removeAlert from './removeAlert';
 import showAlert from './showAlert';
 
 const AUTO_SAVE_DELAY = 1500;
@@ -159,7 +160,7 @@ export default function _JournalPortlet({
 	};
 
 	const handleDDMFormError = (event) => {
-		lockHolder.lock?.unlock();
+		lockHolder.lock?.unlock(true);
 
 		if (event.error?.statusCode) {
 			showAlert(event.error.message);
@@ -218,7 +219,24 @@ export default function _JournalPortlet({
 			availableLocalesInput.value = availableLocales;
 
 			if (autoSaveDraftEnabled) {
-				submitAsyncForm(form, {redirectOnSave});
+				Liferay.componentReady(`${namespace}dataEngineLayoutRenderer`)
+					.then((dataEngineLayoutRenderer) => {
+						const dataEngineLayoutRendererRef =
+							dataEngineLayoutRenderer?.reactComponentRef;
+
+						return dataEngineLayoutRendererRef.current.validate();
+					})
+					.then((validForm) => {
+						if (validForm) {
+							removeAlert();
+							submitAsyncForm(form, {redirectOnSave});
+						}
+						else {
+							Liferay.fire('ddmFormError', {
+								formWrapperId: formId,
+							});
+						}
+					});
 			}
 			else {
 				form.submit();
@@ -236,7 +254,7 @@ export default function _JournalPortlet({
 				);
 			}
 
-			lockHolder.lock?.unlock();
+			lockHolder.lock?.unlock(true);
 		}
 	};
 
@@ -357,23 +375,44 @@ export default function _JournalPortlet({
 				}
 				else {
 					if (!articleId && response.url) {
-						const key = `${namespace}articleId`;
+						const articleIdKey = `${namespace}articleId`;
+						const friendlyURLKey = `${namespace}friendlyURL`;
 						const url = new URL(response.url);
 
-						if (url.searchParams.has(key)) {
-							articleId = url.searchParams.get(key);
+						if (url.searchParams.has(articleIdKey)) {
+							articleId = url.searchParams.get(articleIdKey);
 							document.getElementById(
 								`${namespace}articleId`
 							).value = articleId;
+
+							Liferay.fire('asyncFormSubmission', {articleId});
+						}
+
+						if (url.searchParams.has(friendlyURLKey)) {
+							const friendlyUrlInputComponent = Liferay.component(
+								`${namespace}friendlyURL`
+							);
+
+							if (!friendlyUrlInputComponent.getValue()) {
+								const friendlyURL = url.searchParams.get(
+									friendlyURLKey
+								);
+								friendlyUrlInputComponent.updateInputLanguage(
+									friendlyURL,
+									defaultLanguageId
+								);
+								friendlyUrlInputComponent.updateInput(
+									friendlyURL
+								);
+							}
 						}
 					}
+					lockHolder.lock?.unlock();
 				}
 			})
 			.catch((error) => {
 				console.error(error);
-			})
-			.finally(() => {
-				lockHolder.lock?.unlock();
+				lockHolder.lock?.unlock(true);
 			});
 	};
 
@@ -457,7 +496,7 @@ export default function _JournalPortlet({
 
 					handleDDMFormValid({
 						redirectOnSave: false,
-						showErrors: false,
+						showErrors: true,
 					});
 				}
 			)

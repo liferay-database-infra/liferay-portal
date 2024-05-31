@@ -36,16 +36,14 @@ import {
 	patchProductIdCategory,
 	updateProductSpecification,
 } from '../../../../../../utils/api';
-import {
-	getTemporaryProductIdForSpefication,
-	submitBase64EncodedFile,
-} from '../../../../../../utils/util';
+import {submitBase64EncodedFile} from '../../../../../../utils/util';
 import {useAppContext} from '../AppContext/AppManageState';
 import {TYPES} from '../AppContext/actionTypes';
 import OfferingTypeCheckbox from './components/OfferingTypeCheckbox';
 import {offeringTypesDescription} from './constants/offeringTypesDescriptions';
 
 import './ProvideAppBuildPage.scss';
+import useFeaturePreview from '../../../../../../hooks/useFeaturePreview';
 import {Liferay} from '../../../../../../liferay/liferay';
 import ResourceRequirements from './ResourceRequirements';
 
@@ -189,9 +187,11 @@ export function ProvideAppBuildPage({
 		dispatch,
 	] = useAppContext();
 
+	const {getTemporaryProductIdForSpefication} = useFeaturePreview();
+
 	const _tempProductId = getTemporaryProductIdForSpefication({
 		appId,
-		appProductId,
+		productId: appProductId,
 	});
 
 	const [selectedCheckboxValue, setSelectedCheckboxValue] = useState<

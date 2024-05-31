@@ -39,6 +39,7 @@ import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.service.PersistedModelLocalServiceRegistryUtil;
 
 import java.io.Closeable;
@@ -55,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.Assert;
@@ -528,7 +530,9 @@ public class DataGuardTestRuleUtil {
 				"_serviceTrackerMap");
 
 		for (String modeClassName : serviceTrackerMap.keySet()) {
-			if (modeClassName.indexOf(CharPool.POUND) == -1) {
+			if (!_blacklistedModelClassNames.contains(modeClassName) &&
+				(modeClassName.indexOf(CharPool.POUND) == -1)) {
+
 				scrubbedPersistedModelLocalServices.put(
 					modeClassName, serviceTrackerMap.getService(modeClassName));
 			}
@@ -640,6 +644,9 @@ public class DataGuardTestRuleUtil {
 			basePersistence, "_sessionFactory", originalSessionFactory);
 	}
 
+	private static final Set<String> _blacklistedModelClassNames =
+		SetUtil.fromArray(
+			"com.liferay.portal.security.audit.storage.model.AuditEvent");
 	private static final ThreadLocal<Map<String, Map<Serializable, String>>>
 		_recordsThreadLocal = new ThreadLocal<>();
 	private static final TransactionConfig _transactionConfig =
@@ -706,7 +713,10 @@ public class DataGuardTestRuleUtil {
 		private void _record(Object object) {
 			BaseModel<?> baseModel = (BaseModel<?>)object;
 
-			if (baseModel.isNew()) {
+			if (baseModel.isNew() &&
+				!_blacklistedModelClassNames.contains(
+					baseModel.getModelClassName())) {
+
 				Map<Serializable, String> map = _records.computeIfAbsent(
 					baseModel.getModelClassName(),
 					className -> new ConcurrentHashMap<>());

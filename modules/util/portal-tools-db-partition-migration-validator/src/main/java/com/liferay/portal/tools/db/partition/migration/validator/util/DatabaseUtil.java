@@ -39,23 +39,24 @@ public class DatabaseUtil {
 		return liferayDatabase;
 	}
 
+	public static boolean isPostgreSQL(String jdbcURL) {
+		if (jdbcURL.indexOf("postgresql") != -1) {
+			return true;
+		}
+
+		return false;
+	}
+
 	public static String replaceSchemaName(String jdbcURL, String schemaName) {
 		if (schemaName == null) {
 			return jdbcURL;
 		}
 
-		int index = jdbcURL.indexOf("?");
-
-		if (index == -1) {
-			return jdbcURL.substring(0, jdbcURL.lastIndexOf("/") + 1) +
-				schemaName;
+		if (isPostgreSQL(jdbcURL)) {
+			return _replacePostgreSQLSchemaName(jdbcURL, schemaName);
 		}
 
-		String baseJDBCURL = jdbcURL.substring(0, index);
-
-		return StringBundler.concat(
-			jdbcURL.substring(0, baseJDBCURL.lastIndexOf("/") + 1), schemaName,
-			jdbcURL.substring(index));
+		return _replaceMySQLSchemaName(jdbcURL, schemaName);
 	}
 
 	private static List<Company> _getCompanies(Connection connection)
@@ -168,6 +169,35 @@ public class DatabaseUtil {
 		DBInspector dbInspector = new DBInspector(connection);
 
 		return dbInspector.hasTable("Company");
+	}
+
+	private static String _replaceMySQLSchemaName(
+		String jdbcURL, String schemaName) {
+
+		int index = jdbcURL.indexOf("?");
+
+		if (index == -1) {
+			return jdbcURL.substring(0, jdbcURL.lastIndexOf("/") + 1) +
+				schemaName;
+		}
+
+		String baseJDBCURL = jdbcURL.substring(0, index);
+
+		return StringBundler.concat(
+			jdbcURL.substring(0, baseJDBCURL.lastIndexOf("/") + 1), schemaName,
+			jdbcURL.substring(index));
+	}
+
+	private static String _replacePostgreSQLSchemaName(
+		String jdbcURL, String schemaName) {
+
+		int index = jdbcURL.indexOf("?");
+
+		if (index == -1) {
+			return jdbcURL + "?currentSchema=" + schemaName;
+		}
+
+		return jdbcURL + "&currentSchema=" + schemaName;
 	}
 
 }

@@ -14,7 +14,13 @@
 
 <c:choose>
 	<c:when test="<%= ShutdownUtil.isInProcess() %>">
-		<aui:button cssClass="save-server-button" data-cmd="shutdown" value="cancel-shutdown" />
+		<div class="sheet">
+			<div class="panel-group panel-group-flush">
+				<liferay-captcha:captcha />
+
+				<aui:button cssClass="save-server-button" data-cmd="shutdown" value="cancel-shutdown" />
+			</div>
+		</div>
 	</c:when>
 	<c:otherwise>
 		<div class="sheet">

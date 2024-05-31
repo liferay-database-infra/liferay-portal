@@ -108,7 +108,9 @@ const AccountForm = () => {
 				<ClayButton
 					displayType="secondary"
 					onClick={() => {
-						Liferay.Util.navigate(getSiteURL() + '/p/try-it-now');
+						Liferay.Util.navigate(
+							getSiteURL() + '/pre-built-trial'
+						);
 					}}
 				>
 					Return to trial page
@@ -299,11 +301,11 @@ const AccountForm = () => {
 						label={
 							((
 								<span>
-									I agree to the
+									I agree to the Marketplace Trial
 									<ClayLink
 										className="ml-1"
 										displayType="primary"
-										href="https://www.liferay.com/en/legal/marketplace-terms-of-service"
+										href={properties.trialEulaURL}
 										target="_blank"
 									>
 										Terms & Conditions

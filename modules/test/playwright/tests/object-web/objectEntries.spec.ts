@@ -91,7 +91,7 @@ test.describe('Manage object entries through page templates', () => {
 		}
 
 		await viewObjectEntriesPage.goto(objectDefinition2.id);
-		await viewObjectEntriesPage.addObjectEntryButton.click();
+		await viewObjectEntriesPage.clickAddObjectEntry();
 		await page.getByPlaceholder('Search', {exact: true}).click();
 
 		objectEntries.forEach((objectEntryId) => {
@@ -173,10 +173,10 @@ test.describe('Manage object entries through page templates', () => {
 			id: getRandomString(),
 		});
 
-		const headingDefinition = getFragmentDefinition(
-			getRandomString(),
-			'BASIC_COMPONENT-heading'
-		);
+		const headingDefinition = getFragmentDefinition({
+			id: getRandomString(),
+			key: 'BASIC_COMPONENT-heading',
+		});
 
 		const layout = await apiHelpers.headlessDelivery.createSitePage({
 			pageDefinition: getPageDefinition([
@@ -475,7 +475,7 @@ test.describe('Manage object entries through View Object Entries', () => {
 
 		await viewObjectEntriesPage.goto(objectDefinition.id);
 
-		await viewObjectEntriesPage.addObjectEntryButton.click();
+		await viewObjectEntriesPage.clickAddObjectEntry();
 
 		await viewObjectEntriesPage.selectFileFromDocumentsAndMedia();
 
@@ -555,5 +555,88 @@ test.describe('Manage object entries through View Object Entries', () => {
 		);
 
 		await apiHelpers.listTypeAdmin.deleteListTypeDefinition(picklist.id);
+	});
+
+	test('can view all entries related to an object in the relationship field using autocomplete', async ({
+		apiHelpers,
+		page,
+		viewObjectEntriesPage,
+	}) => {
+		const objectDefinition1 =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				objectFolderExternalReferenceCode: 'default',
+				status: {code: 0},
+				titleObjectFieldName: 'textField',
+			});
+
+		const objectDefinition2 =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				objectFolderExternalReferenceCode: 'default',
+				status: {code: 0},
+			});
+
+		const objectRelationshipLabel =
+			'objectRelationshipLabel' + getRandomInt();
+		const objectRelationshipName =
+			'objectRelationshipName' + Math.floor(Math.random() * 99);
+
+		const objectRelationshipData: Partial<ObjectRelationship> = {
+			label: {
+				en_US: objectRelationshipLabel,
+			},
+			name: objectRelationshipName,
+			objectDefinitionExternalReferenceCode1:
+				objectDefinition1.externalReferenceCode,
+			objectDefinitionExternalReferenceCode2:
+				objectDefinition2.externalReferenceCode,
+			objectDefinitionId1: objectDefinition1.id,
+			objectDefinitionId2: objectDefinition2.id,
+			objectDefinitionName2: objectDefinition2.name,
+			type: 'oneToMany' as ObjectRelationshipType,
+		};
+
+		await apiHelpers.objectAdmin.postObjectRelationship(
+			objectRelationshipData
+		);
+
+		const applicationName =
+			'c/' + objectDefinition1.name.toLowerCase() + 's';
+
+		await apiHelpers.objectEntry.postObjectEntry(
+			{textField: 'test 1'},
+			applicationName
+		);
+
+		await apiHelpers.objectEntry.postObjectEntry(
+			{textField: 'test 2'},
+			applicationName
+		);
+
+		await viewObjectEntriesPage.goto(objectDefinition2.id);
+		await viewObjectEntriesPage.clickAddObjectEntry();
+
+		await page.getByPlaceholder('Search', {exact: true}).fill('t 1');
+		await expect(page.getByRole('menuitem', {name: 'test1'})).toBeVisible();
+
+		await page.locator('input[value="t 1"]').fill('t 2');
+		await expect(page.getByRole('menuitem', {name: 'test2'})).toBeVisible();
+
+		await page.locator('input[value="t 2"]').fill('tes');
+		await expect(
+			page.getByRole('menuitem', {name: 'test 1'})
+		).toBeVisible();
+		await expect(
+			page.getByRole('menuitem', {name: 'test 2'})
+		).toBeVisible();
+
+		// Clean up
+
+		await apiHelpers.objectAdmin.deleteObjectDefinition(
+			objectDefinition1.id
+		);
+
+		await apiHelpers.objectAdmin.deleteObjectDefinition(
+			objectDefinition2.id
+		);
 	});
 });

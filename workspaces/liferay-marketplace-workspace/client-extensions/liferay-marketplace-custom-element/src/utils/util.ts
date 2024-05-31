@@ -365,23 +365,3 @@ export function safeJSONParse<T = any>(
 export function isCloudEnvironment() {
 	return window.location.protocol === 'https:';
 }
-
-/**
- *
- * @description due a breaking change on commerce product specification API
- * starting on > U112 the API expects to receive productId instead of appId
- * remove this helper after Marketplace UAT/PRD get upgraded to > U112
- */
-export function getTemporaryProductIdForSpefication({
-	appId,
-	appProductId,
-}: {
-	appId: number | string;
-	appProductId: number | string;
-}) {
-	if (isCloudEnvironment()) {
-		return appId;
-	}
-
-	return appProductId;
-}

@@ -153,26 +153,26 @@ test('checks Content Flags, Content Ratings and Content Display are compatible w
 	);
 
 	const animalsCollection = getCollectionItemDefinition(getRandomString(), [
-		getFragmentDefinition(
-			getRandomString(),
-			'com.liferay.fragment.internal.renderer.ContentFlagsFragmentRenderer'
-		),
-		getFragmentDefinition(
-			getRandomString(),
-			'com.liferay.fragment.internal.renderer.ContentRatingsFragmentRenderer'
-		),
-		getFragmentDefinition(
-			getRandomString(),
-			'com.liferay.fragment.internal.renderer.ContentObjectFragmentRenderer',
-			{
+		getFragmentDefinition({
+			id: getRandomString(),
+			key: 'com.liferay.fragment.internal.renderer.ContentFlagsFragmentRenderer',
+		}),
+		getFragmentDefinition({
+			id: getRandomString(),
+			key: 'com.liferay.fragment.internal.renderer.ContentRatingsFragmentRenderer',
+		}),
+		getFragmentDefinition({
+			fragmentConfig: {
 				itemSelector: {
 					template: {
 						infoItemRendererKey:
 							'com.liferay.journal.web.internal.info.item.renderer.JournalArticleFullContentInfoItemRenderer',
 					},
 				},
-			}
-		),
+			},
+			id: getRandomString(),
+			key: 'com.liferay.fragment.internal.renderer.ContentObjectFragmentRenderer',
+		}),
 	]);
 
 	const collectionDefinition = getCollectionDefinition({
@@ -266,7 +266,7 @@ test('modifies inline text on all collection items', async ({
 	const headingId = getRandomString();
 
 	const animalsCollection = getCollectionItemDefinition(getRandomString(), [
-		getFragmentDefinition(headingId, 'BASIC_COMPONENT-heading'),
+		getFragmentDefinition({id: headingId, key: 'BASIC_COMPONENT-heading'}),
 	]);
 
 	const collectionDefinition = getCollectionDefinition({
@@ -374,7 +374,10 @@ test('checks the different styles for the Display Collection', async ({
 	);
 
 	const animalsCollection = getCollectionItemDefinition(getRandomString(), [
-		getFragmentDefinition(getRandomString(), 'BASIC_COMPONENT-heading'),
+		getFragmentDefinition({
+			id: getRandomString(),
+			key: 'BASIC_COMPONENT-heading',
+		}),
 	]);
 
 	const borderedListCollection = getCollectionDefinition({
@@ -437,4 +440,114 @@ test('checks the different styles for the Display Collection', async ({
 	await page.goto(`/web${wemSite.friendlyUrlPath}${layout.friendlyUrlPath}`);
 
 	await checkStyleDisplay();
+});
+
+test('checks that fragment ids used within a display collection are not repeated even if they are nested elements', async ({
+	apiHelpers,
+	collectionsPage,
+	page,
+	pageEditorPage,
+	wemSite,
+}) => {
+	const checkNonRepeatedFragmentIds = async () => {
+
+		// Get all fragments with Heading Example text
+
+		const fragments = await page
+			.getByText('Heading Example', {exact: true})
+			.locator('..')
+			.all();
+
+		// Check that the fragment ids are not repeated
+
+		const fragmentIds = [];
+
+		for (const fragment of fragments) {
+			await fragmentIds.push(fragment.getAttribute('id'));
+		}
+
+		await expect(Array.from(new Set(fragmentIds))).toHaveLength(4);
+	};
+
+	const animalsClassPK = await collectionsPage.getCollectionClassPK(
+		'Animals',
+		wemSite.friendlyUrlPath
+	);
+
+	// Create a first collection definition with headings
+
+	const headingDefinition = getFragmentDefinition({
+		id: getRandomString(),
+		key: 'BASIC_COMPONENT-heading',
+	});
+
+	const headingCollectionDefintion = getCollectionItemDefinition(
+		getRandomString(),
+		[headingDefinition]
+	);
+
+	const collectionWithHeadings = getCollectionDefinition({
+		classPK: animalsClassPK,
+		id: getRandomString(),
+		pageElements: [headingCollectionDefintion],
+	});
+
+	// Create a second collection definition with tabs and headings inside
+
+	const tabsCollectionDefinition = getCollectionItemDefinition(
+		getRandomString(),
+		[
+			getFragmentDefinition({
+				fragmentConfig: {
+					numberOfTabs: 1,
+				},
+				fragmentFields: [
+					{
+						id: 'title1',
+						value: {
+							fragmentLink: {},
+						},
+					},
+				],
+				id: getRandomString(),
+				key: 'BASIC_COMPONENT-tabs',
+				pageElements: [
+					{
+						id: getRandomString(),
+						pageElements: [headingDefinition],
+						type: 'FragmentDropZone',
+					},
+				],
+			}),
+		]
+	);
+
+	const collectionWithTabs = getCollectionDefinition({
+		classPK: animalsClassPK,
+		id: getRandomString(),
+		pageElements: [tabsCollectionDefinition],
+	});
+
+	// Create a content page with the two collections and go to edit mode
+
+	const layout = await apiHelpers.headlessDelivery.createSitePage({
+		pageDefinition: getPageDefinition([
+			collectionWithHeadings,
+			collectionWithTabs,
+		]),
+		siteId: wemSite.id,
+		title: getRandomString(),
+	});
+
+	// Check that the fragment ids are not repeated in edit mode
+
+	await pageEditorPage.goto(layout, wemSite.friendlyUrlPath);
+
+	await checkNonRepeatedFragmentIds();
+
+	// Check that the fragment ids are not repeated in view mode
+
+	await page.goto(`/web${wemSite.friendlyUrlPath}${layout.friendlyUrlPath}`);
+
+	await checkNonRepeatedFragmentIds();
 });
