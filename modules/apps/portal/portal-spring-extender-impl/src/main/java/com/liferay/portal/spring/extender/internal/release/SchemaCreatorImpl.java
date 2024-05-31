@@ -63,6 +63,14 @@ public class SchemaCreatorImpl implements SchemaCreator {
 	}
 
 	@Override
+	public String getBundleSQL() {
+		return StringBundler.concat(
+			DBResourceUtil.getModuleTablesSQL(_bundle), StringPool.NEW_LINE,
+			DBResourceUtil.getModuleIndexesSQL(_bundle), StringPool.NEW_LINE,
+			DBResourceUtil.getModuleSequencesSQL(_bundle));
+	}
+
+	@Override
 	public String getBundleSymbolicName() {
 		return _bundle.getSymbolicName();
 	}

@@ -14,6 +14,8 @@ public interface SchemaCreator {
 
 	public void create() throws UpgradeException;
 
+	public String getBundleSQL();
+
 	public String getBundleSymbolicName();
 
 	public String getSchemaVersion();
