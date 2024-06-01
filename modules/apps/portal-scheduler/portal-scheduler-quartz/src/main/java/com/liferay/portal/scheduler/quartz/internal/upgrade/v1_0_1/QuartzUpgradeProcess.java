@@ -44,9 +44,8 @@ public class QuartzUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		if (DBPartition.isPartitionEnabled() &&
-			(PortalUtil.getDefaultCompanyId() !=
-				CompanyThreadLocal.getCompanyId())) {
+		if (PortalUtil.getDefaultCompanyId() !=
+				CompanyThreadLocal.getCompanyId()) {
 
 			return;
 		}
@@ -80,6 +79,15 @@ public class QuartzUpgradeProcess extends UpgradeProcess {
 				"QUARTZ_FIRED_TRIGGERS", "QUARTZ_SIMPLE_TRIGGERS",
 				"QUARTZ_SIMPROP_TRIGGERS", "QUARTZ_TRIGGERS"
 			});
+	}
+
+	@Override
+	protected boolean isSkipUpgradeProcess() {
+		if (!DBPartition.isPartitionEnabled()) {
+			return true;
+		}
+
+		return false;
 	}
 
 	private JobDataMap _deserializeJobDataMap(InputStream inputStream)
