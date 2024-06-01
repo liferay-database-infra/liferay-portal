@@ -89,6 +89,18 @@ public class DLFileShortcutServiceImpl extends DLFileShortcutServiceBaseImpl {
 	}
 
 	@Override
+	public List<DLFileShortcut> getGroupFileShortcuts(
+		long groupId, int start, int end) {
+
+		return dlFileShortcutPersistence.findByGroupId(groupId, start, end);
+	}
+
+	@Override
+	public long getGroupFileShortcutsCount(long groupId) {
+		return dlFileShortcutPersistence.countByGroupId(groupId);
+	}
+
+	@Override
 	public DLFileShortcut updateFileShortcut(
 			long fileShortcutId, long repositoryId, long folderId,
 			long toFileEntryId, ServiceContext serviceContext)

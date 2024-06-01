@@ -25,14 +25,14 @@ String currentURL = PortalUtil.getCurrentURL(request);
 		</div>
 
 		<c:if test="<%= LanguageUtil.isAvailableLocale(themeDisplay.getSiteGroupId(), user.getLocale()) %>">
-			<aui:a cssClass="d-block" href='<%= themeDisplay.getPathMain() + "/portal/update_language?redirect=" + URLCodec.encodeURL(currentURL) + "&groupId=" + themeDisplay.getScopeGroupId() + "&languageId=" + user.getLanguageId() + "&layoutId=" + layout.getLayoutId() + "&persistState=false" + "&privateLayout=" + layout.isPrivateLayout() + "&showUserLocaleOptionsMessage=false" %>'>
+			<aui:a cssClass="d-block" href='<%= themeDisplay.getPathMain() + "/portal/update_language?redirect=" + URLCodec.encodeURL(currentURL) + "&groupId=" + themeDisplay.getScopeGroupId() + "&privateLayout=" + layout.isPrivateLayout() + "&layoutId=" + layout.getLayoutId() + "&languageId=" + user.getLanguageId() + "&persistState=false&showUserLocaleOptionsMessage=false" %>'>
 				<%= LanguageUtil.format(userLocale, "display-the-page-in-x", userLocale.getDisplayName(userLocale)) %>
 			</aui:a>
 		</c:if>
 	</div>
 
 	<div dir="<%= LanguageUtil.get(request, "lang.dir") %>">
-		<aui:a cssClass="d-block" href='<%= themeDisplay.getPathMain() + "/portal/update_language?redirect=" + URLCodec.encodeURL(currentURL) + "&groupId=" + themeDisplay.getScopeGroupId() + "&languageId=" + themeDisplay.getLanguageId() + "&layoutId=" + layout.getLayoutId() + "&privateLayout=" + layout.isPrivateLayout() + "&showUserLocaleOptionsMessage=false" %>'>
+		<aui:a cssClass="d-block" href='<%= themeDisplay.getPathMain() + "/portal/update_language?redirect=" + URLCodec.encodeURL(currentURL) + "&groupId=" + themeDisplay.getScopeGroupId() + "&privateLayout=" + layout.isPrivateLayout()  + "&layoutId=" + layout.getLayoutId() + "&languageId=" + themeDisplay.getLanguageId() + "&showUserLocaleOptionsMessage=false" %>'>
 			<%= LanguageUtil.format(locale, "set-x-as-your-preferred-language", locale.getDisplayName(locale)) %>
 		</aui:a>
 	</div>

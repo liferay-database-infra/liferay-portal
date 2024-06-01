@@ -21,6 +21,18 @@ public class JournalArticleSmallImageSourceUpgradeProcess
 			"update JournalArticle set smallImageSource = " +
 				JournalArticleConstants.SMALL_IMAGE_SOURCE_NONE +
 					" where smallImage = [$FALSE$]");
+		runSQL(
+			"update JournalArticle set smallImageSource = " +
+				JournalArticleConstants.SMALL_IMAGE_SOURCE_USER_COMPUTER +
+					" where smallImage = [$TRUE$] and smallImageId > 0");
+		runSQL(
+			StringBundler.concat(
+				"update JournalArticle set smallImageSource = ",
+				JournalArticleConstants.SMALL_IMAGE_SOURCE_USER_COMPUTER,
+				" where smallImage = [$TRUE$] and (smallImageURL is null or ",
+				"smallImageURL = '')"));
+
+		// See LPD-25796.
 
 		runSQL(
 			StringBundler.concat(
@@ -28,18 +40,6 @@ public class JournalArticleSmallImageSourceUpgradeProcess
 				JournalArticleConstants.SMALL_IMAGE_SOURCE_URL,
 				" where smallImage = [$TRUE$] and not (smallImageURL is null ",
 				"or smallImageURL = '')"));
-
-		runSQL(
-			"update JournalArticle set smallImageSource = " +
-				JournalArticleConstants.SMALL_IMAGE_SOURCE_USER_COMPUTER +
-					" where smallImage = [$TRUE$] and smallImageId > 0");
-
-		runSQL(
-			StringBundler.concat(
-				"update JournalArticle set smallImageSource = ",
-				JournalArticleConstants.SMALL_IMAGE_SOURCE_USER_COMPUTER,
-				" where smallImage = [$TRUE$] and (smallImageURL is null or ",
-				"smallImageURL = '')"));
 	}
 
 }

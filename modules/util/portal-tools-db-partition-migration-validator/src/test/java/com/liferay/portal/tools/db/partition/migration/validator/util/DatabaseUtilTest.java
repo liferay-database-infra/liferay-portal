@@ -86,7 +86,7 @@ public class DatabaseUtilTest extends BaseTestCase {
 	@Test
 	public void testReplaceSchemaName() {
 
-		//
+		// Default JDBC URL
 
 		Assert.assertEquals(
 			"jdbc:mysql://localhost:3306/lportal",
@@ -97,7 +97,7 @@ public class DatabaseUtilTest extends BaseTestCase {
 			DatabaseUtil.replaceSchemaName(
 				"jdbc:postgresql://localhost:5432/lportal", null));
 
-		//
+		// Replace schema name
 
 		Assert.assertEquals(
 			"jdbc:mysql://localhost:3306/schemaName",
@@ -106,10 +106,9 @@ public class DatabaseUtilTest extends BaseTestCase {
 		Assert.assertEquals(
 			"jdbc:postgresql://localhost:5432/lportal?currentSchema=schemaName",
 			DatabaseUtil.replaceSchemaName(
-
 				"jdbc:postgresql://localhost:5432/lportal", "schemaName"));
 
-		//
+		// Replace schema name with several URL parameters
 
 		Assert.assertEquals(
 			"jdbc:mysql://localhost:3306/schemaName?parameter=value",

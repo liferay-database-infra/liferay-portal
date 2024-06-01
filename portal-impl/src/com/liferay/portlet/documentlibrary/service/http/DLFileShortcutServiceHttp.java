@@ -197,6 +197,73 @@ public class DLFileShortcutServiceHttp {
 		}
 	}
 
+	public static java.util.List
+		<com.liferay.document.library.kernel.model.DLFileShortcut>
+			getGroupFileShortcuts(
+				HttpPrincipal httpPrincipal, long groupId, int start, int end) {
+
+		try {
+			MethodKey methodKey = new MethodKey(
+				DLFileShortcutServiceUtil.class, "getGroupFileShortcuts",
+				_getGroupFileShortcutsParameterTypes4);
+
+			MethodHandler methodHandler = new MethodHandler(
+				methodKey, groupId, start, end);
+
+			Object returnObj = null;
+
+			try {
+				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
+			}
+			catch (Exception exception) {
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
+			}
+
+			return (java.util.List
+				<com.liferay.document.library.kernel.model.DLFileShortcut>)
+					returnObj;
+		}
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
+
+			_log.error(systemException, systemException);
+
+			throw systemException;
+		}
+	}
+
+	public static long getGroupFileShortcutsCount(
+		HttpPrincipal httpPrincipal, long groupId) {
+
+		try {
+			MethodKey methodKey = new MethodKey(
+				DLFileShortcutServiceUtil.class, "getGroupFileShortcutsCount",
+				_getGroupFileShortcutsCountParameterTypes5);
+
+			MethodHandler methodHandler = new MethodHandler(methodKey, groupId);
+
+			Object returnObj = null;
+
+			try {
+				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
+			}
+			catch (Exception exception) {
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
+			}
+
+			return ((Long)returnObj).longValue();
+		}
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
+
+			_log.error(systemException, systemException);
+
+			throw systemException;
+		}
+	}
+
 	public static com.liferay.document.library.kernel.model.DLFileShortcut
 			updateFileShortcut(
 				HttpPrincipal httpPrincipal, long fileShortcutId,
@@ -207,7 +274,7 @@ public class DLFileShortcutServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				DLFileShortcutServiceUtil.class, "updateFileShortcut",
-				_updateFileShortcutParameterTypes4);
+				_updateFileShortcutParameterTypes6);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, fileShortcutId, repositoryId, folderId,
@@ -250,7 +317,7 @@ public class DLFileShortcutServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				DLFileShortcutServiceUtil.class, "updateFileShortcuts",
-				_updateFileShortcutsParameterTypes5);
+				_updateFileShortcutsParameterTypes7);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, oldToFileEntryId, newToFileEntryId);
@@ -293,12 +360,16 @@ public class DLFileShortcutServiceHttp {
 		new Class[] {long.class};
 	private static final Class<?>[] _getGroupFileShortcutsParameterTypes3 =
 		new Class[] {long.class};
-	private static final Class<?>[] _updateFileShortcutParameterTypes4 =
+	private static final Class<?>[] _getGroupFileShortcutsParameterTypes4 =
+		new Class[] {long.class, int.class, int.class};
+	private static final Class<?>[] _getGroupFileShortcutsCountParameterTypes5 =
+		new Class[] {long.class};
+	private static final Class<?>[] _updateFileShortcutParameterTypes6 =
 		new Class[] {
 			long.class, long.class, long.class, long.class,
 			com.liferay.portal.kernel.service.ServiceContext.class
 		};
-	private static final Class<?>[] _updateFileShortcutsParameterTypes5 =
+	private static final Class<?>[] _updateFileShortcutsParameterTypes7 =
 		new Class[] {long.class, long.class};
 
 }

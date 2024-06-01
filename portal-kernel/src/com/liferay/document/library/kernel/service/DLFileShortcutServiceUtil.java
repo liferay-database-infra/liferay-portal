@@ -54,6 +54,16 @@ public class DLFileShortcutServiceUtil {
 		return getService().getGroupFileShortcuts(groupId);
 	}
 
+	public static List<DLFileShortcut> getGroupFileShortcuts(
+		long groupId, int start, int end) {
+
+		return getService().getGroupFileShortcuts(groupId, start, end);
+	}
+
+	public static long getGroupFileShortcutsCount(long groupId) {
+		return getService().getGroupFileShortcutsCount(groupId);
+	}
+
 	/**
 	 * Returns the OSGi service identifier.
 	 *

@@ -59,6 +59,13 @@ public interface DLFileShortcutService extends BaseService {
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<DLFileShortcut> getGroupFileShortcuts(long groupId);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<DLFileShortcut> getGroupFileShortcuts(
+		long groupId, int start, int end);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public long getGroupFileShortcutsCount(long groupId);
+
 	/**
 	 * Returns the OSGi service identifier.
 	 *
