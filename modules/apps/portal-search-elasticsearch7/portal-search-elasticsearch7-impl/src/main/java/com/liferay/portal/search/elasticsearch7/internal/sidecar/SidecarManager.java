@@ -13,10 +13,8 @@ import com.liferay.portal.search.elasticsearch7.internal.configuration.Elasticse
 import com.liferay.portal.search.elasticsearch7.internal.configuration.ElasticsearchConfigurationWrapper;
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchConnectionBuilder;
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchConnectionManager;
-import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchInstancePaths;
-import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchInstancePathsBuilder;
 import com.liferay.portal.search.elasticsearch7.internal.connection.constants.ConnectionConstants;
-import com.liferay.portal.search.elasticsearch7.internal.index.constants.SidecarVersionConstants;
+import com.liferay.portal.search.elasticsearch7.internal.sidecar.constants.SidecarConstants;
 import com.liferay.portal.search.elasticsearch7.internal.util.ResourceUtil;
 import com.liferay.portal.util.PropsValues;
 
@@ -158,7 +156,7 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 
 		if (sidecarHome.equals("elasticsearch-sidecar")) {
 			String versionNumber = ResourceUtil.getResourceAsString(
-				getClass(), SidecarVersionConstants.SIDECAR_VERSION_FILE_NAME);
+				getClass(), SidecarConstants.SIDECAR_VERSION_FILE_NAME);
 
 			sidecarHome = sidecarHome + "/" + versionNumber;
 		}

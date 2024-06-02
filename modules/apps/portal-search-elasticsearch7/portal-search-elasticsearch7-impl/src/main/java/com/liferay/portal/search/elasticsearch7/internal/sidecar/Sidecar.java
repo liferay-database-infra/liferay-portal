@@ -24,10 +24,7 @@ import com.liferay.portal.kernel.util.OSDetector;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.search.elasticsearch7.internal.configuration.ElasticsearchConfigurationWrapper;
-import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchInstancePaths;
-import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchInstanceSettingsBuilder;
-import com.liferay.portal.search.elasticsearch7.internal.connection.HttpPortRange;
-import com.liferay.portal.search.elasticsearch7.internal.index.constants.SidecarVersionConstants;
+import com.liferay.portal.search.elasticsearch7.internal.sidecar.constants.SidecarConstants;
 import com.liferay.portal.search.elasticsearch7.internal.util.ResourceUtil;
 import com.liferay.portal.util.PropsValues;
 
@@ -288,7 +285,7 @@ public class Sidecar {
 
 	private Distribution _getElasticsearchDistribution() {
 		String versionNumber = ResourceUtil.getResourceAsString(
-			getClass(), SidecarVersionConstants.SIDECAR_VERSION_FILE_NAME);
+			getClass(), SidecarConstants.SIDECAR_VERSION_FILE_NAME);
 
 		if (versionNumber.equals(ElasticsearchDistribution.VERSION)) {
 			return new ElasticsearchDistribution();
@@ -467,7 +464,8 @@ public class Sidecar {
 		try (URLClassLoader urlClassLoader = new URLClassLoader(
 				new URL[] {bundleURL})) {
 
-			return urlClassLoader.findResource("META-INF/sidecar.policy");
+			return urlClassLoader.findResource(
+				SidecarConstants.SIDECAR_POLICY_FILE_NAME);
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);

@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import ClayCard from '@clayui/card';
+import {ClayCardWithInfo} from '@clayui/card';
 import ClayForm, {ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import {useModal} from '@clayui/modal';
 import classNames from 'classnames';
+import {useId} from 'frontend-js-components-web';
 import PropTypes from 'prop-types';
 import React, {useState} from 'react';
 
@@ -28,6 +29,7 @@ export default function AddFragmentModal({
 	const [type, setType] = useState(fragmentTypes[0]);
 	const [nameError, setNameError] = useState(null);
 	const [selectedFieldTypes, setSelectedFieldTypes] = useState([]);
+	const selectFragmentText = useId();
 
 	const [visible, setVisible] = useState(true);
 	const {observer, onClose} = useModal({
@@ -46,11 +48,18 @@ export default function AddFragmentModal({
 				title={Liferay.Language.get('add-fragment')}
 			>
 				<MultiStepFormModalStep>
-					<p className="font-weight-semi-bold mb-4 text-secondary">
+					<p
+						className="font-weight-semi-bold mb-4 text-secondary"
+						id={selectFragmentText}
+					>
 						{Liferay.Language.get('select-fragment-type')}
 					</p>
 
-					<div className="d-flex">
+					<div
+						aria-labelledby={selectFragmentText}
+						className="d-flex fragment-type-cards"
+						role="group"
+					>
 						{fragmentTypes.map((fragmentType) => (
 							<FragmentTypeCard
 								active={type.key === fragmentType.key}
@@ -134,38 +143,22 @@ function FragmentTypeCard({active, fragmentType, onSelect}) {
 	const {description, name, symbol, title} = fragmentType;
 
 	return (
-		<ClayCard
-			active={active}
+		<ClayCardWithInfo
 			className={`fragment-type-card mb-0 fragment-type-card-${name}`}
-			onClick={() => onSelect(fragmentType)}
-			selectable
-		>
-			<ClayCard.AspectRatio className="card-item-first">
-				<div className="aspect-ratio-item aspect-ratio-item-center-middle card-type-asset-icon">
-					<ClayIcon className="text-white" symbol={symbol} />
-				</div>
-			</ClayCard.AspectRatio>
-
-			<ClayCard.Body>
-				<ClayCard.Row>
-					<div className="autofit-col autofit-col-expand">
-						<section className="autofit-section">
-							<ClayCard.Description displayType="title">
-								{title}
-							</ClayCard.Description>
-
-							<ClayCard.Description
-								className="text-dark"
-								displayType="subtitle"
-								truncate={false}
-							>
-								{description}
-							</ClayCard.Description>
-						</section>
-					</div>
-				</ClayCard.Row>
-			</ClayCard.Body>
-		</ClayCard>
+			description={description}
+			onSelectChange={() => onSelect(fragmentType)}
+			radioProps={{
+				'aria-label': title,
+				'name': 'fragments',
+				'value': name,
+			}}
+			selectableType="radio"
+			selected={active}
+			stickerProps={null}
+			symbol={symbol}
+			title={title}
+			truncate={false}
+		/>
 	);
 }
 

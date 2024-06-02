@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Locator, Page} from '@playwright/test';
+import {FrameLocator, Locator, Page, expect} from '@playwright/test';
 
+import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
 import {PORTLET_URLS} from '../../utils/portletUrls';
 
 export class DocumentLibraryPage {
@@ -28,11 +29,58 @@ export class DocumentLibraryPage {
 		);
 	}
 
+	async assertPrivateFileIcon(frameLocator?: FrameLocator) {
+		const privateFileIcon = await (frameLocator ?? this.page)
+			.getByLabel('Not Visible to Guest Users')
+			.last();
+
+		await privateFileIcon.waitFor();
+
+		await expect(privateFileIcon).toBeVisible();
+	}
+
+	async changeTab(tabName: string) {
+		await this.page.getByRole('link', {name: tabName}).click();
+	}
+
+	async changeView(viewName: string) {
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: this.page.getByRole('menuitem', {name: viewName}),
+			trigger: this.page.getByLabel('Select View, Currently Selected: '),
+		});
+	}
+
 	async deleteAllFileEntries() {
+		await this.goto();
 		await this.page
 			.locator('input[data-modelclassname="FileEntry"]')
 			.check();
 		await this.page.getByRole('button', {name: 'Delete'}).click();
+	}
+
+	async deleteFileEntry(name: string) {
+		await this.goto();
+		await this.changeView('list');
+		await this.page.getByLabel(name).check();
+		await this.page.getByRole('button', {name: 'Delete'}).click();
+		await this.changeView('cards');
+	}
+
+	async deleteDocumentType(name: string) {
+		await this.goto();
+		await this.changeTab('Document Types');
+
+		await this.page.getByRole('row', {name}).getByTitle('Actions').click();
+		this.page.once('dialog', (dialog) => {
+			dialog.accept();
+		});
+
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: this.page.getByRole('link', {name: 'Delete'}),
+			trigger: this.page.getByRole('row', {name}).getByTitle('Actions'),
+		});
 	}
 
 	async editEntry(entryTitle: string) {
@@ -43,10 +91,31 @@ export class DocumentLibraryPage {
 		await this.page.getByRole('menuitem', {name: 'Edit'}).click();
 	}
 
-	async openNewButton() {
-		await this.page.getByRole('button', {name: 'New'}).click();
+	async editFileEntry(entryTitle: string) {
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: this.page.getByRole('menuitem', {name: 'Edit'}),
+			trigger: this.page
+				.locator(`.card-body:has-text('${entryTitle}')`)
+				.getByLabel('Actions'),
+		});
 	}
 
+	async goToCreateNewFile() {
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: this.page.getByRole('menuitem', {name: 'File Upload'}),
+			trigger: this.page.getByRole('button', {exact: true, name: 'New'}),
+		});
+	}
+
+	async goToCreateNewFileWithDifferentType(type: string) {
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: this.page.getByRole('menuitem', {name: type}),
+			trigger: this.page.getByRole('button', {exact: true, name: 'New'}),
+		});
+	}
 	async openCreateAIImage() {
 		await this.openNewButton();
 
@@ -57,14 +126,12 @@ export class DocumentLibraryPage {
 			.click();
 	}
 
-	async goToCreateNewFile() {
-		await this.openNewButton();
+	async openNewButton() {
+		await this.page.getByRole('button', {exact: true, name: 'New'}).click();
+	}
 
-		await this.page
-			.getByRole('menuitem', {
-				name: 'File Upload',
-			})
-			.click();
+	async openNewDLTypeButton() {
+		await this.page.getByRole('link', {name: 'New Document Type'}).click();
 	}
 
 	async openOptionsMenu() {

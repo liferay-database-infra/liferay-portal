@@ -53,6 +53,7 @@ import java.text.ParseException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -202,10 +203,24 @@ public class InfoRequestFieldValuesProviderHelper {
 	private InfoFieldValue<Object> _getDateTimeInfoFieldValue(
 		InfoField<?> infoField, Locale locale, String value) {
 
-		LocalDateTime localDateTime = LocalDateTime.parse(
-			value, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+		if (Validator.isBlank(value)) {
+			return _getInfoFieldValue(
+				infoField, locale, (Object)StringPool.BLANK);
+		}
 
-		return _getInfoFieldValue(infoField, locale, localDateTime);
+		try {
+			LocalDateTime localDateTime = LocalDateTime.parse(
+				value, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+
+			return _getInfoFieldValue(infoField, locale, localDateTime);
+		}
+		catch (DateTimeParseException dateTimeParseException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(dateTimeParseException);
+			}
+		}
+
+		return null;
 	}
 
 	private InfoFieldValue<Object> _getFileInfoFieldValue(

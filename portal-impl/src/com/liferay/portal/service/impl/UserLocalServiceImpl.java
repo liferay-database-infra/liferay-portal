@@ -1806,7 +1806,9 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 
 		User user = getUserByEmailAddress(companyId, emailAddress);
 
-		checkLoginFailure(user);
+		PasswordPolicy passwordPolicy = user.getPasswordPolicy();
+
+		checkLoginFailure(_unlockOutUser(user, passwordPolicy));
 	}
 
 	/**
@@ -6212,51 +6214,7 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 			return user;
 		}
 
-		// Reset failure count
-
-		Date date = new Date();
-		int failedLoginAttempts = user.getFailedLoginAttempts();
-
-		if (failedLoginAttempts > 0) {
-			Date lastFailedLoginDate = user.getLastFailedLoginDate();
-
-			long failedLoginTime = lastFailedLoginDate.getTime();
-
-			long elapsedTime = date.getTime() - failedLoginTime;
-
-			long requiredElapsedTime =
-				passwordPolicy.getResetFailureCount() * 1000;
-
-			if ((requiredElapsedTime != 0) &&
-				(elapsedTime > requiredElapsedTime)) {
-
-				user.setFailedLoginAttempts(0);
-
-				user = userPersistence.update(user);
-			}
-		}
-
-		// Reset lockout
-
-		if (user.isLockout()) {
-			Date lockoutDate = user.getLockoutDate();
-
-			long lockoutTime = lockoutDate.getTime();
-
-			long elapsedTime = date.getTime() - lockoutTime;
-
-			long requiredElapsedTime =
-				passwordPolicy.getLockoutDuration() * 1000;
-
-			if ((requiredElapsedTime != 0) &&
-				(elapsedTime > requiredElapsedTime)) {
-
-				user.setLockout(false);
-				user.setLockoutDate(null);
-
-				user = userPersistence.update(user);
-			}
-		}
+		user = _unlockOutUser(user, passwordPolicy);
 
 		if (user.isLockout()) {
 			throw new UserLockoutException.PasswordPolicyLockout(
@@ -7483,6 +7441,52 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 		catch (IOException ioException) {
 			throw new SystemException(ioException);
 		}
+	}
+
+	private User _unlockOutUser(User user, PasswordPolicy passwordPolicy) {
+		Date date = new Date();
+		int failedLoginAttempts = user.getFailedLoginAttempts();
+
+		if (failedLoginAttempts > 0) {
+			Date lastFailedLoginDate = user.getLastFailedLoginDate();
+
+			long failedLoginTime = lastFailedLoginDate.getTime();
+
+			long elapsedTime = date.getTime() - failedLoginTime;
+
+			long requiredElapsedTime =
+				passwordPolicy.getResetFailureCount() * 1000;
+
+			if ((requiredElapsedTime != 0) &&
+				(elapsedTime > requiredElapsedTime)) {
+
+				user.setFailedLoginAttempts(0);
+
+				user = userPersistence.update(user);
+			}
+		}
+
+		if (user.isLockout()) {
+			Date lockoutDate = user.getLockoutDate();
+
+			long lockoutTime = lockoutDate.getTime();
+
+			long elapsedTime = date.getTime() - lockoutTime;
+
+			long requiredElapsedTime =
+				passwordPolicy.getLockoutDuration() * 1000;
+
+			if ((requiredElapsedTime != 0) &&
+				(elapsedTime > requiredElapsedTime)) {
+
+				user.setLockout(false);
+				user.setLockoutDate(null);
+
+				user = userPersistence.update(user);
+			}
+		}
+
+		return user;
 	}
 
 	private User _updateLastLogin(

@@ -51,7 +51,13 @@ public class Testray1TestrayRun extends TestrayRun {
 
 		JSONObject jsonObject = getJSONObject();
 
-		_id = jsonObject.getLong("testrayRunId");
+		long id = 0;
+
+		if (jsonObject != null) {
+			id = jsonObject.getLong("testrayRunId");
+		}
+
+		_id = id;
 	}
 
 	@Override

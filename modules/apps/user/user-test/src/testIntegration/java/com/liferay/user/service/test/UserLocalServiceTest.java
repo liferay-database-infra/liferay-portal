@@ -66,6 +66,7 @@ import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -259,8 +260,6 @@ public class UserLocalServiceTest {
 
 		List<User> companyUsers = _userLocalService.getCompanyUsers(
 			_company.getCompanyId(), QueryUtil.ALL_POS, QueryUtil.ALL_POS);
-
-		_companyLocalService.deleteCompany(_company);
 
 		Assert.assertEquals(companyUsers.toString(), 1, companyUsers.size());
 
@@ -484,7 +483,7 @@ public class UserLocalServiceTest {
 	}
 
 	@Test
-	public void testLockout() throws Exception {
+	public void testLockoutUser() throws Exception {
 		User user = UserTestUtil.addUser();
 
 		String password = "password";
@@ -835,6 +834,61 @@ public class UserLocalServiceTest {
 		user = _userLocalService.getUser(user.getUserId());
 
 		Assert.assertTrue(ArrayUtil.contains(user.getRoleIds(), roleId));
+	}
+
+	@Test
+	public void testUnlockoutUserWithStaleLastFailedLoginDate()
+		throws Exception {
+
+		User user = UserTestUtil.addUser();
+
+		user.setLastFailedLoginDate(
+			DateUtil.newDate(System.currentTimeMillis() - 5000L));
+		user.setFailedLoginAttempts(3);
+
+		user = _userLocalService.updateUser(user);
+
+		PasswordPolicy passwordPolicy = user.getPasswordPolicy();
+
+		passwordPolicy.setLockout(false);
+		passwordPolicy.setResetFailureCount(3L);
+
+		_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
+
+		_userLocalService.authenticateByEmailAddress(
+			user.getCompanyId(), user.getEmailAddress(),
+			RandomTestUtil.randomString(), null, null, null);
+
+		user = _userLocalService.fetchUser(user.getUserId());
+
+		Assert.assertEquals(1, user.getFailedLoginAttempts());
+	}
+
+	@Test
+	public void testUnlockoutUserWithStaleLockoutDate() throws Exception {
+		User user = UserTestUtil.addUser();
+
+		user.setLockout(true);
+		user.setLockoutDate(
+			DateUtil.newDate(System.currentTimeMillis() - 5000L));
+
+		user = _userLocalService.updateUser(user);
+
+		PasswordPolicy passwordPolicy = user.getPasswordPolicy();
+
+		passwordPolicy.setLockout(true);
+		passwordPolicy.setMaxFailure(0);
+		passwordPolicy.setLockoutDuration(3L);
+
+		_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
+
+		_userLocalService.authenticateByEmailAddress(
+			user.getCompanyId(), user.getEmailAddress(),
+			RandomTestUtil.randomString(), null, null, null);
+
+		user = _userLocalService.fetchUser(user.getUserId());
+
+		Assert.assertFalse(user.isLockout());
 	}
 
 	@Test
