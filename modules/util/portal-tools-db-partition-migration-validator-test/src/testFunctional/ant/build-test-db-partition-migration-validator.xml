@@ -46,18 +46,38 @@ exit 0
 				</else>
 			</if>
 
-			<exec dir="${liferay.home}/tools/portal-tools-db-partition-migration-validator" executable="/bin/bash" failonerror="false" output="db-partition-migration-validator.log">
-				<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
-				<arg value="--export" />
-				<arg value="--jdbc-url" />
-				<arg value="jdbc:mysql://${custom.database.url}/${database.source.name}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
-				<arg value="--user" />
-				<arg value="${database.mysql.username}" />
-				<arg value="--password" />
-				<arg value="${database.schema.password}" />
-				<arg value="--schema-name" />
-				<arg value="${database.schema.name}" />
-			</exec>
+			<get-database-property property.name="database.type" />
+			<if>
+				<equals arg1="${database.type}" arg2="mysql" />
+				<then>
+					<exec dir="${liferay.home}/tools/portal-tools-db-partition-migration-validator" executable="/bin/bash" failonerror="false" output="db-partition-migration-validator.log">
+						<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
+						<arg value="--export" />
+						<arg value="--jdbc-url" />
+						<arg value="jdbc:mysql://${custom.database.url}/${database.source.name}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
+						<arg value="--user" />
+						<arg value="${database.mysql.username}" />
+						<arg value="--password" />
+						<arg value="${database.schema.password}" />
+						<arg value="--schema-name" />
+						<arg value="${database.schema.name}" />
+					</exec>
+				</then>
+				<else>
+					<exec dir="${liferay.home}/tools/portal-tools-db-partition-migration-validator" executable="/bin/bash" failonerror="false" output="db-partition-migration-validator.log">
+						<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
+						<arg value="--export" />
+						<arg value="--jdbc-url" />
+						<arg value="jdbc:postgresql://${custom.database.url}/${database.source.name}" />
+						<arg value="--user" />
+						<arg value="${database.postgresql.username}" />
+						<arg value="--password" />
+						<arg value="${database.schema.password}" />
+						<arg value="--schema-name" />
+						<arg value="${database.schema.name}" />
+					</exec>
+				</else>
+			</if>
 		</sequential>
 	</macrodef>
 
