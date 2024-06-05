@@ -44,9 +44,15 @@ import com.liferay.commerce.product.service.CommerceCatalogLocalService;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.data.engine.rest.dto.v2_0.DataDefinition;
 import com.liferay.data.engine.rest.resource.v2_0.DataDefinitionResource;
+import com.liferay.depot.model.DepotAppCustomization;
+import com.liferay.depot.model.DepotEntry;
+import com.liferay.depot.service.DepotAppCustomizationLocalService;
+import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
+import com.liferay.document.library.kernel.service.DLFolderLocalService;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
@@ -65,6 +71,7 @@ import com.liferay.headless.admin.user.dto.v1_0.AccountBrief;
 import com.liferay.headless.admin.user.dto.v1_0.Organization;
 import com.liferay.headless.admin.user.dto.v1_0.OrganizationBrief;
 import com.liferay.headless.admin.user.dto.v1_0.UserAccount;
+import com.liferay.headless.admin.user.dto.v1_0.UserGroupBrief;
 import com.liferay.headless.admin.user.resource.v1_0.AccountResource;
 import com.liferay.headless.admin.user.resource.v1_0.OrganizationResource;
 import com.liferay.headless.admin.user.resource.v1_0.UserAccountResource;
@@ -1357,7 +1364,78 @@ public class BundleSiteInitializerTest {
 		Assert.assertEquals(productLayoutUuid, publicLayout.getUuid());
 	}
 
-	private void _assertDLFileEntry() throws Exception {
+	private void _assertDepotEntries1() throws Exception {
+		List<DepotEntry> depotEntries =
+			_depotEntryLocalService.getGroupConnectedDepotEntries(
+				_group.getGroupId(), QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+
+		Assert.assertEquals(depotEntries.toString(), 2, depotEntries.size());
+
+		List<DepotAppCustomization> depotAppCustomizations =
+			_depotAppCustomizationLocalService.getDepotAppCustomizations(
+				depotEntries.get(
+					0
+				).getDepotEntryId());
+
+		Assert.assertTrue(
+			depotAppCustomizations.get(
+				0
+			).getEnabled());
+
+		depotAppCustomizations =
+			_depotAppCustomizationLocalService.getDepotAppCustomizations(
+				depotEntries.get(
+					1
+				).getDepotEntryId());
+
+		Assert.assertFalse(
+			depotAppCustomizations.get(
+				0
+			).getEnabled());
+	}
+
+	private void _assertDepotEntries2() throws Exception {
+		List<DepotEntry> depotEntries =
+			_depotEntryLocalService.getGroupConnectedDepotEntries(
+				_group.getGroupId(), -1, -1);
+
+		Assert.assertEquals(depotEntries.toString(), 3, depotEntries.size());
+
+		List<DepotAppCustomization> depotAppCustomizations =
+			_depotAppCustomizationLocalService.getDepotAppCustomizations(
+				depotEntries.get(
+					0
+				).getDepotEntryId());
+
+		Assert.assertFalse(
+			depotAppCustomizations.get(
+				0
+			).getEnabled());
+
+		depotAppCustomizations =
+			_depotAppCustomizationLocalService.getDepotAppCustomizations(
+				depotEntries.get(
+					1
+				).getDepotEntryId());
+
+		Assert.assertFalse(
+			depotAppCustomizations.get(
+				0
+			).getEnabled());
+
+		depotAppCustomizations =
+			_depotAppCustomizationLocalService.getDepotAppCustomizations(
+				depotEntries.get(
+					2
+				).getDepotEntryId());
+
+		Assert.assertTrue(
+			depotAppCustomizations.get(
+				0
+			).getEnabled());
+	}
+
+	private void _assertDLFileEntry1() throws Exception {
 		DLFileEntry dlFileEntry = _dlFileEntryLocalService.getFileEntry(
 			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			"Table of Contents.markdown");
@@ -1371,6 +1449,42 @@ public class BundleSiteInitializerTest {
 		Assert.assertTrue(string.contains("1. Genesis"));
 		Assert.assertTrue(string.contains("## New Testament"));
 		Assert.assertTrue(string.contains("1. Revelation"));
+	}
+
+	private void _assertDLFileEntry2() throws Exception {
+		DLFileEntry dlFileEntry = _dlFileEntryLocalService.getFileEntry(
+			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			"Table of Contents.markdown");
+
+		String string = new String(
+			StreamUtil.toByteArray(
+				_dlFileEntryLocalService.getFileAsStream(
+					dlFileEntry.getFileEntryId(), dlFileEntry.getVersion())));
+
+		Assert.assertTrue(string.contains("## Old Testament"));
+		Assert.assertTrue(string.contains("1. Genesis"));
+		Assert.assertTrue(string.contains("## New Testament"));
+		Assert.assertTrue(string.contains("1. Revelation"));
+		Assert.assertTrue(string.contains("## Content Update"));
+		Assert.assertTrue(string.contains("1. Test Update"));
+
+		DLFolder dlFolder = _dlFolderLocalService.fetchFolder(
+			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			"Old Testament");
+
+		Assert.assertNotNull(dlFolder);
+
+		dlFileEntry = _dlFileEntryLocalService.getFileEntry(
+			_group.getGroupId(), dlFolder.getFolderId(), "Genesis.txt");
+
+		Assert.assertNotNull(dlFileEntry);
+
+		string = new String(
+			StreamUtil.toByteArray(
+				_dlFileEntryLocalService.getFileAsStream(
+					dlFileEntry.getFileEntryId(), dlFileEntry.getVersion())));
+
+		Assert.assertTrue(string.isEmpty());
 	}
 
 	private void _assertExpandoColumns1() {
@@ -3607,6 +3721,13 @@ public class BundleSiteInitializerTest {
 		Assert.assertEquals(
 			Arrays.toString(organizationBriefs), 1, organizationBriefs.length);
 
+		UserGroupBrief[] userGroupBriefs = userAccount.getUserGroupBriefs();
+
+		Assert.assertEquals(
+			Arrays.toString(userGroupBriefs), 2, userGroupBriefs.length);
+
+		Assert.assertTrue(userAccount.getImageId() > 0);
+
 		_assertUserSiteGroups(userAccount.getId());
 
 		userAccount = userAccountResource.getUserAccountByEmailAddress(
@@ -3628,6 +3749,13 @@ public class BundleSiteInitializerTest {
 
 		Assert.assertEquals(
 			Arrays.toString(organizationBriefs), 1, organizationBriefs.length);
+
+		userGroupBriefs = userAccount.getUserGroupBriefs();
+
+		Assert.assertEquals(
+			Arrays.toString(userGroupBriefs), 1, userGroupBriefs.length);
+
+		Assert.assertTrue(userAccount.getImageId() == 0);
 
 		_assertUserSiteGroups(userAccount.getId());
 	}
@@ -3663,10 +3791,17 @@ public class BundleSiteInitializerTest {
 		Assert.assertEquals(
 			Arrays.toString(organizationBriefs), 1, organizationBriefs.length);
 
+		UserGroupBrief[] userGroupBriefs = userAccount.getUserGroupBriefs();
+
+		Assert.assertEquals(
+			Arrays.toString(userGroupBriefs), 2, userGroupBriefs.length);
+
+		Assert.assertTrue(userAccount.getImageId() > 0);
+
 		_assertUserSiteGroups(userAccount.getId());
 
 		userAccount = userAccountResource.getUserAccountByEmailAddress(
-			"test.user2.update@liferay.com");
+			"test.user2@liferay.com");
 
 		Assert.assertNotNull(userAccount);
 
@@ -3676,7 +3811,7 @@ public class BundleSiteInitializerTest {
 			Arrays.toString(accountBriefs), 2, accountBriefs.length);
 
 		Assert.assertEquals(
-			"testalternatename2update", userAccount.getAlternateName());
+			"testalternatename2", userAccount.getAlternateName());
 		Assert.assertEquals(
 			UserAccount.Status.INACTIVE, userAccount.getStatus());
 
@@ -3684,6 +3819,13 @@ public class BundleSiteInitializerTest {
 
 		Assert.assertEquals(
 			Arrays.toString(organizationBriefs), 2, organizationBriefs.length);
+
+		userGroupBriefs = userAccount.getUserGroupBriefs();
+
+		Assert.assertEquals(
+			Arrays.toString(userGroupBriefs), 2, userGroupBriefs.length);
+
+		Assert.assertTrue(userAccount.getImageId() >= 0);
 
 		_assertUserSiteGroups(userAccount.getId());
 
@@ -3706,6 +3848,13 @@ public class BundleSiteInitializerTest {
 
 		Assert.assertEquals(
 			Arrays.toString(organizationBriefs), 0, organizationBriefs.length);
+
+		userGroupBriefs = userAccount.getUserGroupBriefs();
+
+		Assert.assertEquals(
+			Arrays.toString(userGroupBriefs), 0, userGroupBriefs.length);
+
+		Assert.assertTrue(userAccount.getImageId() == 0);
 
 		_assertUserSiteGroups(userAccount.getId());
 	}
@@ -3913,7 +4062,8 @@ public class BundleSiteInitializerTest {
 		_assertDataDefinition1();
 		_assertDDMStructure();
 		_assertDDMTemplate1();
-		_assertDLFileEntry();
+		_assertDepotEntries1();
+		_assertDLFileEntry1();
 		_assertExpandoColumns1();
 		_assertExpandoValues1();
 		_assertFragmentEntries();
@@ -3954,6 +4104,8 @@ public class BundleSiteInitializerTest {
 		_assertCommerceSpecificationProducts2();
 		_assertDataDefinition2();
 		_assertDDMTemplate2();
+		_assertDepotEntries2();
+		_assertDLFileEntry2();
 		_assertExpandoColumns2();
 		_assertExpandoValues2();
 		_assertJournalArticles2();
@@ -4050,7 +4202,17 @@ public class BundleSiteInitializerTest {
 	private DDMTemplateLocalService _ddmTemplateLocalService;
 
 	@Inject
+	private DepotAppCustomizationLocalService
+		_depotAppCustomizationLocalService;
+
+	@Inject
+	private DepotEntryLocalService _depotEntryLocalService;
+
+	@Inject
 	private DLFileEntryLocalService _dlFileEntryLocalService;
+
+	@Inject
+	private DLFolderLocalService _dlFolderLocalService;
 
 	@Inject
 	private FragmentEntryLinkLocalService _fragmentEntryLinkLocalService;

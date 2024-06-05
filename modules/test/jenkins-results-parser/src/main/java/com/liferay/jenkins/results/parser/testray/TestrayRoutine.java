@@ -15,6 +15,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 
@@ -52,12 +54,22 @@ public class TestrayRoutine {
 
 		JSONObject requestJSONObject = new JSONObject();
 
+		if (buildDate == null) {
+			buildDate = new Date();
+		}
+
 		if ((buildDescription != null) && (buildDescription.length() >= 280)) {
 			buildDescription = buildDescription.substring(0, 280);
 		}
 
 		requestJSONObject.put(
 			"description", buildDescription
+		).put(
+			"dueDate",
+			JenkinsResultsParserUtil.toDateString(
+				buildDate, "yyy-MM-dd'T'HH:mm:ss.SSS'Z'", "America/Los_Angeles")
+		).put(
+			"dueStatus", "ACTIVATED"
 		).put(
 			"gitHash", buildSHA
 		).put(
@@ -97,6 +109,12 @@ public class TestrayRoutine {
 	}
 
 	public TestrayBuild getTestrayBuildByID(long buildID) {
+		TestrayBuild testrayBuild = _testrayServer.getTestrayBuildByID(buildID);
+
+		if (testrayBuild != null) {
+			return testrayBuild;
+		}
+
 		String filter = JenkinsResultsParserUtil.combine(
 			"id eq '", String.valueOf(buildID), "' and ",
 			"r_routineToBuilds_c_routineId eq '", String.valueOf(getID()), "'");
@@ -207,12 +225,12 @@ public class TestrayRoutine {
 	}
 
 	public URL getURL() {
-		if (_url != null) {
-			return _url;
+		if (url != null) {
+			return url;
 		}
 
 		try {
-			_url = new URL(
+			url = new URL(
 				JenkinsResultsParserUtil.combine(
 					String.valueOf(_testrayProject.getURL()), "/",
 					String.valueOf(getID())));
@@ -221,7 +239,7 @@ public class TestrayRoutine {
 			throw new RuntimeException(malformedURLException);
 		}
 
-		return _url;
+		return url;
 	}
 
 	public void setJSONObject(JSONObject jsonObject) {
@@ -246,7 +264,7 @@ public class TestrayRoutine {
 	}
 
 	protected TestrayRoutine(URL url) {
-		_url = url;
+		setURL(url);
 	}
 
 	protected void setTestrayProject(TestrayProject testrayProject) {
@@ -257,9 +275,46 @@ public class TestrayRoutine {
 		_testrayServer = testrayServer;
 	}
 
+	protected void setURL(URL url) {
+		this.url = url;
+
+		Matcher matcher = _testrayRoutineURLPattern.matcher(url.toString());
+
+		if (!matcher.find()) {
+			throw new RuntimeException("Invalid routine URL " + url);
+		}
+
+		TestrayServer testrayServer = TestrayFactory.newTestrayServer(
+			matcher.group("serverURL"));
+
+		setTestrayServer(testrayServer);
+
+		String filter = JenkinsResultsParserUtil.combine(
+			"id eq '", matcher.group("routineID"), "'");
+
+		try {
+			List<JSONObject> entityJSONObjects = testrayServer.requestGraphQL(
+				"routines", TestrayRoutine.FIELD_NAMES, filter, null, 1, 1);
+
+			if (entityJSONObjects.isEmpty()) {
+				return;
+			}
+
+			setJSONObject(entityJSONObjects.get(0));
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
+	}
+
+	protected URL url;
+
+	private static final Pattern _testrayRoutineURLPattern = Pattern.compile(
+		"(?<serverURL>https://[^/]+)/#/project/(?<projectID>\\d+)/routines/" +
+			"(?<routineID>\\d+)");
+
 	private JSONObject _jsonObject;
 	private TestrayProject _testrayProject;
 	private TestrayServer _testrayServer;
-	private URL _url;
 
 }

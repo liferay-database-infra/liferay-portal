@@ -69,11 +69,26 @@ type PublisherRequestInfo = {
 		flag: string;
 	};
 	phoneNumber?: string;
+	publisherType: string[];
 	requestDescription?: string;
 	requestStatus?: {
 		key: string;
 		name: string;
 	};
+};
+
+type ListTypeDefinition = {
+	externalReferenceCode: string;
+	id: number;
+	listTypeEntries: {
+		externalReferenceCode: string;
+		key: string;
+		name: string;
+		name_i18n: {
+			[key: string]: string;
+		};
+	}[];
+	name: string;
 };
 
 type Account = {
@@ -387,6 +402,13 @@ interface PlacedOrderItems {
 	thumbnail: string;
 	version: string;
 	virtualItemURLs: string;
+	virtualItems: VirtualItem[];
+}
+
+interface VirtualItem {
+	url: string;
+	usages: number;
+	version: string;
 }
 
 interface PostalAddressResponse {

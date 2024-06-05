@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.ClassName;
+import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
@@ -97,6 +98,19 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 		Assert.assertTrue(
 			dbInspector.hasIndex(TEST_CONTROL_TABLE_NAME, TEST_INDEX_NAME));
+	}
+
+	@Test
+	public void testAddIndexControlTableSystemCompany() throws Exception {
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setWithSafeCloseable(
+					CompanyConstants.SYSTEM)) {
+
+			createIndex(TEST_CONTROL_TABLE_NAME);
+
+			Assert.assertTrue(
+				dbInspector.hasIndex(TEST_CONTROL_TABLE_NAME, TEST_INDEX_NAME));
+		}
 	}
 
 	@Test

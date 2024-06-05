@@ -138,7 +138,7 @@ public class LayoutPageTemplateEntryModelListener
 		}
 
 		_formItemManager.removeLayoutStructureItemsJSONArray(
-			formStyledLayoutStructureItem, layoutStructure);
+			formStyledLayoutStructureItem, layoutStructure, null);
 
 		formStyledLayoutStructureItem.setClassNameId(0);
 		formStyledLayoutStructureItem.setClassTypeId(0);
@@ -210,8 +210,9 @@ public class LayoutPageTemplateEntryModelListener
 
 			return _formItemManager.addFragmentEntryLinks(
 				_jsonFactory.createJSONObject(), formStyledLayoutStructureItem,
-				layout, layoutStructure, LocaleUtil.getMostRelevantLocale(),
-				segmentsExperienceId, serviceContext);
+				true, layout, layoutStructure,
+				LocaleUtil.getMostRelevantLocale(), segmentsExperienceId,
+				serviceContext, null);
 		}
 		catch (PortalException portalException) {
 			if (_log.isDebugEnabled()) {

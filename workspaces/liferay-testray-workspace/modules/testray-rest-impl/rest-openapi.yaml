@@ -5,6 +5,12 @@ components:
                 caseAmount:
                     format: int32
                     type: integer
+                testrayRunId1:
+                    format: int64
+                    type: integer
+                testrayRunId2:
+                    format: int64
+                    type: integer
         TestrayBuildMetric:
             properties:
                 actions:

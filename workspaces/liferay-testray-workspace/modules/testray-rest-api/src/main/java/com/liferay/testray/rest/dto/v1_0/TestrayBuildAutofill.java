@@ -85,6 +85,88 @@ public class TestrayBuildAutofill implements Serializable {
 	@JsonIgnore
 	private Supplier<Integer> _caseAmountSupplier;
 
+	@Schema
+	public Long getTestrayRunId1() {
+		if (_testrayRunId1Supplier != null) {
+			testrayRunId1 = _testrayRunId1Supplier.get();
+
+			_testrayRunId1Supplier = null;
+		}
+
+		return testrayRunId1;
+	}
+
+	public void setTestrayRunId1(Long testrayRunId1) {
+		this.testrayRunId1 = testrayRunId1;
+
+		_testrayRunId1Supplier = null;
+	}
+
+	@JsonIgnore
+	public void setTestrayRunId1(
+		UnsafeSupplier<Long, Exception> testrayRunId1UnsafeSupplier) {
+
+		_testrayRunId1Supplier = () -> {
+			try {
+				return testrayRunId1UnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Long testrayRunId1;
+
+	@JsonIgnore
+	private Supplier<Long> _testrayRunId1Supplier;
+
+	@Schema
+	public Long getTestrayRunId2() {
+		if (_testrayRunId2Supplier != null) {
+			testrayRunId2 = _testrayRunId2Supplier.get();
+
+			_testrayRunId2Supplier = null;
+		}
+
+		return testrayRunId2;
+	}
+
+	public void setTestrayRunId2(Long testrayRunId2) {
+		this.testrayRunId2 = testrayRunId2;
+
+		_testrayRunId2Supplier = null;
+	}
+
+	@JsonIgnore
+	public void setTestrayRunId2(
+		UnsafeSupplier<Long, Exception> testrayRunId2UnsafeSupplier) {
+
+		_testrayRunId2Supplier = () -> {
+			try {
+				return testrayRunId2UnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Long testrayRunId2;
+
+	@JsonIgnore
+	private Supplier<Long> _testrayRunId2Supplier;
+
 	@Override
 	public boolean equals(Object object) {
 		if (this == object) {
@@ -123,6 +205,30 @@ public class TestrayBuildAutofill implements Serializable {
 			sb.append("\"caseAmount\": ");
 
 			sb.append(caseAmount);
+		}
+
+		Long testrayRunId1 = getTestrayRunId1();
+
+		if (testrayRunId1 != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"testrayRunId1\": ");
+
+			sb.append(testrayRunId1);
+		}
+
+		Long testrayRunId2 = getTestrayRunId2();
+
+		if (testrayRunId2 != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"testrayRunId2\": ");
+
+			sb.append(testrayRunId2);
 		}
 
 		sb.append("}");

@@ -8,6 +8,9 @@ package com.liferay.layout.content.page.editor.web.internal.portlet.action;
 import com.liferay.fragment.listener.FragmentEntryLinkListener;
 import com.liferay.fragment.listener.FragmentEntryLinkListenerRegistry;
 import com.liferay.fragment.model.FragmentEntryLink;
+import com.liferay.fragment.service.FragmentEntryLinkLocalService;
+import com.liferay.fragment.util.configuration.FragmentConfigurationField;
+import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
 import com.liferay.layout.content.page.editor.web.internal.manager.FormItemManager;
 import com.liferay.layout.content.page.editor.web.internal.manager.FragmentEntryLinkManager;
@@ -15,20 +18,31 @@ import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureService;
 import com.liferay.layout.util.structure.FormStyledLayoutStructureItem;
+import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
+import com.liferay.layout.util.structure.LayoutStructureItem;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
@@ -59,6 +73,47 @@ public class UpdateFormItemConfigMVCActionCommand
 
 		return _updateFormStyledLayoutStructureItemConfig(
 			actionRequest, actionResponse);
+	}
+
+	private Map<String, String> _getCurrentInputFields(
+		FormStyledLayoutStructureItem formStyledLayoutStructureItem,
+		LayoutStructure layoutStructure, ThemeDisplay themeDisplay) {
+
+		Map<String, String> inputFields = new HashMap<>();
+
+		for (String itemId :
+				formStyledLayoutStructureItem.getChildrenItemIds()) {
+
+			LayoutStructureItem layoutStructureItem =
+				layoutStructure.getLayoutStructureItem(itemId);
+
+			FragmentStyledLayoutStructureItem
+				fragmentStyledLayoutStructureItem =
+					(FragmentStyledLayoutStructureItem)layoutStructureItem;
+
+			FragmentEntryLink fragmentEntryLink =
+				_fragmentEntryLinkLocalService.fetchFragmentEntryLink(
+					fragmentStyledLayoutStructureItem.getFragmentEntryLinkId());
+
+			if (fragmentEntryLink == null) {
+				continue;
+			}
+
+			String inputFieldId = GetterUtil.getString(
+				_fragmentEntryConfigurationParser.getFieldValue(
+					fragmentEntryLink.getEditableValues(),
+					new FragmentConfigurationField(
+						"inputFieldId", "string", "", false, "text"),
+					themeDisplay.getLocale()));
+
+			if (Validator.isNotNull(inputFieldId)) {
+				inputFields.put(
+					inputFieldId,
+					fragmentStyledLayoutStructureItem.getItemId());
+			}
+		}
+
+		return inputFields;
 	}
 
 	private JSONObject _updateFormStyledLayoutStructureItemConfig(
@@ -113,15 +168,80 @@ public class UpdateFormItemConfigMVCActionCommand
 
 			removedLayoutStructureItemsJSONArray =
 				_formItemManager.removeLayoutStructureItemsJSONArray(
-					formStyledLayoutStructureItem, layoutStructure);
+					formStyledLayoutStructureItem, layoutStructure, null);
 
 			if (formStyledLayoutStructureItem.getClassNameId() > 0) {
-				addedFragmentEntryLinks =
-					_formItemManager.addFragmentEntryLinks(
-						jsonObject, formStyledLayoutStructureItem,
-						themeDisplay.getLayout(), layoutStructure,
-						themeDisplay.getLocale(), segmentsExperienceId,
-						ServiceContextFactory.getInstance(httpServletRequest));
+				String[] uniqueInfoFieldIds = StringUtil.split(
+					ParamUtil.getString(actionRequest, "fields"));
+
+				if (!FeatureFlagManagerUtil.isEnabled("LPD-20213") ||
+					ArrayUtil.isNotEmpty(uniqueInfoFieldIds)) {
+
+					addedFragmentEntryLinks =
+						_formItemManager.addFragmentEntryLinks(
+							jsonObject, formStyledLayoutStructureItem, true,
+							themeDisplay.getLayout(), layoutStructure,
+							themeDisplay.getLocale(), segmentsExperienceId,
+							ServiceContextFactory.getInstance(
+								httpServletRequest),
+							uniqueInfoFieldIds);
+				}
+			}
+		}
+		else {
+			if (FeatureFlagManagerUtil.isEnabled("LPD-20213") &&
+				(formStyledLayoutStructureItem.getClassNameId() > 0)) {
+
+				List<String> newUniqueInfoFieldIds = new ArrayList<>();
+
+				Map<String, String> currentInputFields = _getCurrentInputFields(
+					formStyledLayoutStructureItem, layoutStructure,
+					themeDisplay);
+
+				Set<String> currentUniqueInfoFieldIds =
+					currentInputFields.keySet();
+
+				String[] uniqueInfoFieldIds = StringUtil.split(
+					ParamUtil.getString(actionRequest, "fields"));
+
+				for (String uniqueInfoFieldId : uniqueInfoFieldIds) {
+					if (!currentUniqueInfoFieldIds.contains(
+							uniqueInfoFieldId)) {
+
+						newUniqueInfoFieldIds.add(uniqueInfoFieldId);
+					}
+				}
+
+				if (ListUtil.isNotEmpty(newUniqueInfoFieldIds)) {
+					addedFragmentEntryLinks =
+						_formItemManager.addFragmentEntryLinks(
+							jsonObject, formStyledLayoutStructureItem, false,
+							themeDisplay.getLayout(), layoutStructure,
+							themeDisplay.getLocale(), segmentsExperienceId,
+							ServiceContextFactory.getInstance(
+								httpServletRequest),
+							newUniqueInfoFieldIds.toArray(new String[0]));
+				}
+
+				List<String> removedItemIds = new ArrayList<>();
+
+				for (String currentUniqueInfoFieldId :
+						currentUniqueInfoFieldIds) {
+
+					if (!ArrayUtil.contains(
+							uniqueInfoFieldIds, currentUniqueInfoFieldId)) {
+
+						removedItemIds.add(
+							currentInputFields.get(currentUniqueInfoFieldId));
+					}
+				}
+
+				if (ListUtil.isNotEmpty(removedItemIds)) {
+					removedLayoutStructureItemsJSONArray =
+						_formItemManager.removeLayoutStructureItemsJSONArray(
+							formStyledLayoutStructureItem, layoutStructure,
+							removedItemIds);
+				}
 			}
 		}
 
@@ -175,8 +295,14 @@ public class UpdateFormItemConfigMVCActionCommand
 	private FormItemManager _formItemManager;
 
 	@Reference
+	private FragmentEntryConfigurationParser _fragmentEntryConfigurationParser;
+
+	@Reference
 	private FragmentEntryLinkListenerRegistry
 		_fragmentEntryLinkListenerRegistry;
+
+	@Reference
+	private FragmentEntryLinkLocalService _fragmentEntryLinkLocalService;
 
 	@Reference
 	private FragmentEntryLinkManager _fragmentEntryLinkManager;

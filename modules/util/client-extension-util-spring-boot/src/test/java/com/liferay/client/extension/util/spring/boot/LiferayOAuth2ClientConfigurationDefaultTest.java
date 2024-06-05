@@ -5,8 +5,19 @@
 
 package com.liferay.client.extension.util.spring.boot;
 
+import com.liferay.portal.json.JSONFactoryImpl;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.source.RemoteJWKSet;
+import com.nimbusds.jose.proc.JWSAlgorithmFamilyJWSKeySelector;
+
+import java.net.URL;
+
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -14,7 +25,15 @@ import org.junit.runner.RunWith;
 
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+
+import org.mockserver.client.server.MockServerClient;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.matchers.Times;
+import org.mockserver.model.Header;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
@@ -23,6 +42,7 @@ import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResp
 import org.springframework.security.oauth2.client.endpoint.OAuth2ClientCredentialsGrantRequest;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -33,12 +53,62 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @ContextConfiguration(
 	classes = {
 		LiferayOAuth2AccessTokenManager.class,
-		LiferayOAuth2ClientConfiguration.class
+		LiferayOAuth2ClientConfiguration.class,
+		LiferayOAuth2ResourceServerEnableWebSecurity.class
 	}
 )
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @RunWith(SpringJUnit4ClassRunner.class)
 @TestPropertySource("LiferayOAuth2ClientConfigurationDefaultTest.properties")
 public class LiferayOAuth2ClientConfigurationDefaultTest {
+
+	@BeforeClass
+	public static void setUpClass() throws Exception {
+		new JSONFactoryUtil(
+		).setJSONFactory(
+			new JSONFactoryImpl()
+		);
+
+		Mockito.mockStatic(
+			JWSAlgorithmFamilyJWSKeySelector.class
+		).when(
+			(MockedStatic.Verification)
+				JWSAlgorithmFamilyJWSKeySelector.fromJWKSetURL(Mockito.any())
+		).thenReturn(
+			new JWSAlgorithmFamilyJWSKeySelector<>(
+				JWSAlgorithm.Family.RSA,
+				new RemoteJWKSet<>(
+					new URL("http://localhost:63636/o/oauth2/jwks")))
+		);
+
+		_clientAndServer = ClientAndServer.startClientAndServer(63636);
+
+		new MockServerClient(
+			"localhost", 63636
+		).when(
+			HttpRequest.request(
+			).withMethod(
+				"GET"
+			).withPath(
+				"/o/oauth2/jwks"
+			),
+			Times.unlimited()
+		).respond(
+			HttpResponse.response(
+			).withBody(
+				JWTAssertionUtil.JWKS
+			).withHeader(
+				new Header("Content-Type", "application/json")
+			).withStatusCode(
+				200
+			)
+		);
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		_clientAndServer.stop();
+	}
 
 	@Before
 	public void setUp() {
@@ -99,6 +169,8 @@ public class LiferayOAuth2ClientConfigurationDefaultTest {
 
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();
+
+	private static ClientAndServer _clientAndServer;
 
 	@Autowired
 	private AuthorizedClientServiceOAuth2AuthorizedClientManager

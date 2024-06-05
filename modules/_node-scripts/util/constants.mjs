@@ -5,6 +5,18 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import url from 'url';
+
+import fileExists from './fileExists.mjs';
+
+export const SRC_PATH = path.join(
+	'src',
+	'main',
+	'resources',
+	'META-INF',
+	'resources'
+);
+export const SRC_TSCONFIG_PATH = path.join(SRC_PATH, 'tsconfig.json');
 
 export const BUILD_PATH = path.join('build', 'node', 'packageRunBuild');
 export const BUILD_RESOURCES_PATH = path.join(BUILD_PATH, 'resources');
@@ -18,50 +30,61 @@ export const BUILD_NPM_EXPORTS_PATH = path.join(
 	'exports'
 );
 
-export const SRC_PATH = path.join(
-	'src',
-	'main',
-	'resources',
-	'META-INF',
-	'resources'
-);
-
 export const WORK_PATH = path.join('build', 'node-scripts');
 export const WORK_EXPORT_PATH = path.join(WORK_PATH, 'export');
+
+const IGNORED_PROJECT_DIRS = ['modules'];
+const NO_RECURSE_PROJECT_DIRS = [
+	'_node-scripts', 'build', 'classes', 'node_modules', 'osb-faro', 'osb-site-initializer-evp',
+	'sdk', 'test'
+];
+
+let cachedProjectDirs;
+
+export async function getProjectDirs(dir = undefined) {
+	if (dir === undefined) {
+		if (!cachedProjectDirs) {
+			cachedProjectDirs = await getProjectDirs(await getRootDir());
+		}
+
+		return cachedProjectDirs;
+	}
+
+	const projectDirs = [];
+
+	for (const dirent of await fs.readdir(dir, {withFileTypes: true})) {
+		if (dirent.name === 'package.json' && !IGNORED_PROJECT_DIRS.includes(path.basename(dir))) {
+			projectDirs.push(path.resolve(dir));
+			break;
+		}
+		else if (NO_RECURSE_PROJECT_DIRS.includes(dirent.name)) {
+			continue;
+		}
+		else if (dirent.isDirectory()) {
+			for (const childDir of await getProjectDirs(path.resolve(dir, dirent.name))) {
+				projectDirs.push(childDir);
+			}
+		}
+	}
+
+	return projectDirs;
+}
 
 let cachedRootDir;
 
 export async function getRootDir() {
-	if (cachedRootDir) {
-		return cachedRootDir;
-	}
+	if (!cachedRootDir) {
+		const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
-	let rootDir = path.resolve('.');
-	let found = false;
+		cachedRootDir = path.resolve(__dirname, '..', '..');
 
-	while (path.dirname(rootDir) !== rootDir) {
-		try {
-			await fs.stat(path.join(rootDir, 'yarn.lock'));
-
-			found = true;
-
-			break;
-		} catch (error) {
-			if (error.code !== 'ENOENT') {
-				throw error;
-			}
-
-			rootDir = path.resolve(rootDir, '..');
+		if (!await fileExists(path.join(cachedRootDir, 'yarn.lock'))) {
+			throw new Error(
+				`Root project folder is no longer at ${cachedRootDir}. Please check if yarn.lock` +
+					' has been deleted or modules/_node-scripts/util/constants.js has been moved.'
+			);
 		}
 	}
 
-	if (!found) {
-		throw new Error(
-			'Unable to find root project folder (is yarn.lock missing?)'
-		);
-	}
-
-	cachedRootDir = rootDir;
-
-	return rootDir;
+	return cachedRootDir;
 }

@@ -9,6 +9,8 @@ import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
 import com.liferay.jenkins.results.parser.NotificationUtil;
 import com.liferay.jenkins.results.parser.PortalTestClassJob;
 import com.liferay.jenkins.results.parser.job.property.JobProperty;
+import com.liferay.jenkins.results.parser.test.batch.PlaywrightTestBatch;
+import com.liferay.jenkins.results.parser.test.batch.PlaywrightTestSelector;
 import com.liferay.jenkins.results.parser.test.clazz.TestClass;
 import com.liferay.jenkins.results.parser.test.clazz.TestClassFactory;
 
@@ -75,9 +77,63 @@ public class PlaywrightBatchTestClassGroup extends BatchTestClassGroup {
 			}
 		}
 
-		long start = System.currentTimeMillis();
-
 		addDefaultProjectJobProperty(batchName);
+
+		setTestClasses();
+	}
+
+	protected PlaywrightBatchTestClassGroup(
+		String batchName, PortalTestClassJob portalTestClassJob,
+		PlaywrightTestBatch playwrightTestBatch) {
+
+		super(batchName, portalTestClassJob);
+
+		PlaywrightTestSelector playwrightTestSelector =
+			playwrightTestBatch.getTestSelector();
+
+		_projectNames.addAll(
+			playwrightTestSelector.getPlaywrightProjectNames());
+
+		setTestClasses();
+	}
+
+	protected List<JobProperty> getRelevantPlaywrightJobProperties() {
+		Set<JobProperty> playwrightJobProperties = new HashSet<>();
+
+		for (File modifiedFile :
+				portalGitWorkingDirectory.getModifiedFilesList(false)) {
+
+			List<JobProperty> playwrightTestProjectJobProperties =
+				getJobProperties(
+					modifiedFile, PLAYWRIGHT_TEST_PROJECT_PROPERTY_NAME,
+					JobProperty.Type.MODULE_TEST_DIR, null);
+
+			for (JobProperty playwrightTestProjectJobProperty :
+					playwrightTestProjectJobProperties) {
+
+				if (playwrightTestProjectJobProperty.getValue() != null) {
+					String projectNames =
+						playwrightTestProjectJobProperty.getValue();
+
+					_addProjectNames(projectNames);
+
+					playwrightJobProperties.add(
+						playwrightTestProjectJobProperty);
+				}
+			}
+		}
+
+		playwrightJobProperties.removeAll(Collections.singleton(null));
+
+		return new ArrayList<>(playwrightJobProperties);
+	}
+
+	protected List<JSONObject> getSpecJSONObjects() {
+		return _specJSONObjects;
+	}
+
+	protected void setTestClasses() {
+		long start = System.currentTimeMillis();
 
 		_loadPlaywrightJSONObjects();
 
@@ -128,41 +184,6 @@ public class PlaywrightBatchTestClassGroup extends BatchTestClassGroup {
 				String.valueOf(testClasses.size()),
 				" Playwright test classes in ",
 				JenkinsResultsParserUtil.toDurationString(duration)));
-	}
-
-	protected List<JobProperty> getRelevantPlaywrightJobProperties() {
-		Set<JobProperty> playwrightJobProperties = new HashSet<>();
-
-		for (File modifiedFile :
-				portalGitWorkingDirectory.getModifiedFilesList(false)) {
-
-			List<JobProperty> playwrightTestProjectJobProperties =
-				getJobProperties(
-					modifiedFile, PLAYWRIGHT_TEST_PROJECT_PROPERTY_NAME,
-					JobProperty.Type.MODULE_TEST_DIR, null);
-
-			for (JobProperty playwrightTestProjectJobProperty :
-					playwrightTestProjectJobProperties) {
-
-				if (playwrightTestProjectJobProperty.getValue() != null) {
-					String projectNames =
-						playwrightTestProjectJobProperty.getValue();
-
-					_addProjectNames(projectNames);
-
-					playwrightJobProperties.add(
-						playwrightTestProjectJobProperty);
-				}
-			}
-		}
-
-		playwrightJobProperties.removeAll(Collections.singleton(null));
-
-		return new ArrayList<>(playwrightJobProperties);
-	}
-
-	protected List<JSONObject> getSpecJSONObjects() {
-		return _specJSONObjects;
 	}
 
 	protected static final String PLAYWRIGHT_TEST_PROJECT_PROPERTY_NAME =

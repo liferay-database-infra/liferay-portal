@@ -40,5 +40,5 @@
 		"format": "liferay-npm-scripts fix",
 		"test": "liferay-npm-scripts test --passWithNoTests"
 	},
-	"version": "1.0.90"
+	"version": "1.0.91"
 }

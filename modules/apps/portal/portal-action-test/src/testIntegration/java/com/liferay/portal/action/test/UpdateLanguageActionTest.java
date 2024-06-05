@@ -9,6 +9,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.test.util.JournalTestUtil;
 import com.liferay.layout.test.util.LayoutTestUtil;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.action.UpdateLanguageAction;
@@ -22,6 +23,7 @@ import com.liferay.portal.kernel.model.VirtualLayoutConstants;
 import com.liferay.portal.kernel.portlet.FriendlyURLResolverRegistryUtil;
 import com.liferay.portal.kernel.portlet.constants.FriendlyURLResolverConstants;
 import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
@@ -41,8 +43,10 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.servlet.http.HttpSession;
@@ -71,25 +75,18 @@ public class UpdateLanguageActionTest {
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
-		_availableLocales = _language.getAvailableLocales();
-		_defaultLocale = LocaleUtil.getDefault();
-		_localesEnabled = PropsValues.LOCALES_ENABLED;
+		_originalAvailableLocales = _language.getAvailableLocales();
+		_originalDefaultLocale = LocaleUtil.getDefault();
+		_originalLocalesEnabled = PropsValues.LOCALES_ENABLED;
 
 		_language.init();
 
 		CompanyTestUtil.resetCompanyLocales(
-			_portal.getDefaultCompanyId(),
-			Arrays.asList(
-				LocaleUtil.GERMANY, LocaleUtil.FRANCE, LocaleUtil.UK,
-				LocaleUtil.US),
-			LocaleUtil.US);
+			_portal.getDefaultCompanyId(), _availableLocales, _defaultLocale);
 
-		PropsValues.LOCALES_ENABLED = new String[] {
-			_language.getLanguageId(LocaleUtil.GERMANY),
-			_language.getLanguageId(LocaleUtil.FRANCE),
-			_language.getLanguageId(LocaleUtil.UK),
-			_language.getLanguageId(LocaleUtil.US)
-		};
+		PropsValues.LOCALES_ENABLED = TransformUtil.transformToArray(
+			_availableLocales, locale -> _language.getLanguageId(locale),
+			String.class);
 	}
 
 	@AfterClass
@@ -97,9 +94,10 @@ public class UpdateLanguageActionTest {
 		_language.init();
 
 		CompanyTestUtil.resetCompanyLocales(
-			_portal.getDefaultCompanyId(), _availableLocales, _defaultLocale);
+			_portal.getDefaultCompanyId(), _originalAvailableLocales,
+			_originalDefaultLocale);
 
-		PropsValues.LOCALES_ENABLED = _localesEnabled;
+		PropsValues.LOCALES_ENABLED = _originalLocalesEnabled;
 	}
 
 	@Before
@@ -146,8 +144,8 @@ public class UpdateLanguageActionTest {
 
 	@Test
 	public void testGetRedirect() throws Exception {
-		_testGetRedirectWithPortletFriendlyURL(false);
-		_testGetRedirectWithPortletFriendlyURL(true);
+		_testGetRedirectWithPortletFriendlyURL(null);
+		_testGetRedirectWithPortletFriendlyURL(_sourceLocale);
 
 		_testGetRedirectWithControlPanelURL(false);
 		_testGetRedirectWithControlPanelURL(true);
@@ -157,27 +155,13 @@ public class UpdateLanguageActionTest {
 	}
 
 	@Test
-	public void testGetRedirectWithFriendlyURLWithVirtualHost()
+	public void testGetRedirectWithFriendlyURLEndingInAvailableLanguageId()
 		throws Exception {
 
-		UpdateLanguageAction updateLanguageAction = new UpdateLanguageAction();
+		_updateLayoutFriendlyURL(
+			StringPool.SLASH.concat(_defaultLocale.getLanguage()));
 
-		MockHttpServletRequest mockHttpServletRequest =
-			new MockHttpServletRequest();
-
-		mockHttpServletRequest.setServerName(_VIRTUAL_HOSTNAME);
-
-		HttpSession httpSession = mockHttpServletRequest.getSession();
-
-		httpSession.setAttribute(WebKeys.LOCALE, _targetLocale);
-
-		mockHttpServletRequest.setParameter(
-			"redirect",
-			StringBundler.concat(
-				StringPool.SLASH, _sourceUKLocale.toLanguageTag(),
-				_getFriendlyURLSeparatorPart(_sourceUKLocale), "?queryString"));
-
-		ThemeDisplay themeDisplay = new ThemeDisplay();
+		_assertGetRedirectWithLayoutFriendlyURL(false);
 
 		LayoutSet layoutSet = _layout.getLayoutSet();
 
@@ -186,23 +170,27 @@ public class UpdateLanguageActionTest {
 				_VIRTUAL_HOSTNAME, StringPool.BLANK
 			).build());
 
-		themeDisplay.setCompany(
-			_companyLocalService.getCompany(_group.getCompanyId()));
-		themeDisplay.setI18nLanguageId(_sourceUKLocale.getLanguage());
-		themeDisplay.setI18nPath("/" + _sourceUKLocale.getLanguage());
-		themeDisplay.setLayout(_layout);
-		themeDisplay.setLayoutSet(_group.getPublicLayoutSet());
-		themeDisplay.setLocale(_sourceUKLocale);
-		themeDisplay.setPortalDomain(_VIRTUAL_HOSTNAME);
-		themeDisplay.setPortalURL(Http.HTTP_WITH_SLASH + _VIRTUAL_HOSTNAME);
-		themeDisplay.setSiteGroupId(_group.getGroupId());
+		_assertGetRedirectWithLayoutFriendlyURL(true);
+	}
 
-		Assert.assertEquals(
+	@Test
+	public void testGetRedirectWithFriendlyURLWithVirtualHost()
+		throws Exception {
+
+		LayoutSet layoutSet = _layout.getLayoutSet();
+
+		layoutSet.setVirtualHostnames(
+			TreeMapBuilder.put(
+				_VIRTUAL_HOSTNAME, StringPool.BLANK
+			).build());
+
+		_assertGetRedirect(
+			_sourceUKLocale,
 			StringBundler.concat(
-				Http.HTTP_WITH_SLASH, _VIRTUAL_HOSTNAME,
-				_getFriendlyURLSeparatorPart(_targetLocale), "?queryString"),
-			updateLanguageAction.getRedirect(
-				mockHttpServletRequest, themeDisplay, _targetLocale));
+				StringPool.SLASH, _sourceUKLocale.toLanguageTag(),
+				_getFriendlyURLSeparatorPart(_sourceUKLocale), "?queryString"),
+			_targetLocale,
+			_getFriendlyURLSeparatorPart(_targetLocale) + "?queryString", true);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -257,8 +245,85 @@ public class UpdateLanguageActionTest {
 			mockHttpServletRequest, themeDisplay, _targetLocale);
 	}
 
+	private void _assertGetRedirect(
+			Locale sourceLocale, String sourceURL, Locale targetLocale,
+			String targetURL, boolean virtualHost)
+		throws Exception {
+
+		if (virtualHost) {
+			targetURL = Http.HTTP_WITH_SLASH + _VIRTUAL_HOSTNAME + targetURL;
+		}
+
+		ThemeDisplay themeDisplay = new ThemeDisplay();
+
+		if (sourceLocale != null) {
+			themeDisplay.setI18nLanguageId(sourceLocale.getLanguage());
+			themeDisplay.setI18nPath("/" + sourceLocale.getLanguage());
+			themeDisplay.setLocale(sourceLocale);
+		}
+
+		themeDisplay.setCompany(
+			_companyLocalService.getCompany(_group.getCompanyId()));
+		themeDisplay.setLayout(_layout);
+		themeDisplay.setLayoutSet(_group.getPublicLayoutSet());
+
+		if (virtualHost) {
+			themeDisplay.setPortalDomain(_VIRTUAL_HOSTNAME);
+			themeDisplay.setPortalURL(Http.HTTP_WITH_SLASH + _VIRTUAL_HOSTNAME);
+		}
+
+		themeDisplay.setSiteGroupId(_group.getGroupId());
+
+		_assertRedirect(targetURL, targetLocale, themeDisplay, sourceURL);
+
+		if (sourceLocale != null) {
+			_assertRedirect(
+				targetURL, targetLocale, themeDisplay,
+				"/" + sourceLocale.getLanguage() + sourceURL);
+		}
+	}
+
+	private void _assertGetRedirectWithLayoutFriendlyURL(boolean virtualHost)
+		throws Exception {
+
+		for (Locale locale : _availableLocales) {
+			_assertGetRedirectWithLayoutFriendlyURL(
+				StringPool.BLANK, null, locale, virtualHost);
+
+			if (!Objects.equals(_defaultLocale, locale)) {
+				_assertGetRedirectWithLayoutFriendlyURL(
+					StringPool.BLANK, _defaultLocale, locale, virtualHost);
+			}
+		}
+	}
+
+	private void _assertGetRedirectWithLayoutFriendlyURL(
+			String path, Locale sourceLocale, Locale targetLocale,
+			boolean virtualHost)
+		throws Exception {
+
+		String layoutFriendlyURL = _layout.getFriendlyURL();
+
+		if (sourceLocale != null) {
+			layoutFriendlyURL = _layout.getFriendlyURL(sourceLocale);
+		}
+
+		String sourceURL = StringBundler.concat(
+			PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING,
+			_group.getFriendlyURL(), layoutFriendlyURL, path, "?queryString");
+
+		String targetURL = StringBundler.concat(
+			PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING,
+			_group.getFriendlyURL(), _layout.getFriendlyURL(targetLocale), path,
+			"?queryString");
+
+		_assertGetRedirect(
+			sourceLocale, sourceURL, targetLocale, targetURL, virtualHost);
+	}
+
 	private void _assertRedirect(
-			ThemeDisplay themeDisplay, String expectedRedirect, String url)
+			String expectedRedirect, Locale targetLocale,
+			ThemeDisplay themeDisplay, String url)
 		throws Exception {
 
 		UpdateLanguageAction updateLanguageAction = new UpdateLanguageAction();
@@ -268,14 +333,14 @@ public class UpdateLanguageActionTest {
 
 		HttpSession httpSession = mockHttpServletRequest.getSession();
 
-		httpSession.setAttribute(WebKeys.LOCALE, _targetLocale);
+		httpSession.setAttribute(WebKeys.LOCALE, targetLocale);
 
 		mockHttpServletRequest.setParameter("redirect", url);
 
 		Assert.assertEquals(
 			expectedRedirect,
 			updateLanguageAction.getRedirect(
-				mockHttpServletRequest, themeDisplay, _targetLocale));
+				mockHttpServletRequest, themeDisplay, targetLocale));
 	}
 
 	private String _getFriendlyURLSeparatorPart(Locale locale)
@@ -319,17 +384,18 @@ public class UpdateLanguageActionTest {
 
 		controlPanelURL += "?queryString";
 
-		_assertRedirect(themeDisplay, controlPanelURL, controlPanelURL);
+		_assertRedirect(
+			controlPanelURL, _targetLocale, themeDisplay, controlPanelURL);
 
 		if (i18n) {
 			_assertRedirect(
-				themeDisplay, controlPanelURL,
+				controlPanelURL, _targetLocale, themeDisplay,
 				"/" + _sourceLocale.getLanguage() + controlPanelURL);
 		}
 		else {
 			_assertRedirect(
-				themeDisplay,
 				"/" + _sourceLocale.getLanguage() + controlPanelURL,
+				_targetLocale, themeDisplay,
 				"/" + _sourceLocale.getLanguage() + controlPanelURL);
 		}
 	}
@@ -382,13 +448,13 @@ public class UpdateLanguageActionTest {
 
 		sourceURL += sourceFriendlyURLSeparatorPart + "?queryString";
 
-		_assertRedirect(themeDisplay, targetURL, sourceURL);
+		_assertRedirect(targetURL, _targetLocale, themeDisplay, sourceURL);
 		_assertRedirect(
-			themeDisplay, targetURL,
+			targetURL, _targetLocale, themeDisplay,
 			"/" + _sourceLocale.getLanguage() + sourceURL);
 	}
 
-	private void _testGetRedirectWithPortletFriendlyURL(boolean i18n)
+	private void _testGetRedirectWithPortletFriendlyURL(Locale sourceLocale)
 		throws Exception {
 
 		Map<Locale, String> friendlyURLMap =
@@ -401,43 +467,17 @@ public class UpdateLanguageActionTest {
 			_PORTLET_FRIENDLY_URL_PART_ASSET_PUBLISHER +
 				friendlyURLMap.get(defaultLocale);
 
-		_testGetRedirectWithPortletFriendlyURL(i18n, path);
+		_assertGetRedirectWithLayoutFriendlyURL(
+			path, sourceLocale, _targetLocale, false);
 	}
 
-	private void _testGetRedirectWithPortletFriendlyURL(
-			boolean i18n, String path)
-		throws Exception {
-
-		ThemeDisplay themeDisplay = new ThemeDisplay();
-
-		if (i18n) {
-			themeDisplay.setI18nLanguageId(_sourceLocale.getLanguage());
-			themeDisplay.setI18nPath("/" + _sourceLocale.getLanguage());
-			themeDisplay.setLocale(_sourceLocale);
+	private void _updateLayoutFriendlyURL(String suffix) throws Exception {
+		for (Locale locale : _availableLocales) {
+			_layout = _layoutLocalService.updateFriendlyURL(
+				TestPropsValues.getUserId(), _layout.getPlid(),
+				_layout.getFriendlyURL(locale) + suffix,
+				LocaleUtil.toLanguageId(locale));
 		}
-
-		themeDisplay.setCompany(
-			_companyLocalService.getCompany(_group.getCompanyId()));
-		themeDisplay.setLayout(_layout);
-		themeDisplay.setLayoutSet(_group.getPublicLayoutSet());
-		themeDisplay.setSiteGroupId(_group.getGroupId());
-
-		String targetURL =
-			PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING +
-				_group.getFriendlyURL() + _layout.getFriendlyURL(_targetLocale);
-
-		targetURL += path + "?queryString";
-
-		String sourceURL =
-			PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING +
-				_group.getFriendlyURL() + _layout.getFriendlyURL(_sourceLocale);
-
-		sourceURL += path + "?queryString";
-
-		_assertRedirect(themeDisplay, targetURL, sourceURL);
-		_assertRedirect(
-			themeDisplay, targetURL,
-			"/" + _sourceLocale.getLanguage() + sourceURL);
 	}
 
 	private static final String _PORTLET_FRIENDLY_URL_PART_ASSET_PUBLISHER =
@@ -445,13 +485,16 @@ public class UpdateLanguageActionTest {
 
 	private static final String _VIRTUAL_HOSTNAME = "test.com";
 
-	private static Set<Locale> _availableLocales;
-	private static Locale _defaultLocale;
+	private static final List<Locale> _availableLocales = Arrays.asList(
+		LocaleUtil.GERMANY, LocaleUtil.FRANCE, LocaleUtil.UK, LocaleUtil.US);
+	private static final Locale _defaultLocale = LocaleUtil.US;
 
 	@Inject
 	private static Language _language;
 
-	private static String[] _localesEnabled;
+	private static Set<Locale> _originalAvailableLocales;
+	private static Locale _originalDefaultLocale;
+	private static String[] _originalLocalesEnabled;
 
 	@Inject
 	private static Portal _portal;
@@ -462,6 +505,10 @@ public class UpdateLanguageActionTest {
 	private Group _group;
 	private JournalArticle _journalArticle;
 	private Layout _layout;
+
+	@Inject
+	private LayoutLocalService _layoutLocalService;
+
 	private final Locale _sourceLocale = LocaleUtil.FRANCE;
 	private final Locale _sourceUKLocale = LocaleUtil.UK;
 	private final Locale _targetLocale = LocaleUtil.GERMANY;

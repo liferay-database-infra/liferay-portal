@@ -2706,63 +2706,92 @@ public class DefaultObjectEntryManagerImplTest
 
 	@Test
 	public void testGetObjectEntriesWithAggregationFacets() throws Exception {
-		_defaultObjectEntryManager.addObjectEntry(
-			_simpleDTOConverterContext, _objectDefinition1,
-			new ObjectEntry() {
-				{
-					properties = HashMapBuilder.<String, Object>put(
-						"textObjectFieldName", "Able"
-					).build();
-				}
-			},
-			ObjectDefinitionConstants.SCOPE_COMPANY);
+		String textObjectFieldValue = RandomTestUtil.randomString();
 
-		_defaultObjectEntryManager.addObjectEntry(
-			_simpleDTOConverterContext, _objectDefinition1,
-			new ObjectEntry() {
-				{
-					properties = HashMapBuilder.<String, Object>put(
-						"textObjectFieldName", "Able"
-					).build();
-				}
-			},
-			ObjectDefinitionConstants.SCOPE_COMPANY);
+		ObjectEntry parentObjectEntry1 = _addObjectEntry(
+			_objectDefinition1,
+			Collections.singletonMap(
+				"textObjectFieldName", textObjectFieldValue));
+		ObjectEntry parentObjectEntry2 = _addObjectEntry(
+			_objectDefinition1,
+			Collections.singletonMap(
+				"textObjectFieldName", textObjectFieldValue));
 
 		_user = _addUser();
 
 		_addRoleUser(new String[] {ActionKeys.VIEW}, _objectDefinition1, _user);
 
-		Aggregation aggregation = new Aggregation() {
-			{
-				setAggregationTerms(
-					HashMapBuilder.put(
-						"textObjectFieldName", "Able"
-					).build());
-			}
-		};
+		Page<ObjectEntry> page = _getPage(
+			Collections.singletonMap("textObjectFieldName", StringPool.BLANK),
+			_objectDefinition1);
 
-		Page<ObjectEntry> page = _defaultObjectEntryManager.getObjectEntries(
-			companyId, _objectDefinition1, null, aggregation,
-			new DefaultDTOConverterContext(
-				false, Collections.emptyMap(), dtoConverterRegistry, null,
-				LocaleUtil.getDefault(), null, _user),
-			StringPool.BLANK, null, null, null);
+		_assertAggregationFacetValue(2, textObjectFieldValue, page);
 
-		List<Facet> facets = page.getFacets();
+		PermissionThreadLocal.setPermissionChecker(
+			PermissionCheckerFactoryUtil.create(adminUser));
 
-		Assert.assertFalse(ListUtil.isEmpty(facets));
+		PrincipalThreadLocal.setName(adminUser.getUserId());
 
-		Facet facet = facets.get(0);
+		_addObjectEntry(
+			_objectDefinition2,
+			Collections.singletonMap(
+				_objectRelationshipFieldName, parentObjectEntry1.getId()));
+		_addObjectEntry(
+			_objectDefinition2,
+			Collections.singletonMap(
+				_objectRelationshipFieldName, parentObjectEntry2.getId()));
 
-		List<Facet.FacetValue> facetValues = ListUtil.filter(
-			facet.getFacetValues(),
-			facetValue -> Objects.equals(facetValue.getTerm(), "Able"));
+		ObjectEntry childObjectEntry = _addObjectEntry(
+			_objectDefinition2,
+			Collections.singletonMap(
+				_objectRelationshipFieldName, parentObjectEntry2.getId()));
 
-		Assert.assertFalse(ListUtil.isEmpty(facetValues));
+		_addRoleUser(new String[] {ActionKeys.VIEW}, _objectDefinition2, _user);
 
-		Facet.FacetValue facetValue = facetValues.get(0);
+		page = _getPage(
+			Collections.singletonMap(
+				_objectRelationshipFieldName, StringPool.BLANK),
+			_objectDefinition2);
 
-		Assert.assertEquals(facetValue.getNumberOfOccurrences(), (Integer)2);
+		_assertAggregationFacetValue(
+			1, String.valueOf(parentObjectEntry1.getId()), page);
+		_assertAggregationFacetValue(
+			2, String.valueOf(parentObjectEntry2.getId()), page);
+
+		_defaultObjectEntryManager.updateObjectEntry(
+			_simpleDTOConverterContext, _objectDefinition2,
+			childObjectEntry.getId(),
+			new ObjectEntry() {
+				{
+					setProperties(
+						() -> Collections.singletonMap(
+							_objectRelationshipFieldName,
+							parentObjectEntry1.getId()));
+				}
+			});
+
+		page = _getPage(
+			Collections.singletonMap(
+				_objectRelationshipFieldName, StringPool.BLANK),
+			_objectDefinition2);
+
+		_assertAggregationFacetValue(
+			2, String.valueOf(parentObjectEntry1.getId()), page);
+		_assertAggregationFacetValue(
+			1, String.valueOf(parentObjectEntry2.getId()), page);
+
+		_defaultObjectEntryManager.deleteObjectEntry(
+			_objectDefinition2, childObjectEntry.getId());
+
+		page = _getPage(
+			Collections.singletonMap(
+				_objectRelationshipFieldName, StringPool.BLANK),
+			_objectDefinition2);
+
+		_assertAggregationFacetValue(
+			1, String.valueOf(parentObjectEntry1.getId()), page);
+		_assertAggregationFacetValue(
+			1, String.valueOf(parentObjectEntry2.getId()), page);
 	}
 
 	@Test
@@ -3924,6 +3953,20 @@ public class DefaultObjectEntryManagerImplTest
 			ObjectDefinitionConstants.SCOPE_COMPANY);
 	}
 
+	private ObjectEntry _addObjectEntry(
+			ObjectDefinition objectDefinition, Map<String, Object> values)
+		throws Exception {
+
+		return _defaultObjectEntryManager.addObjectEntry(
+			_simpleDTOConverterContext, objectDefinition,
+			new ObjectEntry() {
+				{
+					properties = values;
+				}
+			},
+			ObjectDefinitionConstants.SCOPE_COMPANY);
+	}
+
 	private void _addRelatedObjectEntries(
 			ObjectDefinition objectDefinition1,
 			ObjectDefinition objectDefinition2,
@@ -4018,6 +4061,28 @@ public class DefaultObjectEntryManagerImplTest
 		PrincipalThreadLocal.setName(user.getUserId());
 
 		return user;
+	}
+
+	private void _assertAggregationFacetValue(
+		Integer expectedNumberOfOccurrences, String facetValueTerm,
+		Page<ObjectEntry> page) {
+
+		List<Facet> facets = page.getFacets();
+
+		Assert.assertFalse(ListUtil.isEmpty(facets));
+
+		Facet facet = facets.get(0);
+
+		List<Facet.FacetValue> facetValues = ListUtil.filter(
+			facet.getFacetValues(),
+			facetValue -> Objects.equals(facetValue.getTerm(), facetValueTerm));
+
+		Assert.assertFalse(ListUtil.isEmpty(facetValues));
+
+		Facet.FacetValue facetValue = facetValues.get(0);
+
+		Assert.assertEquals(
+			expectedNumberOfOccurrences, facetValue.getNumberOfOccurrences());
 	}
 
 	private void _assertCountAggregationObjectFieldValue(
@@ -4355,6 +4420,24 @@ public class DefaultObjectEntryManagerImplTest
 			"picklistObjectFieldName");
 
 		return listEntry.getKey();
+	}
+
+	private Page<ObjectEntry> _getPage(
+			Map<String, String> aggregationTerms,
+			ObjectDefinition objectDefinition)
+		throws Exception {
+
+		return _defaultObjectEntryManager.getObjectEntries(
+			companyId, objectDefinition, null,
+			new Aggregation() {
+				{
+					setAggregationTerms(aggregationTerms);
+				}
+			},
+			new DefaultDTOConverterContext(
+				false, Collections.emptyMap(), dtoConverterRegistry, null,
+				LocaleUtil.getDefault(), null, _user),
+			StringPool.BLANK, null, null, null);
 	}
 
 	private void _removeResourcePermission(

@@ -393,7 +393,7 @@ public class TestrayStatusMetricResourceImpl
 				Long testrayTeamId, Pagination pagination)
 		throws Exception {
 
-		StringBundler sb = new StringBundler(35);
+		StringBundler sb = new StringBundler(37);
 
 		sb.append("select count(cr.dueStatus_) as total, sum(case when ");
 		sb.append("cr.dueStatus_ = 'blocked' then 1 else 0 end) as blocked, ");
@@ -420,8 +420,10 @@ public class TestrayStatusMetricResourceImpl
 		sb.append("b2.r_routineToBuilds_c_routineId = r.c_routineId_ and ");
 		sb.append("b2.dueDate_ = (select max(b3.dueDate_) from ");
 		sb.append("O_[%COMPANY_ID%]_Build b3 where ");
-		sb.append("b3.r_routineToBuilds_c_routineId = r.c_routineId_) limit ");
-		sb.append("1) ");
+		sb.append("b3.r_routineToBuilds_c_routineId = r.c_routineId_ and ");
+		sb.append("exists  (select 1 from O_[%COMPANY_ID%]_CaseResult cr ");
+		sb.append("where cr.r_buildToCaseResult_c_buildId = b3.c_buildId_)) ");
+		sb.append("limit 1) ");
 
 		List<Object> params = new ArrayList<>();
 
@@ -565,13 +567,13 @@ public class TestrayStatusMetricResourceImpl
 		params.add(testrayRoutineId);
 
 		if (Validator.isNotNull(testrayProductVersion)) {
-			sb.append("and pv.name_ = ? ");
+			sb.append("and pv.c_productVersionId_ = ? ");
 			params.add(testrayProductVersion);
 		}
 
 		if (Validator.isNotNull(testrayBuildName)) {
-			sb.append("and b.name_ like '%?%' ");
-			params.add(testrayBuildName);
+			sb.append("and b.name_ like ? ");
+			params.add("%" + testrayBuildName + "%");
 		}
 
 		if (Validator.isNotNull(testrayTaskStatus)) {

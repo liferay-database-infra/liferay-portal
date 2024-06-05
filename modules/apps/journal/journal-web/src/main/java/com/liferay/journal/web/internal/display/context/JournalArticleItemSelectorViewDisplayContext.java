@@ -65,7 +65,7 @@ import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -99,7 +99,8 @@ public class JournalArticleItemSelectorViewDisplayContext {
 		InfoItemItemSelectorCriterion infoItemItemSelectorCriterion,
 		String itemSelectedEventName,
 		JournalArticleItemSelectorView journalArticleItemSelectorView,
-		JournalWebConfiguration journalWebConfiguration, PortletURL portletURL,
+		JournalWebConfiguration journalWebConfiguration, Portal portal,
+		PortletURL portletURL,
 		ResourcePermissionLocalService resourcePermissionLocalService,
 		RoleLocalService roleLocalService, boolean search,
 		StagingGroupHelper stagingGroupHelper) {
@@ -109,6 +110,7 @@ public class JournalArticleItemSelectorViewDisplayContext {
 		_itemSelectedEventName = itemSelectedEventName;
 		_journalArticleItemSelectorView = journalArticleItemSelectorView;
 		_journalWebConfiguration = journalWebConfiguration;
+		_portal = portal;
 		_portletURL = portletURL;
 		_resourcePermissionLocalService = resourcePermissionLocalService;
 		_roleLocalService = roleLocalService;
@@ -307,7 +309,7 @@ public class JournalArticleItemSelectorViewDisplayContext {
 		return PortletURLBuilder.create(
 			PortletURLUtil.clone(
 				_portletURL,
-				PortalUtil.getLiferayPortletResponse(_portletResponse))
+				_portal.getLiferayPortletResponse(_portletResponse))
 		).setParameter(
 			"displayStyle", getDisplayStyle()
 		).setParameter(
@@ -328,6 +330,8 @@ public class JournalArticleItemSelectorViewDisplayContext {
 			getPortletURL()
 		).setParameter(
 			"folderId", _getFolderId()
+		).setParameter(
+			"scope", _getScopeFilter()
 		).buildPortletURL();
 
 		SearchContainer<Object> articleAndFolderSearchContainer =
@@ -590,7 +594,7 @@ public class JournalArticleItemSelectorViewDisplayContext {
 			return _journalArticleClassNameId;
 		}
 
-		_journalArticleClassNameId = PortalUtil.getClassNameId(
+		_journalArticleClassNameId = _portal.getClassNameId(
 			JournalArticle.class.getName());
 
 		return _journalArticleClassNameId;
@@ -628,6 +632,16 @@ public class JournalArticleItemSelectorViewDisplayContext {
 			"item-selector-order-by-type", "asc");
 
 		return _orderByType;
+	}
+
+	private String _getScopeFilter() {
+		if (_scope != null) {
+			return _scope;
+		}
+
+		_scope = ParamUtil.getString(_httpServletRequest, "scope");
+
+		return _scope;
 	}
 
 	private long _getStagingAwareGroupId() {
@@ -777,12 +791,14 @@ public class JournalArticleItemSelectorViewDisplayContext {
 	private String _keywords;
 	private String _orderByCol;
 	private String _orderByType;
+	private final Portal _portal;
 	private final PortletRequest _portletRequest;
 	private final PortletResponse _portletResponse;
 	private final PortletURL _portletURL;
 	private final ResourcePermissionLocalService
 		_resourcePermissionLocalService;
 	private final RoleLocalService _roleLocalService;
+	private String _scope;
 	private final boolean _search;
 	private Boolean _searchEverywhere;
 	private final StagingGroupHelper _stagingGroupHelper;

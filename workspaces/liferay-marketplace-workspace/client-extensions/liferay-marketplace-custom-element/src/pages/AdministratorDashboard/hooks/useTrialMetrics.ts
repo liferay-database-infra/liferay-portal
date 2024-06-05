@@ -8,7 +8,7 @@ import {useEffect, useMemo, useState} from 'react';
 import useSWR from 'swr';
 
 import SearchBuilder from '../../../core/SearchBuilder';
-import {ORDER_STATUS, ORDER_TYPES} from '../../../enums/Order';
+import {ORDER_TYPES, ORDER_WORKFLOW_STATUS_CODE} from '../../../enums/Order';
 import useMarketplaceSpringBootOAuth2 from '../../../hooks/useMarketplaceSpringBootOAuth2';
 import HeadlessCommerceAdminOrderImpl from '../../../services/rest/HeadlessCommerceAdminOrder';
 
@@ -20,6 +20,10 @@ export const METRIC_PARAMETER = {
 	q4: 4,
 	week: 7,
 };
+
+const trialSearchBuilder = new SearchBuilder()
+	.eq('orderTypeExternalReferenceCode', ORDER_TYPES.SOLUTIONS7)
+	.and();
 
 const getPeriodMetrics = (
 	lastPeriodValue: number,
@@ -77,28 +81,24 @@ const useTrialMetrics = (param: FilterType) => {
 		new URLSearchParams({
 			fields:
 				'id,account,orderStatusInfo,createDate,customFields,name,accountId',
-			filter: new SearchBuilder()
-				.eq('orderTypeExternalReferenceCode', ORDER_TYPES.SOLUTIONS7)
-				.build(),
+			filter: trialSearchBuilder.clone().build(),
 			nestedFields: 'account,orderItems',
-			pageSize: '15',
+			pageSize: '30',
 			sort: 'createDate:desc',
 		}),
 		new URLSearchParams({
 			fields: 'id,orderStatus,customFields',
-			filter: new SearchBuilder()
+			filter: trialSearchBuilder
+				.clone()
 				.gt('createDate', lastPeriod.toISOString())
-				.and()
-				.eq('orderTypeExternalReferenceCode', ORDER_TYPES.SOLUTIONS7)
 				.build(),
 			pageSize: '-1',
 			sort: 'createDate:desc',
 		}),
 		new URLSearchParams({
 			fields: 'orderStatus,customFields',
-			filter: new SearchBuilder()
-				.eq('orderTypeExternalReferenceCode', ORDER_TYPES.SOLUTIONS7)
-				.and()
+			filter: trialSearchBuilder
+				.clone()
 				.lt('createDate', lastPeriod.toISOString())
 				.and()
 				.gt('createDate', beforeLastPeriod.toISOString())
@@ -109,9 +109,7 @@ const useTrialMetrics = (param: FilterType) => {
 		}),
 		new URLSearchParams({
 			fields: 'orderStatus',
-			filter: new SearchBuilder()
-				.eq('orderTypeExternalReferenceCode', ORDER_TYPES.SOLUTIONS7)
-				.build(),
+			filter: trialSearchBuilder.clone().build(),
 			pageSize: '-1',
 		}),
 	];
@@ -142,9 +140,10 @@ const useTrialMetrics = (param: FilterType) => {
 
 	useEffect(() => {
 		const isProcessing = orderItems.some(({orderStatusInfo}: any) =>
-			[ORDER_STATUS.PROCESSING, ORDER_STATUS.ON_HOLD].includes(
-				orderStatusInfo.code
-			)
+			[
+				ORDER_WORKFLOW_STATUS_CODE.PROCESSING,
+				ORDER_WORKFLOW_STATUS_CODE.ON_HOLD,
+			].includes(orderStatusInfo.code)
 		);
 
 		setRefreshInterval(
@@ -159,7 +158,8 @@ const useTrialMetrics = (param: FilterType) => {
 	} / ${availabilityResponse?.max}`;
 
 	const onHold = ordersTrial?.items?.filter(
-		(order: Order) => order.orderStatus === ORDER_STATUS.ON_HOLD
+		(order: Order) =>
+			order.orderStatus === ORDER_WORKFLOW_STATUS_CODE.ON_HOLD
 	).length;
 
 	const expiredTrialsLastPeriod = getExiredQuantity(orderLastPeriod?.items);

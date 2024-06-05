@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -74,6 +75,7 @@ public class CommercePaymentGatewayImpl implements CommercePaymentGateway {
 				authorizedCommercePaymentEntry.getErrorMessages(),
 				commercePaymentEntry.getLanguageId(),
 				commercePaymentEntry.getNote(),
+				commercePaymentEntry.getPayload(),
 				commercePaymentEntry.getPaymentIntegrationKey(),
 				commercePaymentEntry.getPaymentIntegrationType(),
 				authorizedCommercePaymentEntry.getPaymentStatus(),
@@ -150,6 +152,7 @@ public class CommercePaymentGatewayImpl implements CommercePaymentGateway {
 				cancelledCommercePaymentEntry.getErrorMessages(),
 				commercePaymentEntry.getLanguageId(),
 				commercePaymentEntry.getNote(),
+				commercePaymentEntry.getPayload(),
 				commercePaymentEntry.getPaymentIntegrationKey(),
 				commercePaymentEntry.getPaymentIntegrationType(),
 				cancelledCommercePaymentEntry.getPaymentStatus(),
@@ -208,6 +211,24 @@ public class CommercePaymentGatewayImpl implements CommercePaymentGateway {
 			commercePaymentIntegration.capture(
 				httpServletRequest, commercePaymentEntry);
 
+		if (StringUtil.equals(
+				commercePaymentEntry.getErrorMessages(),
+				capturedCommercePaymentEntry.getErrorMessages()) &&
+			StringUtil.equals(
+				commercePaymentEntry.getPayload(),
+				capturedCommercePaymentEntry.getPayload()) &&
+			(commercePaymentEntry.getPaymentStatus() ==
+				capturedCommercePaymentEntry.getPaymentStatus()) &&
+			StringUtil.equals(
+				commercePaymentEntry.getRedirectURL(),
+				capturedCommercePaymentEntry.getRedirectURL()) &&
+			StringUtil.equals(
+				commercePaymentEntry.getTransactionCode(),
+				capturedCommercePaymentEntry.getTransactionCode())) {
+
+			return commercePaymentEntry;
+		}
+
 		User currentUser = _portal.getUser(httpServletRequest);
 
 		PermissionThreadLocal.setPermissionChecker(
@@ -225,6 +246,7 @@ public class CommercePaymentGatewayImpl implements CommercePaymentGateway {
 				capturedCommercePaymentEntry.getErrorMessages(),
 				commercePaymentEntry.getLanguageId(),
 				commercePaymentEntry.getNote(),
+				capturedCommercePaymentEntry.getPayload(),
 				commercePaymentEntry.getPaymentIntegrationKey(),
 				commercePaymentEntry.getPaymentIntegrationType(),
 				capturedCommercePaymentEntry.getPaymentStatus(),
@@ -301,6 +323,7 @@ public class CommercePaymentGatewayImpl implements CommercePaymentGateway {
 				refundedCommercePaymentEntry.getErrorMessages(),
 				commercePaymentEntry.getLanguageId(),
 				commercePaymentEntry.getNote(),
+				commercePaymentEntry.getPayload(),
 				commercePaymentEntry.getPaymentIntegrationKey(),
 				commercePaymentEntry.getPaymentIntegrationType(),
 				refundedCommercePaymentEntry.getPaymentStatus(),

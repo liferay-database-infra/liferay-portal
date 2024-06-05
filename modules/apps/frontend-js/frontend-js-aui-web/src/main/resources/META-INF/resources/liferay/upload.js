@@ -85,7 +85,7 @@ AUI.add(
 
 			'<tpl if="values.error && !this.multipleFiles">',
 			'<li class="alert alert-danger upload-error" data-fileId="{id}" id="{id}">',
-			'<h4 class="upload-error-message">{[ Lang.sub(this.strings.fileCannotBeSavedText, [LString.escapeHTML(values.name)]) ]}</h4>',
+			'<div class="h4 upload-error-message">{[ Lang.sub(this.strings.fileCannotBeSavedText, [LString.escapeHTML(values.name)]) ]}</div>',
 
 			'<span class="error-message" title="{[ LString.escapeHTML(values.error) ]}">{[ LString.escapeHTML(values.error) ]}</span>',
 
@@ -135,7 +135,7 @@ AUI.add(
 			'</div>',
 
 			'<div class="hide upload-list-info" id="{$ns}listInfo">',
-			'<h4>{[ this.strings.uploadsCompleteText ]}</h4>',
+			'<div class="h4">{[ this.strings.uploadsCompleteText ]}</div>',
 			'</div>',
 
 			'<div class="alert alert-warning hide pending-files-info" role="alert">',
@@ -654,7 +654,7 @@ AUI.add(
 					const removeOnComplete = instance.get('removeOnComplete');
 
 					if (removeOnComplete) {
-						instance._listInfo.one('h4').hide();
+						instance._listInfo.one('.h4').hide();
 
 						instance._allRowIdsCheckbox.hide();
 					}
@@ -1167,7 +1167,7 @@ AUI.add(
 
 					const strings = instance.get(STRINGS);
 
-					const infoTitle = instance._listInfo.one('h4');
+					const infoTitle = instance._listInfo.one('.h4');
 
 					if (!instance.get('multipleFiles')) {
 						infoTitle.html('');

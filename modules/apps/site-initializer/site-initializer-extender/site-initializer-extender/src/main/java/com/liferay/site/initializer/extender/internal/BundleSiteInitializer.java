@@ -31,6 +31,9 @@ import com.liferay.client.extension.type.manager.CETManager;
 import com.liferay.client.extension.util.CETUtil;
 import com.liferay.data.engine.rest.dto.v2_0.DataDefinition;
 import com.liferay.data.engine.rest.resource.v2_0.DataDefinitionResource;
+import com.liferay.depot.model.DepotEntry;
+import com.liferay.depot.service.DepotEntryGroupRelLocalService;
+import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.document.library.kernel.service.DLAppLocalServiceUtil;
@@ -260,6 +263,8 @@ public class BundleSiteInitializer implements SiteInitializer {
 		DDMStructureLocalService ddmStructureLocalService,
 		DDMTemplateLocalService ddmTemplateLocalService,
 		DefaultDDMStructureHelper defaultDDMStructureHelper,
+		DepotEntryGroupRelLocalService depotEntryGroupRelLocalService,
+		DepotEntryLocalService depotEntryLocalService,
 		DLFileEntryTypeLocalService dlFileEntryTypeLocalService,
 		DLURLHelper dlURLHelper,
 		DocumentFolderResource.Factory documentFolderResourceFactory,
@@ -343,6 +348,8 @@ public class BundleSiteInitializer implements SiteInitializer {
 		_ddmStructureLocalService = ddmStructureLocalService;
 		_ddmTemplateLocalService = ddmTemplateLocalService;
 		_defaultDDMStructureHelper = defaultDDMStructureHelper;
+		_depotEntryGroupRelLocalService = depotEntryGroupRelLocalService;
+		_depotEntryLocalService = depotEntryLocalService;
 		_dlFileEntryTypeLocalService = dlFileEntryTypeLocalService;
 		_dlURLHelper = dlURLHelper;
 		_documentFolderResourceFactory = documentFolderResourceFactory;
@@ -506,6 +513,7 @@ public class BundleSiteInitializer implements SiteInitializer {
 			_invoke(
 				() -> _addOrUpdateDDMStructures(
 					serviceContext, stringUtilReplaceValues));
+			_invoke(() -> _addOrUpdateDepotEntries(serviceContext));
 
 			_invoke(
 				() -> _addOrUpdateDocuments(
@@ -554,7 +562,9 @@ public class BundleSiteInitializer implements SiteInitializer {
 				() -> _addOrUpdateListTypeDefinitions(
 					serviceContext, stringUtilReplaceValues));
 
-			_invoke(() -> _addUserAccounts(serviceContext));
+			_invoke(
+				() -> _addUserAccounts(
+					serviceContext, stringUtilReplaceValues));
 
 			Map<String, ObjectDefinition>
 				accountEntryRestrictedObjectDefinitions = new HashMap<>();
@@ -1789,6 +1799,99 @@ public class BundleSiteInitializer implements SiteInitializer {
 				"DDM_TEMPLATE_ID:" +
 					ddmTemplate.getName(LocaleUtil.getSiteDefault()),
 				String.valueOf(ddmTemplate.getTemplateId()));
+		}
+	}
+
+	private void _addOrUpdateDepotEntries(ServiceContext serviceContext)
+		throws Exception {
+
+		String json = SiteInitializerUtil.read(
+			"/site-initializer/depot-entries.json", _servletContext);
+
+		if (json == null) {
+			return;
+		}
+
+		JSONArray jsonArray = _jsonFactory.createJSONArray(json);
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+			Group group = _groupLocalService.fetchGroup(
+				serviceContext.getCompanyId(),
+				SiteInitializerUtil.toMap(
+					jsonObject.getString("name_i18n")
+				).get(
+					LocaleUtil.getSiteDefault()
+				));
+
+			DepotEntry depotEntry = null;
+
+			if (group == null) {
+				depotEntry = _depotEntryLocalService.addDepotEntry(
+					SiteInitializerUtil.toMap(
+						jsonObject.getString("name_i18n")),
+					SiteInitializerUtil.toMap(
+						jsonObject.getString("description_i18n")),
+					serviceContext);
+			}
+
+			UnicodeProperties unicodeProperties = new UnicodeProperties(true);
+
+			JSONArray typeSettingsJSONArray = jsonObject.getJSONArray(
+				"typeSettings");
+
+			if (typeSettingsJSONArray != null) {
+				for (int j = 0; j < typeSettingsJSONArray.length(); j++) {
+					JSONObject propertyJSONObject =
+						typeSettingsJSONArray.getJSONObject(j);
+
+					unicodeProperties.put(
+						propertyJSONObject.getString("key"),
+						propertyJSONObject.getString("value"));
+				}
+			}
+
+			JSONObject depotAppCustomizationJSONObject =
+				jsonObject.getJSONObject("depotAppCustomization");
+
+			_depotEntryLocalService.updateDepotEntry(
+				(group != null) ? group.getClassPK() :
+					depotEntry.getDepotEntryId(),
+				SiteInitializerUtil.toMap(jsonObject.getString("name_i18n")),
+				SiteInitializerUtil.toMap(
+					jsonObject.getString("description_i18n")),
+				HashMapBuilder.put(
+					PortletKeys.ASSET_LIST,
+					GetterUtil.getBoolean(
+						depotAppCustomizationJSONObject.getBoolean(
+							PortletKeys.ASSET_LIST),
+						true)
+				).put(
+					PortletKeys.DOCUMENT_LIBRARY_ADMIN,
+					GetterUtil.getBoolean(
+						depotAppCustomizationJSONObject.getBoolean(
+							PortletKeys.DOCUMENT_LIBRARY_ADMIN),
+						true)
+				).put(
+					PortletKeys.JOURNAL,
+					GetterUtil.getBoolean(
+						depotAppCustomizationJSONObject.getBoolean(
+							PortletKeys.JOURNAL),
+						true)
+				).put(
+					PortletKeys.TRANSLATION,
+					GetterUtil.getBoolean(
+						depotAppCustomizationJSONObject.getBoolean(
+							PortletKeys.TRANSLATION),
+						true)
+				).build(),
+				unicodeProperties, serviceContext);
+
+			_depotEntryGroupRelLocalService.addDepotEntryGroupRel(
+				(group != null) ? group.getClassPK() :
+					depotEntry.getDepotEntryId(),
+				serviceContext.getScopeGroupId());
 		}
 	}
 
@@ -4413,7 +4516,9 @@ public class BundleSiteInitializer implements SiteInitializer {
 		}
 	}
 
-	private void _addUserAccounts(ServiceContext serviceContext)
+	private void _addUserAccounts(
+			ServiceContext serviceContext,
+			Map<String, String> stringUtilReplaceValues)
 		throws Exception {
 
 		String json = SiteInitializerUtil.read(
@@ -4433,7 +4538,8 @@ public class BundleSiteInitializer implements SiteInitializer {
 				serviceContext.getRequest()
 			).build();
 
-		JSONArray jsonArray = _jsonFactory.createJSONArray(json);
+		JSONArray jsonArray = _jsonFactory.createJSONArray(
+			_replace(json, stringUtilReplaceValues));
 
 		for (int i = 0; i < jsonArray.length(); i++) {
 			JSONObject jsonObject = jsonArray.getJSONObject(i);
@@ -4447,6 +4553,7 @@ public class BundleSiteInitializer implements SiteInitializer {
 
 			List<Group> oldGroups = new ArrayList<>();
 
+			long imageId = jsonObject.getLong("imageId");
 			int j = 0;
 			long userId = 0;
 
@@ -4491,10 +4598,24 @@ public class BundleSiteInitializer implements SiteInitializer {
 				userId, ListUtil.toLongArray(oldGroups, GroupModel::getGroupId),
 				serviceContext);
 
+			if (imageId > 0) {
+				FileEntry fileEntry = DLAppLocalServiceUtil.getFileEntry(
+					imageId);
+
+				_userLocalService.updatePortrait(
+					userId, FileUtil.getBytes(fileEntry.getContentStream()));
+			}
+
 			if (jsonObject.has("organizationBriefs")) {
 				_addOrganizationUser(
 					jsonObject.getJSONArray("organizationBriefs"),
 					serviceContext, userId);
+			}
+
+			if (jsonObject.has("userGroupBriefs")) {
+				_addUserGroupsUser(
+					jsonObject.getJSONArray("userGroupBriefs"), serviceContext,
+					userId);
 			}
 
 			for (; j < accountBriefsJSONArray.length(); j++) {
@@ -4519,6 +4640,29 @@ public class BundleSiteInitializer implements SiteInitializer {
 
 			userAccountResource.patchUserAccount(
 				userAccount.getId(), userAccount);
+		}
+	}
+
+	private void _addUserGroupsUser(
+			JSONArray jsonArray, ServiceContext serviceContext, long userId)
+		throws Exception {
+
+		if (JSONUtil.isEmpty(jsonArray)) {
+			return;
+		}
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+			UserGroup userGroup = _userGroupLocalService.fetchUserGroup(
+				serviceContext.getCompanyId(), jsonObject.getString("name"));
+
+			if (userGroup == null) {
+				continue;
+			}
+
+			_userLocalService.addUserGroupUser(
+				userGroup.getUserGroupId(), userId);
 		}
 	}
 
@@ -5322,6 +5466,9 @@ public class BundleSiteInitializer implements SiteInitializer {
 	private final DDMStructureLocalService _ddmStructureLocalService;
 	private final DDMTemplateLocalService _ddmTemplateLocalService;
 	private final DefaultDDMStructureHelper _defaultDDMStructureHelper;
+	private final DepotEntryGroupRelLocalService
+		_depotEntryGroupRelLocalService;
+	private final DepotEntryLocalService _depotEntryLocalService;
 	private final DLFileEntryTypeLocalService _dlFileEntryTypeLocalService;
 	private final DLURLHelper _dlURLHelper;
 	private final DocumentFolderResource.Factory _documentFolderResourceFactory;

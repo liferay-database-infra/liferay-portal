@@ -9,7 +9,6 @@ import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {KeyedMutator} from 'swr';
 
-import {DashboardTable} from '../../../../components/DashboardTable/DashboardTable';
 import Modal from '../../../../components/Modal';
 import OrderStatus from '../../../../components/OrderStatus';
 import Table from '../../../../components/Table/Table';
@@ -37,22 +36,6 @@ const PublishedSolutionsTable: React.FC<PublishedSolutionsTableProps> = ({
 
 	const modal = useModal();
 	const navigate = useNavigate();
-
-	if (!items.length) {
-		return (
-			<DashboardTable
-				emptyStateMessage={{
-					className: 'd-flex justify-content-center',
-					description1:
-						'Create and submit new Solutions and they will show up here.',
-					description2: 'Click on “Add Solution Template” to start.',
-
-					title: 'No Solutions Yet',
-				}}
-				icon="grid"
-			/>
-		);
-	}
 
 	const handleDeleteSolution = async (product: Product) => {
 		setLoading(true);

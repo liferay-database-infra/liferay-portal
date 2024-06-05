@@ -33,6 +33,7 @@ import com.liferay.portal.struts.model.ActionForward;
 import com.liferay.portal.struts.model.ActionMapping;
 
 import java.util.Locale;
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -274,22 +275,27 @@ public class UpdateLanguageAction implements Action {
 	protected boolean isGroupFriendlyURL(
 		Group group, Layout layout, String layoutURL, Locale locale) {
 
-		if (Validator.isNull(layoutURL)) {
-			return true;
-		}
-
-		int pos = layoutURL.lastIndexOf(CharPool.SLASH);
-
-		String layoutURLLanguageId = layoutURL.substring(pos + 1);
-
-		Locale layoutURLLocale = LocaleUtil.fromLanguageId(
-			layoutURLLanguageId, true, false);
-
-		if ((layoutURLLocale != null) ||
+		if (Objects.equals(layoutURL, PortalUtil.getPathContext()) ||
+			Objects.equals(
+				layoutURL, PortalUtil.getPathContext() + StringPool.SLASH) ||
 			PortalUtil.isGroupFriendlyURL(
 				layoutURL, group.getFriendlyURL(),
 				layout.getFriendlyURL(locale))) {
 
+			return true;
+		}
+
+		int index = layoutURL.indexOf(
+			PortalUtil.getPathContext() + StringPool.SLASH);
+
+		String string = layoutURL.substring(index + 1);
+
+		index = string.indexOf(CharPool.SLASH);
+
+		Locale layoutURLLocale = LocaleUtil.fromLanguageId(
+			string.substring(index + 1), true, false);
+
+		if (layoutURLLocale != null) {
 			return true;
 		}
 

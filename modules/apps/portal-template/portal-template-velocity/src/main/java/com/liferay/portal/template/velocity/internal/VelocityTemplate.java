@@ -5,6 +5,7 @@
 
 package com.liferay.portal.template.velocity.internal;
 
+import com.liferay.petra.function.UnsafeSupplierValue;
 import com.liferay.portal.kernel.template.StringTemplateResource;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateException;
@@ -45,7 +46,24 @@ public class VelocityTemplate extends BaseTemplate {
 		_templateResourceCache = templateResourceCache;
 		_restricted = restricted;
 
-		_velocityContext = new VelocityContext(super.context);
+		_velocityContext = new VelocityContext(super.context) {
+
+			@Override
+			public Object get(String key) {
+				Object value = super.get(key);
+
+				if (value instanceof UnsafeSupplierValue) {
+					UnsafeSupplierValue<?, RuntimeException>
+						unsafeSupplierValue =
+							(UnsafeSupplierValue<?, RuntimeException>)value;
+
+					value = unsafeSupplierValue.getValue();
+				}
+
+				return value;
+			}
+
+		};
 
 		if (templateResourceCache.isEnabled()) {
 			cacheTemplateResource(templateResourceCache, templateResource);

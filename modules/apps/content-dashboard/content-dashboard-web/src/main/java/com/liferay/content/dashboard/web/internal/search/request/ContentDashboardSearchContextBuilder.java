@@ -13,6 +13,7 @@ import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
 import com.liferay.content.dashboard.item.action.exception.ContentDashboardItemActionException;
 import com.liferay.content.dashboard.item.filter.ContentDashboardItemFilter;
 import com.liferay.content.dashboard.item.filter.provider.ContentDashboardItemFilterProvider;
+import com.liferay.content.dashboard.web.internal.constants.ContentDashboardConstants;
 import com.liferay.content.dashboard.web.internal.item.filter.ContentDashboardItemFilterProviderRegistry;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalServiceUtil;
@@ -34,17 +35,22 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.search.filter.ExistsFilter;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.search.filter.RangeTermFilter;
 import com.liferay.portal.kernel.search.filter.TermsFilter;
 import com.liferay.portal.kernel.search.generic.BooleanQueryImpl;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.text.DateFormat;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -83,16 +89,7 @@ public class ContentDashboardSearchContextBuilder {
 		}
 
 		searchContext.setAttribute("status", status);
-		searchContext.setBooleanClauses(
-			_getBooleanClauses(
-				new AssetCategoryIds(
-					ParamUtil.getLongValues(
-						_httpServletRequest, "assetCategoryId"),
-					_assetCategoryLocalService, _assetVocabularyLocalService),
-				ParamUtil.getStringValues(_httpServletRequest, "assetTagId"),
-				ParamUtil.getLongValues(_httpServletRequest, "authorIds"),
-				PortalUtil.getCompanyId(_httpServletRequest),
-				ParamUtil.getString(_httpServletRequest, "reviewDate")));
+		searchContext.setBooleanClauses(_getBooleanClauses());
 
 		String[] contentDashboardItemSubtypePayloads =
 			ParamUtil.getParameterValues(
@@ -196,8 +193,10 @@ public class ContentDashboardSearchContextBuilder {
 		return this;
 	}
 
-	private Filter _getAssetCategoryIdsFilter(
-		AssetCategoryIds assetCategoryIds) {
+	private Filter _getAssetCategoryIdsFilter() {
+		AssetCategoryIds assetCategoryIds = new AssetCategoryIds(
+			ParamUtil.getLongValues(_httpServletRequest, "assetCategoryId"),
+			_assetCategoryLocalService, _assetVocabularyLocalService);
 
 		if ((assetCategoryIds == null) ||
 			(ArrayUtil.isEmpty(
@@ -233,7 +232,10 @@ public class ContentDashboardSearchContextBuilder {
 		return booleanFilter;
 	}
 
-	private Filter _getAssetTagNamesFilter(String[] assetTagNames) {
+	private Filter _getAssetTagNamesFilter() {
+		String[] assetTagNames = ParamUtil.getStringValues(
+			_httpServletRequest, "assetTagId");
+
 		if (ArrayUtil.isEmpty(assetTagNames)) {
 			return null;
 		}
@@ -249,7 +251,10 @@ public class ContentDashboardSearchContextBuilder {
 		return booleanFilter;
 	}
 
-	private Filter _getAuthorIdsFilter(long[] authorIds) {
+	private Filter _getAuthorIdsFilter() {
+		long[] authorIds = ParamUtil.getLongValues(
+			_httpServletRequest, "authorIds");
+
 		if (ArrayUtil.isEmpty(authorIds)) {
 			return null;
 		}
@@ -263,21 +268,16 @@ public class ContentDashboardSearchContextBuilder {
 		return termsFilter;
 	}
 
-	private BooleanClause[] _getBooleanClauses(
-		AssetCategoryIds assetCategoryIds, String[] assetTagNames,
-		long[] authorIds, long companyId, String reviewDate) {
-
+	private BooleanClause[] _getBooleanClauses() {
 		BooleanQueryImpl booleanQueryImpl = new BooleanQueryImpl();
 
 		BooleanFilter booleanFilter = new BooleanFilter();
 
 		for (Filter filter :
 				Arrays.asList(
-					_getAssetCategoryIdsFilter(assetCategoryIds),
-					_getAssetTagNamesFilter(assetTagNames),
-					_getAuthorIdsFilter(authorIds),
-					_getGoogleDriveShortcutFilter(companyId),
-					_getReviewDateFilter(reviewDate))) {
+					_getAssetCategoryIdsFilter(), _getAssetTagNamesFilter(),
+					_getAuthorIdsFilter(), _getDateTypeRangeFilter(),
+					_getGoogleDriveShortcutFilter(), _getReviewDateFilter())) {
 
 			if (filter != null) {
 				booleanFilter.add(filter, BooleanClauseOccur.MUST);
@@ -323,7 +323,56 @@ public class ContentDashboardSearchContextBuilder {
 		};
 	}
 
-	private Filter _getGoogleDriveShortcutFilter(long companyId) {
+	private Filter _getDateTypeRangeFilter() {
+		String dateType = ParamUtil.getString(_httpServletRequest, "dateType");
+		String endDateString = ParamUtil.getString(
+			_httpServletRequest, "endDate");
+		String startDateString = ParamUtil.getString(
+			_httpServletRequest, "startDate");
+
+		if (Validator.isNull(dateType) && Validator.isNull(endDateString) &&
+			Validator.isNull(startDateString)) {
+
+			return null;
+		}
+
+		ContentDashboardConstants.DateType filterDateType =
+			ContentDashboardConstants.DateType.parse(dateType);
+
+		if (filterDateType == null) {
+			return null;
+		}
+
+		DateFormat simpleDateFormat = DateFormatFactoryUtil.getSimpleDateFormat(
+			"yyyy-MM-dd");
+
+		Calendar endDateCalendar = Calendar.getInstance();
+		Calendar startDateCalendar = Calendar.getInstance();
+
+		try {
+			endDateCalendar.setTime(simpleDateFormat.parse(endDateString));
+
+			endDateCalendar.add(Calendar.DATE, 1);
+
+			startDateCalendar.setTime(simpleDateFormat.parse(startDateString));
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
+			return null;
+		}
+
+		return new RangeTermFilter(
+			Field.getSortableFieldName(filterDateType.getField()), true, false,
+			String.valueOf(startDateCalendar.getTimeInMillis()),
+			String.valueOf(endDateCalendar.getTimeInMillis()));
+	}
+
+	private Filter _getGoogleDriveShortcutFilter() {
+		long companyId = PortalUtil.getCompanyId(_httpServletRequest);
+
 		try {
 			Company company = CompanyLocalServiceUtil.getCompany(companyId);
 
@@ -351,7 +400,10 @@ public class ContentDashboardSearchContextBuilder {
 		return null;
 	}
 
-	private Filter _getReviewDateFilter(String reviewDateString) {
+	private Filter _getReviewDateFilter() {
+		String reviewDateString = ParamUtil.getString(
+			_httpServletRequest, "reviewDate");
+
 		if (Validator.isNull(reviewDateString)) {
 			return null;
 		}

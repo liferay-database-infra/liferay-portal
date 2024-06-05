@@ -9,55 +9,6 @@
 	padding: 0;
 }
 
-.subnav-tbar {
-	background-color: #fff !important;
-}
-
-.subnav-tbar-primary {
-	background-color: #fff;
-
-	.result-filter {
-		background-color: #0e1387;
-		border-color: #0e1387;
-		color: #fff;
-	}
-}
-
-.popover {
-	max-width: 900px !important;
-	width: 480px !important;
-	z-index: 9;
-}
-
-.testray-multi-select__clear-indicator {
-	display: none !important;
-}
-
-.popover .inline-scroller {
-	max-height: unset !important;
-}
-
-.clay-reorder-footer {
-	display: none;
-}
-
-.compare-runs-popover {
-	top: 210px !important;
-	z-index: 98;
-}
-
-.cursor-pointer {
-	cursor: pointer;
-}
-
-.dropdown-menu {
-	z-index: 9999;
-}
-
-.portlet {
-	margin-bottom: 0;
-}
-
 body {
 	font-size: 100%;
 	list-style-type: none;
@@ -70,65 +21,39 @@ html {
 	overflow: hidden;
 }
 
-.dropdown-section .custom-control-label {
-	color: unset;
-}
-
-.management-bar {
-	div:nth-child(1) {
-		max-width: none;
-	}
-
-	.navbar-nav {
-		flex-wrap: initial;
+.autofill-builds-popover {
+	.build-buttons {
+		background-color: #373ecc !important;
+		cursor: default;
 	}
 }
 
-.subnav-tbar {
-	background-color: #b3cdff;
+.case-results-attachments-box {
+	max-width: fit-content;
+}
 
-	div:nth-child(1) {
-		max-width: none;
+.clay-reorder-footer {
+	display: none;
+}
+
+.compare-runs-popover {
+	top: 210px !important;
+	z-index: 98;
+
+	.runs-buttons {
+		background-color: #373ecc !important;
+		cursor: default;
 	}
 }
 
-.management-toolbar-filter-dropdown {
-	max-height: 800px;
-	overflow-y: hidden;
-	width: 300px;
-
-	label {
-		font-size: 14px;
-		font-weight: normal !important;
-	}
-
-	.form-control {
-		margin-bottom: 15px;
-	}
+.cursor-pointer {
+	cursor: pointer;
 }
 
 .dropdown-header {
 	.form-control {
 		margin: 0;
 	}
-}
-
-.dropdown-scrollbar {
-	max-height: 100px;
-	overflow-y: scroll;
-}
-
-.popover-body {
-	max-height: 580px;
-	min-height: 100px;
-	overflow-y: auto;
-}
-
-.popover-footer {
-	background-color: #fff;
-	bottom: 0;
-	padding: 3px 16px 16px;
-	position: relative;
 }
 
 .dropdown-management-toolbar {
@@ -187,12 +112,73 @@ html {
 	}
 }
 
-.popover-management-toolbar {
-	&.popover {
-		width: 300px !important;
-		z-index: 999;
+.dropdown-menu {
+	z-index: 9999;
+}
+
+.dropdown-scrollbar {
+	max-height: 100px;
+	overflow-y: scroll;
+}
+
+.dropdown-section .custom-control-label {
+	color: unset;
+}
+
+.management-bar {
+	div:nth-child(1) {
+		max-width: none;
 	}
 
+	.navbar-nav {
+		flex-wrap: initial;
+	}
+}
+
+.management-toolbar-buttons {
+	height: fit-content !important;
+	width: fit-content !important;
+}
+
+.management-toolbar-filter-dropdown {
+	max-height: 800px;
+	overflow-y: hidden;
+	width: 300px;
+
+	label {
+		font-size: 14px;
+		font-weight: normal !important;
+	}
+
+	.form-control {
+		margin-bottom: 15px;
+	}
+}
+
+.popover {
+	max-width: 900px !important;
+	width: 480px !important;
+	z-index: 9;
+}
+
+.popover-body {
+	max-height: 580px;
+	min-height: 100px;
+	overflow-y: auto;
+}
+
+.popover-footer {
+	background-color: #fff;
+	bottom: 0;
+	padding: 3px 16px 16px;
+	position: relative;
+}
+
+.popover .inline-scroller {
+	max-height: unset !important;
+}
+
+.popover-management-toolbar {
 	&.body-columns {
 		.popover-body {
 			max-height: 300px !important;
@@ -208,6 +194,11 @@ html {
 		}
 	}
 
+	&.popover {
+		width: 300px !important;
+		z-index: 999;
+	}
+
 	&.popover-management-toolbar-small {
 		.popover-body {
 			max-height: 190px !important;
@@ -215,19 +206,6 @@ html {
 			overflow-y: hidden !important;
 			padding: 0;
 		}
-	}
-
-	.popover-body {
-		max-height: 590px !important;
-		min-height: 350px !important;
-		overflow-y: hidden !important;
-		padding: 0;
-	}
-
-	.management-toolbar-body {
-		max-height: 390px !important;
-		min-height: 180px !important;
-		overflow-y: none;
 	}
 
 	.dropdown-header {
@@ -238,6 +216,23 @@ html {
 		.form-control {
 			margin: 0;
 		}
+	}
+
+	.inline-scroller {
+		overflow-x: hidden;
+	}
+
+	.management-toolbar-body {
+		max-height: 390px !important;
+		min-height: 180px !important;
+		overflow-y: none;
+	}
+
+	.popover-body {
+		max-height: 590px !important;
+		min-height: 350px !important;
+		overflow-y: hidden !important;
+		padding: 0;
 	}
 
 	.popover-filter-content {
@@ -253,26 +248,30 @@ html {
 		position: sticky;
 		top: 0;
 	}
+}
 
-	.inline-scroller {
-		overflow-x: hidden;
+.portlet {
+	margin-bottom: 0;
+}
+
+.subnav-tbar {
+	background-color: #fff !important;
+
+	div:nth-child(1) {
+		max-width: none;
 	}
 }
 
-.management-toolbar-buttons {
-	height: fit-content !important;
-	width: fit-content !important;
+.subnav-tbar-primary {
+	background-color: #fff;
+
+	.result-filter {
+		background-color: #0e1387;
+		border-color: #0e1387;
+		color: #fff;
+	}
 }
 
-.autofill-builds-popover {
-	.build-buttons {
-		background-color: #373ecc !important;
-		cursor: default;
-	}
-}
-.compare-runs-popover {
-	.runs-buttons {
-		background-color: #373ecc !important;
-		cursor: default;
-	}
+.testray-multi-select__clear-indicator {
+	display: none !important;
 }

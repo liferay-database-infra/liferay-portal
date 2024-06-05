@@ -13,7 +13,7 @@ import org.json.JSONObject;
 public class TestrayCase {
 
 	public static final String[] FIELD_NAMES = {
-		"dateCreated", "dateModified", "id", "name"
+		"caseTypeToCases", "dateCreated", "dateModified", "id", "name"
 	};
 
 	public String getComponent() {
@@ -64,8 +64,17 @@ public class TestrayCase {
 
 		TestrayServer testrayServer = testrayProject.getTestrayServer();
 
-		_testrayCaseType = testrayServer.getTestrayCaseTypeByID(
-			jsonObject.getLong("r_caseTypeToCases_c_caseTypeId"));
+		if (jsonObject.has("r_caseTypeToCases_c_caseTypeId")) {
+			_testrayCaseType = testrayServer.getTestrayCaseTypeByID(
+				jsonObject.getLong("r_caseTypeToCases_c_caseTypeId"));
+		}
+		else {
+			JSONObject caseTypeJSONObject = jsonObject.getJSONObject(
+				"caseTypeToCases");
+
+			_testrayCaseType = testrayServer.getTestrayCaseTypeByID(
+				caseTypeJSONObject.getLong("id"));
+		}
 	}
 
 	private final JSONObject _jsonObject;

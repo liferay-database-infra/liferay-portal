@@ -5,6 +5,7 @@
 
 package com.liferay.users.admin.web.internal.template;
 
+import com.liferay.petra.function.UnsafeSupplierValue;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -47,22 +48,74 @@ public class UsersTemplateContextContributor
 		User user1 = themeDisplay.getUser();
 
 		contextObjects.put("is_default_user", user1.isDefaultUser());
+		contextObjects.put(
+			"is_female",
+			new UnsafeSupplierValue<>(
+				() -> {
+					try {
+						Contact contact = user1.getContact();
 
-		try {
-			Contact contact = user1.getContact();
+						return !contact.isMale();
+					}
+					catch (PortalException portalException) {
+						_log.error(portalException);
+					}
 
-			contextObjects.put("is_female", !contact.isMale());
-			contextObjects.put("is_male", contact.isMale());
-			contextObjects.put("user_birthday", contact.getBirthday());
-		}
-		catch (PortalException portalException) {
-			_log.error(portalException);
-		}
-
+					return null;
+				}));
 		contextObjects.put("is_guest_user", user1.isGuestUser());
+		contextObjects.put(
+			"is_male",
+			new UnsafeSupplierValue<>(
+				() -> {
+					try {
+						Contact contact = user1.getContact();
+
+						return contact.isMale();
+					}
+					catch (PortalException portalException) {
+						_log.error(portalException);
+					}
+
+					return null;
+				}));
 		contextObjects.put("is_setup_complete", user1.isSetupComplete());
+
 		contextObjects.put("language", themeDisplay.getLanguageId());
 		contextObjects.put("language_id", user1.getLanguageId());
+		contextObjects.put(
+			"user2",
+			new UnsafeSupplierValue<>(
+				() -> {
+					Group group = themeDisplay.getSiteGroup();
+
+					if (group.isUser()) {
+						try {
+							return _userLocalService.getUserById(
+								group.getClassPK());
+						}
+						catch (PortalException portalException) {
+							_log.error(portalException);
+						}
+					}
+
+					return null;
+				}));
+		contextObjects.put(
+			"user_birthday",
+			new UnsafeSupplierValue<>(
+				() -> {
+					try {
+						Contact contact = user1.getContact();
+
+						return contact.getBirthday();
+					}
+					catch (PortalException portalException) {
+						_log.error(portalException);
+					}
+
+					return null;
+				}));
 		contextObjects.put("user_comments", user1.getComments());
 		contextObjects.put("user_email_address", user1.getEmailAddress());
 		contextObjects.put("user_first_name", user1.getFirstName());
@@ -75,20 +128,6 @@ public class UsersTemplateContextContributor
 		contextObjects.put("user_login_ip", user1.getLoginIP());
 		contextObjects.put("user_middle_name", user1.getMiddleName());
 		contextObjects.put("user_name", user1.getFullName());
-
-		Group group = themeDisplay.getSiteGroup();
-
-		if (group.isUser()) {
-			try {
-				User user2 = _userLocalService.getUserById(group.getClassPK());
-
-				contextObjects.put("user2", user2);
-			}
-			catch (PortalException portalException) {
-				_log.error(portalException);
-			}
-		}
-
 		contextObjects.put(
 			"w3c_language_id",
 			LocaleUtil.toW3cLanguageId(themeDisplay.getLanguageId()));
