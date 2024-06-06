@@ -49,13 +49,25 @@ public class CommerceOrderModelPreFilterContributor
 		}
 
 		BooleanFilter commerceAccountIdBooleanFilter = new BooleanFilter();
+		BooleanFilter nestedBooleanFilter = new BooleanFilter();
 
-		for (long commerceAccountId : commerceAccountIds) {
+		for (int i = 0; i < commerceAccountIds.length; i++) {
 			Filter termFilter = new TermFilter(
-				"commerceAccountId", String.valueOf(commerceAccountId));
+				"commerceAccountId", String.valueOf(commerceAccountIds[i]));
 
+			nestedBooleanFilter.add(termFilter, BooleanClauseOccur.SHOULD);
+
+			if (((i + 1) % _MAX_CLAUSES_COUNT) == 0) {
+				commerceAccountIdBooleanFilter.add(
+					nestedBooleanFilter, BooleanClauseOccur.SHOULD);
+
+				nestedBooleanFilter = new BooleanFilter();
+			}
+		}
+
+		if (nestedBooleanFilter.hasClauses()) {
 			commerceAccountIdBooleanFilter.add(
-				termFilter, BooleanClauseOccur.SHOULD);
+				nestedBooleanFilter, BooleanClauseOccur.SHOULD);
 		}
 
 		commerceAccountIdBooleanFilter.add(
@@ -110,5 +122,7 @@ public class CommerceOrderModelPreFilterContributor
 				orderStatusesBooleanFilter, BooleanClauseOccur.MUST);
 		}
 	}
+
+	private static final int _MAX_CLAUSES_COUNT = 1024;
 
 }

@@ -5,42 +5,107 @@
 
 import {expect, mergeTests} from '@playwright/test';
 
+import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
+import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
+import {pageEditorPagesTest} from '../../fixtures/pageEditorPagesTest';
 import getRandomString from '../../utils/getRandomString';
 import {blogsPagesTest} from './fixtures/blogsPagesTest';
+import {friendlyURLCategoriesSetup} from './utils/friendlyURLCategoriesSetup';
 
-const baseTest = mergeTests(isolatedSiteTest, blogsPagesTest, loginTest());
-
-const blogEntryAutoSaved = mergeTests(baseTest);
-
-blogEntryAutoSaved(
-	'LPD-22497: Permission sets are differing depending on autosaving of a blog entry',
-	async ({blogsEditBlogEntryPage, blogsPage, page, site}) => {
-		await blogsEditBlogEntryPage.goto(site.friendlyUrlPath);
-
-		const title = getRandomString();
-
-		await blogsEditBlogEntryPage.editBlogEntry(getRandomString(), title);
-
-		await expect(
-			page.locator(
-				'#_com_liferay_blogs_web_portlet_BlogsAdminPortlet_saveStatus'
-			)
-		).toContainText('Draft Saved at', {
-			timeout: 40000,
-		});
-
-		await blogsPage.goto(site.friendlyUrlPath);
-
-		await blogsPage.assertBlogEntryPermissions(
-			[
-				{enabled: true, locator: '#guest_ACTION_ADD_DISCUSSION'},
-				{enabled: true, locator: '#guest_ACTION_VIEW'},
-				{enabled: true, locator: '#site-member_ACTION_ADD_DISCUSSION'},
-				{enabled: true, locator: '#site-member_ACTION_VIEW'},
-			],
-			title
-		);
-	}
+const test = mergeTests(
+	apiHelpersTest,
+	isolatedSiteTest,
+	blogsPagesTest,
+	pageEditorPagesTest,
+	loginTest(),
+	featureFlagsTest({
+		'LPD-11147': true,
+		'LPS-178052': true,
+	})
 );
+
+test('LPD-22497: Permission sets are differing depending on autosaving of a blog entry', async ({
+	blogsEditBlogEntryPage,
+	blogsPage,
+	page,
+	site,
+}) => {
+	await blogsEditBlogEntryPage.goto(site.friendlyUrlPath);
+
+	const title = getRandomString();
+
+	await blogsEditBlogEntryPage.editBlogEntry({
+		content: getRandomString(),
+		publish: false,
+		title,
+	});
+
+	await expect(
+		page.locator(
+			'#_com_liferay_blogs_web_portlet_BlogsAdminPortlet_saveStatus'
+		)
+	).toContainText('Draft Saved at', {
+		timeout: 40000,
+	});
+
+	await blogsPage.goto(site.friendlyUrlPath);
+
+	await blogsPage.assertBlogEntryPermissions(
+		[
+			{enabled: true, locator: '#guest_ACTION_ADD_DISCUSSION'},
+			{enabled: true, locator: '#guest_ACTION_VIEW'},
+			{enabled: true, locator: '#site-member_ACTION_ADD_DISCUSSION'},
+			{enabled: true, locator: '#site-member_ACTION_VIEW'},
+		],
+		title
+	);
+});
+
+test('LPD-26752 Select categories for the custom friendly URL', async ({
+	apiHelpers,
+	blogsEditBlogEntryPage,
+	displayPageTemplatesPage,
+	page,
+	pageEditorPage,
+	site,
+}) => {
+	const vocabularyName = getRandomString();
+	const friendlyUrlCategories = ['category-1', 'category-2', 'category-3'];
+
+	await friendlyURLCategoriesSetup({
+		apiHelpers,
+		displayPageTemplatesPage,
+		friendlyUrlCategories,
+		page,
+		pageEditorPage,
+		site,
+		vocabularyName,
+	});
+
+	await blogsEditBlogEntryPage.goto(site.friendlyUrlPath);
+
+	const title = getRandomString();
+
+	await blogsEditBlogEntryPage.editBlogEntry({
+		content: getRandomString(),
+		friendlyUrl: {categories: friendlyUrlCategories, vocabularyName},
+		publish: false,
+		title,
+	});
+
+	await expect(
+		page.getByText(`/-/blogs/${friendlyUrlCategories.join('/')}/`)
+	).toBeVisible();
+
+	await blogsEditBlogEntryPage.publishBlogEntry();
+
+	const response = await page.goto(`/web${site.friendlyUrlPath}/b/${title}`);
+
+	await expect(response.url()).toContain(
+		`/web${site.friendlyUrlPath}/b/${friendlyUrlCategories.join(
+			'/'
+		)}/${title}`
+	);
+});

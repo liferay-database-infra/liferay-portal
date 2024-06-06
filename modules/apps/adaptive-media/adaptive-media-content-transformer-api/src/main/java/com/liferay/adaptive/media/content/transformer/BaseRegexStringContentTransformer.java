@@ -35,13 +35,13 @@ public abstract class BaseRegexStringContentTransformer
 				sb = new StringBuffer(content.length());
 			}
 
+			String replacement = matcher.group(0);
+
 			FileEntry fileEntry = getFileEntry(matcher);
 
-			if (!isSupported(fileEntry)) {
-				return content;
+			if (isSupported(fileEntry)) {
+				replacement = getReplacement(replacement, fileEntry);
 			}
-
-			String replacement = getReplacement(matcher.group(0), fileEntry);
 
 			matcher.appendReplacement(
 				sb, Matcher.quoteReplacement(replacement));

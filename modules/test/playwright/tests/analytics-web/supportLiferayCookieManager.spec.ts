@@ -112,7 +112,7 @@ test.describe('LPD-6540 Support Liferay Cookie Manager', () => {
 		await connectACToDXP(page);
 	});
 
-	test('When Cookie Preference Handling and Explicit Cookie Consent Mode are both Enabled, AC tracking should be enabled as soon the user accepts the performance cookies', async ({
+	test('When Cookie Preference Handling and Explicit Cookie Consent Mode are both Enabled, AC tracking should be disabled by default and only be enabled as soon the user accepts the performance cookies', async ({
 		page,
 	}) => {
 		await changeCookiePreference(page, {
@@ -121,6 +121,8 @@ test.describe('LPD-6540 Support Liferay Cookie Manager', () => {
 		});
 
 		await page.goto(liferayConfig.environment.baseUrl);
+
+		expect(await checkAnalyticsInstance(page)).toBeFalsy();
 
 		await page.getByRole('button', {name: 'Accept All'}).click();
 
@@ -129,7 +131,7 @@ test.describe('LPD-6540 Support Liferay Cookie Manager', () => {
 		expect(await checkAnalyticsInstance(page)).toBeTruthy();
 	});
 
-	test('When Cookie Preference Handling and Explicit Cookie Consent Mode are both Enabled, AC tracking should be disabled if end user did not accept the perfomance cookies', async ({
+	test('When Cookie Preference Handling and Explicit Cookie Consent Mode are both Enabled, AC tracking should be disabled by default and remain disabled if end user did not accept the perfomance cookies', async ({
 		page,
 	}) => {
 		await changeCookiePreference(page, {
@@ -139,6 +141,8 @@ test.describe('LPD-6540 Support Liferay Cookie Manager', () => {
 
 		await page.goto(liferayConfig.environment.baseUrl);
 
+		expect(await checkAnalyticsInstance(page)).toBeFalsy();
+
 		await page.getByRole('button', {name: 'Decline All'}).click();
 
 		await page.waitForTimeout(3000);
@@ -146,22 +150,7 @@ test.describe('LPD-6540 Support Liferay Cookie Manager', () => {
 		expect(await checkAnalyticsInstance(page)).toBeFalsy();
 	});
 
-	test('When Cookie Preference Handling is Enabled and Explicit Cookie Consent Mode is not Enabled, AC tracking should be enabled by default ', async ({
-		page,
-	}) => {
-		await changeCookiePreference(page, {
-			enableCookieBanner: true,
-			enableExplicitCookieConsentMode: false,
-		});
-
-		await page.goto(liferayConfig.environment.baseUrl);
-
-		await page.waitForTimeout(3000);
-
-		expect(await checkAnalyticsInstance(page)).toBeTruthy();
-	});
-
-	test('When Cookie Preference Handling is Enabled and Explicit Cookie Consent Mode is not Enabled, AC tracking should be enabled until the user rejects the performance cookies', async ({
+	test('When Cookie Preference Handling is Enabled and Explicit Cookie Consent Mode is not Enabled, AC tracking should be enabled by default until the user rejects the performance cookies', async ({
 		page,
 	}) => {
 		await changeCookiePreference(page, {
@@ -180,14 +169,19 @@ test.describe('LPD-6540 Support Liferay Cookie Manager', () => {
 		expect(await checkAnalyticsInstance(page)).toBeFalsy();
 	});
 
-	test('When Cookie Preference Handling is not Enabled, AC tracking should be enabled by default', async ({
+	test('When Cookie Preference Handling is Enabled and Explicit Cookie Consent Mode is not Enabled, AC tracking should be enabled by default and remain enabled if end user accepts the perfomance cookies', async ({
 		page,
 	}) => {
 		await changeCookiePreference(page, {
-			enableCookieBanner: false,
+			enableCookieBanner: true,
+			enableExplicitCookieConsentMode: false,
 		});
 
 		await page.goto(liferayConfig.environment.baseUrl);
+
+		expect(await checkAnalyticsInstance(page)).toBeTruthy();
+
+		await page.getByRole('button', {name: 'Accept All'}).click();
 
 		await page.waitForTimeout(3000);
 

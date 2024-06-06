@@ -6,10 +6,12 @@
 import {expect, mergeTests} from '@playwright/test';
 
 import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
+import {isolatedLayoutTest} from '../../fixtures/isolatedLayoutTest';
 import {loginTest} from '../../fixtures/loginTest';
 import getRandomString from '../../utils/getRandomString';
 import {dataSetManagerApiHelpersTest} from './fixtures/dataSetManagerApiHelpersTest';
 import {dataSetsPageTest} from './fixtures/dataSetsPageTest';
+import {fdsFragmentPageTest} from './fixtures/fdsFragmentPageTest';
 import {sortingPageTest} from './fixtures/sortingPageTest';
 import saveFromModal from './utils/saveFromModal';
 
@@ -41,7 +43,7 @@ test.afterEach(async ({dataSetManagerApiHelpers}) => {
 	await dataSetManagerApiHelpers.deleteDataSet({erc: dataSetERC});
 });
 
-test.describe('Configure sorting in Data Set Manager', () => {
+test.describe('Sorting in Data Set Manager', () => {
 	test('In the New Sort modal, the Order Type input only appears when default is checked @LPD-19465', async ({
 		page,
 		sortingPage,
@@ -154,4 +156,206 @@ test.describe('Configure sorting in Data Set Manager', () => {
 			).not.toBeVisible();
 		});
 	});
+});
+
+export const applicationPageTest = mergeTests(
+	dataSetManagerApiHelpersTest,
+	dataSetsPageTest,
+	featureFlagsTest({
+		'LPS-164563': true,
+		'LPS-178052': true,
+	}),
+	loginTest()
+);
+
+applicationPageTest.describe(
+	'Sorting Dropdown in Data Set Application Page',
+	() => {
+		applicationPageTest(
+			'When sorting configuration has no labels defined, the order dropdown is not displayed @LPD-19503',
+			async ({dataSetsPage, page}) => {
+				await dataSetsPage.goto();
+
+				await expect(
+					page.getByRole('button', {name: 'Order'})
+				).not.toBeVisible();
+			}
+		);
+	}
+);
+
+export const fragmentTest = mergeTests(
+	dataSetManagerApiHelpersTest,
+	fdsFragmentPageTest,
+	isolatedLayoutTest({publish: false}),
+	loginTest()
+);
+
+fragmentTest.describe('Sorting Dropdown in Data Set Fragment', () => {
+	fragmentTest(
+		'When sorting is configured with at least 1 sort, the dropdown is displayed in the fragment @LPD-19503',
+		async ({dataSetManagerApiHelpers, fdsFragmentPage, layout, page}) => {
+			await fragmentTest.step('Create sorting', async () => {
+				await dataSetManagerApiHelpers.createDataSetSort({
+					defaultValue: true,
+					fieldName: 'id',
+					label_i18n: {en_US: 'ID'},
+					orderType: 'asc',
+					r_fdsViewFDSSortRelationship_c_fdsViewERC: dataSetERC,
+				});
+
+				await dataSetManagerApiHelpers.createDataSetSort({
+					defaultValue: false,
+					fieldName: 'name',
+					label_i18n: {en_US: 'Name'},
+					r_fdsViewFDSSortRelationship_c_fdsViewERC: dataSetERC,
+				});
+			});
+
+			await fragmentTest.step(
+				'Add fields, so data is displayed',
+				async () => {
+					await dataSetManagerApiHelpers.createDataSetField({
+						label_i18n: {
+							en_US: 'ID',
+						},
+						name: 'id',
+						r_fdsViewFDSFieldRelationship_c_fdsViewERC: dataSetERC,
+						sortable: true,
+						type: 'string',
+					});
+
+					await dataSetManagerApiHelpers.createDataSetField({
+						label_i18n: {en_US: 'Name'},
+						name: 'name',
+						r_fdsViewFDSFieldRelationship_c_fdsViewERC: dataSetERC,
+						sortable: true,
+						type: 'string',
+					});
+				}
+			);
+
+			await fragmentTest.step('Configure Data Set fragment', async () => {
+				await fdsFragmentPage.configureDataSetFragment({
+					dataSetLabel,
+					layout,
+				});
+			});
+
+			await fragmentTest.step(
+				'Check that the order dropdown is displayed',
+				async () => {
+					await expect(
+						page.getByRole('button', {name: 'Order'})
+					).toBeVisible();
+				}
+			);
+
+			await fragmentTest.step(
+				'Check that default sorting is applied',
+				async () => {
+					const firstIDText = await fdsFragmentPage.fdsTableWrapper
+						.locator(
+							'.dnd-tbody .dnd-tr:first-child .dnd-td:first-child'
+						)
+						.textContent();
+
+					const lastIDText = await fdsFragmentPage.fdsTableWrapper
+						.locator(
+							'.dnd-tbody .dnd-tr:last-child .dnd-td:first-child'
+						)
+						.textContent();
+
+					expect(firstIDText < lastIDText).toBeTruthy();
+				}
+			);
+
+			await fragmentTest.step(
+				'Check that sorting is displayed in the dropdown',
+				async () => {
+					await page.getByRole('button', {name: 'Order'}).click();
+
+					await expect(
+						page.getByRole('menuitem', {name: 'ID'})
+					).toBeVisible();
+					await expect(
+						page.getByRole('menuitem', {name: 'Name'})
+					).toBeVisible();
+				}
+			);
+
+			await fragmentTest.step(
+				'Select "Descending" in the dropdown',
+				async () => {
+					await page
+						.getByRole('menuitem', {name: 'Descending'})
+						.click();
+				}
+			);
+
+			await fragmentTest.step(
+				'Check that the first ID is greater than the last ID in the table',
+				async () => {
+					const firstIDText = await fdsFragmentPage.fdsTableWrapper
+						.locator(
+							'.dnd-tbody .dnd-tr:first-child .dnd-td:first-child'
+						)
+						.textContent();
+
+					const lastIDText = await fdsFragmentPage.fdsTableWrapper
+						.locator(
+							'.dnd-tbody .dnd-tr:last-child .dnd-td:first-child'
+						)
+						.textContent();
+
+					expect(firstIDText > lastIDText).toBeTruthy();
+				}
+			);
+
+			await fragmentTest.step(
+				'Check that a different sort "Name" can be used',
+				async () => {
+					await page.getByRole('button', {name: 'Order'}).click();
+					await page.getByRole('menuitem', {name: 'Name'}).click();
+
+					const firstNameText = await fdsFragmentPage.fdsTableWrapper
+						.locator(
+							'.dnd-tbody .dnd-tr:first-child .dnd-td:nth-child(2)'
+						)
+						.textContent();
+
+					const lastNameText = await fdsFragmentPage.fdsTableWrapper
+						.locator(
+							'.dnd-tbody .dnd-tr:last-child .dnd-td:nth-child(2)'
+						)
+						.textContent();
+
+					expect(firstNameText > lastNameText).toBeTruthy();
+
+					await page.getByRole('button', {name: 'Order'}).click();
+					await page
+						.getByRole('menuitem', {name: 'Ascending'})
+						.click();
+
+					const firstNameTextAscending =
+						await fdsFragmentPage.fdsTableWrapper
+							.locator(
+								'.dnd-tbody .dnd-tr:first-child .dnd-td:nth-child(2)'
+							)
+							.textContent();
+
+					const lastNameTextAscending =
+						await fdsFragmentPage.fdsTableWrapper
+							.locator(
+								'.dnd-tbody .dnd-tr:last-child .dnd-td:nth-child(2)'
+							)
+							.textContent();
+
+					expect(
+						firstNameTextAscending < lastNameTextAscending
+					).toBeTruthy();
+				}
+			);
+		}
+	);
 });

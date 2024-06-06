@@ -26,13 +26,16 @@ import com.liferay.journal.model.JournalFolder;
 import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.journal.service.JournalFolderLocalService;
 import com.liferay.journal.util.JournalContent;
+import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.test.util.ConfigurationTemporarySwapper;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.StagedModel;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.sanitizer.SanitizerUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.AssertUtils;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -44,6 +47,7 @@ import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -103,65 +107,31 @@ public class AMJournalArticleStagedModelDataHandlerTest
 	}
 
 	@Test
-	public void testExportImportContentWithMultipleDynamicReferences()
+	public void testExportImportContentWithMultipleDynamicReferencesIFrameSanitizerDisabled()
 		throws Exception {
 
-		ServiceContext serviceContext = _getServiceContext();
-
-		FileEntry fileEntry1 = _addImageFileEntry(serviceContext);
-		FileEntry fileEntry2 = _addImageFileEntry(serviceContext);
-
-		String content = _getDynamicContent(fileEntry1, fileEntry2);
-
-		JournalArticle journalArticle = _addJournalArticle(
-			content, _getServiceContext());
-
-		ExportImportThreadLocal.setPortletImportInProcess(true);
-
-		try {
-			exportImportStagedModel(journalArticle);
-		}
-		finally {
-			ExportImportThreadLocal.setPortletImportInProcess(false);
-		}
-
-		JournalArticle importedJournalArticle = (JournalArticle)getStagedModel(
-			journalArticle.getUuid(), liveGroup);
-
-		_assertXMLEquals(
-			_getExpectedDynamicContent(fileEntry1, fileEntry2),
-			importedJournalArticle.getContent());
+		_testExportImportContentWithMultipleDynamicReferences(false);
 	}
 
 	@Test
-	public void testExportImportContentWithMultipleStaticReferences()
+	public void testExportImportContentWithMultipleDynamicReferencesIFrameSanitizerEnabled()
 		throws Exception {
 
-		ServiceContext serviceContext = _getServiceContext();
+		_testExportImportContentWithMultipleDynamicReferences(true);
+	}
 
-		FileEntry fileEntry1 = _addImageFileEntry(serviceContext);
-		FileEntry fileEntry2 = _addImageFileEntry(serviceContext);
+	@Test
+	public void testExportImportContentWithMultipleStaticReferencesIFrameSanitizerDisabled()
+		throws Exception {
 
-		String content = _getStaticContent(fileEntry1, fileEntry2);
+		_testExportImportContentWithMultipleStaticReferences(false);
+	}
 
-		JournalArticle journalArticle = _addJournalArticle(
-			content, serviceContext);
+	@Test
+	public void testExportImportContentWithMultipleStaticReferencesIFrameSanitizerEnabled()
+		throws Exception {
 
-		ExportImportThreadLocal.setPortletImportInProcess(true);
-
-		try {
-			exportImportStagedModel(journalArticle);
-		}
-		finally {
-			ExportImportThreadLocal.setPortletImportInProcess(false);
-		}
-
-		JournalArticle importedJournalArticle = (JournalArticle)getStagedModel(
-			journalArticle.getUuid(), liveGroup);
-
-		_assertXMLEquals(
-			_getExpectedStaticContent(fileEntry1, fileEntry2),
-			importedJournalArticle.getContent());
+		_testExportImportContentWithMultipleStaticReferences(true);
 	}
 
 	@Test
@@ -210,7 +180,7 @@ public class AMJournalArticleStagedModelDataHandlerTest
 		FileEntry fileEntry = _addImageFileEntry(serviceContext);
 
 		return _addJournalArticle(
-			_getContent(_getImgTag(fileEntry)), serviceContext);
+			_getContent(_getImgTag(fileEntry, false)), serviceContext);
 	}
 
 	@Override
@@ -223,7 +193,7 @@ public class AMJournalArticleStagedModelDataHandlerTest
 
 		return Collections.singletonList(
 			_addJournalArticle(
-				_getContent(_getImgTag(fileEntry)), serviceContext));
+				_getContent(_getImgTag(fileEntry, false)), serviceContext));
 	}
 
 	@Override
@@ -338,13 +308,14 @@ public class AMJournalArticleStagedModelDataHandlerTest
 			"[$CONTENT$]", html);
 	}
 
-	private String _getDynamicContent(FileEntry... fileEntries)
+	private String _getDynamicContent(
+			boolean sanitize, FileEntry... fileEntries)
 		throws Exception {
 
 		StringBundler sb = new StringBundler(fileEntries.length);
 
 		for (FileEntry fileEntry : fileEntries) {
-			sb.append(_getImgTag(fileEntry));
+			sb.append(_getImgTag(fileEntry, sanitize));
 			sb.append(StringPool.NEW_LINE);
 		}
 
@@ -353,7 +324,8 @@ public class AMJournalArticleStagedModelDataHandlerTest
 		return _getContent(sb.toString());
 	}
 
-	private String _getExpectedDynamicContent(FileEntry... fileEntries)
+	private String _getExpectedDynamicContent(
+			boolean sanitize, FileEntry... fileEntries)
 		throws Exception {
 
 		List<FileEntry> importedFileEntries = new ArrayList<>();
@@ -365,10 +337,11 @@ public class AMJournalArticleStagedModelDataHandlerTest
 		}
 
 		return _getDynamicContent(
-			importedFileEntries.toArray(new FileEntry[0]));
+			sanitize, importedFileEntries.toArray(new FileEntry[0]));
 	}
 
-	private String _getExpectedStaticContent(FileEntry... fileEntries)
+	private String _getExpectedStaticContent(
+			boolean sanitize, FileEntry... fileEntries)
 		throws Exception {
 
 		StringBundler sb = new StringBundler(fileEntries.length * 2);
@@ -378,9 +351,19 @@ public class AMJournalArticleStagedModelDataHandlerTest
 				_dlAppLocalService.getFileEntryByUuidAndGroupId(
 					fileEntry.getUuid(), liveGroup.getGroupId());
 
-			sb.append(
-				_amImageHTMLTagFactory.create(
-					_getImgTag(importedFileEntry), importedFileEntry));
+			String amImageHTMLTag = _amImageHTMLTagFactory.create(
+				_getImgTag(importedFileEntry, sanitize), importedFileEntry);
+
+			if (sanitize) {
+				amImageHTMLTag = SanitizerUtil.sanitize(
+					importedFileEntry.getCompanyId(),
+					importedFileEntry.getGroupId(),
+					importedFileEntry.getUserId(),
+					JournalArticle.class.getName(), 0, ContentTypes.TEXT_HTML,
+					amImageHTMLTag);
+			}
+
+			sb.append(amImageHTMLTag);
 
 			sb.append(StringPool.NEW_LINE);
 		}
@@ -390,7 +373,13 @@ public class AMJournalArticleStagedModelDataHandlerTest
 		return _getContent(sb.toString());
 	}
 
-	private String _getImgTag(FileEntry fileEntry) throws Exception {
+	private String _getImgTag(FileEntry fileEntry, boolean sanitize)
+		throws Exception {
+
+		if (sanitize) {
+			return _getSanitizedImgTag(fileEntry.getFileEntryId());
+		}
+
 		return _getImgTag(fileEntry.getFileEntryId());
 	}
 
@@ -408,10 +397,17 @@ public class AMJournalArticleStagedModelDataHandlerTest
 		sb.append(fileEntry.getFileEntryId());
 		sb.append("\">");
 		sb.append("<source></source>");
-		sb.append(_getImgTag(fileEntry));
+		sb.append(_getImgTag(fileEntry, false));
 		sb.append("</picture>");
 
 		return sb.toString();
+	}
+
+	private String _getSanitizedImgTag(long fileEntryId) throws Exception {
+		return String.format(
+			"<img alt=\"alt\" class=\"a class\" src=\"theURL\" " +
+				"data-fileentryid=\"%s\">",
+			fileEntryId);
 	}
 
 	private ServiceContext _getServiceContext() throws Exception {
@@ -432,6 +428,98 @@ public class AMJournalArticleStagedModelDataHandlerTest
 		sb.setIndex(sb.index() - 1);
 
 		return _getContent(sb.toString());
+	}
+
+	private void _testExportImportContentWithMultipleDynamicReferences(
+			boolean enabled)
+		throws Exception {
+
+		ServiceContext serviceContext = _getServiceContext();
+
+		FileEntry fileEntry1 = _addImageFileEntry(serviceContext);
+		FileEntry fileEntry2 = _addImageFileEntry(serviceContext);
+
+		String content = _getDynamicContent(enabled, fileEntry1, fileEntry2);
+
+		_withIFrameSanitizerConfiguration(
+			enabled,
+			() -> {
+				JournalArticle journalArticle = _addJournalArticle(
+					content, serviceContext);
+
+				ExportImportThreadLocal.setPortletImportInProcess(true);
+
+				try {
+					exportImportStagedModel(journalArticle);
+				}
+				finally {
+					ExportImportThreadLocal.setPortletImportInProcess(false);
+				}
+
+				JournalArticle importedJournalArticle =
+					(JournalArticle)getStagedModel(
+						journalArticle.getUuid(), liveGroup);
+
+				_assertXMLEquals(
+					_getExpectedDynamicContent(enabled, fileEntry1, fileEntry2),
+					importedJournalArticle.getContent());
+			});
+	}
+
+	private void _testExportImportContentWithMultipleStaticReferences(
+			boolean enabled)
+		throws Exception {
+
+		ServiceContext serviceContext = _getServiceContext();
+
+		FileEntry fileEntry1 = _addImageFileEntry(serviceContext);
+		FileEntry fileEntry2 = _addImageFileEntry(serviceContext);
+
+		String content = _getStaticContent(fileEntry1, fileEntry2);
+
+		_withIFrameSanitizerConfiguration(
+			enabled,
+			() -> {
+				JournalArticle journalArticle = _addJournalArticle(
+					content, serviceContext);
+
+				ExportImportThreadLocal.setPortletImportInProcess(true);
+
+				try {
+					exportImportStagedModel(journalArticle);
+				}
+				finally {
+					ExportImportThreadLocal.setPortletImportInProcess(false);
+				}
+
+				JournalArticle importedJournalArticle =
+					(JournalArticle)getStagedModel(
+						journalArticle.getUuid(), liveGroup);
+
+				_assertXMLEquals(
+					_getExpectedStaticContent(enabled, fileEntry1, fileEntry2),
+					importedJournalArticle.getContent());
+			});
+	}
+
+	private void _withIFrameSanitizerConfiguration(
+			boolean enabled, UnsafeRunnable<Exception> unsafeRunnable)
+		throws Exception {
+
+		try (ConfigurationTemporarySwapper configurationTemporarySwapper =
+				new ConfigurationTemporarySwapper(
+					"com.liferay.portal.security.iframe.sanitizer." +
+						"configuration.IFrameConfiguration",
+					HashMapDictionaryBuilder.<String, Object>put(
+						"enabled", enabled
+					).put(
+						"removeIFrameTags", false
+					).put(
+						"sandboxAttributeValues", StringPool.BLANK
+					).build())) {
+
+			unsafeRunnable.run();
+		}
 	}
 
 	private JournalArticle _withPortletImportEnabled(

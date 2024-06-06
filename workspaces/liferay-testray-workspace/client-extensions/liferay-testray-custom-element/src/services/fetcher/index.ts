@@ -67,6 +67,12 @@ const safeLiferaySessionExtend = () => {
 		sessionStorage.setItem('lastTimestamp', String(currentTimestamp));
 	}
 
+	if (currentTimestamp - lastTimestamp >= 15 * 60 * 1000) {
+		window.location.reload();
+
+		sessionStorage.setItem('lastTimestamp', String(currentTimestamp));
+	}
+
 	if (currentTimestamp - lastTimestamp > EXTEND_SESSION_5_MINUTES) {
 		try {
 			Liferay.Session.reset();
@@ -74,7 +80,7 @@ const safeLiferaySessionExtend = () => {
 			sessionStorage.setItem('lastTimestamp', String(currentTimestamp));
 		}
 		catch (error) {
-			console.error('Unable to extend Session', error);
+			error;
 		}
 	}
 };
