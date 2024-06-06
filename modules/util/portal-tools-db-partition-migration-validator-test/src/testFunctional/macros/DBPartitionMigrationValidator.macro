@@ -16,8 +16,9 @@ definition {
 	}
 
 	@summary = "Runs the db partition migration validator tool for extraction"
-	macro executeExtraction(databaseSchemaPassword = null, databaseSchemaName = null, ignoreErrors = null) {
-		AntCommands.runCommand("modules/util/portal-tools-db-partition-migration-validator-test/src/testFunctional/ant/build-test-db-partition-migration-validator.xml", "execute-db-partition-migration-validator-tool-extraction -Ddatabase.schema.name=${databaseSchemaName} -Ddatabase.schema.password=${databaseSchemaPassword} -Dignore.migration.errors=${ignoreErrors}");
+	macro executeExtraction(databaseSchemaName = null, ignoreErrors = null) {
+		AntCommands.runCommand("modules/util/portal-tools-db-partition-migration-validator-test/src/testFunctional/ant/build-test-db-partition-migration-validator.xml", "execute-db-partition-migration-validator-tool-extraction -Ddatabase.schema.name=${databaseSchemaName} -Dignore.migration.errors=${ignoreErrors}");
+		AntCommands.runCommand("modules/util/portal-tools-db-partition-migration-validator-test/src/testFunctional/ant/build-test-db-partition-migration-validator.xml", "execute-db-partition-migration-validator-tool-extraction -Ddatabase.schema.name=${databaseSchemaName}-Dignore.migration.errors=${ignoreErrors}");
 	}
 
 	@summary = "Runs the db partition migration validator tool for validation"

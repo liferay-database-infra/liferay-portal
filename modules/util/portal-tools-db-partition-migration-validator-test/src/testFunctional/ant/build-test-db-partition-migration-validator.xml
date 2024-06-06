@@ -32,10 +32,12 @@ exit 0
 
 	<macrodef name="run-script-extraction">
 		<attribute default="lportal" name="database.schema.name" />
-		<attribute default="" name="database.schema.password" />
 
 		<sequential>
 			<get-database-property property.name="database.host" />
+
+			<echo>Database host is ${database.host}</echo>
+
 			<if>
 				<equals arg1="${database.host}" arg2="localhost_mysql" />
 				<then>
@@ -47,6 +49,9 @@ exit 0
 			</if>
 
 			<get-database-property property.name="database.type" />
+
+			<echo>Database type is ${database.type}</echo>
+
 			<if>
 				<equals arg1="${database.type}" arg2="mysql" />
 				<then>
@@ -54,7 +59,7 @@ exit 0
 						<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
 						<arg value="--export" />
 						<arg value="--jdbc-url" />
-						<arg value="jdbc:mysql://${custom.database.url}/${database.mysql.schema}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
+						<arg value="jdbc:mysql://${database.mysql.url}/${database.mysql.schema}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
 						<arg value="--user" />
 						<arg value="${database.mysql.username}" />
 						<arg value="--password" />
@@ -68,7 +73,7 @@ exit 0
 						<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
 						<arg value="--export" />
 						<arg value="--jdbc-url" />
-						<arg value="jdbc:postgresql://${custom.database.url}/${database.postgresql.schema}" />
+						<arg value="jdbc:postgresql://${database.postgresql.url}/${database.postgresql.schema}" />
 						<arg value="--user" />
 						<arg value="${database.postgresql.username}" />
 						<arg value="--password" />
@@ -119,10 +124,10 @@ exit 0
 			<then>
 				<modify-script-exit-code />
 
-				<run-script-extraction database.schema.name="${database.schema.name}" database.schema.password="${database.schema.password}" />
+				<run-script-extraction database.schema.name="${database.schema.name}" />
 			</then>
 			<else>
-				<run-script-extraction database.schema.name="${database.schema.name}" database.schema.password="${database.schema.password}" />
+				<run-script-extraction database.schema.name="${database.schema.name}" />
 			</else>
 		</if>
 
