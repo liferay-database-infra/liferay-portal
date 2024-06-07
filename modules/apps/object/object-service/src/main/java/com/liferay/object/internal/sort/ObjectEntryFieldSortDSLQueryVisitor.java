@@ -73,7 +73,7 @@ public class ObjectEntryFieldSortDSLQueryVisitor
 
 		if (!contains(dslQuery, fieldTable)) {
 			dslQuery = addLeftJoin(
-				getPrimaryKeyColumn(fieldTable), dslQuery, fieldTable);
+				getPrimaryKeyColumn(fieldTable), null, dslQuery, fieldTable);
 		}
 
 		OrderByExpression orderByExpression = _getOrderByExpression(

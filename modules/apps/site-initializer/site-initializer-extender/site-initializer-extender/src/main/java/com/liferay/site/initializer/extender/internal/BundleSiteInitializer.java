@@ -18,8 +18,12 @@ import com.liferay.account.service.AccountGroupRelService;
 import com.liferay.account.service.AccountRoleLocalService;
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetCategory;
+import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
+import com.liferay.asset.kernel.service.AssetEntryLocalService;
+import com.liferay.asset.link.constants.AssetLinkConstants;
+import com.liferay.asset.link.service.AssetLinkLocalService;
 import com.liferay.asset.list.model.AssetListEntry;
 import com.liferay.asset.list.service.AssetListEntryLocalService;
 import com.liferay.asset.list.util.comparator.ClassNameModelResourceComparator;
@@ -56,8 +60,10 @@ import com.liferay.headless.admin.list.type.dto.v1_0.ListTypeDefinition;
 import com.liferay.headless.admin.list.type.dto.v1_0.ListTypeEntry;
 import com.liferay.headless.admin.list.type.resource.v1_0.ListTypeDefinitionResource;
 import com.liferay.headless.admin.list.type.resource.v1_0.ListTypeEntryResource;
+import com.liferay.headless.admin.taxonomy.dto.v1_0.Keyword;
 import com.liferay.headless.admin.taxonomy.dto.v1_0.TaxonomyCategory;
 import com.liferay.headless.admin.taxonomy.dto.v1_0.TaxonomyVocabulary;
+import com.liferay.headless.admin.taxonomy.resource.v1_0.KeywordResource;
 import com.liferay.headless.admin.taxonomy.resource.v1_0.TaxonomyCategoryResource;
 import com.liferay.headless.admin.taxonomy.resource.v1_0.TaxonomyVocabularyResource;
 import com.liferay.headless.admin.user.dto.v1_0.Account;
@@ -70,11 +76,13 @@ import com.liferay.headless.admin.user.resource.v1_0.OrganizationResource;
 import com.liferay.headless.admin.user.resource.v1_0.UserAccountResource;
 import com.liferay.headless.admin.workflow.dto.v1_0.WorkflowDefinition;
 import com.liferay.headless.admin.workflow.resource.v1_0.WorkflowDefinitionResource;
+import com.liferay.headless.delivery.dto.v1_0.BlogPosting;
 import com.liferay.headless.delivery.dto.v1_0.Document;
 import com.liferay.headless.delivery.dto.v1_0.DocumentFolder;
 import com.liferay.headless.delivery.dto.v1_0.KnowledgeBaseArticle;
 import com.liferay.headless.delivery.dto.v1_0.KnowledgeBaseFolder;
 import com.liferay.headless.delivery.dto.v1_0.StructuredContentFolder;
+import com.liferay.headless.delivery.resource.v1_0.BlogPostingResource;
 import com.liferay.headless.delivery.resource.v1_0.DocumentFolderResource;
 import com.liferay.headless.delivery.resource.v1_0.DocumentResource;
 import com.liferay.headless.delivery.resource.v1_0.KnowledgeBaseArticleResource;
@@ -255,7 +263,10 @@ public class BundleSiteInitializer implements SiteInitializer {
 		AccountRoleLocalService accountRoleLocalService,
 		AccountRoleResource.Factory accountRoleResourceFactory,
 		AssetCategoryLocalService assetCategoryLocalService,
-		AssetListEntryLocalService assetListEntryLocalService, Bundle bundle,
+		AssetEntryLocalService assetEntryLocalService,
+		AssetLinkLocalService assetLinkLocalService,
+		AssetListEntryLocalService assetListEntryLocalService,
+		BlogPostingResource.Factory blogPostingResourceFactory, Bundle bundle,
 		CETManager cetManager,
 		ClientExtensionEntryLocalService clientExtensionEntryLocalService,
 		ConfigurationProvider configurationProvider,
@@ -273,7 +284,7 @@ public class BundleSiteInitializer implements SiteInitializer {
 		FragmentsImporter fragmentsImporter,
 		GroupLocalService groupLocalService,
 		JournalArticleLocalService journalArticleLocalService,
-		JSONFactory jsonFactory,
+		JSONFactory jsonFactory, KeywordResource.Factory keywordResourceFactory,
 		KnowledgeBaseArticleResource.Factory
 			knowledgeBaseArticleResourceFactory,
 		KnowledgeBaseFolderResource.Factory knowledgeBaseFolderResourceFactory,
@@ -339,7 +350,10 @@ public class BundleSiteInitializer implements SiteInitializer {
 		_accountRoleLocalService = accountRoleLocalService;
 		_accountRoleResourceFactory = accountRoleResourceFactory;
 		_assetCategoryLocalService = assetCategoryLocalService;
+		_assetEntryLocalService = assetEntryLocalService;
+		_assetLinkLocalService = assetLinkLocalService;
 		_assetListEntryLocalService = assetListEntryLocalService;
+		_blogPostingResourceFactory = blogPostingResourceFactory;
 		_bundle = bundle;
 		_cetManager = cetManager;
 		_clientExtensionEntryLocalService = clientExtensionEntryLocalService;
@@ -359,6 +373,7 @@ public class BundleSiteInitializer implements SiteInitializer {
 		_groupLocalService = groupLocalService;
 		_journalArticleLocalService = journalArticleLocalService;
 		_jsonFactory = jsonFactory;
+		_keywordResourceFactory = keywordResourceFactory;
 		_knowledgeBaseArticleResourceFactory =
 			knowledgeBaseArticleResourceFactory;
 		_knowledgeBaseFolderResourceFactory =
@@ -516,6 +531,9 @@ public class BundleSiteInitializer implements SiteInitializer {
 			_invoke(() -> _addOrUpdateDepotEntries(serviceContext));
 
 			_invoke(
+				() -> _addKeywords(serviceContext, stringUtilReplaceValues));
+
+			_invoke(
 				() -> _addOrUpdateDocuments(
 					serviceContext, siteNavigationMenuItemSettingsBuilder,
 					stringUtilReplaceValues));
@@ -553,6 +571,13 @@ public class BundleSiteInitializer implements SiteInitializer {
 					serviceContext, siteNavigationMenuItemSettingsBuilder,
 					stringUtilReplaceValues));
 
+			_invoke(
+				() -> _addOrUpdateBlogPostings(
+					serviceContext, stringUtilReplaceValues));
+
+			_invoke(
+				() -> _addOrUpdateAssetLinkEntries(
+					serviceContext, stringUtilReplaceValues));
 			_invoke(() -> _addPortletSettings(serviceContext));
 			_invoke(
 				() -> _updateLayoutSets(
@@ -1045,6 +1070,111 @@ public class BundleSiteInitializer implements SiteInitializer {
 			stringUtilReplaceValues);
 	}
 
+	private void _addKeywords(
+			ServiceContext serviceContext,
+			Map<String, String> stringUtilReplaceValues)
+		throws Exception {
+
+		_addKeywords(
+			"ASSET_LIBRARY", "/site-initializer/keywords/asset-libraries",
+			serviceContext, stringUtilReplaceValues);
+		_addKeywords(
+			"SITE", "/site-initializer/keywords/group", serviceContext,
+			stringUtilReplaceValues);
+	}
+
+	private void _addKeywords(
+			String replaceKey, String resourcePath,
+			ServiceContext serviceContext,
+			Map<String, String> stringUtilReplaceValues)
+		throws Exception {
+
+		String json = SiteInitializerUtil.read(
+			resourcePath + "/keywords.json", _servletContext);
+
+		if (json == null) {
+			return;
+		}
+
+		KeywordResource.Builder keywordResourceBuilder =
+			_keywordResourceFactory.create();
+
+		KeywordResource keywordResource = keywordResourceBuilder.user(
+			serviceContext.fetchUser()
+		).build();
+
+		JSONArray jsonArray = _jsonFactory.createJSONArray(json);
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+			long groupId = 0;
+
+			if (jsonObject.has("assetLibraryName")) {
+				Group group = _groupLocalService.fetchGroup(
+					serviceContext.getCompanyId(),
+					jsonObject.getString("assetLibraryName"));
+
+				if (group == null) {
+					_log.error(
+						"Unable to get asset library " +
+							jsonObject.getString("assetLibraryName"));
+
+					break;
+				}
+
+				groupId = group.getGroupId();
+			}
+
+			JSONArray keywordsJSONArray = jsonObject.getJSONArray("keywords");
+
+			for (int j = 0; j < keywordsJSONArray.length(); j++) {
+				Keyword keyword = Keyword.toDTO(
+					String.valueOf(keywordsJSONArray.getJSONObject(j)));
+
+				if (keyword == null) {
+					_log.error(
+						"Unable to transform keyword from JSON: " + json);
+
+					continue;
+				}
+
+				Keyword existingKeyword = null;
+
+				if (groupId != 0) {
+					existingKeyword =
+						keywordResource.getAssetLibraryKeywordsPage(
+							groupId, null, null,
+							keywordResource.toFilter(
+								"name eq '" + keyword.getName() + "'"),
+							null, null
+						).fetchFirstItem();
+				}
+				else {
+					existingKeyword = keywordResource.getSiteKeywordsPage(
+						groupId, null, null,
+						keywordResource.toFilter(
+							"name eq '" + keyword.getName() + "'"),
+						null, null
+					).fetchFirstItem();
+
+					groupId = serviceContext.getScopeGroupId();
+				}
+
+				if (existingKeyword != null) {
+					continue;
+				}
+
+				keyword = keywordResource.postAssetLibraryKeyword(
+					groupId, keyword);
+
+				stringUtilReplaceValues.put(
+					replaceKey + "_KEYWORD_ID:" + keyword.getName(),
+					String.valueOf(keyword.getId()));
+			}
+		}
+	}
+
 	private void _addLayoutPageTemplates(
 			ServiceContext serviceContext,
 			Map<String, String> stringUtilReplaceValues)
@@ -1382,6 +1512,56 @@ public class BundleSiteInitializer implements SiteInitializer {
 		}
 	}
 
+	private void _addOrUpdateAssetLinkEntries(
+			ServiceContext serviceContext,
+			Map<String, String> stringUtilReplaceValues)
+		throws Exception {
+
+		String json = SiteInitializerUtil.read(
+			"/site-initializer/asset-link-entries.json", _servletContext);
+
+		if (json == null) {
+			return;
+		}
+
+		JSONArray jsonArray = _jsonFactory.createJSONArray(
+			_replace(json, stringUtilReplaceValues));
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+			AssetEntry assetEntry1 = _assetEntryLocalService.fetchEntry(
+				_portal.getClassNameId(jsonObject.getString("classNameId")),
+				jsonObject.getLong("classPK"));
+
+			if (assetEntry1 == null) {
+				continue;
+			}
+
+			JSONArray assetEntriesJSONArray = jsonObject.getJSONArray(
+				"assetEntries");
+
+			for (int j = 0; j < assetEntriesJSONArray.length(); j++) {
+				JSONObject assetEntryJSONObject =
+					assetEntriesJSONArray.getJSONObject(j);
+
+				AssetEntry assetEntry2 = _assetEntryLocalService.fetchEntry(
+					_portal.getClassNameId(
+						assetEntryJSONObject.getString("classNameId")),
+					assetEntryJSONObject.getLong("classPK"));
+
+				if (assetEntry2 == null) {
+					continue;
+				}
+
+				_assetLinkLocalService.updateLink(
+					serviceContext.getUserId(), assetEntry1.getEntryId(),
+					assetEntry2.getEntryId(), AssetLinkConstants.TYPE_RELATED,
+					0);
+			}
+		}
+	}
+
 	private void _addOrUpdateAssetListEntry(
 			JSONObject assetListJSONObject, ServiceContext serviceContext)
 		throws Exception {
@@ -1481,6 +1661,51 @@ public class BundleSiteInitializer implements SiteInitializer {
 			_assetListEntryLocalService.updateAssetListEntry(
 				assetListEntry.getAssetListEntryId(),
 				assetListJSONObject.getString("title"));
+		}
+	}
+
+	private void _addOrUpdateBlogPostings(
+			ServiceContext serviceContext,
+			Map<String, String> stringUtilReplaceValues)
+		throws Exception {
+
+		String json = SiteInitializerUtil.read(
+			"/site-initializer/blog-postings.json", _servletContext);
+
+		if (json == null) {
+			return;
+		}
+
+		BlogPostingResource.Builder blogPostingResourceBuilder =
+			_blogPostingResourceFactory.create();
+
+		BlogPostingResource blogPostingResource =
+			blogPostingResourceBuilder.user(
+				serviceContext.fetchUser()
+			).build();
+
+		JSONArray jsonArray = _jsonFactory.createJSONArray(
+			_replace(json, stringUtilReplaceValues));
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			BlogPosting blogPosting = BlogPosting.toDTO(
+				String.valueOf(jsonArray.getJSONObject(i)));
+
+			if (blogPosting == null) {
+				_log.error(
+					"Unable to transform blog posting from JSON: " + json);
+
+				continue;
+			}
+
+			blogPosting =
+				blogPostingResource.putSiteBlogPostingByExternalReferenceCode(
+					serviceContext.getScopeGroupId(),
+					blogPosting.getExternalReferenceCode(), blogPosting);
+
+			stringUtilReplaceValues.put(
+				"BLOG_POSTING_ID:" + blogPosting.getExternalReferenceCode(),
+				String.valueOf(blogPosting.getId()));
 		}
 	}
 
@@ -5455,7 +5680,10 @@ public class BundleSiteInitializer implements SiteInitializer {
 	private final AccountRoleResource.Factory _accountRoleResourceFactory;
 	private final ArchivedSettingsFactory _archivedSettingsFactory;
 	private final AssetCategoryLocalService _assetCategoryLocalService;
+	private final AssetEntryLocalService _assetEntryLocalService;
+	private final AssetLinkLocalService _assetLinkLocalService;
 	private final AssetListEntryLocalService _assetListEntryLocalService;
+	private final BlogPostingResource.Factory _blogPostingResourceFactory;
 	private final Bundle _bundle;
 	private final CETManager _cetManager;
 	private final ClassLoader _classLoader;
@@ -5478,6 +5706,7 @@ public class BundleSiteInitializer implements SiteInitializer {
 	private final GroupLocalService _groupLocalService;
 	private final JournalArticleLocalService _journalArticleLocalService;
 	private final JSONFactory _jsonFactory;
+	private final KeywordResource.Factory _keywordResourceFactory;
 	private final KnowledgeBaseArticleResource.Factory
 		_knowledgeBaseArticleResourceFactory;
 	private final KnowledgeBaseFolderResource.Factory

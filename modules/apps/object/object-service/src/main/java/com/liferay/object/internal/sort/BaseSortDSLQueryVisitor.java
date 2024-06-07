@@ -41,15 +41,20 @@ public abstract class BaseSortDSLQueryVisitor {
 		throws PortalException;
 
 	protected DSLQuery addLeftJoin(
-		Column<?, Long> column, DSLQuery dslQuery, Table<?> table) {
+		Column<?, Long> column1, Column<?, Long> column2, DSLQuery dslQuery,
+		Table<?> table) {
 
 		Stack<BaseASTNode> allBaseASTNodes = getAllBaseASTNodes(
 			JoinStep.class, dslQuery);
 
 		JoinStep joinStep = (JoinStep)allBaseASTNodes.pop();
 
+		if (column2 == null) {
+			column2 = getPrimaryKeyColumn(getTable(joinStep));
+		}
+
 		BaseASTNode baseASTNode = (BaseASTNode)joinStep.leftJoinOn(
-			table, column.eq(getPrimaryKeyColumn(getTable(joinStep))));
+			table, column1.eq(column2));
 
 		return updateParents(baseASTNode, allBaseASTNodes);
 	}

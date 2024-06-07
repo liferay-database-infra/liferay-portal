@@ -187,6 +187,10 @@ pre[class*='language-'] {
 	border-color: var(--warning);
 }
 
+.code-toolbar > .toolbar {
+	z-index: 2 !important;
+}
+
 .code-toolbar > .toolbar > .toolbar-item > button.copy-to-clipboard-button {
 	background-color: transparent;
 	/* stylelint-disable-next-line function-url-quotes */
@@ -229,11 +233,12 @@ pre[class*='language-'] {
 	padding: 1.5rem 0;
 }
 
-.learn-article {
+.learn-article, .learn-recipe-container {
 	font-family: var(--font-family-sans-serif);
 	max-width: var(--container-max-xl);
 	padding: var(--spacer-4);
 	position: relative;
+	width: 55vw;
 
 	.general-info {
 		background-color: var(--white);
@@ -254,7 +259,7 @@ pre[class*='language-'] {
 		}
 	}
 
-	.learn-article-breadcrumbs {
+	.learn-article-breadcrumbs, .learn-recipe-breadcrumbs {
 		margin-bottom: var(--spacer-3, 1rem);
 		a,
 		li {
@@ -268,7 +273,7 @@ pre[class*='language-'] {
 				border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 		}
 
-		.learn-article-breadcrumb {
+		.learn-article-breadcrumb, .learn-recipe-breadcrumb {
 			display: inline-flex;
 			flex-wrap: wrap;
 			list-style: none;
@@ -435,6 +440,10 @@ pre[class*='language-'] {
 					width: 4px;
 				}
 			}
+		}
+
+		ul {
+			width: inherit;
 		}
 	}
 

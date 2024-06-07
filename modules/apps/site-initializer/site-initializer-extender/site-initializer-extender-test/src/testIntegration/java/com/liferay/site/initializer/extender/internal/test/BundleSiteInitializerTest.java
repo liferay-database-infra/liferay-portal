@@ -13,8 +13,11 @@ import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
+import com.liferay.asset.link.model.AssetLink;
+import com.liferay.asset.link.service.AssetLinkLocalService;
 import com.liferay.asset.list.model.AssetListEntry;
 import com.liferay.asset.list.service.AssetListEntryLocalService;
+import com.liferay.blogs.model.BlogsEntry;
 import com.liferay.client.extension.model.ClientExtensionEntry;
 import com.liferay.client.extension.service.ClientExtensionEntryLocalService;
 import com.liferay.client.extension.type.CustomElementCET;
@@ -66,6 +69,8 @@ import com.liferay.fragment.service.FragmentEntryLocalService;
 import com.liferay.headless.admin.list.type.dto.v1_0.ListTypeDefinition;
 import com.liferay.headless.admin.list.type.dto.v1_0.ListTypeEntry;
 import com.liferay.headless.admin.list.type.resource.v1_0.ListTypeDefinitionResource;
+import com.liferay.headless.admin.taxonomy.dto.v1_0.Keyword;
+import com.liferay.headless.admin.taxonomy.resource.v1_0.KeywordResource;
 import com.liferay.headless.admin.user.dto.v1_0.Account;
 import com.liferay.headless.admin.user.dto.v1_0.AccountBrief;
 import com.liferay.headless.admin.user.dto.v1_0.Organization;
@@ -82,7 +87,9 @@ import com.liferay.headless.commerce.admin.account.resource.v1_0.AdminAccountGro
 import com.liferay.headless.commerce.admin.catalog.resource.v1_0.ProductSpecificationResource;
 import com.liferay.headless.commerce.admin.order.dto.v1_0.OrderType;
 import com.liferay.headless.commerce.admin.order.resource.v1_0.OrderTypeResource;
+import com.liferay.headless.delivery.dto.v1_0.BlogPosting;
 import com.liferay.headless.delivery.dto.v1_0.SitePage;
+import com.liferay.headless.delivery.resource.v1_0.BlogPostingResource;
 import com.liferay.headless.delivery.resource.v1_0.SitePageResource;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.model.JournalFolder;
@@ -621,6 +628,17 @@ public class BundleSiteInitializerTest {
 			testAssetCategory4.getExternalReferenceCode());
 	}
 
+	private void _assertAssetLinkEntries(
+		long blogPostingId, long assetLinkEntriesCount) {
+
+		List<AssetLink> links = _assetLinkLocalService.getLinks(
+			_portal.getClassNameId(BlogsEntry.class), blogPostingId);
+
+		Assert.assertNotNull(links);
+		Assert.assertEquals(
+			links.toString(), assetLinkEntriesCount, links.size());
+	}
+
 	private void _assertAssetListEntries() {
 		List<AssetListEntry> assetListEntries =
 			_assetListEntryLocalService.getAssetListEntries(
@@ -686,6 +704,72 @@ public class BundleSiteInitializerTest {
 			testAssetVocabulary2.getExternalReferenceCode());
 
 		_assertAssetCategories();
+	}
+
+	private void _assertBlogPostings1() throws Exception {
+		BlogPostingResource.Builder blogPostingResourceBuilder =
+			_blogPostingResourceFactory.create();
+
+		BlogPostingResource blogPostingResource =
+			blogPostingResourceBuilder.user(
+				_serviceContext.fetchUser()
+			).build();
+
+		BlogPosting blogPosting =
+			blogPostingResource.getSiteBlogPostingByExternalReferenceCode(
+				_group.getGroupId(), "TESTBLOGPOSTING1");
+
+		Assert.assertEquals("Test Headline 1", blogPosting.getHeadline());
+		Assert.assertTrue(blogPosting.getImage() != null);
+
+		_assertAssetLinkEntries(blogPosting.getId(), 2);
+
+		blogPosting =
+			blogPostingResource.getSiteBlogPostingByExternalReferenceCode(
+				_group.getGroupId(), "TESTBLOGPOSTING2");
+
+		Assert.assertEquals("Test Headline 2", blogPosting.getHeadline());
+		Assert.assertTrue(blogPosting.getImage() == null);
+
+		_assertAssetLinkEntries(blogPosting.getId(), 2);
+	}
+
+	private void _assertBlogPostings2() throws Exception {
+		BlogPostingResource.Builder blogPostingResourceBuilder =
+			_blogPostingResourceFactory.create();
+
+		BlogPostingResource blogPostingResource =
+			blogPostingResourceBuilder.user(
+				_serviceContext.fetchUser()
+			).build();
+
+		BlogPosting blogPosting =
+			blogPostingResource.getSiteBlogPostingByExternalReferenceCode(
+				_group.getGroupId(), "TESTBLOGPOSTING1");
+
+		Assert.assertEquals("Test Headline 1", blogPosting.getHeadline());
+		Assert.assertTrue(blogPosting.getImage() != null);
+
+		_assertAssetLinkEntries(blogPosting.getId(), 2);
+
+		blogPosting =
+			blogPostingResource.getSiteBlogPostingByExternalReferenceCode(
+				_group.getGroupId(), "TESTBLOGPOSTING2");
+
+		Assert.assertEquals(
+			"Test Headline 2 Update", blogPosting.getHeadline());
+		Assert.assertTrue(blogPosting.getImage() != null);
+
+		_assertAssetLinkEntries(blogPosting.getId(), 4);
+
+		blogPosting =
+			blogPostingResource.getSiteBlogPostingByExternalReferenceCode(
+				_group.getGroupId(), "TESTBLOGPOSTING3");
+
+		Assert.assertEquals("Test Headline 3", blogPosting.getHeadline());
+		Assert.assertTrue(blogPosting.getImage() == null);
+
+		_assertAssetLinkEntries(blogPosting.getId(), 2);
 	}
 
 	private void _assertClientExtension() throws Exception {
@@ -1821,6 +1905,72 @@ public class BundleSiteInitializerTest {
 		Assert.assertEquals("Test KB Article 3 Title", kbArticle3.getTitle());
 		Assert.assertEquals(
 			"This is the body for Test KB Article 3.", kbArticle3.getContent());
+	}
+
+	private void _assertKeywords1() throws Exception {
+		KeywordResource.Builder keywordResourceBuilder =
+			_keywordResourceFactory.create();
+
+		KeywordResource keywordResource = keywordResourceBuilder.user(
+			_serviceContext.fetchUser()
+		).build();
+
+		Page<Keyword> keywordsPage = keywordResource.getSiteKeywordsPage(
+			_group.getGroupId(), null, null, null, null, null);
+
+		Assert.assertEquals(
+			keywordsPage.toString(), 2, keywordsPage.getTotalCount());
+
+		Group group = _groupLocalService.fetchGroup(
+			_serviceContext.getCompanyId(), "Test Depot Entry 1");
+
+		keywordsPage = keywordResource.getAssetLibraryKeywordsPage(
+			group.getGroupId(), null, null, null, null, null);
+
+		Assert.assertEquals(
+			keywordsPage.toString(), 2, keywordsPage.getTotalCount());
+
+		group = _groupLocalService.fetchGroup(
+			_serviceContext.getCompanyId(), "Test Depot Entry 2");
+
+		keywordsPage = keywordResource.getAssetLibraryKeywordsPage(
+			group.getGroupId(), null, null, null, null, null);
+
+		Assert.assertEquals(
+			keywordsPage.toString(), 1, keywordsPage.getTotalCount());
+	}
+
+	private void _assertKeywords2() throws Exception {
+		KeywordResource.Builder keywordResourceBuilder =
+			_keywordResourceFactory.create();
+
+		KeywordResource keywordResource = keywordResourceBuilder.user(
+			_serviceContext.fetchUser()
+		).build();
+
+		Page<Keyword> keywordsPage = keywordResource.getSiteKeywordsPage(
+			_group.getGroupId(), null, null, null, null, null);
+
+		Assert.assertEquals(
+			keywordsPage.toString(), 3, keywordsPage.getTotalCount());
+
+		Group group = _groupLocalService.fetchGroup(
+			_serviceContext.getCompanyId(), "Test Depot Entry 1");
+
+		keywordsPage = keywordResource.getAssetLibraryKeywordsPage(
+			group.getGroupId(), null, null, null, null, null);
+
+		Assert.assertEquals(
+			keywordsPage.toString(), 2, keywordsPage.getTotalCount());
+
+		group = _groupLocalService.fetchGroup(
+			_serviceContext.getCompanyId(), "Test Depot Entry 2");
+
+		keywordsPage = keywordResource.getAssetLibraryKeywordsPage(
+			group.getGroupId(), null, null, null, null, null);
+
+		Assert.assertEquals(
+			keywordsPage.toString(), 2, keywordsPage.getTotalCount());
 	}
 
 	private void _assertLayoutPageTemplateEntries() throws Exception {
@@ -4050,6 +4200,7 @@ public class BundleSiteInitializerTest {
 		_assertAccounts1();
 		_assertAssetListEntries();
 		_assertAssetVocabularies();
+		_assertBlogPostings1();
 		_assertClientExtension();
 		_assertCommerceCatalogs1();
 		_assertCommerceChannel1();
@@ -4069,6 +4220,7 @@ public class BundleSiteInitializerTest {
 		_assertFragmentEntries();
 		_assertJournalArticles1();
 		_assertKBArticles();
+		_assertKeywords1();
 		_assertLayoutPageTemplateEntries();
 		_assertLayoutSets();
 		_assertLayouts1();
@@ -4098,6 +4250,7 @@ public class BundleSiteInitializerTest {
 
 		_assertAccountGroups2();
 		_assertAccounts2();
+		_assertBlogPostings2();
 		_assertCommerceCatalogs2();
 		_assertCommerceChannel2();
 		_assertCommerceOrderType2();
@@ -4109,6 +4262,7 @@ public class BundleSiteInitializerTest {
 		_assertExpandoColumns2();
 		_assertExpandoValues2();
 		_assertJournalArticles2();
+		_assertKeywords2();
 		_assertLayouts2();
 		_assertListTypeDefinitions2();
 		_assertNotificationTemplate2();
@@ -4147,10 +4301,16 @@ public class BundleSiteInitializerTest {
 	private AssetCategoryLocalService _assetCategoryLocalService;
 
 	@Inject
+	private AssetLinkLocalService _assetLinkLocalService;
+
+	@Inject
 	private AssetListEntryLocalService _assetListEntryLocalService;
 
 	@Inject
 	private AssetVocabularyLocalService _assetVocabularyLocalService;
+
+	@Inject
+	private BlogPostingResource.Factory _blogPostingResourceFactory;
 
 	@Inject
 	private CETFactory _cetFactory;
@@ -4236,6 +4396,9 @@ public class BundleSiteInitializerTest {
 
 	@Inject
 	private KBFolderLocalService _kbFolderLocalService;
+
+	@Inject
+	private KeywordResource.Factory _keywordResourceFactory;
 
 	@Inject
 	private LayoutLocalService _layoutLocalService;

@@ -82,6 +82,8 @@ public class NewEnvTestRule implements TestRule {
 
 		builder.setArguments(createArguments(description));
 		builder.setBootstrapClassPath(CLASS_PATH);
+		builder.setJavaExecutable(
+			System.getProperty("java.home") + "/bin/java");
 		builder.setRuntimeClassPath(CLASS_PATH);
 
 		setEnvironment(builder, description);
@@ -159,6 +161,14 @@ public class NewEnvTestRule implements TestRule {
 			arguments.addAll(processJVMArgsLine(jvmArgsLine));
 		}
 
+		RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+
+		for (String jvmArg : runtimeMXBean.getInputArguments()) {
+			if (jvmArg.startsWith("--add-opens")) {
+				arguments.add(jvmArg);
+			}
+		}
+
 		arguments.add("-Djava.net.preferIPv4Stack=true");
 
 		if (_isJPDAEnabled()) {
@@ -166,6 +176,7 @@ public class NewEnvTestRule implements TestRule {
 			arguments.add("-Djvm.debug=true");
 		}
 
+		arguments.add("-Dnet.bytebuddy.experimental=true");
 		arguments.add("-Dsun.zip.disableMemoryMapping=true");
 
 		String whipAgentLine = System.getProperty("whip.agent");

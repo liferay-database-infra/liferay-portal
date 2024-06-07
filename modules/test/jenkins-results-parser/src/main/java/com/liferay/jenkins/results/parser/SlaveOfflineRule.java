@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -104,6 +105,61 @@ public class SlaveOfflineRule {
 		return shutdown;
 	}
 
+	public void takeSlaveOffline(Build build) {
+		String pinnedMessage = "";
+
+		if (!shutdown) {
+			pinnedMessage = "PINNED\n";
+		}
+
+		JenkinsSlave jenkinsSlave = build.getJenkinsSlave();
+
+		JenkinsMaster jenkinsMaster = jenkinsSlave.getJenkinsMaster();
+
+		String slaveOfflineRuleString = toString();
+
+		slaveOfflineRuleString = slaveOfflineRuleString.replace("\\", "\\\\");
+
+		String message = JenkinsResultsParserUtil.combine(
+			pinnedMessage, getName(), " failure detected at ",
+			build.getBuildURL(), ". \n\n", slaveOfflineRuleString,
+			"\n\n\nOffline Slave URL: ", jenkinsSlave.getComputerURL(), "\n");
+
+		if (getOfflineSibling() && (jenkinsMaster.getSlavesPerHost() == 2)) {
+			Set<JenkinsSlave> siblingJenkinsSlaves = jenkinsSlave.getSiblings();
+
+			for (JenkinsSlave siblingJenkinsSlave : siblingJenkinsSlaves) {
+				message = JenkinsResultsParserUtil.combine(
+					message, "Offline Slave URL: ",
+					siblingJenkinsSlave.getComputerURL(), "\n");
+
+				String siblingMessage = JenkinsResultsParserUtil.combine(
+					pinnedMessage, "Offline Sibling: ", jenkinsSlave.getName(),
+					" Reason: ", getName());
+
+				siblingJenkinsSlave.takeSlavesOffline(siblingMessage);
+			}
+		}
+
+		System.out.println(message);
+
+		TopLevelBuild topLevelBuild = build.getTopLevelBuild();
+
+		if (topLevelBuild != null) {
+			message = JenkinsResultsParserUtil.combine(
+				message, "Top Level Build URL: ", topLevelBuild.getBuildURL());
+		}
+
+		jenkinsSlave.takeSlavesOffline(message);
+
+		if ((notificationRecipients != null) &&
+			!notificationRecipients.isEmpty()) {
+
+			NotificationUtil.sendEmail(
+				message, "jenkins", "Slave Offline", notificationRecipients);
+		}
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -194,7 +250,7 @@ public class SlaveOfflineRule {
 		notificationRecipients = configurationsMap.get(
 			"notificationRecipients");
 
-		offlineSibling = configurationsMap.get("offlineSibling");
+		offlineSibling = configurationsMap.get("offlineSiblings");
 
 		if (configurationsMap.containsKey("shutdown")) {
 			shutdown = Boolean.parseBoolean(configurationsMap.get("shutdown"));

@@ -69,7 +69,6 @@ const expect = baseExpect.extend({
 const autoSaveAsDraftTest = mergeTests(
 	baseTest,
 	featureFlagsTest({
-		'LPD-11228': true,
 		'LPD-15596': true,
 		'LPS-141392': true,
 	})
@@ -972,16 +971,24 @@ scheduleTest(
 		await journalEditArticlePage.goto({siteUrl: site.friendlyUrlPath});
 
 		const articleTitle = getRandomString();
-		const scheduleDate = '9987-11-26 13:00';
+		const expirationDate = '01/01/9999';
+		const publishDate = '9987-11-26 13:00';
+		const reviewDate = '01/01/9999';
 
 		await journalEditArticlePage.scheduleArticle(
 			articleTitle,
-			scheduleDate
+			publishDate,
+			undefined,
+			expirationDate,
+			reviewDate
 		);
 
-		await journalEditArticlePage.assertScheduleDate(
+		await journalEditArticlePage.assertScheduledArticleDates(
 			articleTitle,
-			scheduleDate
+			publishDate,
+			undefined,
+			expirationDate,
+			reviewDate
 		);
 	}
 );
@@ -1021,7 +1028,7 @@ scheduleTest(
 
 		await journalPage.goto(site.friendlyUrlPath);
 
-		await journalEditArticlePage.assertScheduleDate(
+		await journalEditArticlePage.assertScheduledArticleDates(
 			articleTitle,
 			articleDate,
 			{workflow: true}

@@ -7,6 +7,7 @@ package com.liferay.dynamic.data.mapping.form.field.type.internal.document.libra
 
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
+import com.liferay.document.library.util.DLURLHelper;
 import com.liferay.dynamic.data.mapping.constants.DDMFormConstants;
 import com.liferay.dynamic.data.mapping.constants.DDMPortletKeys;
 import com.liferay.dynamic.data.mapping.form.field.type.BaseDDMFormFieldTypeSettingsTestCase;
@@ -16,7 +17,9 @@ import com.liferay.dynamic.data.mapping.render.DDMFormFieldRenderingContext;
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceLocalService;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.criteria.file.criterion.FileItemSelectorCriterion;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.json.JSONFactoryImpl;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -86,6 +89,7 @@ public class DocumentLibraryDDMFormFieldTemplateContextContributorTest
 		_setUpCompanyLocalService();
 		_setUpDDMFormInstanceLocalService();
 		_setUpDLAppLocalService();
+		_setUpDLURLHelper();
 		_setUpFileEntry();
 		_setUpGroupLocalService();
 		_setUpItemSelector();
@@ -236,17 +240,48 @@ public class DocumentLibraryDDMFormFieldTemplateContextContributorTest
 	}
 
 	@Test
-	public void testGetParametersShouldContainFileEntryURL() {
+	public void testGetParametersShouldContainFileEntryURL()
+		throws PortalException {
+
+		ThemeDisplay themeDisplay = _mockThemeDisplay();
+
+		String downloadURL = RandomTestUtil.randomString();
+
+		Mockito.when(
+			_dlURLHelper.getDownloadURL(
+				_fileEntry, _fileEntry.getFileVersion(), themeDisplay,
+				StringPool.BLANK)
+		).thenReturn(
+			downloadURL
+		);
+
 		DocumentLibraryDDMFormFieldTemplateContextContributor
 			documentLibraryDDMFormFieldTemplateContextContributor = _createSpy(
-				_mockThemeDisplay());
+				themeDisplay);
+
+		DDMFormFieldRenderingContext ddmFormFieldRenderingContext =
+			_createDDMFormFieldRenderingContext();
+
+		ddmFormFieldRenderingContext.setProperty(
+			"ddmFormInstanceRecordId", RandomTestUtil.randomLong());
 
 		Map<String, Object> parameters =
 			documentLibraryDDMFormFieldTemplateContextContributor.getParameters(
 				new DDMFormField("field", "document_library"),
-				_createDDMFormFieldRenderingContext());
+				ddmFormFieldRenderingContext);
 
-		Assert.assertTrue(parameters.containsKey("fileEntryURL"));
+		Assert.assertEquals(
+			String.valueOf(new TestMockLiferayPortletURL()),
+			parameters.get("fileEntryURL"));
+
+		ddmFormFieldRenderingContext.setProperty("ddmFormInstanceRecordId", 0L);
+
+		parameters =
+			documentLibraryDDMFormFieldTemplateContextContributor.getParameters(
+				new DDMFormField("field", "document_library"),
+				ddmFormFieldRenderingContext);
+
+		Assert.assertEquals(downloadURL, parameters.get("fileEntryURL"));
 	}
 
 	@Test
@@ -617,6 +652,12 @@ public class DocumentLibraryDDMFormFieldTemplateContextContributorTest
 		);
 	}
 
+	private void _setUpDLURLHelper() throws Exception {
+		ReflectionTestUtil.setFieldValue(
+			_documentLibraryDDMFormFieldTemplateContextContributor,
+			"_dlURLHelper", _dlURLHelper);
+	}
+
 	private void _setUpFileEntry() {
 		_fileEntry.setUuid(_FILE_ENTRY_UUID);
 		_fileEntry.setGroupId(_GROUP_ID);
@@ -785,6 +826,7 @@ public class DocumentLibraryDDMFormFieldTemplateContextContributorTest
 
 	private final DLAppLocalService _dlAppLocalService = Mockito.mock(
 		DLAppLocalService.class);
+	private final DLURLHelper _dlURLHelper = Mockito.mock(DLURLHelper.class);
 	private final DocumentLibraryDDMFormFieldTemplateContextContributor
 		_documentLibraryDDMFormFieldTemplateContextContributor =
 			new DocumentLibraryDDMFormFieldTemplateContextContributor();

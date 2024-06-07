@@ -20,6 +20,7 @@ import JobsPage from './pages/JobsPage/JobsPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import RoutinePage from './pages/RoutinePage/RoutinePage';
 import RoutinesPage from './pages/RoutinesPage/RoutinesPage';
+import UpdateJobPage from './pages/UpdateJobPage/UpdateJobPage';
 import UpstreamBranchPage from './pages/UpstreamBranchPage/UpstreamBranchPage';
 import UpstreamBranchesPage from './pages/UpstreamBranchesPage/UpstreamBranchesPage';
 
@@ -74,6 +75,10 @@ function App() {
 						path="/routines/:routineId/create-job"
 					/>
 					<Route element={<RoutinesPage />} path="/routines" />
+					<Route
+						element={<UpdateJobPage />}
+						path="/jobs/:id/update"
+					/>
 					<Route
 						element={<UpstreamBranchesPage />}
 						path="/upstream-branches"

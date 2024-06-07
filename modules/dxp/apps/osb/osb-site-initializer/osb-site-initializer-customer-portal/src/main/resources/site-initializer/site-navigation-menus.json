@@ -49,8 +49,8 @@
 						"externalReferenceCode": "toolsMenuItem",
 						"menuItems": [
 							{
-								"externalReferenceCode": "dxpReleaseNotesMenuItem",
-								"friendlyURL": "/dxp-release-notes",
+								"externalReferenceCode": "releaseNotesMenuItem",
+								"friendlyURL": "/release-notes",
 								"type": "layout"
 							},
 							{
@@ -238,7 +238,7 @@
 								"useNewTab": false
 							},
 							{
-								"externalReferenceCode": "escalateATicketBetaMenuItem",
+								"externalReferenceCode": "escalateATicketMenuItem",
 								"friendlyURL": "/support-ticket-escalation",
 								"type": "layout"
 							}

@@ -11,6 +11,8 @@ import com.liferay.account.service.AccountGroupLocalService;
 import com.liferay.account.service.AccountGroupRelService;
 import com.liferay.account.service.AccountRoleLocalService;
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
+import com.liferay.asset.kernel.service.AssetEntryLocalService;
+import com.liferay.asset.link.service.AssetLinkLocalService;
 import com.liferay.asset.list.service.AssetListEntryLocalService;
 import com.liferay.client.extension.service.ClientExtensionEntryLocalService;
 import com.liferay.client.extension.type.manager.CETManager;
@@ -26,6 +28,7 @@ import com.liferay.expando.kernel.service.ExpandoValueLocalService;
 import com.liferay.fragment.importer.FragmentsImporter;
 import com.liferay.headless.admin.list.type.resource.v1_0.ListTypeDefinitionResource;
 import com.liferay.headless.admin.list.type.resource.v1_0.ListTypeEntryResource;
+import com.liferay.headless.admin.taxonomy.resource.v1_0.KeywordResource;
 import com.liferay.headless.admin.taxonomy.resource.v1_0.TaxonomyCategoryResource;
 import com.liferay.headless.admin.taxonomy.resource.v1_0.TaxonomyVocabularyResource;
 import com.liferay.headless.admin.user.resource.v1_0.AccountResource;
@@ -33,6 +36,7 @@ import com.liferay.headless.admin.user.resource.v1_0.AccountRoleResource;
 import com.liferay.headless.admin.user.resource.v1_0.OrganizationResource;
 import com.liferay.headless.admin.user.resource.v1_0.UserAccountResource;
 import com.liferay.headless.admin.workflow.resource.v1_0.WorkflowDefinitionResource;
+import com.liferay.headless.delivery.resource.v1_0.BlogPostingResource;
 import com.liferay.headless.delivery.resource.v1_0.DocumentFolderResource;
 import com.liferay.headless.delivery.resource.v1_0.DocumentResource;
 import com.liferay.headless.delivery.resource.v1_0.KnowledgeBaseArticleResource;
@@ -107,7 +111,10 @@ public class SiteInitializerExtension {
 		AccountRoleLocalService accountRoleLocalService,
 		AccountRoleResource.Factory accountRoleResourceFactory,
 		AssetCategoryLocalService assetCategoryLocalService,
-		AssetListEntryLocalService assetListEntryLocalService, Bundle bundle,
+		AssetEntryLocalService assetEntryLocalService,
+		AssetLinkLocalService assetLinkLocalService,
+		AssetListEntryLocalService assetListEntryLocalService,
+		BlogPostingResource.Factory blogPostingResourceFactory, Bundle bundle,
 		CETManager cetManager,
 		ClientExtensionEntryLocalService clientExtensionEntryLocalService,
 		ConfigurationProvider configurationProvider,
@@ -126,7 +133,7 @@ public class SiteInitializerExtension {
 		FragmentsImporter fragmentsImporter,
 		GroupLocalService groupLocalService,
 		JournalArticleLocalService journalArticleLocalService,
-		JSONFactory jsonFactory,
+		JSONFactory jsonFactory, KeywordResource.Factory keywordResourceFactory,
 		KnowledgeBaseArticleResource.Factory
 			knowledgeBaseArticleResourceFactory,
 		KnowledgeBaseFolderResource.Factory knowledgeBaseFolderResourceFactory,
@@ -193,15 +200,16 @@ public class SiteInitializerExtension {
 			accountGroupLocalService, accountGroupRelService,
 			accountResourceFactory, accountRoleLocalService,
 			accountRoleResourceFactory, assetCategoryLocalService,
-			assetListEntryLocalService, bundle, cetManager,
-			clientExtensionEntryLocalService, configurationProvider,
+			assetEntryLocalService, assetLinkLocalService,
+			assetListEntryLocalService, blogPostingResourceFactory, bundle,
+			cetManager, clientExtensionEntryLocalService, configurationProvider,
 			dataDefinitionResourceFactory, ddmStructureLocalService,
 			ddmTemplateLocalService, defaultDDMStructureHelper,
 			depotEntryGroupRelLocalService, depotEntryLocalService,
 			dlFileEntryTypeLocalService, dlURLHelper,
 			documentFolderResourceFactory, documentResourceFactory,
 			expandoValueLocalService, fragmentsImporter, groupLocalService,
-			journalArticleLocalService, jsonFactory,
+			journalArticleLocalService, jsonFactory, keywordResourceFactory,
 			knowledgeBaseArticleResourceFactory,
 			knowledgeBaseFolderResourceFactory, layoutLocalService,
 			layoutPageTemplateEntryLocalService, layoutsImporter,

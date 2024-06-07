@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -66,12 +67,13 @@ public class LayoutSetPrototypeHelperPerformanceTest {
 	public void testGetDuplicatedFriendlyURLLayoutsWithLayoutSetPrototypeLayout()
 		throws Exception {
 
-		List<Layout> layouts = new ArrayList<>();
+		List<Long> plids = new ArrayList<>();
 
 		for (Group group : _groups) {
-			layouts.add(
-				LayoutTestUtil.addTypePortletLayout(
-					group.getGroupId(), "test", false));
+			Layout layout = LayoutTestUtil.addTypePortletLayout(
+				group.getGroupId(), "test", false);
+
+			plids.add(layout.getPlid());
 		}
 
 		Layout layoutSetPrototypeLayout = LayoutTestUtil.addTypePortletLayout(
@@ -80,21 +82,21 @@ public class LayoutSetPrototypeHelperPerformanceTest {
 		_entityCache.clearCache();
 		_multiVMPool.clear();
 
-		List<Layout> conflictLayouts = null;
+		long[] conflictPlids = null;
 
 		try (PerformanceTimer performanceTimer = new PerformanceTimer(1000)) {
-			conflictLayouts =
+			conflictPlids = TransformUtil.transformToLongArray(
 				_layoutSetPrototypeHelper.getDuplicatedFriendlyURLLayouts(
-					layoutSetPrototypeLayout);
+					layoutSetPrototypeLayout),
+				layout -> layout.getPlid());
 		}
 
 		Assert.assertEquals(
-			conflictLayouts.toString(), layouts.size(), conflictLayouts.size());
-		Assert.assertArrayEquals(
-			TransformUtil.transformToLongArray(
-				layouts, layout -> layout.getPlid()),
-			TransformUtil.transformToLongArray(
-				conflictLayouts, layout -> layout.getPlid()));
+			conflictPlids.toString(), plids.size(), conflictPlids.length);
+
+		for (Long plid : plids) {
+			Assert.assertTrue(ArrayUtil.contains(conflictPlids, plid));
+		}
 	}
 
 	protected void setLinkEnabled(Group group) throws Exception {

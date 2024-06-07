@@ -14,10 +14,15 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,6 +54,27 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 		return _jsonObject.optString("description");
 	}
 
+	public Date getDueDate() {
+		String dueDateString = _jsonObject.optString("dueDate");
+
+		if (JenkinsResultsParserUtil.isNullOrEmpty(dueDateString)) {
+			return null;
+		}
+
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
+			"yyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+		simpleDateFormat.setTimeZone(
+			TimeZone.getTimeZone("America/Los_Angeles"));
+
+		try {
+			return simpleDateFormat.parse(dueDateString);
+		}
+		catch (ParseException parseException) {
+			return null;
+		}
+	}
+
 	public long getID() {
 		return _jsonObject.getLong("id");
 	}
@@ -72,13 +98,7 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 	}
 
 	public String getPortalSHA() {
-		Matcher matcher = _portalSHAPattern.matcher(getDescription());
-
-		if (!matcher.find()) {
-			return null;
-		}
-
-		return matcher.group("portalSHA");
+		return _jsonObject.getString("gitHash");
 	}
 
 	public String getPullRequestSenderUsername() {
@@ -429,8 +449,6 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 
 	private static final Pattern _portalBranchPattern = Pattern.compile(
 		"Portal Branch: (?<portalBranch>[^;]+);");
-	private static final Pattern _portalSHAPattern = Pattern.compile(
-		"Portal SHA: (?<portalSHA>[^;]+);");
 	private static final Pattern _testrayAttachmentURLPattern = Pattern.compile(
 		JenkinsResultsParserUtil.combine(
 			"https://.+/(?<startYearMonth>\\d{4}-\\d{2})/",

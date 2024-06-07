@@ -7,6 +7,8 @@ package com.liferay.marketplace.service;
 
 import com.liferay.petra.string.StringBundler;
 
+import java.time.Duration;
+
 import java.util.Objects;
 
 import org.apache.commons.logging.Log;
@@ -19,10 +21,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import reactor.core.publisher.Mono;
+
+import reactor.util.retry.Retry;
 
 /**
  * @author Keven Leone
@@ -37,10 +42,13 @@ public class ConsoleService {
 		).delete(
 		).uri(
 			"/projects/" + projectName
-		);
+		).retrieve(
+		).bodyToMono(
+			Void.class
+		).block();
 
 		if (_log.isInfoEnabled()) {
-			_log.info("Deleted project " + projectId);
+			_log.info("Deleted project " + projectName);
 		}
 	}
 
@@ -51,8 +59,12 @@ public class ConsoleService {
 			return _accessToken;
 		}
 
-		String json = WebClient.create(
+		String json = WebClient.builder(
+		).baseUrl(
 			_consoleAuthURL
+		).filter(
+			_getRetryExchangeFilterFunction()
+		).build(
 		).post(
 		).uri(
 			"/login"
@@ -120,12 +132,31 @@ public class ConsoleService {
 		}
 	}
 
+	private ExchangeFilterFunction _getRetryExchangeFilterFunction() {
+		return (clientRequest, next) -> next.exchange(
+			clientRequest
+		).retryWhen(
+			Retry.fixedDelay(
+				3, Duration.ofSeconds(5)
+			).doBeforeRetry(
+				retrySignal -> {
+					if (_log.isInfoEnabled()) {
+						_log.info(
+							"Retry attempt " + retrySignal.totalRetries() + 1);
+					}
+				}
+			)
+		);
+	}
+
 	private WebClient _getWebClient() throws Exception {
 		return WebClient.builder(
 		).baseUrl(
 			_consoleAuthURL
 		).defaultHeader(
 			HttpHeaders.AUTHORIZATION, "Bearer " + getAuthorization()
+		).filter(
+			_getRetryExchangeFilterFunction()
 		).build();
 	}
 
