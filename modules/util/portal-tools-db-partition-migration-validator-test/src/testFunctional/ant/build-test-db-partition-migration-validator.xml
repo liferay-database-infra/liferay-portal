@@ -59,7 +59,7 @@ exit 0
 						<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
 						<arg value="--export" />
 						<arg value="--jdbc-url" />
-						<arg value="jdbc:mysql://${database.mysql.url}/${database.mysql.schema}?characterEncoding=UTF-8&amp;dontTrackOpenResources=true&amp;holdResultsOpenOverStatementClose=true&amp;serverTimezone=GMT&amp;useFastDateParsing=false&amp;useUnicode=true" />
+						<arg value="${database.mysql.url}" />
 						<arg value="--user" />
 						<arg value="${database.mysql.username}" />
 						<arg value="--password" />
@@ -73,7 +73,7 @@ exit 0
 						<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
 						<arg value="--export" />
 						<arg value="--jdbc-url" />
-						<arg value="jdbc:postgresql://${database.postgresql.url}/${database.postgresql.schema}" />
+						<arg value="${database.postgresql.url}" />
 						<arg value="--user" />
 						<arg value="${database.postgresql.username}" />
 						<arg value="--password" />
@@ -113,6 +113,15 @@ exit 0
 			</not>
 			<then>
 				<get-testcase-property property.name="ignore.migration.errors" />
+			</then>
+		</if>
+
+		<if>
+			<not>
+				<isset property="database.type" />
+			</not>
+			<then>
+				<get-testcase-property property.name="database.type" />
 			</then>
 		</if>
 
