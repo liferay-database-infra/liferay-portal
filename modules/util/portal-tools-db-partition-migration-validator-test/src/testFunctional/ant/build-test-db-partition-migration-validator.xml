@@ -48,12 +48,12 @@ exit 0
 				</else>
 			</if>
 
-			<get-database-property property.name="database.type" />
+			<get-database-property property.name="db.type" />
 
-			<echo>Database type is ${database.type}</echo>
+			<echo>Database type is ${db.type}</echo>
 
 			<if>
-				<equals arg1="${database.type}" arg2="mysql" />
+				<equals arg1="${db.type}" arg2="mysql" />
 				<then>
 					<exec dir="${liferay.home}/tools/portal-tools-db-partition-migration-validator" executable="/bin/bash" failonerror="false" output="db-partition-migration-validator.log">
 						<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
