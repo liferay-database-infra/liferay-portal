@@ -4,12 +4,16 @@
  */
 
 import {Locator, Page, expect} from '@playwright/test';
+import path from 'path';
 
+import {zipFolder} from '../../../../utils/zip';
 import {PublishProductPayload, Steps} from '../types';
 
 export class PublisherAppPage {
+	readonly addPackagesButton: Locator;
 	readonly backButton: Locator;
 	readonly cloudCompatibleRadio: Locator;
+	readonly confirmButton: Locator;
 	readonly continueButton: Locator;
 	readonly form: {
 		build: {
@@ -31,13 +35,20 @@ export class PublisherAppPage {
 	readonly logoUploadButton: Locator;
 	readonly page: Page;
 	readonly selectFileButton: Locator;
+	readonly standardLicenses: Locator;
 	readonly submissionCheckbox: Locator;
 	readonly submitButton: Locator;
 	readonly zipFilesContainer: Locator;
+	readonly paidPriceModel: Locator;
 
 	constructor(page: Page) {
+		this.addPackagesButton = page.getByRole('button', {
+			name: 'Add Package(s)',
+		});
 		this.backButton = page.getByRole('button', {name: 'Back'});
 		this.cloudCompatibleRadio = page.locator('.radio-card-button-icon');
+
+		this.confirmButton = page.getByRole('button', {name: 'Confirm'});
 		this.continueButton = page.getByRole('button', {name: 'Continue'});
 		this.form = {
 			build: {
@@ -65,12 +76,17 @@ export class PublisherAppPage {
 		this.selectFileButton = page.getByRole('button', {
 			name: 'Select a file',
 		});
+		this.standardLicenses = page.getByText('Standard License prices');
 		this.submitButton = page.getByRole('button', {
 			name: 'Submit App',
 		});
 		this.submissionCheckbox = page.getByRole('checkbox');
 
 		this.page = page;
+		this.paidPriceModel = page
+			.locator('div')
+			.filter({hasText: /^Paid$/})
+			.first();
 		this.zipFilesContainer = page.locator(
 			'.document-file-list-item-container'
 		);
@@ -133,30 +149,22 @@ export class PublisherAppPage {
 		}
 
 		expect(this.continueButton).toBeEnabled();
+
+		await this.continue();
+		await this.waitForStep('build');
 	}
 
 	async fillBuild() {
-		await this.waitForStep('build');
-
 		expect(this.continueButton).toBeDisabled();
 
 		if (this.publishProductPayload.cloudCompatible) {
 			await this.cloudCompatibleRadio.first().click();
+
 			await this.form.build.cpu.fill(
 				this.publishProductPayload.resourceRequirements.cpus.toString()
 			);
 			await this.form.build.ram.fill(
 				this.publishProductPayload.resourceRequirements.ram.toString()
-			);
-
-			await this.importFile(
-				this.selectFileButton,
-				this.publishProductPayload.zipFiles[0]
-			);
-
-			expect(await this.zipFilesContainer).toHaveCount(1);
-			expect(await this.zipFilesContainer).toContainText(
-				this.publishProductPayload.zipFiles[0].split('/').at(-1)
 			);
 		}
 		else {
@@ -170,14 +178,50 @@ export class PublisherAppPage {
 				.click();
 		}
 
+		await this.addPackagesButton.click();
+
+		await this.page
+			.getByRole('heading', {
+				name: 'Select Compatible Versions',
+			})
+			.waitFor({state: 'visible'});
+
+		for (const dxpVersion of this.publishProductPayload.dxpVersions) {
+			await this.page.getByLabel(dxpVersion).click();
+		}
+
+		await this.confirmButton.click();
+
+		let i = 0;
+
+		for (const _ of this.publishProductPayload.dxpVersions) {
+			await this.importFile(
+				this.selectFileButton.nth(i),
+				await zipFolder(
+					path.join(
+						__dirname,
+						'../dependencies/folder.marketplace.jar'
+					)
+				)
+			);
+
+			i++;
+		}
+
 		await this.continue();
 
 		expect(this.continueButton).toBeDisabled();
+
+		await this.waitForStep('storefront');
+	}
+
+	async fillLicensing() {
+		await this.continue();
+
+		await this.waitForStep('support');
 	}
 
 	async fillStoreFront() {
-		await this.waitForStep('storefront');
-
 		expect(this.continueButton).toBeDisabled();
 
 		await this.importFile(
@@ -190,11 +234,11 @@ export class PublisherAppPage {
 		await this.continue();
 
 		expect(this.continueButton).toBeDisabled();
+
+		await this.waitForStep('version');
 	}
 
 	async fillVersion() {
-		await this.waitForStep('version');
-
 		expect(this.continueButton).toBeDisabled();
 		expect(this.form.version.notes).toHaveValue('');
 		expect(this.form.version.version).toHaveValue('1.0');
@@ -208,18 +252,31 @@ export class PublisherAppPage {
 		);
 
 		await this.continue();
+		await this.waitForStep('pricing');
 	}
 
 	async fillPricing() {
-		await this.waitForStep('pricing');
+		if (this.publishProductPayload.priceModel === 'paid') {
+			await this.paidPriceModel.click();
 
-		await this.continue(); // Select the App Price
-		await this.continue(); // Select Trial Condition
+			await this.continue(); // Select the App License
+			await this.waitForStep('licensing');
+			await this.continue();
+
+			await expect(this.standardLicenses).toBeVisible();
+
+			await this.continue();
+			await this.waitForStep('support');
+		}
+		else {
+			await this.continue();
+			await this.waitForStep('licensing');
+			await this.continue();
+			await this.waitForStep('support');
+		}
 	}
 
 	async fillSupport() {
-		await this.waitForStep('support');
-
 		await this.continue();
 	}
 

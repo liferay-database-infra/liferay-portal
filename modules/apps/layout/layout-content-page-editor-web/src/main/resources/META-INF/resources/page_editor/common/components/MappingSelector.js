@@ -49,7 +49,11 @@ const UNMAPPED_OPTION = {
 	value: 'unmapped',
 };
 
-function filterFields(fields, fieldType, filterLinkTypes) {
+function filterFields(initialFields, fieldType, filterLinkTypes, relationship) {
+	const fields = relationship
+		? initialFields.filter((fieldSet) => fieldSet.name === relationship)
+		: initialFields;
+
 	return fields.reduce((acc, fieldSet) => {
 		const newFields = fieldSet.fields.filter((field) => {
 			if (fieldType === EDITABLE_TYPES['date-time']) {
@@ -93,11 +97,14 @@ function filterFields(fields, fieldType, filterLinkTypes) {
 	}, []);
 }
 
-function loadMappingFields({item, relationship, sourceType}) {
+function loadMappingFields({item, sourceType}) {
 	let classNameId;
 	let classTypeId;
 
-	if (sourceType === MAPPING_SOURCE_TYPES.structure) {
+	if (
+		sourceType === MAPPING_SOURCE_TYPES.structure ||
+		sourceType === MAPPING_SOURCE_TYPES.relationship
+	) {
 		const {selectedMappingTypes} = config;
 
 		classNameId = selectedMappingTypes.type.id;
@@ -109,13 +116,6 @@ function loadMappingFields({item, relationship, sourceType}) {
 	) {
 		classNameId = item.classNameId;
 		classTypeId = item.classTypeId;
-	}
-	else if (
-		sourceType === MAPPING_SOURCE_TYPES.relationship &&
-		relationship
-	) {
-		classNameId = relationship;
-		classTypeId = '0';
 	}
 
 	const promise = InfoItemService.getAvailableStructureMappingFields({
@@ -303,7 +303,7 @@ function MappingSelector({
 	);
 
 	const [selectedRelationship, setSelectedRelationship] = useState(
-		mappedItem.classNameId || NOT_SELECTED_OPTION.value
+		isMappedToRelationship(mappedItem) ? mappedItem.classNameId : null
 	);
 
 	const relationships = useCache({
@@ -411,7 +411,7 @@ function MappingSelector({
 			(selectedSourceType === MAPPING_SOURCE_TYPES.content &&
 				!selectedItem.classNameId) ||
 			(selectedSourceType === MAPPING_SOURCE_TYPES.relationship &&
-				selectedRelationship === NOT_SELECTED_OPTION.value)
+				!selectedRelationship)
 		) {
 			setItemFields(null);
 
@@ -434,12 +434,18 @@ function MappingSelector({
 		const fields = mappingFields[key];
 
 		if (fields) {
-			setItemFields(filterFields(fields, fieldType, filterLinkTypes));
+			setItemFields(
+				filterFields(
+					fields,
+					fieldType,
+					filterLinkTypes,
+					selectedRelationship
+				)
+			);
 		}
 		else {
 			loadMappingFields({
 				item: selectedItem,
-				relationship: selectedRelationship,
 				sourceType: selectedSourceType,
 			}).then((newFields) => {
 				dispatch(addMappingFields({fields: newFields, key}));
@@ -474,9 +480,7 @@ function MappingSelector({
 
 								setSelectedItem({});
 
-								setSelectedRelationship(
-									NOT_SELECTED_OPTION.value
-								);
+								setSelectedRelationship(null);
 
 								if (isMapped(mappedItem)) {
 									onMappingSelect({});
@@ -503,13 +507,16 @@ function MappingSelector({
 								options={[
 									NOT_SELECTED_OPTION,
 									...(relationships || []).map(
-										({classNameId, label}) => ({
+										({label, name}) => ({
 											label,
-											value: classNameId,
+											value: name,
 										})
 									),
 								]}
-								value={selectedRelationship}
+								value={
+									selectedRelationship ||
+									NOT_SELECTED_OPTION.value
+								}
 							/>
 						</ClayForm.Group>
 					) : null}

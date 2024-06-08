@@ -36,6 +36,11 @@ interface IBaseFilter {
 	name: string;
 }
 
+export interface IDateRangeFilter extends IBaseFilter {
+	from?: string;
+	to?: string;
+}
+
 export interface ISelectionFilter extends IBaseFilter {
 	filterMode: 'Include' | 'Exclude';
 	picklist?: string;

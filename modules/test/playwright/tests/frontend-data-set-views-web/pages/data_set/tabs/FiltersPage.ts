@@ -5,50 +5,89 @@
 
 import {Locator, Page, expect} from '@playwright/test';
 
-import {ISelectionFilter} from '../../../utils/types';
+import {IDateRangeFilter, ISelectionFilter} from '../../../utils/types';
 import {DataSetPage} from '../DataSetPage';
+
+interface NewFilterModal {
+	cancelButton: Locator;
+	closeButton: Locator;
+	filterByDropdown: Locator;
+	filterBySelect: Locator;
+	formFeedback: Locator;
+	modalBody: Locator;
+	nameInput: Locator;
+	saveButton: Locator;
+}
+
+interface NewSelectionFilterModal extends NewFilterModal {
+	filterModeRadioButtons: Locator;
+	picklistDropdown: Locator;
+	preselectedValuesMultiSelect: Locator;
+	selectionRadioButtons: Locator;
+	sourceDropdown: Locator;
+}
+
+interface NewDateRangeFilterModal extends NewFilterModal {
+	datePicker: Locator;
+	fromDatePickerTrigger: Locator;
+	fromInput: Locator;
+	toDatePickerTrigger: Locator;
+	toInput: Locator;
+}
 
 export class FiltersPage {
 	private readonly dataSetPage: DataSetPage;
-	readonly newDateRangeFilterModal: {
-		filterBySelect: Locator;
-	};
+
+	private readonly filterTable: Locator;
+
+	readonly newDateRangeFilterModal: NewDateRangeFilterModal;
 	private readonly newFilterButton: Locator;
-	private readonly newFilterModal: {
-		cancelButton: Locator;
-		saveButton: Locator;
-	};
-	private readonly newSelectionFilterModal: {
-		filterBySelect: Locator;
-		filterModeRarioButtons: Locator;
-		nameInput: Locator;
-		newFilterModalheading: Locator;
-		picklistDropdown: Locator;
-		preselectedValuesMultiSelect: Locator;
-		selectionRadioButtons: Locator;
-		sourceDropdown: Locator;
-	};
+	private readonly newFilterModal: NewFilterModal;
+	private readonly newSelectionFilterModal: NewSelectionFilterModal;
 	readonly page: Page;
 
 	constructor(page: Page) {
 		this.dataSetPage = new DataSetPage(page);
+		this.filterTable = page.getByRole('table');
 		this.newFilterButton = page
 			.getByRole('button', {name: 'New Filter'})
 			.and(page.getByTitle('New Filter'));
-		this.newDateRangeFilterModal = {
-			filterBySelect: page.getByLabel('Filter By'),
-		};
 		this.newFilterModal = {
 			cancelButton: page.getByRole('button', {name: 'Cancel'}),
+			closeButton: page.getByRole('button', {
+				exact: true,
+				name: 'Close',
+			}),
+			filterByDropdown: page.locator('.fds-field-name-dropdown-menu'),
+			filterBySelect: page.getByLabel('Filter By'),
+			formFeedback: page.locator('.form-feedback-item'),
+			modalBody: page.locator('.modal-body'),
+			nameInput: page.getByPlaceholder('Add a name'),
 			saveButton: page.getByRole('button', {name: 'Save'}),
 		};
+		this.newDateRangeFilterModal = {
+			...this.newFilterModal,
+			datePicker: page.getByRole('dialog', {name: 'Choose date'}),
+			fromDatePickerTrigger: page
+				.locator('div')
+				.filter({hasText: /^From$/})
+				.getByRole('button'),
+			fromInput: page
+				.locator('div')
+				.filter({hasText: /^From$/})
+				.getByPlaceholder('YYYY-MM-DD'),
+			toDatePickerTrigger: page
+				.locator('div')
+				.filter({hasText: /^From$/})
+				.getByRole('button'),
+			toInput: page
+				.locator('div')
+				.filter({hasText: /^To$/})
+				.getByPlaceholder('YYYY-MM-DD'),
+		};
 		this.newSelectionFilterModal = {
-			filterBySelect: page.getByLabel('Filter ByRequired'),
-			filterModeRarioButtons: page.getByText('Filter ModeIncludeExclude'),
-			nameInput: page.getByPlaceholder('Add a name'),
-			newFilterModalheading: page.getByRole('heading', {
-				name: 'New Selection Filter',
-			}),
+			...this.newFilterModal,
+			filterModeRadioButtons: page.getByText('Filter ModeIncludeExclude'),
 			picklistDropdown: page.getByLabel('Picklist'),
 			preselectedValuesMultiSelect: page.getByPlaceholder(
 				'Select a default value for your filter.'
@@ -65,6 +104,53 @@ export class FiltersPage {
 		});
 
 		await this.dataSetPage.selectTab('Filters');
+	}
+
+	async assertFiltersTableRowCount(rowCount: number) {
+		await expect(
+			this.filterTable.locator('tbody').locator('tr')
+		).toHaveCount(rowCount);
+	}
+
+	async assertValidationError(text: string) {
+		const visualFeedback = this.newFilterModal.formFeedback
+			.filter({has: this.page.locator('.form-feedback-indicator')})
+			.first();
+
+		await expect(visualFeedback).toBeVisible();
+
+		await expect(visualFeedback).toContainText(text);
+	}
+
+	async cancelAddFilterModal() {
+		await this.newFilterModal.cancelButton.click();
+	}
+
+	async createDateRangeFilter({filterBy, from, name, to}: IDateRangeFilter) {
+		await this.openNewFilterModal({
+			dropdownItemLabel: 'Date Range',
+		});
+
+		await this.newDateRangeFilterModal.nameInput.click();
+		await this.newDateRangeFilterModal.nameInput.fill(name);
+
+		await this.newDateRangeFilterModal.filterBySelect.click();
+
+		const dateFilterOption = this.page.getByRole('option', {
+			name: filterBy,
+		});
+
+		await dateFilterOption.click();
+
+		if (from) {
+			await this.newDateRangeFilterModal.fromInput.fill(from);
+		}
+
+		if (to) {
+			await this.newDateRangeFilterModal.toInput.fill(to);
+		}
+
+		await this.saveAddFilterModal();
 	}
 
 	async createSelectionFilter({
@@ -94,10 +180,25 @@ export class FiltersPage {
 			.click();
 		await this.page.getByText(selectionType).click();
 		await this.page.locator('label').filter({hasText: filterMode}).click();
-		await this.newFilterModal.saveButton.click();
+		await this.saveAddFilterModal();
 	}
 
-	async openNewFilterModal({dropdownItemLabel}: {dropdownItemLabel: string}) {
+	getRowByText(text: string) {
+		return this.filterTable
+			.locator('tbody')
+			.locator('tr')
+			.filter({
+				has: this.page.getByText(text, {exact: true}).first(),
+			});
+	}
+
+	async openNewFilterModal({
+		dropdownItemLabel,
+		expectSaveHidden = false,
+	}: {
+		dropdownItemLabel: string;
+		expectSaveHidden?: boolean;
+	}) {
 		await expect(this.newFilterButton).toBeVisible();
 
 		await this.newFilterButton.click();
@@ -110,6 +211,15 @@ export class FiltersPage {
 
 		await menuItem.click();
 
-		await expect(this.newFilterModal.saveButton).toBeVisible();
+		if (expectSaveHidden) {
+			await expect(this.newFilterModal.saveButton).toBeHidden();
+		}
+		else {
+			await expect(this.newFilterModal.saveButton).toBeVisible();
+		}
+	}
+
+	async saveAddFilterModal() {
+		await this.newFilterModal.saveButton.click();
 	}
 }

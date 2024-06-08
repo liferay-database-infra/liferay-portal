@@ -7,6 +7,7 @@ package com.liferay.user.service.test;
 
 import com.liferay.announcements.kernel.service.AnnouncementsDeliveryLocalService;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.audit.AuditMessage;
@@ -842,12 +843,6 @@ public class UserLocalServiceTest {
 
 		User user = UserTestUtil.addUser();
 
-		user.setLastFailedLoginDate(
-			DateUtil.newDate(System.currentTimeMillis() - 5000L));
-		user.setFailedLoginAttempts(3);
-
-		user = _userLocalService.updateUser(user);
-
 		PasswordPolicy passwordPolicy = user.getPasswordPolicy();
 
 		passwordPolicy.setLockout(false);
@@ -855,24 +850,32 @@ public class UserLocalServiceTest {
 
 		_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
 
-		_userLocalService.authenticateByEmailAddress(
-			user.getCompanyId(), user.getEmailAddress(),
-			RandomTestUtil.randomString(), null, null, null);
+		long companyId = user.getCompanyId();
+		String emailAddress = user.getEmailAddress();
+		String screenName = user.getScreenName();
+		long userId = user.getUserId();
 
-		user = _userLocalService.fetchUser(user.getUserId());
+		user = _assertFailedLoginAttempts(
+			() -> _userLocalService.authenticateByEmailAddress(
+				companyId, emailAddress, RandomTestUtil.randomString(), null,
+				null, null),
+			user);
+		user = _assertFailedLoginAttempts(
+			() -> _userLocalService.authenticateByScreenName(
+				companyId, screenName, RandomTestUtil.randomString(), null,
+				null, null),
+			user);
 
-		Assert.assertEquals(1, user.getFailedLoginAttempts());
+		_assertFailedLoginAttempts(
+			() -> _userLocalService.authenticateByUserId(
+				companyId, userId, RandomTestUtil.randomString(), null, null,
+				null),
+			user);
 	}
 
 	@Test
 	public void testUnlockoutUserWithStaleLockoutDate() throws Exception {
 		User user = UserTestUtil.addUser();
-
-		user.setLockout(true);
-		user.setLockoutDate(
-			DateUtil.newDate(System.currentTimeMillis() - 5000L));
-
-		user = _userLocalService.updateUser(user);
 
 		PasswordPolicy passwordPolicy = user.getPasswordPolicy();
 
@@ -882,13 +885,27 @@ public class UserLocalServiceTest {
 
 		_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
 
-		_userLocalService.authenticateByEmailAddress(
-			user.getCompanyId(), user.getEmailAddress(),
-			RandomTestUtil.randomString(), null, null, null);
+		long companyId = user.getCompanyId();
+		String emailAddress = user.getEmailAddress();
+		String screenName = user.getScreenName();
+		long userId = user.getUserId();
 
-		user = _userLocalService.fetchUser(user.getUserId());
+		user = _assertLockout(
+			() -> _userLocalService.authenticateByEmailAddress(
+				companyId, emailAddress, RandomTestUtil.randomString(), null,
+				null, null),
+			user);
+		user = _assertLockout(
+			() -> _userLocalService.authenticateByScreenName(
+				companyId, screenName, RandomTestUtil.randomString(), null,
+				null, null),
+			user);
 
-		Assert.assertFalse(user.isLockout());
+		_assertLockout(
+			() -> _userLocalService.authenticateByUserId(
+				companyId, userId, RandomTestUtil.randomString(), null, null,
+				null),
+			user);
 	}
 
 	@Test
@@ -1065,6 +1082,44 @@ public class UserLocalServiceTest {
 		}
 
 		return userIds;
+	}
+
+	private User _assertFailedLoginAttempts(
+			UnsafeRunnable<PortalException> unsafeRunnable, User user)
+		throws Exception {
+
+		user.setLastFailedLoginDate(
+			DateUtil.newDate(System.currentTimeMillis() - 5000L));
+		user.setFailedLoginAttempts(3);
+
+		user = _userLocalService.updateUser(user);
+
+		unsafeRunnable.run();
+
+		user = _userLocalService.fetchUser(user.getUserId());
+
+		Assert.assertEquals(1, user.getFailedLoginAttempts());
+
+		return user;
+	}
+
+	private User _assertLockout(
+			UnsafeRunnable<PortalException> unsafeRunnable, User user)
+		throws Exception {
+
+		user.setLockout(true);
+		user.setLockoutDate(
+			DateUtil.newDate(System.currentTimeMillis() - 5000L));
+
+		user = _userLocalService.updateUser(user);
+
+		unsafeRunnable.run();
+
+		user = _userLocalService.fetchUser(user.getUserId());
+
+		Assert.assertFalse(user.isLockout());
+
+		return user;
 	}
 
 	private static Company _company;

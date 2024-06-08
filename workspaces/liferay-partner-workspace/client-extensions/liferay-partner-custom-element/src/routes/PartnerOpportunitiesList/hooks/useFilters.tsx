@@ -6,11 +6,12 @@
 import {useCallback, useEffect, useState} from 'react';
 
 import {Filters} from '../../../common/utils/constants/filters';
-import getSearchFilterTerm from '../../../common/utils/getSearchFilterTerm';
 import getCloseDateFilterTerm from '../utils/constants/getCloseDateFilterTerm';
 import {INITIAL_FILTER} from '../utils/constants/initialFilter';
 
 export default function useFilters(
+	sort: string,
+	urlParams: URLSearchParams,
 	openOpportunitiesFilter?: boolean,
 	isRenewalListing?: boolean
 ) {
@@ -19,8 +20,6 @@ export default function useFilters(
 			sessionStorage.getItem('opportunitiesFilters')!
 		) as typeof INITIAL_FILTER) || INITIAL_FILTER
 	);
-
-	const [filtersTerm, setFilterTerm] = useState('');
 
 	const opportunitiesInitialFilter = isRenewalListing
 		? openOpportunitiesFilter
@@ -55,12 +54,6 @@ export default function useFilters(
 				: `${opportunitiesInitialFilter}`;
 		}
 
-		if (filters.searchTerm) {
-			initialFilter = initialFilter
-				? initialFilter.concat(getSearchFilterTerm(filters.searchTerm))
-				: getSearchFilterTerm(filters.searchTerm);
-		}
-
 		if (
 			filters.closeDate?.dates?.endDate ||
 			filters.closeDate?.dates?.startDate
@@ -90,7 +83,8 @@ export default function useFilters(
 			hasValue: hasFilter,
 		});
 
-		setFilterTerm(initialFilter);
+		urlParams.set('filter', initialFilter);
+		urlParams.set('sort', sort);
 	}, [
 		filters.closeDate,
 		filters.searchTerm,
@@ -98,7 +92,9 @@ export default function useFilters(
 		onFilter,
 		opportunitiesInitialFilter,
 		setFilters,
+		sort,
+		urlParams,
 	]);
 
-	return {filters, filtersTerm, onFilter, setFilters};
+	return {filters, onFilter, setFilters};
 }

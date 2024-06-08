@@ -22,7 +22,6 @@ import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -311,10 +310,6 @@ public class MenuItemProvider {
 	public MenuItem getAICreatorMenuItem(
 		Folder folder, ThemeDisplay themeDisplay,
 		PortletRequest portletRequest) {
-
-		if (!FeatureFlagManagerUtil.isEnabled("LPD-10793")) {
-			return null;
-		}
 
 		long folderId = _getFolderId(folder);
 

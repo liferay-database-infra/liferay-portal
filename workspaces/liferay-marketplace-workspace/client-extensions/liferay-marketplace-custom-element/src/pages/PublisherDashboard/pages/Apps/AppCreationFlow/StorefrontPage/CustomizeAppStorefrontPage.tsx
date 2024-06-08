@@ -31,6 +31,7 @@ import i18n from '../../../../../../i18n';
 import {Liferay} from '../../../../../../liferay/liferay';
 import fetcher from '../../../../../../services/fetcher';
 import HeadlessCommerceAdminCatalogImpl from '../../../../../../services/rest/HeadlessCommerceAdminCatalog';
+import {getRandomID} from '../../../../../../utils/string';
 import {submitBase64EncodedFile} from '../../../../../../utils/util';
 import {swapImageElements} from '../../../../constants';
 
@@ -66,7 +67,7 @@ export function CustomizeAppStorefrontPage({
 			error: false,
 			file,
 			fileName: file.name,
-			id: crypto.randomUUID(),
+			id: getRandomID(),
 			index: 0,
 			preview: URL.createObjectURL(file),
 			progress: 0,

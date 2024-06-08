@@ -9,6 +9,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.field.util.ObjectFieldUtil;
 import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.model.ObjectRelationship;
 import com.liferay.object.service.ObjectRelationshipLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.object.test.util.ObjectRelationshipTestUtil;
@@ -71,9 +72,10 @@ public class GetInfoItemOneToManyRelationshipsMVCResourceCommandTest {
 					ObjectFieldConstants.DB_TYPE_STRING, "myText", "myText",
 					false)));
 
-		ObjectRelationshipTestUtil.addObjectRelationship(
-			_objectRelationshipLocalService, _objectDefinition2,
-			_objectDefinition1);
+		ObjectRelationship objectRelationship =
+			ObjectRelationshipTestUtil.addObjectRelationship(
+				_objectRelationshipLocalService, _objectDefinition2,
+				_objectDefinition1);
 
 		MockLiferayResourceRequest mockLiferayResourceRequest =
 			new MockLiferayResourceRequest();
@@ -103,6 +105,8 @@ public class GetInfoItemOneToManyRelationshipsMVCResourceCommandTest {
 		Assert.assertEquals(
 			_objectDefinition2.getLabel(LocaleUtil.getDefault()),
 			jsonObject.getString("label"));
+		Assert.assertEquals(
+			objectRelationship.getName(), jsonObject.getString("name"));
 	}
 
 	@Test
