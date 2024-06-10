@@ -331,7 +331,6 @@ definition {
 	@priority = 5
 	test ViewLocaleChangeThroughFriendlyURL {
 		property environment.acceptance = "true";
-		property operating.system.types = "alpine,amazonlinux,centos,debian,fedora,orcllinux,osx,redhat,rockylinux,solaris,suse,ubuntu,windows";
 		property portal.acceptance = "true";
 
 		task ("View the inline text on Home page is in English as default") {
@@ -345,7 +344,7 @@ definition {
 			ContentPages.viewFragmentImage(
 				fragmentName = "image",
 				id = "image-square",
-				image = "tree-png");
+				image = "tree");
 		}
 
 		task ("Change the locale to Chinese") {
@@ -363,7 +362,7 @@ definition {
 			ContentPages.viewFragmentImage(
 				fragmentName = "image",
 				id = "image-square",
-				image = "tree-png");
+				image = "tree");
 		}
 
 		task ("Change the locale to Portuguese") {
@@ -381,7 +380,7 @@ definition {
 			ContentPages.viewFragmentImage(
 				fragmentName = "image",
 				id = "image-square",
-				image = "tree-png");
+				image = "tree");
 		}
 
 		task ("Change the locale to French") {
@@ -399,7 +398,7 @@ definition {
 			ContentPages.viewFragmentImage(
 				fragmentName = "image",
 				id = "image-square",
-				image = "tree-png");
+				image = "tree");
 		}
 
 		task ("Change the locale to English") {

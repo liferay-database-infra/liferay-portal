@@ -1156,6 +1156,10 @@
 															},
 															{
 																"definition": {
+																	"cssClasses": [
+																		"resource-requirements",
+																		"d-none"
+																	],
 																	"fragmentStyle": {
 																		"backgroundColor": "whiteColor",
 																		"borderRadius": "2px",

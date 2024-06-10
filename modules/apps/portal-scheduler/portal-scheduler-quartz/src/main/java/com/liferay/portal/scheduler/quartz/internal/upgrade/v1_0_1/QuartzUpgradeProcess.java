@@ -9,16 +9,13 @@ import com.liferay.petra.io.ProtectedClassLoaderObjectInputStream;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
-import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.scheduler.SchedulerEngine;
-import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.InputStream;
 
@@ -33,9 +30,9 @@ import org.quartz.JobDataMap;
 /**
  * @author Kevin Lee
  */
-public class QuartzDBPartitionUpgradeProcess extends UpgradeProcess {
+public class QuartzUpgradeProcess extends UpgradeProcess {
 
-	public QuartzDBPartitionUpgradeProcess(
+	public QuartzUpgradeProcess(
 		CompanyLocalService companyLocalService, JSONFactory jsonFactory) {
 
 		_companyLocalService = companyLocalService;
@@ -44,12 +41,6 @@ public class QuartzDBPartitionUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		if (PortalUtil.getDefaultCompanyId() !=
-				CompanyThreadLocal.getCompanyId()) {
-
-			return;
-		}
-
 		Map<String, Long> companyIds = new HashMap<>();
 
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
@@ -81,15 +72,6 @@ public class QuartzDBPartitionUpgradeProcess extends UpgradeProcess {
 			});
 	}
 
-	@Override
-	protected boolean isSkipUpgradeProcess() {
-		if (!DBPartition.isPartitionEnabled()) {
-			return true;
-		}
-
-		return false;
-	}
-
 	private JobDataMap _deserializeJobDataMap(InputStream inputStream)
 		throws Exception {
 
@@ -97,8 +79,7 @@ public class QuartzDBPartitionUpgradeProcess extends UpgradeProcess {
 				protectedClassLoaderObjectInputStream =
 					new ProtectedClassLoaderObjectInputStream(
 						inputStream,
-						QuartzDBPartitionUpgradeProcess.class.
-							getClassLoader())) {
+						QuartzUpgradeProcess.class.getClassLoader())) {
 
 			return (JobDataMap)
 				protectedClassLoaderObjectInputStream.readObject();

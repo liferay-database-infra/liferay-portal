@@ -15,53 +15,61 @@ ClaySampleManagementToolbarsDisplayContext managementToolbarsDisplayContext = ne
 	<p>Management toolbar is an extension of Toolbar. A combination of different components as filters, orders, search, visualization select and other actions, that allow to manage dataset.</p>
 </blockquote>
 
-<h3>DEFAULT STATE</h3>
+<section id="managementToolbarDefaultState">
+	<h3>DEFAULT STATE</h3>
 
-<clay:management-toolbar
-	creationMenu="<%= managementToolbarsDisplayContext.getCreationMenu() %>"
-	filterDropdownItems="<%= managementToolbarsDisplayContext.getFilterDropdownItems() %>"
-	orderDropdownItems="<%= managementToolbarsDisplayContext.getOrderDropdownItems() %>"
-	searchActionURL="mySearchActionURL?key1=val1&key2=val2&key3=val3"
-	searchFormName="mySearchName"
-	searchInputAutoFocus="<%= true %>"
-	searchInputName="mySearchInputName"
-	selectable="<%= true %>"
-	sortingOrder="desc"
-	viewTypeItems="<%= managementToolbarsDisplayContext.getViewTypeItems() %>"
-/>
+	<clay:management-toolbar
+		creationMenu="<%= managementToolbarsDisplayContext.getCreationMenu() %>"
+		filterDropdownItems="<%= managementToolbarsDisplayContext.getFilterDropdownItems() %>"
+		orderDropdownItems="<%= managementToolbarsDisplayContext.getOrderDropdownItems() %>"
+		searchActionURL="mySearchActionURL?key1=val1&key2=val2&key3=val3"
+		searchFormName="mySearchName"
+		searchInputAutoFocus="<%= true %>"
+		searchInputName="mySearchInputName"
+		selectable="<%= true %>"
+		sortingOrder="desc"
+		viewTypeItems="<%= managementToolbarsDisplayContext.getViewTypeItems() %>"
+	/>
+</section>
 
-<h3>ACTIVE STATE</h3>
+<section id="managementToolbarActiveState">
+	<h3>ACTIVE STATE</h3>
 
-<clay:management-toolbar
-	actionDropdownItems="<%= managementToolbarsDisplayContext.getActionDropdownItems() %>"
-	checkboxStatus="checked"
-	itemsTotal="<%= 42 %>"
-	selectable="<%= true %>"
-	selectedItems="<%= 14 %>"
-	showSelectAllButton="<%= true %>"
-/>
+	<clay:management-toolbar
+		actionDropdownItems="<%= managementToolbarsDisplayContext.getActionDropdownItems() %>"
+		checkboxStatus="checked"
+		itemsTotal="<%= 42 %>"
+		selectable="<%= true %>"
+		selectedItems="<%= 14 %>"
+		showSelectAllButton="<%= true %>"
+	/>
+</section>
 
-<h3>WITH RESULTS BAR</h3>
+<section id="managementToolbarWithResultsBar">
+	<h3>WITH RESULTS BAR</h3>
 
-<clay:management-toolbar
-	creationMenu="<%= managementToolbarsDisplayContext.getCreationMenu() %>"
-	filterDropdownItems="<%= managementToolbarsDisplayContext.getFilterDropdownItems() %>"
-	filterLabelItems="<%= managementToolbarsDisplayContext.getFilterLabelItems() %>"
-	itemsTotal="<%= 42 %>"
-	orderDropdownItems="<%= managementToolbarsDisplayContext.getOrderDropdownItems() %>"
-	searchActionURL="mySearchActionURL?key1=val1&key2=val2&key3=val3"
-	searchFormName="mySearchName"
-	searchInputName="mySearchInputName"
-	searchValue="my search"
-	selectable="<%= true %>"
-	showResultsBar="<%= true %>"
-	sortingOrder="desc"
-	viewTypeItems="<%= managementToolbarsDisplayContext.getViewTypeItems() %>"
-/>
+	<clay:management-toolbar
+		creationMenu="<%= managementToolbarsDisplayContext.getCreationMenu() %>"
+		filterDropdownItems="<%= managementToolbarsDisplayContext.getFilterDropdownItems() %>"
+		filterLabelItems="<%= managementToolbarsDisplayContext.getFilterLabelItems() %>"
+		itemsTotal="<%= 42 %>"
+		orderDropdownItems="<%= managementToolbarsDisplayContext.getOrderDropdownItems() %>"
+		searchActionURL="mySearchActionURL?key1=val1&key2=val2&key3=val3"
+		searchFormName="mySearchName"
+		searchInputName="mySearchInputName"
+		searchValue="my search"
+		selectable="<%= true %>"
+		showResultsBar="<%= true %>"
+		sortingOrder="desc"
+		viewTypeItems="<%= managementToolbarsDisplayContext.getViewTypeItems() %>"
+	/>
+</section>
 
-<h3>USING DISPLAY CONTEXT</h3>
+<section id="managementToolbarUsingDisplayContext">
+	<h3>USING DISPLAY CONTEXT</h3>
 
-<clay:management-toolbar
-	managementToolbarDisplayContext="<%= managementToolbarsDisplayContext %>"
-	propsTransformer="{ClaySampleManagementToolbarPropsTransformer} from frontend-taglib-clay-sample-web"
-/>
+	<clay:management-toolbar
+		managementToolbarDisplayContext="<%= managementToolbarsDisplayContext %>"
+		propsTransformer="{ClaySampleManagementToolbarPropsTransformer} from frontend-taglib-clay-sample-web"
+	/>
+</section>

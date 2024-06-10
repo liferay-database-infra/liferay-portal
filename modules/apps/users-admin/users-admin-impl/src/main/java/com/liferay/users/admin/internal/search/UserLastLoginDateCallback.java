@@ -8,10 +8,11 @@ package com.liferay.users.admin.internal.search;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.DocumentImpl;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.search.index.UpdateDocumentIndexWriter;
-import com.liferay.portal.search.indexer.BaseModelDocumentFactory;
+import com.liferay.portal.search.model.uid.UIDFactory;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -33,9 +34,14 @@ public class UserLastLoginDateCallback implements Indexable.Callback {
 
 		User user = (User)baseModel;
 
-		Document document = _baseModelDocumentFactory.createDocument(user);
+		Document document = new DocumentImpl();
 
+		document.add(
+			new Field(Field.ENTRY_CLASS_NAME, user.getModelClassName()));
+		document.add(
+			new Field(Field.ENTRY_CLASS_PK, String.valueOf(user.getUserId())));
 		document.addDate(Field.MODIFIED_DATE, user.getModifiedDate());
+		document.addKeyword(Field.UID, _uidFactory.getUID(user));
 		document.addDate("lastLoginDate", user.getLastLoginDate());
 
 		_updateDocumentIndexWriter.updateDocumentPartially(
@@ -43,7 +49,7 @@ public class UserLastLoginDateCallback implements Indexable.Callback {
 	}
 
 	@Reference
-	private BaseModelDocumentFactory _baseModelDocumentFactory;
+	private UIDFactory _uidFactory;
 
 	@Reference
 	private UpdateDocumentIndexWriter _updateDocumentIndexWriter;

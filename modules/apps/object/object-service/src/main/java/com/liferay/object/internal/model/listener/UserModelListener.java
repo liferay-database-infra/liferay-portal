@@ -7,6 +7,7 @@ package com.liferay.object.internal.model.listener;
 
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.service.ObjectDefinitionLocalService;
+import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.object.system.SystemObjectDefinitionManager;
 import com.liferay.object.system.SystemObjectDefinitionManagerRegistry;
 import com.liferay.portal.kernel.exception.ModelListenerException;
@@ -38,14 +39,15 @@ public class UserModelListener extends BaseModelListener<User> {
 				_userLocalService.fetchUserByScreenName(
 					user.getCompanyId(), "default-service-account");
 
-			// Adding conditional to check default user existence
-			// If removed, deleting virtual instances will no longer work
-
 			if (defaultServiceAccountUser == null) {
 				return;
 			}
 
 			_objectDefinitionLocalService.updateUserId(
+				user.getCompanyId(), user.getUserId(),
+				defaultServiceAccountUser.getUserId());
+
+			_objectFieldLocalService.updateUserId(
 				user.getCompanyId(), user.getUserId(),
 				defaultServiceAccountUser.getUserId());
 		}
@@ -106,6 +108,9 @@ public class UserModelListener extends BaseModelListener<User> {
 
 	@Reference
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;
+
+	@Reference
+	private ObjectFieldLocalService _objectFieldLocalService;
 
 	@Reference
 	private SystemObjectDefinitionManagerRegistry
