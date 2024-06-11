@@ -123,7 +123,7 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 	@Test
 	public void testCopyDBPartition() throws Exception {
-		long newCompanyId = RandomTestUtil.randomLong();
+		long companyId = RandomTestUtil.randomLong();
 
 		CurrentConnection defaultCurrentConnection =
 			CurrentConnectionUtil.getCurrentConnection();
@@ -136,6 +136,7 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 				currentConnection);
 
 			addDBPartitions();
+
 			insertPartitionRequiredData();
 
 			String testObjectsTableNamePrefix = dbInspector.normalizeName(
@@ -149,7 +150,7 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 			}
 
 			Assert.assertTrue(
-				DBPartitionUtil.copyDBPartition(COMPANY_IDS[0], newCompanyId));
+				DBPartitionUtil.copyDBPartition(COMPANY_IDS[0], companyId));
 
 			List<String> fromTableNames = _getObjectNames(
 				"TABLE", COMPANY_IDS[0]);
@@ -158,9 +159,9 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 				fromTableNames.remove(
 					testObjectsTableNamePrefix + COMPANY_IDS[0]));
 			Assert.assertTrue(
-				fromTableNames.add(testObjectsTableNamePrefix + newCompanyId));
+				fromTableNames.add(testObjectsTableNamePrefix + companyId));
 
-			List<String> toTableNames = _getObjectNames("TABLE", newCompanyId);
+			List<String> toTableNames = _getObjectNames("TABLE", companyId);
 
 			Assert.assertEquals(
 				toTableNames.toString(), fromTableNames.size(),
@@ -169,20 +170,20 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 			Assert.assertEquals(
 				_getObjectNames("VIEW", COMPANY_IDS[0]),
-				_getObjectNames("VIEW", newCompanyId));
+				_getObjectNames("VIEW", companyId));
 
 			for (String fromTableName : fromTableNames) {
 				String toTableName = fromTableName;
 
 				if (fromTableName.equals(
-						testObjectsTableNamePrefix + newCompanyId)) {
+						testObjectsTableNamePrefix + companyId)) {
 
 					fromTableName = testObjectsTableNamePrefix + COMPANY_IDS[0];
 				}
 
 				Assert.assertEquals(
 					toTableName, _getCount(COMPANY_IDS[0], fromTableName),
-					_getCount(newCompanyId, toTableName));
+					_getCount(companyId, toTableName));
 			}
 		}
 		finally {
@@ -190,7 +191,7 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 				CurrentConnectionUtil.class, "_currentConnection",
 				defaultCurrentConnection);
 
-			removeDBPartitions(new long[] {newCompanyId});
+			removeDBPartitions(new long[] {companyId});
 
 			deletePartitionRequiredData();
 			removeDBPartitions();
