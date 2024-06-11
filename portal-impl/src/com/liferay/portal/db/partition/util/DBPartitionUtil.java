@@ -410,42 +410,43 @@ public class DBPartitionUtil {
 
 							quartzTableNames.add(fromTableName);
 						}
+
+						continue;
 					}
-					else {
-						String toTableName = StringUtil.replace(
-							fromTableName, String.valueOf(fromCompanyId),
-							String.valueOf(toCompanyId));
 
+					String toTableName = StringUtil.replace(
+						fromTableName, String.valueOf(fromCompanyId),
+						String.valueOf(toCompanyId));
+
+					statement.executeUpdate(
+						_dbPartitionDB.getCreateTableSQL(
+							fromPartitionName, toPartitionName, fromTableName,
+							toTableName));
+
+					statement.executeUpdate(
+						_getCopyDataSQL(
+							fromPartitionName, toPartitionName, fromTableName,
+							toTableName,
+							_getColumnNames(connection, fromTableName),
+							StringPool.BLANK));
+
+					String partitionTableName =
+						toPartitionName + StringPool.PERIOD + toTableName;
+
+					if (dbInspector.hasColumn(fromTableName, "companyId")) {
 						statement.executeUpdate(
-							_dbPartitionDB.getCreateTableSQL(
-								fromPartitionName, toPartitionName,
-								fromTableName, toTableName));
+							StringBundler.concat(
+								"update ", partitionTableName, " set ",
+								"companyId = ", toCompanyId, " where ",
+								"companyId = ", fromCompanyId));
+					}
 
+					if (fromTableName.equals("Group_")) {
 						statement.executeUpdate(
-							_getCopyDataSQL(
-								fromPartitionName, toPartitionName,
-								fromTableName, toTableName,
-								_getColumnNames(connection, fromTableName),
-								StringPool.BLANK));
-
-						String partitionTableName =
-							toPartitionName + StringPool.PERIOD + toTableName;
-
-						if (dbInspector.hasColumn(fromTableName, "companyId")) {
-							statement.executeUpdate(
-								StringBundler.concat(
-									"update ", partitionTableName, " set ",
-									"companyId = ", toCompanyId, " where ",
-									"companyId = ", fromCompanyId));
-						}
-
-						if (fromTableName.equals("Group_")) {
-							statement.executeUpdate(
-								StringBundler.concat(
-									"update ", partitionTableName, " set ",
-									"classPK = ", toCompanyId, " where ",
-									"classPK = ", fromCompanyId));
-						}
+							StringBundler.concat(
+								"update ", partitionTableName, " set classPK ",
+								"= ", toCompanyId, " where classPK = ",
+								fromCompanyId));
 					}
 				}
 			}
