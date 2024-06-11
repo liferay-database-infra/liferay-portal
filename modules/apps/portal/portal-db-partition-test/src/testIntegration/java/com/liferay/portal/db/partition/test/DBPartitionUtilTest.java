@@ -194,6 +194,7 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 			removeDBPartitions(new long[] {companyId});
 
 			deletePartitionRequiredData();
+
 			removeDBPartitions();
 		}
 	}
