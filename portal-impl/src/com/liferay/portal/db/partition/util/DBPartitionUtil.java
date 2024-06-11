@@ -500,7 +500,7 @@ public class DBPartitionUtil {
 			StringBundler.concat(
 				"insert into ", partitionName, StringPool.PERIOD, tableName,
 				"(", columnName, ", ", StringUtil.merge(columnNames),
-				") select REPLACE (", columnName, ", '@", fromCompanyId,
+				") select replace (", columnName, ", '@", fromCompanyId,
 				"', '@", toCompanyId, "') as ", columnName, ", ",
 				StringUtil.merge(columnNames), " from ", partitionName,
 				StringPool.PERIOD, tableName,
