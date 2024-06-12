@@ -35,33 +35,40 @@ exit 0
 		<attribute default="" name="database.type" />
 
 		<sequential>
-			<get-database-property property.name="database.host" />
-
-			<if>
-				<equals arg1="${database.host}" arg2="localhost_mysql" />
-				<then>
-					<property name="custom.database.url" value="localhost:3307" />
-				</then>
-				<else>
-					<property name="custom.database.url" value="${database.host}" />
-				</else>
-			</if>
+			<echo>Database type is: ${database.type}</echo>
 
 			<if>
 				<equals arg1="${database.type}" arg2="mysql" />
 				<then>
+					<exec dir="${liferay.home}/tools/portal-tools-db-partition-migration-validator" executable="/bin/bash" failonerror="false" output="db-partition-migration-validator.log">
+						<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
+						<arg value="--export" />
+						<arg value="--jdbc-url" />
+						<arg value="${database.mysql.url}" />
+						<arg value="--user" />
+						<arg value="${database.mysql.username}" />
+						<arg value="--password" />
+						<arg value="${database.mysql.password}" />
+						<arg value="--schema-name" />
+						<arg value="${database.schema.name}" />
+					</exec>
+				</then>
+				<else>
 					<if>
-						<equals arg1="${database.schema.name}" arg2="lportal" />
+						<or>
+							<equals arg1="${database.schema.name}" arg2="lportal" />
+							<equals arg1="${database.schema.name}" arg2="lportal_target" />
+						</or>
 						<then>
 							<exec dir="${liferay.home}/tools/portal-tools-db-partition-migration-validator" executable="/bin/bash" failonerror="false" output="db-partition-migration-validator.log">
 								<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
 								<arg value="--export" />
 								<arg value="--jdbc-url" />
-								<arg value="${database.mysql.url}" />
+								<arg value="jdbc:postgresql://${database.postgresql.host}/{database.schema.name}" />
 								<arg value="--user" />
-								<arg value="${database.mysql.username}" />
+								<arg value="${database.postgresql.username}" />
 								<arg value="--password" />
-								<arg value="${database.mysql.password}" />
+								<arg value="${database.postgresql.password}" />
 							</exec>
 						</then>
 						<else>
@@ -69,30 +76,16 @@ exit 0
 								<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
 								<arg value="--export" />
 								<arg value="--jdbc-url" />
-								<arg value="${database.mysql.url}" />
+								<arg value="${database.postgresql.url}" />
 								<arg value="--user" />
-								<arg value="${database.mysql.username}" />
+								<arg value="${database.postgresql.username}" />
 								<arg value="--password" />
-								<arg value="${database.mysql.password}" />
+								<arg value="${database.postgresql.password}" />
 								<arg value="--schema-name" />
 								<arg value="${database.schema.name}" />
 							</exec>
 						</else>
 					</if>
-				</then>
-				<else>
-					<exec dir="${liferay.home}/tools/portal-tools-db-partition-migration-validator" executable="/bin/bash" failonerror="false" output="db-partition-migration-validator.log">
-						<arg value="${liferay.home}/tools/portal-tools-db-partition-migration-validator/db_partition_migration_validator.sh" />
-						<arg value="--export" />
-						<arg value="--jdbc-url" />
-						<arg value="${database.postgresql.url}" />
-						<arg value="--user" />
-						<arg value="${database.postgresql.username}" />
-						<arg value="--password" />
-						<arg value="${database.postgresql.password}" />
-						<arg value="--schema-name" />
-						<arg value="${database.schema.name}" />
-					</exec>
 				</else>
 			</if>
 		</sequential>
