@@ -522,6 +522,10 @@ definition {
 			Questions.search(
 				searchKey = "tag1",
 				searchTag = "true");
+
+			WaitForElementNotPresent(
+				key_tagName = "tag2",
+				locator1 = "Questions#TAGS_LIST_TAB_NAMES");
 		}
 
 		task ("Then only the matching tag is displayed") {

@@ -6,11 +6,42 @@
 import {expect, mergeTests} from '@playwright/test';
 
 import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
+import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
+import {fragmentsPagesTest} from '../../fixtures/fragmentPagesTest';
+import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {objectPagesTest} from '../../fixtures/objectPagesTest';
+import {pageEditorPagesTest} from '../../fixtures/pageEditorPagesTest';
 import {getRandomInt} from '../../utils/getRandomInt';
+import getRandomString from '../../utils/getRandomString';
+import getFragmentDefinition from '../layout-content-page-editor-web/utils/getFragmentDefinition';
+import getPageDefinition from '../layout-content-page-editor-web/utils/getPageDefinition';
 
-export const test = mergeTests(apiHelpersTest, loginTest(), objectPagesTest);
+export const test = mergeTests(
+	apiHelpersTest,
+	featureFlagsTest({
+		'LPS-178052': true,
+	}),
+	fragmentsPagesTest,
+	isolatedSiteTest,
+	loginTest(),
+	objectPagesTest,
+	pageEditorPagesTest
+);
+
+let objectDefinitions: ObjectDefinition[] = [];
+
+test.afterEach(async ({apiHelpers}) => {
+	if (objectDefinitions.length) {
+		for (const objectDefinition of objectDefinitions) {
+			await apiHelpers.objectAdmin.deleteObjectDefinition(
+				objectDefinition.id
+			);
+		}
+
+		objectDefinitions = [];
+	}
+});
 
 test.describe('Manage object definitions through Model Builder', () => {
 	test.beforeEach(({page}) => {
@@ -18,7 +49,6 @@ test.describe('Manage object definitions through Model Builder', () => {
 	});
 
 	test('can create an object definition by model builder', async ({
-		apiHelpers,
 		modalAddObjectDefinitionPage,
 		modelBuilderPage,
 	}) => {
@@ -33,6 +63,8 @@ test.describe('Manage object definitions through Model Builder', () => {
 				objectDefinitionLabel
 			);
 
+		objectDefinitions.push(objectDefinition);
+
 		await expect(
 			modelBuilderPage.objectDefinitionNodes.filter({
 				hasText: objectDefinition.label['en_US'],
@@ -44,16 +76,9 @@ test.describe('Manage object definitions through Model Builder', () => {
 				hasText: objectDefinition.label['en_US'],
 			})
 		).toBeVisible();
-
-		// Clean up
-
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition.id
-		);
 	});
 
 	test('can create an object definition inside a folder and see if it renders correctly in the model builder', async ({
-		apiHelpers,
 		modalAddObjectDefinitionPage,
 		modelBuilderPage,
 		page,
@@ -70,6 +95,8 @@ test.describe('Manage object definitions through Model Builder', () => {
 				objectDefinitionLabel
 			);
 
+		objectDefinitions.push(objectDefinition);
+
 		expect(page.getByText(objectDefinitionLabel)).toBeVisible();
 
 		await viewObjectDefinitionsPage.viewInModelBuilder();
@@ -85,12 +112,6 @@ test.describe('Manage object definitions through Model Builder', () => {
 				hasText: objectDefinition.label['en_US'],
 			})
 		).toBeVisible();
-
-		// Clean up
-
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition.id
-		);
 	});
 
 	test('can delete an object definition by model builder leftsidebar', async ({
@@ -108,6 +129,10 @@ test.describe('Manage object definitions through Model Builder', () => {
 				objectFolderExternalReferenceCode: 'default',
 				status: {code: 2},
 			});
+
+		objectDefinitions.push(objectDefinition1);
+
+		objectDefinitions.push(objectDefinition2);
 
 		await modelBuilderPage.goto({objectFolderName: 'Default'});
 
@@ -132,12 +157,6 @@ test.describe('Manage object definitions through Model Builder', () => {
 				hasText: objectDefinition1.label['en_US'],
 			})
 		).toBeHidden();
-
-		// Clean up
-
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition2.id
-		);
 	});
 
 	test('can delete an published object definition by model builder', async ({
@@ -160,6 +179,10 @@ test.describe('Manage object definitions through Model Builder', () => {
 				'ObjectDefinition' + getRandomInt()
 			);
 
+		objectDefinitions.push(objectDefinition1);
+
+		objectDefinitions.push(objectDefinition2);
+
 		await modelBuilderPage.clickToggleSidebarsButton();
 
 		await modelBuilderPage.clickFitViewButton();
@@ -181,12 +204,6 @@ test.describe('Manage object definitions through Model Builder', () => {
 				hasText: objectDefinition1.label['en_US'],
 			})
 		).toBeHidden();
-
-		// Clean up
-
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition2.id
-		);
 	});
 
 	test('linked object definitions are created when object definitions are related and put into different folders', async ({
@@ -208,6 +225,10 @@ test.describe('Manage object definitions through Model Builder', () => {
 				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
+
+		objectDefinitions.push(objectDefinition1);
+
+		objectDefinitions.push(objectDefinition2);
 
 		const objectRelationshipLabel =
 			'objectRelationshipLabel' + getRandomInt();
@@ -267,13 +288,6 @@ test.describe('Manage object definitions through Model Builder', () => {
 
 		// Clean up
 
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition1.id
-		);
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition2.id
-		);
-
 		await apiHelpers.objectAdmin.deleteObjectFolder(objectFolder.id);
 	});
 
@@ -309,6 +323,8 @@ test.describe('Manage object definitions through Model Builder', () => {
 				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
+
+		objectDefinitions.push(objectDefinition);
 
 		await modelBuilderPage.goto({objectFolderName: 'Default'});
 
@@ -353,16 +369,9 @@ test.describe('Manage object definitions through Model Builder', () => {
 					.filter({hasText: objectDefinition.name})
 			).toBeVisible();
 		}
-
-		// Clean up
-
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition.id
-		);
 	});
 
 	test('show object definition details in "RightSidebar" after create object definition', async ({
-		apiHelpers,
 		modalAddObjectDefinitionPage,
 		modelBuilderPage,
 	}) => {
@@ -377,17 +386,13 @@ test.describe('Manage object definitions through Model Builder', () => {
 				objectDefinitionLabel
 			);
 
+		objectDefinitions.push(objectDefinition);
+
 		await expect(
 			modelBuilderPage.rightSidebar.getByTitle(
 				objectDefinitionLabel + ' Details'
 			)
 		).toBeVisible();
-
-		// Clean up
-
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition.id
-		);
 	});
 });
 
@@ -408,6 +413,10 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 				objectFolderExternalReferenceCode: 'default',
 				status: {code: 2},
 			});
+
+		objectDefinitions.push(objectDefinition1);
+
+		objectDefinitions.push(objectDefinition2);
 
 		await viewObjectDefinitionsPage.goto();
 
@@ -432,11 +441,60 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 				hasText: objectDefinition2.label['en_US'],
 			})
 		).toBeHidden();
+	});
+});
 
-		// Clean up
+test.describe('Manage object definitions through a Page', () => {
+	test('can display an object reactivated on the Page Item Selector', async ({
+		apiHelpers,
+		page,
+		pageEditorPage,
+		site,
+		viewObjectDefinitionsPage,
+	}) => {
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				objectFolderExternalReferenceCode: 'default',
+				status: {code: 0},
+			});
 
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition1.id
+		objectDefinitions.push(objectDefinition);
+
+		await viewObjectDefinitionsPage.goto();
+
+		await viewObjectDefinitionsPage.changeObjectActivateStatus(
+			objectDefinition.name
 		);
+
+		await viewObjectDefinitionsPage.goto();
+
+		await viewObjectDefinitionsPage.changeObjectActivateStatus(
+			objectDefinition.name
+		);
+
+		const headingDefinition = getFragmentDefinition({
+			id: getRandomString(),
+			key: 'BASIC_COMPONENT-heading',
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([headingDefinition]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await pageEditorPage.selectFragment(headingDefinition.id);
+
+		await page.getByLabel('Select element-text').click();
+
+		await page.getByLabel('Select Item').click();
+
+		await expect(
+			page
+				.frameLocator('iframe[title="Select"]')
+				.getByRole('menuitem', {name: objectDefinition.name})
+		).toBeVisible();
 	});
 });

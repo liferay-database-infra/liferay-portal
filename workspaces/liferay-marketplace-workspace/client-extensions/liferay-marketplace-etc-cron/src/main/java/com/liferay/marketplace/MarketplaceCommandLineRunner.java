@@ -15,6 +15,8 @@ import java.net.URL;
 
 import java.time.ZonedDateTime;
 
+import java.util.Objects;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -36,19 +38,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class MarketplaceCommandLineRunner implements CommandLineRunner {
 
 	public void run(String... args) throws Exception {
-		_processExpiredTrials();
-		_processOnHoldTrials();
-	}
+		_processInProgressTrials();
 
-	private void _deleteTrial(long orderId) throws Exception {
-		_getWebClient(
-		).delete(
-		).uri(
-			"/trial/" + orderId
-		).retrieve(
-		).bodyToMono(
-			Void.class
-		).block();
+		_processOnHoldTrials();
 	}
 
 	private JSONObject _getAvailabilityJSONObject() throws Exception {
@@ -83,7 +75,7 @@ public class MarketplaceCommandLineRunner implements CommandLineRunner {
 	private WebClient _getWebClient() throws Exception {
 		return WebClient.builder(
 		).baseUrl(
-			_marketplaceSpringBootUrl
+			_liferayMarketplaceEtcSpringBootURL.toString()
 		).defaultHeader(
 			HttpHeaders.AUTHORIZATION,
 			_liferayOAuth2AccessTokenManager.getAuthorization(
@@ -91,7 +83,29 @@ public class MarketplaceCommandLineRunner implements CommandLineRunner {
 		).build();
 	}
 
-	private void _postTrial(Order order) throws Exception {
+	private void _postTrialExpire(long orderId) throws Exception {
+		_getWebClient(
+		).post(
+		).uri(
+			"/trial/expire/" + orderId
+		).retrieve(
+		).bodyToMono(
+			Void.class
+		).block();
+	}
+
+	private void _postTrialNotifyEnd(long orderId) throws Exception {
+		_getWebClient(
+		).post(
+		).uri(
+			"/trial/notify-end/" + orderId
+		).retrieve(
+		).bodyToMono(
+			Void.class
+		).block();
+	}
+
+	private void _postTrialProvisioning(Order order) throws Exception {
 		_getWebClient(
 		).post(
 		).uri(
@@ -117,45 +131,73 @@ public class MarketplaceCommandLineRunner implements CommandLineRunner {
 		).block();
 	}
 
-	private void _processExpiredTrials() throws Exception {
-		Page<Order> page = _getOrdersPage(_ORDER_STATUS_COMPLETED);
+	private void _processInProgressTrials() throws Exception {
+		Page<Order> page = _getOrdersPage(_ORDER_STATUS_IN_PROGRESS);
 
 		for (Order order : page.getItems()) {
-			if (ZonedDateTime.parse(
+			try {
+				ZonedDateTime nowZonedDateTime = ZonedDateTime.now();
+				ZonedDateTime trialEndDateZonedDateTime = ZonedDateTime.parse(
 					order.getCustomFields(
 					).get(
 						"trial-end-date"
-					).toString()
-				).isAfter(
-					ZonedDateTime.now()
-				)) {
+					).toString());
 
-				try {
-					_deleteTrial(order.getId());
+				if (nowZonedDateTime.isAfter(trialEndDateZonedDateTime)) {
+					_postTrialExpire(order.getId());
 
 					if (_log.isInfoEnabled()) {
 						_log.info("Processed expired order " + order.getId());
 					}
+
+					continue;
 				}
-				catch (Exception exception) {
-					_log.error(exception);
+
+				if (Objects.equals(
+						nowZonedDateTime.getDayOfMonth(),
+						trialEndDateZonedDateTime.minusDays(
+							1
+						).getDayOfMonth())) {
+
+					_postTrialNotifyEnd(order.getId());
+
+					if (_log.isInfoEnabled()) {
+						_log.info(
+							"Processed notify end of trial for order " +
+								order.getId());
+					}
 				}
+			}
+			catch (Exception exception) {
+				_log.error(exception);
 			}
 		}
 	}
 
 	private void _processOnHoldTrials() throws Exception {
-		JSONObject availabilityJSONObject = _getAvailabilityJSONObject();
+		Page<Order> page = _getOrdersPage(_ORDER_STATUS_ON_HOLD);
 
-		if (!availabilityJSONObject.getBoolean("available")) {
+		if (page.getTotalCount() == 0) {
 			return;
 		}
 
-		Page<Order> page = _getOrdersPage(_ORDER_STATUS_ON_HOLD);
+		JSONObject availabilityJSONObject = _getAvailabilityJSONObject();
+
+		if (!availabilityJSONObject.getBoolean("active")) {
+			return;
+		}
+
+		long available = availabilityJSONObject.getLong("available");
 
 		for (Order order : page.getItems()) {
+			if (available == 0) {
+				break;
+			}
+
 			try {
-				_postTrial(order);
+				_postTrialProvisioning(order);
+
+				available--;
 
 				if (_log.isInfoEnabled()) {
 					_log.info("Processed on hold order " + order.getId());
@@ -167,12 +209,15 @@ public class MarketplaceCommandLineRunner implements CommandLineRunner {
 		}
 	}
 
-	private static final int _ORDER_STATUS_COMPLETED = 0;
+	private static final int _ORDER_STATUS_IN_PROGRESS = 6;
 
 	private static final int _ORDER_STATUS_ON_HOLD = 20;
 
 	private static final Log _log = LogFactory.getLog(
 		MarketplaceCommandLineRunner.class);
+
+	@Value("${liferay.marketplace.etc.spring.boot.url}")
+	private URL _liferayMarketplaceEtcSpringBootURL;
 
 	@Autowired
 	private LiferayOAuth2AccessTokenManager _liferayOAuth2AccessTokenManager;
@@ -185,8 +230,5 @@ public class MarketplaceCommandLineRunner implements CommandLineRunner {
 
 	@Value("${com.liferay.lxc.dxp.server.protocol}")
 	private String _lxcDXPServerProtocol;
-
-	@Value("${com.liferay.marketplace.spring.boot.url}")
-	private String _marketplaceSpringBootUrl;
 
 }

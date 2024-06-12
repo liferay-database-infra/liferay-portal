@@ -6,6 +6,8 @@
 package com.liferay.notification.web.internal.portlet.action;
 
 import com.liferay.notification.constants.NotificationPortletKeys;
+import com.liferay.notification.term.provider.NotificationTermProvider;
+import com.liferay.notification.term.provider.NotificationTermProviderRegistry;
 import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectRelationship;
@@ -23,6 +25,7 @@ import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
+import java.util.Map;
 import java.util.Objects;
 
 import javax.portlet.ResourceRequest;
@@ -96,18 +99,42 @@ public class GetObjectFieldNotificationTemplateTermsMVCResourceCommand
 				));
 		}
 
+		JSONArray termsJSONArray = getTermsJSONArray(
+			_objectFieldLocalService.getObjectFields(
+				objectDefinition.getObjectDefinitionId()),
+			objectDefinition.getShortName(), themeDisplay);
+
+		for (NotificationTermProvider notificationTermProvider :
+				_notificationTermProviderRegistry.getNotificationTermProviders(
+					objectDefinition.getClassName())) {
+
+			Map<String, String> notificationTerms =
+				notificationTermProvider.getNotificationTerms();
+
+			for (Map.Entry<String, String> entry :
+					notificationTerms.entrySet()) {
+
+				termsJSONArray.put(
+					JSONUtil.put(
+						"termLabel",
+						language.get(themeDisplay.getLocale(), entry.getKey())
+					).put(
+						"termName", entry.getValue()
+					));
+			}
+		}
+
 		JSONPortletResponseUtil.writeJSON(
 			resourceRequest, resourceResponse,
 			JSONUtil.put(
 				"relationshipSections", relationshipSectionsJSONArray
 			).put(
-				"terms",
-				getTermsJSONArray(
-					_objectFieldLocalService.getObjectFields(
-						objectDefinition.getObjectDefinitionId()),
-					objectDefinition.getShortName(), themeDisplay)
+				"terms", termsJSONArray
 			));
 	}
+
+	@Reference
+	private NotificationTermProviderRegistry _notificationTermProviderRegistry;
 
 	@Reference
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;

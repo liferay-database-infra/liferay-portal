@@ -8,7 +8,7 @@ package com.liferay.portal.workflow.kaleo.runtime.internal.assignment;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
-import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.workflow.kaleo.model.KaleoTaskAssignment;
@@ -106,6 +106,17 @@ public class AggregateKaleoTaskAssignmentSelectorImplTest {
 				_containsKaleoTaskAssignment(
 					kaleoTaskAssignments3, kaleoTaskAssignment));
 		}
+
+		KaleoTaskAssignment kaleoTaskAssignment3 = _createKaleoTaskAssignment(
+			assigneeClassNames.get(2), RandomTestUtil.randomLong());
+
+		Collection<KaleoTaskAssignment> kaleoTaskAssignments4 =
+			_aggregateKaleoTaskAssignmentSelectorImpl.getKaleoTaskAssignments(
+				Arrays.asList(kaleoTaskAssignment1, kaleoTaskAssignment3),
+				Mockito.mock(ExecutionContext.class));
+
+		Assert.assertEquals(
+			kaleoTaskAssignments4.toString(), 3, kaleoTaskAssignments4.size());
 	}
 
 	private boolean _containsKaleoTaskAssignment(
@@ -130,10 +141,16 @@ public class AggregateKaleoTaskAssignmentSelectorImplTest {
 	}
 
 	private KaleoTaskAssignment _createKaleoTaskAssignment(
-		String assigneeClassName, long assigneeClassPK) {
+		long groupId, String assigneeClassName, long assigneeClassPK) {
 
 		KaleoTaskAssignment kaleoTaskAssignment = Mockito.mock(
 			KaleoTaskAssignment.class);
+
+		Mockito.when(
+			kaleoTaskAssignment.getGroupId()
+		).thenReturn(
+			groupId
+		);
 
 		Mockito.when(
 			kaleoTaskAssignment.getAssigneeClassName()
@@ -148,6 +165,13 @@ public class AggregateKaleoTaskAssignmentSelectorImplTest {
 		);
 
 		return kaleoTaskAssignment;
+	}
+
+	private KaleoTaskAssignment _createKaleoTaskAssignment(
+		String assigneeClassName, long assigneeClassPK) {
+
+		return _createKaleoTaskAssignment(
+			0L, assigneeClassName, assigneeClassPK);
 	}
 
 	private void _setUpAggregateKaleoTaskAssignmentSelectorImpl()
@@ -182,7 +206,7 @@ public class AggregateKaleoTaskAssignmentSelectorImplTest {
 			new KaleoTaskAssignmentSelectorRegistryImpl();
 	private final Map<String, List<KaleoTaskAssignment>>
 		_kaleoTaskAssignmentSelectors =
-			HashMapBuilder.<String, List<KaleoTaskAssignment>>put(
+			LinkedHashMapBuilder.<String, List<KaleoTaskAssignment>>put(
 				RandomTestUtil.randomString(),
 				Arrays.asList(
 					_createKaleoTaskAssignment("A", 1),
@@ -196,6 +220,11 @@ public class AggregateKaleoTaskAssignmentSelectorImplTest {
 					_createKaleoTaskAssignment(
 						RandomTestUtil.randomString(),
 						RandomTestUtil.randomLong()))
+			).put(
+				RandomTestUtil.randomString(),
+				Arrays.asList(
+					_createKaleoTaskAssignment(
+						RandomTestUtil.randomLong(), "A", 1))
 			).build();
 	private final List<ServiceRegistration<KaleoTaskAssignmentSelector>>
 		_serviceRegistrations = new ArrayList<>();

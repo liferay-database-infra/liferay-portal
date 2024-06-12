@@ -113,10 +113,13 @@ public interface AssetListEntryAssetEntryRelLocalService
 	 *
 	 * @param assetListEntryAssetEntryRel the asset list entry asset entry rel
 	 * @return the asset list entry asset entry rel that was removed
+	 * @throws PortalException
 	 */
 	@Indexable(type = IndexableType.DELETE)
+	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
 	public AssetListEntryAssetEntryRel deleteAssetListEntryAssetEntryRel(
-		AssetListEntryAssetEntryRel assetListEntryAssetEntryRel);
+			AssetListEntryAssetEntryRel assetListEntryAssetEntryRel)
+		throws PortalException;
 
 	/**
 	 * Deletes the asset list entry asset entry rel with the primary key from the database. Also notifies the appropriate model listeners.
@@ -251,6 +254,10 @@ public interface AssetListEntryAssetEntryRelLocalService
 	public AssetListEntryAssetEntryRel getAssetListEntryAssetEntryRel(
 			long assetListEntryAssetEntryRelId)
 		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<AssetListEntryAssetEntryRel>
+		getAssetListEntryAssetEntryRelByAssetEntryId(long assetEntryId);
 
 	/**
 	 * Returns the asset list entry asset entry rel matching the UUID and group.

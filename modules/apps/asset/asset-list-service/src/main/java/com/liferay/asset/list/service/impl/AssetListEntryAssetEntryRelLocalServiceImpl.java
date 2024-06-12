@@ -99,16 +99,18 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 	@Override
 	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
 	public AssetListEntryAssetEntryRel deleteAssetListEntryAssetEntryRel(
-			long assetListEntryId, long segmentsEntryId, int position)
+			AssetListEntryAssetEntryRel assetListEntryAssetEntryRel)
 		throws PortalException {
 
-		AssetListEntryAssetEntryRel assetListEntryAssetEntryRel =
-			assetListEntryAssetEntryRelPersistence.removeByA_S_P(
-				assetListEntryId, segmentsEntryId, position);
+		assetListEntryAssetEntryRel =
+			assetListEntryAssetEntryRelPersistence.remove(
+				assetListEntryAssetEntryRel);
 
 		List<AssetListEntryAssetEntryRel> assetListEntryAssetEntryRels =
 			assetListEntryAssetEntryRelPersistence.findByA_S_GtP(
-				assetListEntryId, segmentsEntryId, position);
+				assetListEntryAssetEntryRel.getAssetListEntryId(),
+				assetListEntryAssetEntryRel.getSegmentsEntryId(),
+				assetListEntryAssetEntryRel.getPosition());
 
 		for (AssetListEntryAssetEntryRel curAssetListEntryAssetEntryRel :
 				assetListEntryAssetEntryRels) {
@@ -124,11 +126,30 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 	}
 
 	@Override
+	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
+	public AssetListEntryAssetEntryRel deleteAssetListEntryAssetEntryRel(
+			long assetListEntryId, long segmentsEntryId, int position)
+		throws PortalException {
+
+		return deleteAssetListEntryAssetEntryRel(
+			assetListEntryAssetEntryRelPersistence.findByA_S_P(
+				assetListEntryId, segmentsEntryId, position));
+	}
+
+	@Override
 	public void deleteAssetListEntryAssetEntryRelByAssetListEntryId(
 		long assetListEntryId) {
 
 		assetListEntryAssetEntryRelPersistence.removeByAssetListEntryId(
 			assetListEntryId);
+	}
+
+	@Override
+	public List<AssetListEntryAssetEntryRel>
+		getAssetListEntryAssetEntryRelByAssetEntryId(long assetEntryId) {
+
+		return assetListEntryAssetEntryRelPersistence.findByAssetEntryId(
+			assetEntryId);
 	}
 
 	@Override
