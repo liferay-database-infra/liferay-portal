@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
+import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -27,6 +28,7 @@ import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
+import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -34,6 +36,7 @@ import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.spring.hibernate.DialectDetector;
 import com.liferay.portal.util.PropsValues;
 
@@ -45,6 +48,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -448,6 +454,22 @@ public class DBPartitionUtil {
 								"= ", toCompanyId, " where classPK = ",
 								fromCompanyId));
 					}
+
+					if (fromTableName.equals("ResourcePermission")) {
+						statement.executeUpdate(
+							StringBundler.concat(
+								"update ", partitionTableName, " set primKey ",
+								"= ", toCompanyId, ", primKeyId = ",
+								toCompanyId, " where primKey = ", fromCompanyId,
+								" and scope = ",
+								ResourceConstants.SCOPE_COMPANY));
+					}
+
+					if (fromTableName.equals("Configuration_")) {
+						_updateCompanyIdConfiguration(
+							connection, partitionTableName, fromCompanyId,
+							toCompanyId);
+					}
 				}
 			}
 
@@ -584,6 +606,10 @@ public class DBPartitionUtil {
 		catch (Exception exception) {
 			throw new PortalException(exception);
 		}
+	}
+
+	private static String _escapeValue(String value) {
+		return StringUtil.replace(value, "\\", "\\\\");
 	}
 
 	private static void _extractDBPartition(long companyId)
@@ -1103,6 +1129,41 @@ public class DBPartitionUtil {
 		_deleteData(tableName, fromPartitionName, statement, whereClause);
 	}
 
+	private static Dictionary<String, String> _readConfig(
+		String dictionaryString) {
+
+		Dictionary<String, String> dictionary = new Hashtable<>();
+
+		String[] lines = dictionaryString.split("\n");
+
+		for (String line : lines) {
+			int equalsIndex = line.indexOf(StringPool.EQUAL);
+
+			if (equalsIndex != -1) {
+				String key = line.substring(
+					0, equalsIndex
+				).trim();
+
+				String value = line.substring(
+					equalsIndex + 1
+				).trim();
+
+				if (value.startsWith("L\"") || value.startsWith("B\"")) {
+					value = value.substring(2, value.length() - 1);
+				}
+				else if (value.startsWith("\"")) {
+					value = value.substring(1, value.length() - 1);
+				}
+
+				value = StringUtil.replace(value, "\\ ", StringPool.SPACE);
+
+				dictionary.put(key, value);
+			}
+		}
+
+		return dictionary;
+	}
+
 	private static void _restoreView(
 			long companyId, String tableName, Statement statement,
 			DBInspector dbInspector)
@@ -1128,6 +1189,56 @@ public class DBPartitionUtil {
 		statement.executeUpdate(
 			_dbPartitionDB.getCreateViewSQL(
 				_defaultPartitionName, partitionName, tableName));
+	}
+
+	private static void _updateCompanyIdConfiguration(
+			Connection connection, String partitionTableName,
+			long fromCompanyId, long toCompanyId)
+		throws SQLException {
+
+		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+				"select * from Configuration_");
+			PreparedStatement preparedStatement2 =
+				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+					connection,
+					"update Configuration_ set dictionary = ? where " +
+						"configurationId = ?");
+			ResultSet resultSet = preparedStatement1.executeQuery()) {
+
+			while (resultSet.next()) {
+				String dictionaryString = resultSet.getString("dictionary");
+
+				if (Validator.isNull(dictionaryString)) {
+					continue;
+				}
+
+				Dictionary<String, String> dictionary = _readConfig(
+					dictionaryString);
+
+				String companyId = dictionary.get("companyId");
+
+				if (companyId == null) {
+					continue;
+				}
+
+				if (companyId == String.valueOf(fromCompanyId)) {
+					dictionary.put("companyId", String.valueOf(toCompanyId));
+				}
+				else {
+					continue;
+				}
+
+				String configurationId = resultSet.getString("configurationId");
+
+				preparedStatement2.setString(1, _writeConfig(dictionary));
+
+				preparedStatement2.setString(2, configurationId);
+
+				preparedStatement2.addBatch();
+			}
+
+			preparedStatement2.executeBatch();
+		}
 	}
 
 	private static Statement _wrapStatement(Statement statement) {
@@ -1199,6 +1310,57 @@ public class DBPartitionUtil {
 			}
 
 		};
+	}
+
+	private static String _writeConfig(Dictionary<String, String> dictionary) {
+		StringBuilder sb = new StringBuilder();
+
+		Enumeration<String> keysEnumeration = dictionary.keys();
+
+		while (keysEnumeration.hasMoreElements()) {
+			String key = keysEnumeration.nextElement();
+
+			String value = dictionary.get(key);
+
+			sb.append(
+				key
+			).append(
+				StringPool.EQUAL
+			);
+
+			boolean needsEscape = false;
+
+			for (char c : value.toCharArray()) {
+				if (c == '\\') {
+					needsEscape = true;
+
+					break;
+				}
+			}
+
+			if (needsEscape) {
+				sb.append(
+					"\""
+				).append(
+					_escapeValue(value)
+				).append(
+					"\""
+				);
+			}
+			else {
+				sb.append(
+					"L\""
+				).append(
+					value
+				).append(
+					"\""
+				);
+			}
+
+			sb.append("\n");
+		}
+
+		return sb.toString();
 	}
 
 	private static final String _DATABASE_PARTITION_SCHEMA_NAME_PREFIX =
