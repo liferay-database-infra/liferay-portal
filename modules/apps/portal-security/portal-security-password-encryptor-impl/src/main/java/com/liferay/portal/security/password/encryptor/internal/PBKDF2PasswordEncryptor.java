@@ -5,7 +5,6 @@
 
 package com.liferay.portal.security.password.encryptor.internal;
 
-import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.exception.PwdEncryptorException;
 import com.liferay.portal.kernel.io.BigEndianCodec;
 import com.liferay.portal.kernel.security.SecureRandomUtil;
@@ -20,9 +19,8 @@ import java.nio.ByteBuffer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 import org.osgi.service.component.annotations.Component;
 
@@ -53,27 +51,22 @@ public class PBKDF2PasswordEncryptor implements PasswordEncryptor {
 			pbkdf2EncryptionConfiguration.configure(
 				algorithm, encryptedPassword);
 
+			PKCS5S2ParametersGenerator pkcs5S2ParametersGenerator =
+				new PKCS5S2ParametersGenerator();
+
+			pkcs5S2ParametersGenerator.init(
+				plainTextPassword.getBytes(),
+				pbkdf2EncryptionConfiguration.getSaltBytes(),
+				pbkdf2EncryptionConfiguration.getRounds());
+
 			byte[] saltBytes = pbkdf2EncryptionConfiguration.getSaltBytes();
 
-			PBEKeySpec pbeKeySpec = new PBEKeySpec(
-				plainTextPassword.toCharArray(), saltBytes,
-				pbkdf2EncryptionConfiguration.getRounds(),
-				pbkdf2EncryptionConfiguration.getKeySize());
+			KeyParameter keyParameter =
+				(KeyParameter)
+					pkcs5S2ParametersGenerator.generateDerivedMacParameters(
+						pbkdf2EncryptionConfiguration.getKeySize());
 
-			String algorithmName = algorithm;
-
-			int index = algorithm.indexOf(CharPool.SLASH);
-
-			if (index > -1) {
-				algorithmName = algorithm.substring(0, index);
-			}
-
-			SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(
-				algorithmName);
-
-			SecretKey secretKey = secretKeyFactory.generateSecret(pbeKeySpec);
-
-			byte[] secretKeyBytes = secretKey.getEncoded();
+			byte[] secretKeyBytes = keyParameter.getKey();
 
 			ByteBuffer byteBuffer = ByteBuffer.allocate(
 				(2 * 4) + saltBytes.length + secretKeyBytes.length);
@@ -94,7 +87,7 @@ public class PBKDF2PasswordEncryptor implements PasswordEncryptor {
 
 	private static final int _ROUNDS = 720000;
 
-	private static final int _SALT_BYTES_LENGTH = 8;
+	private static final int _SALT_BYTES_LENGTH = 16;
 
 	private static final Pattern _pattern = Pattern.compile(
 		"^.*/?([0-9]+)?/([0-9]+)$");
@@ -105,6 +98,8 @@ public class PBKDF2PasswordEncryptor implements PasswordEncryptor {
 			throws PwdEncryptorException {
 
 			if (Validator.isNull(encryptedPassword)) {
+				_saltBytes = new byte[_SALT_BYTES_LENGTH];
+
 				Matcher matcher = _pattern.matcher(algorithm);
 
 				if (matcher.matches()) {
@@ -122,8 +117,14 @@ public class PBKDF2PasswordEncryptor implements PasswordEncryptor {
 					Base64.decode(encryptedPassword));
 
 				try {
+					int length = byteBuffer.remaining();
+
 					_keySize = byteBuffer.getInt();
 					_rounds = byteBuffer.getInt();
+
+					_saltBytes = new byte
+						[length - (2 * 4) -
+							(int)Math.ceil((double)_keySize / 8)];
 
 					byteBuffer.get(_saltBytes);
 				}
@@ -149,7 +150,7 @@ public class PBKDF2PasswordEncryptor implements PasswordEncryptor {
 
 		private int _keySize = _KEY_SIZE;
 		private int _rounds = _ROUNDS;
-		private final byte[] _saltBytes = new byte[_SALT_BYTES_LENGTH];
+		private byte[] _saltBytes;
 
 	}
 

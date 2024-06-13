@@ -334,6 +334,150 @@ public class ${entity.name}PersistenceTest {
 	}
 
 	<#if entity.hasExternalReferenceCode()>
+		<#if entity.versionEntity??>
+			@Test
+			public void testCreateDraft() throws Exception {
+				${entity.name} ${entity.variableName} = add${entity.name}();
+
+				<#assign entityColumn = entity.PKEntityColumns[0] />
+
+				${entityColumn.type} pk =
+
+				<#if stringUtil.equals(entityColumn.type, "int")>
+					RandomTestUtil.nextInt()
+				<#elseif stringUtil.equals(entityColumn.type, "long")>
+					RandomTestUtil.nextLong()
+				<#elseif stringUtil.equals(entityColumn.type, "String")>
+					<#assign maxLength = serviceBuilder.getMaxLength(entity.getName(), entityColumn) />
+
+					<#if maxLength < 8>
+						RandomTestUtil.randomString(${maxLength})
+					<#else>
+						RandomTestUtil.randomString()
+					</#if>
+				</#if>
+
+				;
+
+				${entity.name} draft${entity.name} = _persistence.create(pk);
+
+				<#list entity.regularEntityColumns as entityColumn>
+					<#if !entityColumn.primary && (validator.isNull(parentPKColumn) || (parentPKColumn.name != entityColumn.name))>
+						draft${entity.name}.set${entityColumn.methodName}(
+
+						<#if stringUtil.equals(entityColumn.name, "headId")>
+							-
+						</#if>
+
+						${entity.variableName}.get${entityColumn.methodName}());
+					</#if>
+				</#list>
+
+				_${entity.pluralVariableName}.add(_persistence.update(draft${entity.name}));
+
+				<#list entity.regularEntityColumns as entityColumn>
+					<#if !entityColumn.primary && (validator.isNull(parentPKColumn) || (parentPKColumn.name != entityColumn.name))>
+						<#if stringUtil.equals(entityColumn.name, "headId")>
+							Assert.assertEquals(${entity.variableName}.get${entityColumn.methodName}(), -draft${entity.name}.get${entityColumn.methodName}());
+						<#elseif stringUtil.equals(entityColumn.name, "status")>
+							Assert.assertEquals(2, draft${entity.name}.get${entityColumn.methodName}());
+						<#elseif stringUtil.equals(entityColumn.type, "Blob")>
+							Blob ${entityColumn.methodName} = ${entity.variableName}.get${entityColumn.methodName}();
+							Blob draft${entityColumn.methodName} = draft${entity.name}.get${entityColumn.methodName}();
+
+							Assert.assertTrue(Arrays.equals(${entityColumn.variableName}.getBytes(1, (int)${entityColumn.variableName}.length()), Arrays.equals(draft${entityColumn.name}.getBytes(1, (int)draft${entityColumn.name}.length()));
+						<#elseif stringUtil.equals(entityColumn.type, "boolean")>
+							Assert.assertEquals(${entity.variableName}.is${entityColumn.methodName}(), draft${entity.name}.is${entityColumn.methodName}());
+						<#elseif stringUtil.equals(entityColumn.type, "Date")>
+							Assert.assertEquals(Time.getShortTimestamp(${entity.variableName}.get${entityColumn.methodName}()), Time.getShortTimestamp(draft${entity.name}.get${entityColumn.methodName}()));
+						<#elseif stringUtil.equals(entityColumn.type, "double")>
+							AssertUtils.assertEquals(${entity.variableName}.get${entityColumn.methodName}(), draft${entity.name}.get${entityColumn.methodName}());
+						<#else>
+							Assert.assertEquals(${entity.variableName}.get${entityColumn.methodName}(), draft${entity.name}.get${entityColumn.methodName}());
+						</#if>
+					</#if>
+				</#list>
+
+			}
+
+			@Test(expected = ${duplicateEntityExternalReferenceCode}Exception.class)
+			public void testCreateWithExistingExternalReferenceCodeHead()
+				throws Exception {
+
+				${entity.name} ${entity.variableName}1 = add${entity.name}();
+
+				<#assign entityColumn = entity.PKEntityColumns[0] />
+
+				${entityColumn.type} pk =
+
+				<#if stringUtil.equals(entityColumn.type, "int")>
+					RandomTestUtil.nextInt()
+				<#elseif stringUtil.equals(entityColumn.type, "long")>
+					RandomTestUtil.nextLong()
+				<#elseif stringUtil.equals(entityColumn.type, "String")>
+					<#assign maxLength = serviceBuilder.getMaxLength(entity.getName(), entityColumn) />
+
+					<#if maxLength < 8>
+						RandomTestUtil.randomString(${maxLength})
+					<#else>
+						RandomTestUtil.randomString()
+					</#if>
+				</#if>
+
+				;
+
+				${entity.name} ${entity.variableName}2 = _persistence.create(pk);
+
+				<#list entity.regularEntityColumns as entityColumn>
+					<#if !entityColumn.primary && (validator.isNull(parentPKColumn) || (parentPKColumn.name != entityColumn.name))>
+						<#if stringUtil.equals(entityColumn.type, "Blob")>
+							String ${entityColumn.name}String = RandomTestUtil.randomString();
+
+							byte[] ${entityColumn.name}Bytes = ${entityColumn.name}String.getBytes("UTF-8");
+
+							Blob ${entityColumn.name}Blob = new OutputBlob(new ByteArrayInputStream(${entityColumn.name}Bytes), ${entityColumn.name}Bytes.length);
+						</#if>
+
+						${entity.variableName}2.set${entityColumn.methodName}(
+
+						<#if stringUtil.equals(entityColumn.name, "externalReferenceCode") || stringUtil.equals(entityColumn.name, "groupId")>
+							${entity.variableName}1.get${entityColumn.methodName}()
+						<#elseif stringUtil.equals(entityColumn.name, "headId")>
+							- RandomTestUtil.nextLong()
+						<#elseif stringUtil.equals(entityColumn.type, "boolean")>
+							RandomTestUtil.randomBoolean()
+						<#elseif stringUtil.equals(entityColumn.type, "double")>
+							RandomTestUtil.nextDouble()
+						<#elseif stringUtil.equals(entityColumn.type, "int")>
+							RandomTestUtil.nextInt()
+						<#elseif stringUtil.equals(entityColumn.type, "long")>
+							RandomTestUtil.nextLong()
+						<#elseif stringUtil.equals(entityColumn.type, "BigDecimal")>
+							new BigDecimal(RandomTestUtil.nextDouble())
+						<#elseif stringUtil.equals(entityColumn.type, "Blob")>
+							${entityColumn.name}Blob
+						<#elseif stringUtil.equals(entityColumn.type, "Date")>
+							RandomTestUtil.nextDate()
+						<#elseif stringUtil.equals(entityColumn.type, "Map")>
+							new HashMap<String, Serializable>()
+						<#elseif stringUtil.equals(entityColumn.type, "String")>
+							<#assign maxLength = serviceBuilder.getMaxLength(entity.getName(), entityColumn) />
+
+							<#if maxLength < 8>
+								RandomTestUtil.randomString(${maxLength})
+							<#else>
+								RandomTestUtil.randomString()
+							</#if>
+						</#if>
+
+						);
+					</#if>
+				</#list>
+
+				_${entity.pluralVariableName}.add(_persistence.update(${entity.variableName}2));
+			}
+		</#if>
+
 		@Test(expected = ${duplicateEntityExternalReferenceCode}Exception.class)
 		public void testUpdateWithExistingExternalReferenceCode() throws Exception {
 			${entity.name} ${entity.variableName} = add${entity.name}();
@@ -1205,7 +1349,9 @@ public class ${entity.name}PersistenceTest {
 
 				${entity.variableName}.set${entityColumn.methodName}(
 
-				<#if stringUtil.equals(entityColumn.type, "boolean")>
+				<#if stringUtil.equals(entityColumn.name, "headId") && entity.versionEntity??>
+					-pk
+				<#elseif stringUtil.equals(entityColumn.type, "boolean")>
 					RandomTestUtil.randomBoolean()
 				<#elseif stringUtil.equals(entityColumn.type, "double")>
 					RandomTestUtil.nextDouble()

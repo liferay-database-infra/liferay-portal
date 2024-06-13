@@ -83,6 +83,7 @@ import com.liferay.portal.kernel.model.Repository;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.portletfilerepository.PortletFileRepository;
 import com.liferay.portal.kernel.repository.model.FileEntry;
@@ -106,6 +107,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.RoleTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.test.util.UserGroupTestUtil;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.Base64;
@@ -7089,6 +7091,32 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
+	public void testPostSiteScopedObjectDefinitionInUserGroup()
+		throws Exception {
+
+		UserGroup userGroup = UserGroupTestUtil.addUserGroup();
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			_getEndpoint(userGroup.getGroupId(), _siteScopedObjectDefinition1),
+			Http.Method.GET);
+
+		JSONArray itemsJSONArray = jsonObject.getJSONArray("items");
+
+		Assert.assertEquals(0, itemsJSONArray.length());
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_1
+			).toString(),
+			_getEndpoint(userGroup.getGroupId(), _siteScopedObjectDefinition1),
+			Http.Method.POST);
+
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_1, jsonObject.getInt(_OBJECT_FIELD_NAME_1));
+	}
+
+	@Test
 	public void testPutByExternalReferenceCodeCurrentExternalReferenceCodeObjectRelationshipNameRelatedExternalReferenceCodeWithSlash()
 		throws Exception {
 
@@ -8085,7 +8113,6 @@ public class ObjectEntryResourceTest {
 		}
 	}
 
-	@FeatureFlags("LPD-18730")
 	@Test
 	public void testSortByManyToOneAndOneToManyRelationshipsCustomObjectFields()
 		throws Exception {
@@ -8567,7 +8594,6 @@ public class ObjectEntryResourceTest {
 		}
 	}
 
-	@FeatureFlags("LPD-18730")
 	@Test
 	public void testSortByManyToOneRelationshipCustomObjectFields()
 		throws Exception {
@@ -9058,7 +9084,6 @@ public class ObjectEntryResourceTest {
 		}
 	}
 
-	@FeatureFlags("LPD-18730")
 	@Test
 	public void testSortByManyToOneRelationshipSystemObjectFields()
 		throws Exception {
@@ -9448,7 +9473,6 @@ public class ObjectEntryResourceTest {
 		}
 	}
 
-	@FeatureFlags("LPD-18730")
 	@Test
 	public void testSortByOneToManyRelationshipCustomObjectFields()
 		throws Exception {
@@ -10109,7 +10133,6 @@ public class ObjectEntryResourceTest {
 		}
 	}
 
-	@FeatureFlags("LPD-18730")
 	@Test
 	public void testSortByOneToManyRelationshipSystemObjectFields()
 		throws Exception {
@@ -10561,7 +10584,8 @@ public class ObjectEntryResourceTest {
 				JSONUtil.put(
 					"status", "BAD_REQUEST"
 				).put(
-					"title", "Unable to sort by a related object field"
+					"title",
+					"Unable to sort by a many to many related object field"
 				).toString(),
 				HTTPTestUtil.invokeToString(
 					null,
@@ -10692,7 +10716,6 @@ public class ObjectEntryResourceTest {
 		}
 	}
 
-	@FeatureFlags("LPD-18730")
 	@Test
 	public void testSortByUnsupportedObjectFields() throws Exception {
 		_objectRelationship1 = ObjectRelationshipTestUtil.addObjectRelationship(

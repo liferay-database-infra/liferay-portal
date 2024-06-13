@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.portlet.bridges.mvc.BaseTransactionalMVCActionC
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -91,6 +92,13 @@ public class InviteAccountUsersMVCActionCommand
 		throws PortalException {
 
 		for (String emailAddress : emailAddresses) {
+			User existingUser = _userLocalService.fetchUserByEmailAddress(
+				user.getCompanyId(), emailAddress);
+
+			if (existingUser != null) {
+				continue;
+			}
+
 			_accountEntryUserRelService.inviteUser(
 				accountEntryId, accountRoleIds, emailAddress, user,
 				serviceContext);
@@ -105,5 +113,8 @@ public class InviteAccountUsersMVCActionCommand
 
 	@Reference
 	private JSONFactory _jsonFactory;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

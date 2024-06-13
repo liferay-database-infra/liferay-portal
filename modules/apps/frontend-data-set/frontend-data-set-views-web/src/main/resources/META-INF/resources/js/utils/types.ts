@@ -26,6 +26,7 @@ export enum EFieldType {
 
 export enum ESelectionFilterSourceType {
 	PICKLIST = 'PICKLIST',
+	API_HEADLESS = 'API_HEADLESS',
 }
 
 export interface IBaseVisualizationMode<Mode extends string> {
@@ -92,8 +93,13 @@ export interface IDateFilter extends IFilter {
 
 export interface ISelectionFilter extends IFilter {
 	include: boolean;
+	itemKey: string;
+	itemLabel: string;
 	multiple: boolean;
 	preselectedValues: string;
+	restApplication: string;
+	restEndpoint: string;
+	restSchema: string;
 	source: string;
 	sourceType: ESelectionFilterSourceType;
 }

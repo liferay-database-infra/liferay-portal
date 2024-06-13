@@ -139,6 +139,8 @@ import com.liferay.segments.model.SegmentsExperience;
 import com.liferay.segments.service.SegmentsExperienceLocalService;
 import com.liferay.sites.kernel.util.Sites;
 import com.liferay.staging.configuration.StagingConfiguration;
+import com.liferay.style.book.model.StyleBookEntry;
+import com.liferay.style.book.service.StyleBookEntryLocalService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -353,6 +355,9 @@ public class LayoutStagedModelDataHandler
 
 		_exportMasterLayout(layout, layoutElement, portletDataContext);
 
+		_exportLayoutPageTemplateEntry(
+			layout, layoutElement, portletDataContext);
+
 		_exportLayoutFriendlyURLs(layout, portletDataContext);
 
 		_exportLayoutSEOEntries(layout, portletDataContext);
@@ -386,6 +391,8 @@ public class LayoutStagedModelDataHandler
 		_fixExportTypeSettings(layout);
 
 		_exportTheme(layout, portletDataContext);
+
+		_exportStyleBookEntry(layout, portletDataContext);
 
 		portletDataContext.addClassedModel(
 			layoutElement, ExportImportPathUtil.getModelPath(layout),
@@ -731,33 +738,6 @@ public class LayoutStagedModelDataHandler
 				layoutPlids, masterLayoutPlid, masterLayoutPlid);
 
 			importedLayout.setMasterLayoutPlid(importedMasterLayoutPlid);
-
-			if (MergeLayoutPrototypesThreadLocal.isInProgress()) {
-				String masterLayoutLayoutPageTemplateEntryUuid =
-					layoutElement.attributeValue(
-						"master-layout-layout-page-template-entry-uuid");
-
-				if (Validator.isNotNull(
-						masterLayoutLayoutPageTemplateEntryUuid)) {
-
-					LayoutPageTemplateEntry layoutPageTemplateEntry =
-						_layoutPageTemplateEntryLocalService.
-							fetchLayoutPageTemplateEntryByPlid(
-								importedMasterLayoutPlid);
-
-					if (layoutPageTemplateEntry == null) {
-						Element masterLayoutLayoutPageTemplateEntryElement =
-							portletDataContext.getReferenceDataElement(
-								layout, LayoutPageTemplateEntry.class,
-								layout.getGroupId(),
-								masterLayoutLayoutPageTemplateEntryUuid);
-
-						StagedModelDataHandlerUtil.importStagedModel(
-							portletDataContext,
-							masterLayoutLayoutPageTemplateEntryElement);
-					}
-				}
-			}
 		}
 		else {
 			importedLayout.setMasterLayoutPlid(0);
@@ -887,7 +867,7 @@ public class LayoutStagedModelDataHandler
 			importedLayout.setIconImageId(0);
 		}
 
-		importedLayout.setStyleBookEntryId(layout.getStyleBookEntryId());
+		_importStyleBookEntry(importedLayout, layout, portletDataContext);
 
 		if (existingLayout == null) {
 			try {
@@ -943,6 +923,9 @@ public class LayoutStagedModelDataHandler
 		_importTheme(importedLayout, layout, portletDataContext);
 
 		importedLayout = _layoutLocalService.updateLayout(importedLayout);
+
+		_importLayoutPageTemplateEntry(
+			layout, layoutElement, portletDataContext);
 
 		_importLayoutFriendlyURLs(importedLayout, layout, portletDataContext);
 
@@ -1454,6 +1437,29 @@ public class LayoutStagedModelDataHandler
 		}
 	}
 
+	private void _exportLayoutPageTemplateEntry(
+			Layout layout, Element layoutElement,
+			PortletDataContext portletDataContext)
+		throws Exception {
+
+		LayoutPageTemplateEntry layoutPageTemplateEntry =
+			_layoutPageTemplateEntryLocalService.
+				fetchLayoutPageTemplateEntryByPlid(layout.getPlid());
+
+		if ((layoutPageTemplateEntry != null) &&
+			(layoutPageTemplateEntry.getType() ==
+				LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT)) {
+
+			StagedModelDataHandlerUtil.exportReferenceStagedModel(
+				portletDataContext, layout, layoutPageTemplateEntry,
+				PortletDataContext.REFERENCE_TYPE_DEPENDENCY);
+
+			layoutElement.addAttribute(
+				"master-layout-layout-page-template-entry-uuid",
+				layoutPageTemplateEntry.getUuid());
+		}
+	}
+
 	private void _exportLayoutPageTemplateStructure(
 			Layout layout, PortletDataContext portletDataContext)
 		throws Exception {
@@ -1662,25 +1668,24 @@ public class LayoutStagedModelDataHandler
 			"master-layout-uuid", masterLayout.getUuid());
 		layoutElement.addAttribute(
 			"master-layout-plid", String.valueOf(masterLayout.getPlid()));
+	}
 
-		if (MergeLayoutPrototypesThreadLocal.isInProgress()) {
-			LayoutPageTemplateEntry layoutPageTemplateEntry =
-				_layoutPageTemplateEntryLocalService.
-					fetchLayoutPageTemplateEntryByPlid(masterLayout.getPlid());
+	private void _exportStyleBookEntry(
+			Layout layout, PortletDataContext portletDataContext)
+		throws Exception {
 
-			if ((layoutPageTemplateEntry != null) &&
-				Validator.isNull(
-					layoutElement.attributeValue(
-						"master-layout-layout-page-template-entry-uuid"))) {
+		if (layout.getStyleBookEntryId() == 0) {
+			return;
+		}
 
-				layoutElement.addAttribute(
-					"master-layout-layout-page-template-entry-uuid",
-					layoutPageTemplateEntry.getUuid());
+		StyleBookEntry styleBookEntry =
+			_styleBookEntryLocalService.fetchStyleBookEntry(
+				layout.getStyleBookEntryId());
 
-				StagedModelDataHandlerUtil.exportReferenceStagedModel(
-					portletDataContext, layout, layoutPageTemplateEntry,
-					PortletDataContext.REFERENCE_TYPE_DEPENDENCY);
-			}
+		if (styleBookEntry != null) {
+			StagedModelDataHandlerUtil.exportReferenceStagedModel(
+				portletDataContext, layout, styleBookEntry,
+				PortletDataContext.REFERENCE_TYPE_DEPENDENCY);
 		}
 	}
 
@@ -2204,6 +2209,26 @@ public class LayoutStagedModelDataHandler
 		}
 	}
 
+	private void _importLayoutPageTemplateEntry(
+			Layout layout, Element layoutElement,
+			PortletDataContext portletDataContext)
+		throws Exception {
+
+		String masterLayoutLayoutPageTemplateEntryUuid =
+			layoutElement.attributeValue(
+				"master-layout-layout-page-template-entry-uuid");
+
+		if (Validator.isNotNull(masterLayoutLayoutPageTemplateEntryUuid)) {
+			Element masterLayoutLayoutPageTemplateEntryElement =
+				portletDataContext.getReferenceDataElement(
+					layout, LayoutPageTemplateEntry.class, layout.getGroupId(),
+					masterLayoutLayoutPageTemplateEntryUuid);
+
+			StagedModelDataHandlerUtil.importStagedModel(
+				portletDataContext, masterLayoutLayoutPageTemplateEntryElement);
+		}
+	}
+
 	private void _importLayoutPageTemplateStructure(
 			PortletDataContext portletDataContext, long classNameId,
 			long classPK, Element layoutPageTemplateStructureElement)
@@ -2562,6 +2587,29 @@ public class LayoutStagedModelDataHandler
 				_defaultTextExportImportContentProcessor.
 					replaceImportContentReferences(
 						portletDataContext, layout, linkedToURL)));
+	}
+
+	private void _importStyleBookEntry(
+			Layout importedLayout, Layout layout,
+			PortletDataContext portletDataContext)
+		throws Exception {
+
+		if (layout.getStyleBookEntryId() == 0) {
+			return;
+		}
+
+		StagedModelDataHandlerUtil.importReferenceStagedModel(
+			portletDataContext, layout, StyleBookEntry.class,
+			layout.getStyleBookEntryId());
+
+		Map<Long, Long> styleBooksEntryNewPrimaryKeysMap =
+			(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
+				StyleBookEntry.class);
+
+		importedLayout.setStyleBookEntryId(
+			MapUtil.getLong(
+				styleBooksEntryNewPrimaryKeysMap, layout.getStyleBookEntryId(),
+				layout.getStyleBookEntryId()));
 	}
 
 	private void _importTheme(
@@ -3218,6 +3266,9 @@ public class LayoutStagedModelDataHandler
 
 	@Reference
 	private Staging _staging;
+
+	@Reference
+	private StyleBookEntryLocalService _styleBookEntryLocalService;
 
 	@Reference
 	private UserLocalService _userLocalService;

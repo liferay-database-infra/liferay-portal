@@ -517,7 +517,14 @@ public class FinderCacheImpl
 				public ArgumentsResolverHolder addingService(
 					ServiceReference<ArgumentsResolver> serviceReference) {
 
-					return new ArgumentsResolverHolder(serviceReference);
+					ArgumentsResolverHolder argumentsResolverHolder =
+						new ArgumentsResolverHolder(serviceReference);
+
+					_argumentsResolverHolderMap.put(
+						argumentsResolverHolder.getTableName(),
+						argumentsResolverHolder);
+
+					return argumentsResolverHolder;
 				}
 
 				@Override
@@ -530,6 +537,9 @@ public class FinderCacheImpl
 				public void removedService(
 					ServiceReference<ArgumentsResolver> serviceReference,
 					ArgumentsResolverHolder argumentsResolverHolder) {
+
+					_argumentsResolverHolderMap.remove(
+						argumentsResolverHolder.getTableName());
 
 					argumentsResolverHolder.ungetArgumentsResolver();
 				}
@@ -650,16 +660,17 @@ public class FinderCacheImpl
 
 		String groupKey = _GROUP_KEY_PREFIX.concat(className);
 
-		String modleImplClassName = className;
+		String modelImplClassName = className;
 
 		if (className.endsWith(".List1") || className.endsWith(".List2")) {
-			modleImplClassName = className.substring(0, className.length() - 6);
+			modelImplClassName = className.substring(0, className.length() - 6);
 		}
 
+		boolean ctAware = false;
 		boolean sharded = false;
 
 		ArgumentsResolverHolder argumentsResolverHolder =
-			_serviceTrackerMap.getService(modleImplClassName);
+			_serviceTrackerMap.getService(modelImplClassName);
 
 		if (argumentsResolverHolder != null) {
 			ArgumentsResolver argumentsResolver =
@@ -682,9 +693,48 @@ public class FinderCacheImpl
 							modelImplClass);
 					}
 
-					if (CTModel.class.isAssignableFrom(modelImplClass)) {
-						portalCache = new CTAwarePortalCache(
-							_multiVMPool, groupKey, false, sharded);
+					ctAware = CTModel.class.isAssignableFrom(modelImplClass);
+				}
+				catch (ClassNotFoundException classNotFoundException) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(classNotFoundException);
+					}
+				}
+			}
+		}
+		else {
+			String[] tableNames = FinderPath.decodeDSLQueryCacheName(className);
+
+			for (String tableName : tableNames) {
+				argumentsResolverHolder = _argumentsResolverHolderMap.get(
+					tableName);
+
+				if (argumentsResolverHolder == null) {
+					continue;
+				}
+
+				ArgumentsResolver argumentsResolver =
+					argumentsResolverHolder.getArgumentsResolver();
+
+				if (Objects.equals(
+						argumentsResolver.getClassName(),
+						argumentsResolver.getTableName())) {
+
+					continue;
+				}
+
+				Class<?> clazz = argumentsResolver.getClass();
+
+				ClassLoader classLoader = clazz.getClassLoader();
+
+				try {
+					Class<?> modelImplClass = classLoader.loadClass(
+						argumentsResolver.getClassName());
+
+					ctAware = CTModel.class.isAssignableFrom(modelImplClass);
+
+					if (ctAware) {
+						break;
 					}
 				}
 				catch (ClassNotFoundException classNotFoundException) {
@@ -695,7 +745,11 @@ public class FinderCacheImpl
 			}
 		}
 
-		if (portalCache == null) {
+		if (ctAware) {
+			portalCache = new CTAwarePortalCache(
+				_multiVMPool, groupKey, false, sharded);
+		}
+		else {
 			portalCache =
 				(PortalCache<Serializable, Serializable>)
 					_multiVMPool.getPortalCache(groupKey, false, sharded);
@@ -750,6 +804,8 @@ public class FinderCacheImpl
 	private static final MethodKey _clearDSLQueryCacheMethodKey = new MethodKey(
 		FinderCacheUtil.class, "clearDSLQueryCache", String.class);
 
+	private final Map<String, ArgumentsResolverHolder>
+		_argumentsResolverHolderMap = new ConcurrentHashMap<>();
 	private volatile CacheKeyGenerator _baseModelCacheKeyGenerator;
 	private BundleContext _bundleContext;
 	private volatile CacheKeyGenerator _cacheKeyGenerator;

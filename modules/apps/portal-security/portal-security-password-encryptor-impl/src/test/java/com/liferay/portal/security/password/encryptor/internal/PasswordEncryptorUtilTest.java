@@ -5,18 +5,18 @@
 
 package com.liferay.portal.security.password.encryptor.internal;
 
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.pwd.PasswordEncryptor;
 import com.liferay.portal.kernel.security.pwd.PasswordEncryptorUtil;
+import com.liferay.portal.kernel.test.util.PropsValuesTestUtil;
 import com.liferay.portal.kernel.util.DigesterUtil;
 import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.util.DigesterImpl;
-import com.liferay.portal.util.PropsUtil;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -165,6 +165,22 @@ public class PasswordEncryptorUtilTest {
 	}
 
 	@Test
+	public void testEncryptPBKDF2With8ByteSalt() throws Exception {
+		runTests(
+			PasswordEncryptor.TYPE_PBKDF2 + "WithHmacSHA1", "password",
+			"AAAAoAAK/IBDrUHgboU2XfC7pqk97rPAQEuRTknBTxehNard",
+			PasswordEncryptor.TYPE_PBKDF2 + "WithHmacSHA1");
+	}
+
+	@Test
+	public void testEncryptPBKDF2With16ByteSalt() throws Exception {
+		runTests(
+			PasswordEncryptor.TYPE_PBKDF2 + "WithHmacSHA1", "password",
+			"AAAAoAAK/IAwGhXn0y8iEgAAAAAAAAAA4zLIf9Yqr/EvCcKm3UJw4gc2KBQ=",
+			PasswordEncryptor.TYPE_PBKDF2 + "WithHmacSHA1");
+	}
+
+	@Test
 	public void testEncryptPBKDF2With50000Rounds() throws Exception {
 		runTests(
 			PasswordEncryptor.TYPE_PBKDF2 + "WithHmacSHA1/50000", "password",
@@ -282,22 +298,13 @@ public class PasswordEncryptorUtilTest {
 			String expectedPassword)
 		throws Exception {
 
-		String originalLegacyAlgorithm = PropsUtil.get(
-			PropsKeys.PASSWORDS_ENCRYPTION_ALGORITHM_LEGACY);
-
-		try {
-			PropsUtil.set(
-				PropsKeys.PASSWORDS_ENCRYPTION_ALGORITHM_LEGACY,
-				legacyAlgorithm);
+		try (SafeCloseable safeCloseable =
+				PropsValuesTestUtil.swapWithSafeCloseable(
+					"PASSWORDS_ENCRYPTION_ALGORITHM_LEGACY", legacyAlgorithm)) {
 
 			Assert.assertEquals(
 				expectedPassword,
 				PasswordEncryptorUtil.encrypt(plainPassword, expectedPassword));
-		}
-		finally {
-			PropsUtil.set(
-				PropsKeys.PASSWORDS_ENCRYPTION_ALGORITHM_LEGACY,
-				originalLegacyAlgorithm);
 		}
 	}
 

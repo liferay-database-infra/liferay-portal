@@ -88,9 +88,8 @@ export function ProvideAppBuildPage({
 	const [selectedCheckboxValue, setSelectedCheckboxValue] = useState<
 		string[]
 	>([]);
-	const [visibleSelectVersionModal, setVisibleSelectVersionModal] = useState(
-		false
-	);
+	const [visibleSelectVersionModal, setVisibleSelectVersionModal] =
+		useState(false);
 
 	const bodySpecification = useMemo(
 		() => [
@@ -246,6 +245,17 @@ export function ProvideAppBuildPage({
 	const submitAppBuildPackages = async () => {
 		if (properties.featureFlags?.includes('LPD-21582')) {
 			const items = [];
+			const liferayVersionSpecifications = [];
+
+			const dataProductSpecifications = await getProductSpecifications({
+				appProductId,
+			});
+
+			const filteredProductSpecifications =
+				dataProductSpecifications.filter(
+					(specification) =>
+						specification.specificationKey !== 'liferay-version'
+				);
 
 			for (const versionKey in buildAppPackages) {
 				const appPackagesByVersion = buildAppPackages[versionKey];
@@ -257,12 +267,22 @@ export function ProvideAppBuildPage({
 						),
 						version: versionKey,
 					});
+					liferayVersionSpecifications.push({
+						specificationKey: 'liferay-version',
+						value: {
+							en_US: versionKey,
+						},
+					});
 				}
 			}
 
 			await HeadlessCommerceAdminCatalogImpl.updateProductByExternalReferenceCode(
 				appERC,
 				{
+					productSpecifications: [
+						...filteredProductSpecifications,
+						...liferayVersionSpecifications,
+					],
 					productStatus: PRODUCT_WORKFLOW_STATUS_CODE.DRAFT,
 					productVirtualSettings: {
 						productVirtualSettingsFileEntries: items,
@@ -279,6 +299,7 @@ export function ProvideAppBuildPage({
 			try {
 				for (const appPackage of appPackagesByVersion) {
 					if (appPackage.uploaded) {
+
 						// eslint-disable-next-line no-console
 						console.info('File already uploaded', appPackage);
 
@@ -532,9 +553,9 @@ export function ProvideAppBuildPage({
 							<OfferingTypeCheckbox
 								handleSelectCheckbox={handleSelectCheckbox}
 								offeringTypes={
-									(offeringTypesDescription[
+									offeringTypesDescription[
 										appType.value as ProductType
-									] as unknown) as OfferingType[]
+									] as unknown as OfferingType[]
 								}
 								selectedValue={selectedCheckboxValue}
 							/>
@@ -588,7 +609,7 @@ export function ProvideAppBuildPage({
 										? i18n.translate('via-zip-upload')
 										: i18n.translate(
 												'via-liferay-plugin-packages'
-										  )
+											)
 								}
 								tooltip={ReactDOMServer.renderToString(
 									<span>
@@ -710,8 +731,8 @@ export function ProvideAppBuildPage({
 
 					try {
 						await submitAppBuildCategories();
-						await submitAppBuildTypeSpecification();
 						await submitAppBuildPackages();
+						await submitAppBuildTypeSpecification();
 
 						if (isCloud) {
 							await submitAppBuildCloudResourceRequirements(

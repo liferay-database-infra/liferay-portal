@@ -234,10 +234,7 @@ public class SystemObjectDefinitionManagerModelListener<T extends BaseModel<T>>
 
 		String dtoConverterType = _getDTOConverterType();
 
-		return JSONUtil.put(
-			"classPK", baseModel.getPrimaryKeyObj()
-		).put(
-			"extendedProperties",
+		Map<String, Object> extendedProperties =
 			HashMapBuilder.<String, Object>putAll(
 				_objectEntryLocalService.
 					getExtensionDynamicObjectDefinitionTableValues(
@@ -245,12 +242,18 @@ public class SystemObjectDefinitionManagerModelListener<T extends BaseModel<T>>
 						GetterUtil.getLong(baseModel.getPrimaryKeyObj()))
 			).putAll(
 				EntityExtensionThreadLocal.getExtendedProperties()
-			).build()
+			).build();
+
+		return JSONUtil.put(
+			"classPK", baseModel.getPrimaryKeyObj()
+		).put(
+			"extendedProperties", extendedProperties
 		).put(
 			"model" + _modelClass.getSimpleName(),
 			baseModel.getModelAttributes()
 		).put(
-			"modelDTO" + dtoConverterType, _toDTO(baseModel, userId)
+			"modelDTO" + dtoConverterType,
+			_toDTO(baseModel, extendedProperties, userId)
 		).put(
 			"objectActionTriggerKey", objectActionTriggerKey
 		).put(
@@ -269,7 +272,8 @@ public class SystemObjectDefinitionManagerModelListener<T extends BaseModel<T>>
 					return null;
 				}
 
-				return _toDTO(originalBaseModel, userId);
+				return _toDTO(
+					originalBaseModel, Collections.emptyMap(), userId);
 			}
 		);
 	}
@@ -295,7 +299,18 @@ public class SystemObjectDefinitionManagerModelListener<T extends BaseModel<T>>
 		return (Long)function.apply(baseModel);
 	}
 
-	private Map<String, Object> _toDTO(T baseModel, long userId) {
+	private Object _toDTO(
+			T baseModel, DefaultDTOConverterContext defaultDTOConverterContext)
+		throws Exception {
+
+		DTOConverter<T, ?> dtoConverter = _getDTOConverter();
+
+		return dtoConverter.toDTO(defaultDTOConverterContext, baseModel);
+	}
+
+	private Map<String, Object> _toDTO(
+		T baseModel, Map<String, Object> extendedProperties, long userId) {
+
 		DTOConverter<T, ?> dtoConverter = _getDTOConverter();
 
 		Map<String, Object> modelAttributes = baseModel.getModelAttributes();
@@ -325,7 +340,7 @@ public class SystemObjectDefinitionManagerModelListener<T extends BaseModel<T>>
 				baseModel.getPrimaryKeyObj(), user.getLocale(), null, user);
 
 		try {
-			Object object = dtoConverter.toDTO(defaultDTOConverterContext);
+			Object object = _toDTO(baseModel, defaultDTOConverterContext);
 
 			if (object == null) {
 				return modelAttributes;
@@ -334,7 +349,7 @@ public class SystemObjectDefinitionManagerModelListener<T extends BaseModel<T>>
 			JSONObject jsonObject = _jsonFactory.createJSONObject(
 				_jsonFactory.looseSerializeDeep(object));
 
-			return jsonObject.put(
+			jsonObject.put(
 				"createDate", modelAttributes.get("createDate")
 			).put(
 				"modifiedDate", modelAttributes.get("modifiedDate")
@@ -344,7 +359,15 @@ public class SystemObjectDefinitionManagerModelListener<T extends BaseModel<T>>
 				"userName", user.getFullName()
 			).put(
 				"uuid", modelAttributes.get("uuid")
-			).toMap();
+			);
+
+			for (Map.Entry<String, Object> entry :
+					extendedProperties.entrySet()) {
+
+				jsonObject.put(entry.getKey(), entry.getValue());
+			}
+
+			return jsonObject.toMap();
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {

@@ -38,6 +38,8 @@ import {JSONWebServicesJournalApiHelper} from './json-web-services/JSONWebServic
 import {JSONWebServicesLayoutApiHelper} from './json-web-services/JSONWebServicesLayoutApiHelper';
 import {JSONWebServicesLayoutSetPrototypeApiHelper} from './json-web-services/JSONWebServicesLayoutSetPrototypeApiHelper';
 import {JSONWebServicesMBApiHelper} from './json-web-services/JSONWebServicesMBApiHelper';
+import {JSONWebServicesOSBAsahApiHelper} from './json-web-services/JSONWebServicesOSBAsahApiHelper';
+import {JSONWebServicesOSBFaroApiHelper} from './json-web-services/JSONWebServicesOSBFaroApiHelper';
 
 type TDataApiHelpersData = {
 	id: any;
@@ -81,6 +83,8 @@ export class ApiHelpers {
 	readonly jsonWebServicesLayout: JSONWebServicesLayoutApiHelper;
 	readonly jsonWebServicesLayoutSetPrototype: JSONWebServicesLayoutSetPrototypeApiHelper;
 	readonly jsonWebServicesMBApiHelper: JSONWebServicesMBApiHelper;
+	readonly jsonWebServicesOSBAsah: JSONWebServicesOSBAsahApiHelper;
+	readonly jsonWebServicesOSBFaro: JSONWebServicesOSBFaroApiHelper;
 	readonly listTypeAdmin: ListTypeAdminApiHelper;
 	readonly notification: NotificationApiHelper;
 	readonly objectAdmin: ObjectAdminApiHelper;
@@ -134,6 +138,8 @@ export class ApiHelpers {
 		this.jsonWebServicesLayoutSetPrototype =
 			new JSONWebServicesLayoutSetPrototypeApiHelper(this);
 		this.jsonWebServicesMBApiHelper = new JSONWebServicesMBApiHelper(this);
+		this.jsonWebServicesOSBFaro = new JSONWebServicesOSBFaroApiHelper(this);
+		this.jsonWebServicesOSBAsah = new JSONWebServicesOSBAsahApiHelper(this);
 		this.listTypeAdmin = new ListTypeAdminApiHelper(this);
 		this.notification = new NotificationApiHelper(this);
 		this.objectAdmin = new ObjectAdminApiHelper(this);
@@ -174,9 +180,25 @@ export class ApiHelpers {
 		});
 	}
 
-	async putResponse(url: string) {
+	async put<T>(url: string, options: PostOptions<T> = {}) {
+		const response = await this.putResponse(url, options);
+
+		if (response.status() === 204) {
+			return;
+		}
+
+		return response.json();
+	}
+
+	async putResponse<T>(
+		url: string,
+		{data, failOnStatusCode, headers, multipart}: PostOptions<T> = {}
+	) {
 		return await this.page.request.put(url, {
-			headers: await this.getHeader(),
+			data,
+			failOnStatusCode: failOnStatusCode || false,
+			headers: headers || (await this.getHeader()),
+			multipart,
 		});
 	}
 
@@ -233,6 +255,10 @@ export class ApiHelpers {
 			'x-csrf-token': authToken,
 		};
 	}
+
+	getAuthorizationHeader() {
+		return ApiHelpers._authorization;
+	}
 }
 
 export class DataApiHelpers extends ApiHelpers {
@@ -277,6 +303,10 @@ export class DataApiHelpers extends ApiHelpers {
 					await this.headlessCommerceAdminPricing.deleteDiscount(
 						item.id
 					);
+
+					break;
+				case 'objectDefinition':
+					await this.objectAdmin.deleteObjectDefinition(item.id);
 
 					break;
 				case 'option':

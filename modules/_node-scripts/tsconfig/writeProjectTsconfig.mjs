@@ -3,12 +3,15 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
 import {SRC_PATH, SRC_TSCONFIG_PATH, getRootDir} from '../util/constants.mjs';
-import sortObjectKeys from '../util/sortObjectKeys.mjs';
+import objectSF from '../util/objectSF.mjs';
 import baseTsconfig from './baseTsconfig.mjs';
+
+const GENERATED = '@generated';
 
 export default async function writeProjectTsconfig(
 	projectsEntryPoints,
@@ -90,11 +93,33 @@ export default async function writeProjectTsconfig(
 		references,
 	};
 
-	sortObjectKeys(json);
+	json[GENERATED] = hash(json);
 
-	await fs.writeFile(
+	const contents = await fs.readFile(
 		path.join(srcPath, 'tsconfig.json'),
-		JSON.stringify(json, null, '\t'),
-		'utf-8'
+		'utf8'
 	);
+
+	const previousConfig = JSON.parse(contents.trim() ? contents : '{}');
+
+	if (json[GENERATED] !== previousConfig[GENERATED]) {
+		const configPath = path.join(srcPath, 'tsconfig.json');
+
+		await fs.writeFile(configPath, objectSF(json), 'utf-8');
+
+		console.log(`Generated new tsconfig.json at ${configPath}`);
+	}
+}
+
+function hash(config) {
+	const shasum = crypto.createHash('sha1');
+
+	shasum.update(
+		JSON.stringify({
+			...config,
+			[GENERATED]: null,
+		})
+	);
+
+	return shasum.digest('hex');
 }

@@ -19,6 +19,7 @@ import {
 import getFragmentDefinition from '../layout-content-page-editor-web/utils/getFragmentDefinition';
 import getPageDefinition from '../layout-content-page-editor-web/utils/getPageDefinition';
 import {faroConfig} from './faro.config';
+import {createChannel} from './utils/channel';
 
 export const test = mergeTests(
 	apiHelpersTest,
@@ -31,9 +32,10 @@ export const test = mergeTests(
 );
 
 const createSitePage = async function (apiHelpers, pageTitle) {
-	const company = await apiHelpers.jsonWebServicesCompany.getCompanyByWebId(
-		'liferay.com'
-	);
+	const company =
+		await apiHelpers.jsonWebServicesCompany.getCompanyByWebId(
+			'liferay.com'
+		);
 
 	const group = await apiHelpers.jsonWebServicesGroup.getGroupByKey(
 		company.companyId,
@@ -64,6 +66,187 @@ const goToWithReferrer = async function (page, referrer, url) {
 	}, url);
 };
 
+test('shows individuals who viewed a page less than 24 hours ago', async ({
+	apiHelpers,
+	page,
+}) => {
+	const {channel, project} = await createChannel(
+		apiHelpers,
+		'My Property - ' + getRandomString()
+	);
+
+	await apiHelpers.jsonWebServicesOSBAsah.createIndividuals([
+		{
+			emailAddress: 'user1@liferay.com',
+			fields: [
+				{
+					dataSourceId: 0,
+					name: 'givenName',
+					value: 'user1',
+				},
+				{
+					dataSourceId: 0,
+					name: 'familyName',
+					value: 'user1',
+				},
+				{
+					dataSourceId: 0,
+					name: 'email',
+					value: 'user1@liferay.com',
+				},
+			],
+			firstName: 'user1',
+			id: 'user1@liferay.com',
+			lastName: 'user1',
+		},
+		{
+			emailAddress: 'user2@liferay.com',
+			fields: [
+				{
+					dataSourceId: 0,
+					name: 'givenName',
+					value: 'user2',
+				},
+				{
+					dataSourceId: 0,
+					name: 'familyName',
+					value: 'user2',
+				},
+				{
+					dataSourceId: 0,
+					name: 'email',
+					value: 'user2@liferay.com',
+				},
+			],
+			firstName: 'user2',
+			id: 'user2@liferay.com',
+			lastName: 'user2',
+		},
+		{
+			emailAddress: 'user3@liferay.com',
+			fields: [
+				{
+					dataSourceId: 0,
+					name: 'givenName',
+					value: 'user3',
+				},
+				{
+					dataSourceId: 0,
+					name: 'familyName',
+					value: 'user3',
+				},
+				{
+					dataSourceId: 0,
+					name: 'email',
+					value: 'user3@liferay.com',
+				},
+			],
+			firstName: 'user3',
+			id: 'user3@liferay.com',
+			lastName: 'user3',
+		},
+	]);
+
+	const date1 = new Date();
+
+	await apiHelpers.jsonWebServicesOSBAsah.createIdentities([
+		{
+			createDate: date1.toISOString(),
+			id: '1',
+			individualId: 'user1@liferay.com',
+		},
+		{
+			createDate: date1.toISOString(),
+			id: '2',
+			individualId: 'user2@liferay.com',
+		},
+		{
+			createDate: date1.toISOString(),
+			id: '3',
+			individualId: 'user3@liferay.com',
+		},
+	]);
+
+	await apiHelpers.jsonWebServicesOSBAsah.createEvents([
+		{
+			applicationId: 'Page',
+			canonicalUrl: 'https://www.liferay.com',
+			channelId: channel.id,
+			eventDate: date1.toISOString(),
+			eventId: 'pageViewed',
+			title: 'Liferay',
+			userId: '1',
+		},
+		{
+			applicationId: 'Page',
+			canonicalUrl: 'https://www.liferay.com',
+			channelId: channel.id,
+			eventDate: date1.toISOString(),
+			eventId: 'pageViewed',
+			title: 'Liferay',
+			userId: '2',
+		},
+	]);
+
+	const date2 = new Date();
+
+	date2.setDate(date2.getDate() - 5);
+
+	await apiHelpers.jsonWebServicesOSBAsah.createPagesDaily([
+		{
+			canonicalUrl: 'https://www.liferay.com',
+			channelId: channel.id,
+			eventDate: date2.toISOString(),
+			title: 'Liferay',
+			userId: '3',
+			views: 1,
+		},
+	]);
+
+	await page.goto(
+		`${faroConfig.environment.baseUrl}/workspace/${project.groupId}/${channel.id}/sites`
+	);
+
+	await page.getByRole('link', {exact: true, name: 'Pages'}).click();
+
+	await page.getByRole('link', {name: 'Liferay'}).click();
+
+	await page.getByRole('link', {name: 'Known Individuals'}).click();
+
+	await expect(
+		page.getByRole('cell', {name: 'user3 user3 user3@liferay.com'})
+	).toBeVisible({
+		timeout: 100 * 1000,
+	});
+
+	await page.getByRole('button', {name: 'Last 30 days'}).click();
+
+	await page.getByRole('menuitem', {name: 'Last 24 hours'}).click();
+
+	await expect(
+		page.getByRole('cell', {name: 'user1 user1 user1@liferay.com'})
+	).toBeVisible({
+		timeout: 100 * 1000,
+	});
+
+	await expect(
+		page.getByRole('cell', {name: 'user2 user2 user2@liferay.com'})
+	).toBeVisible({
+		timeout: 100 * 1000,
+	});
+
+	await expect(
+		page.getByRole('cell', {name: 'user3 user3 user3@liferay.com'})
+	).toBeHidden({
+		timeout: 100 * 1000,
+	});
+
+	await apiHelpers.jsonWebServicesOSBFaro.deleteChannel(
+		`[${channel.id}]`,
+		project.groupId
+	);
+});
+
 test('shows outside pages in path analysis', async ({apiHelpers, page}) => {
 	const pageTitle = 'My Page';
 
@@ -71,7 +254,7 @@ test('shows outside pages in path analysis', async ({apiHelpers, page}) => {
 
 	const channelName = 'My Property - ' + getRandomString();
 
-	await syncAnalyticsCloud(page, channelName);
+	await syncAnalyticsCloud(apiHelpers, page, channelName);
 
 	await goToWithReferrer(
 		page,
@@ -146,7 +329,7 @@ test('shows tracked pages in path analysis', async ({apiHelpers, page}) => {
 
 	const channelName = 'My Property - ' + getRandomString();
 
-	await syncAnalyticsCloud(page, channelName);
+	await syncAnalyticsCloud(apiHelpers, page, channelName);
 
 	await navigateToSitePage(page, '', pageTitle1);
 

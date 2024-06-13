@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.search.generic.MatchAllQuery;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Localization;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -100,6 +101,28 @@ public class SearchResultResourceImpl extends BaseSearchResultResourceImpl {
 	}
 
 	@Override
+	public Page<SearchResult> getSearchPage(
+			String blueprintExternalReferenceCode, Boolean emptySearch,
+			String entryClassNames, String scope, String search, Filter filter,
+			Pagination pagination, Sort[] sorts)
+		throws Exception {
+
+		SearchRequestBody searchRequestBody = new SearchRequestBody();
+
+		searchRequestBody.setAttributes(
+			() -> HashMapBuilder.<String, Object>put(
+				"search.empty.search", emptySearch
+			).put(
+				"search.experiences.blueprint.external.reference.code",
+				blueprintExternalReferenceCode
+			).build());
+
+		return postSearchPage(
+			entryClassNames, scope, search, filter, pagination, sorts,
+			searchRequestBody);
+	}
+
+	@Override
 	public Page<SearchResult> postSearchPage(
 			String entryClassNames, String scope, String search, Filter filter,
 			Pagination pagination, Sort[] sorts,
@@ -119,6 +142,7 @@ public class SearchResultResourceImpl extends BaseSearchResultResourceImpl {
 					_localization.getLocalizedName(
 						com.liferay.portal.kernel.search.Field.CONTENT,
 						contextAcceptLanguage.getPreferredLanguageId()),
+					com.liferay.portal.kernel.search.Field.CREATE_DATE,
 					_localization.getLocalizedName(
 						com.liferay.portal.kernel.search.Field.DESCRIPTION,
 						contextAcceptLanguage.getPreferredLanguageId()),
@@ -397,6 +421,22 @@ public class SearchResultResourceImpl extends BaseSearchResultResourceImpl {
 		searchContext.setUserId(contextUser.getUserId());
 	}
 
+	private void _setDateCreated(
+		Document document, List<String> fields, SearchResult searchResult) {
+
+		if (!_isEmptyOrContains(fields, "dateCreated")) {
+			return;
+		}
+
+		String createDate = document.getString(
+			com.liferay.portal.kernel.search.Field.CREATE_DATE);
+
+		if (createDate != null) {
+			searchResult.setDateCreated(
+				() -> _parseDateStringFieldValue(createDate));
+		}
+	}
+
 	private void _setDateModified(
 		Document document, List<String> fields, SearchResult searchResult) {
 
@@ -409,9 +449,7 @@ public class SearchResultResourceImpl extends BaseSearchResultResourceImpl {
 
 		if (modifiedDate != null) {
 			searchResult.setDateModified(
-				() -> _parseDateStringFieldValue(
-					document.getString(
-						com.liferay.portal.kernel.search.Field.MODIFIED_DATE)));
+				() -> _parseDateStringFieldValue(modifiedDate));
 		}
 	}
 
@@ -613,6 +651,7 @@ public class SearchResultResourceImpl extends BaseSearchResultResourceImpl {
 				_setTitle(assetRenderer, fields, searchResult, summary);
 			}
 
+			_setDateCreated(document, fields, searchResult);
 			_setDateModified(document, fields, searchResult);
 			_setScore(fields, searchHit, searchResult);
 

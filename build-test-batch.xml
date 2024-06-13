@@ -6268,7 +6268,6 @@ information. Make sure to commit in all format-javadoc results.
 			<test-action>
 				<gradle-execute dir="modules" task="packageRunTest">
 					<arg value="--continue" />
-					<arg value="--parallel" />
 				</gradle-execute>
 
 				<replace
@@ -8527,10 +8526,15 @@ information. Make sure to commit in all build services results.
 				</exec>
 
 				<if>
-					<or>
-						<contains string="${git.diff}" substring="modules${file.separator}util${file.separator}source-formatter" />
-						<contains string="${git.diff}" substring="source-formatter.properties" />
-					</or>
+					<and>
+						<or>
+							<contains string="${git.diff}" substring="modules${file.separator}util${file.separator}source-formatter" />
+							<contains string="${git.diff}" substring="source-formatter.properties" />
+						</or>
+						<not>
+							<matches pattern="release-((\d{4})\.q([1-4])|(7\.[0-4]\.[0-9]?[0-9]\.\d+))" string="${liferay.portal.branch}" />
+						</not>
+					</and>
 					<then>
 						<antcall target="compile" />
 

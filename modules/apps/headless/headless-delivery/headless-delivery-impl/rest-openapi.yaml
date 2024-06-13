@@ -1611,7 +1611,6 @@ components:
                     description:
                         The document shortcut's folder ID.
                     format: int64
-                    readOnly: true
                     type: integer
                 id:
                     description:
@@ -1629,12 +1628,18 @@ components:
                     description:
                         The ID of the document to which this shortcut is scoped.
                     format: int64
-                    readOnly: true
                     type: integer
                 title:
                     description:
                         The title of the document to which this shortcut is scoped.
+                    readOnly: true
                     type: string
+                viewableBy:
+                    description:
+                        A write-only property that specifies the default permissions.
+                    enum: [Anyone, Members, Owner]
+                    type: string
+                    writeOnly: true
             type: object
         Experience:
             description:
@@ -6394,6 +6399,33 @@ paths:
                                 items:
                                     $ref: "#/components/schemas/DocumentShortcut"
                                 type: array
+            tags: ["DocumentShortcut"]
+        post:
+            operationId: postAssetLibraryDocumentShortcut
+            parameters:
+                - in: path
+                  name: assetLibraryId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/DocumentShortcut"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/DocumentShortcut"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/DocumentShortcut"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/DocumentShortcut"
             tags: ["DocumentShortcut"]
     "/asset-libraries/{assetLibraryId}/documents":
         get:
@@ -12593,6 +12625,33 @@ paths:
                                 items:
                                     $ref: "#/components/schemas/DocumentShortcut"
                                 type: array
+            tags: ["DocumentShortcut"]
+        post:
+            operationId: postSiteDocumentShortcut
+            parameters:
+                - in: path
+                  name: siteId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/DocumentShortcut"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/DocumentShortcut"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/DocumentShortcut"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/DocumentShortcut"
             tags: ["DocumentShortcut"]
     "/sites/{siteId}/documents":
         get:

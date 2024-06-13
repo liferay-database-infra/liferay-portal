@@ -367,6 +367,129 @@ test.describe('Visualization Modes in Data Set Manager', () => {
 		});
 	});
 
+	test('Add a field and assert its added to the last position in the table and assert fields can be reordered using a keyboard', async ({
+		page,
+		visualizationModesPage,
+	}) => {
+		const SAMPLE_FIELD = 'name';
+		const SAMPLE_SCALAR_FIELD = 'id';
+		const SAMPLE_OBJECT_FIELD = 'fdsViewFDSFieldRelationship';
+		const SAMPLE_OBJECT_CHILD_FIELD = 'id';
+
+		await test.step('Navigate to table visualization mode page', async () => {
+			await visualizationModesPage.goto({
+				dataSetLabel,
+			});
+
+			await visualizationModesPage.selectTab('Table');
+
+			await expect(
+				visualizationModesPage.page.getByPlaceholder('Search')
+			).toBeVisible();
+		});
+
+		await test.step('Add fields', async () => {
+			await visualizationModesPage.openAddFieldsModal();
+
+			await visualizationModesPage.selectField({
+				fieldName: SAMPLE_SCALAR_FIELD,
+			});
+
+			await visualizationModesPage.selectField({
+				dataId: `${SAMPLE_OBJECT_FIELD}.*`,
+				fieldName: SAMPLE_OBJECT_FIELD,
+			});
+
+			await visualizationModesPage.selectField({
+				dataId: `${SAMPLE_OBJECT_FIELD}.${SAMPLE_OBJECT_CHILD_FIELD}`,
+				fieldName: SAMPLE_OBJECT_CHILD_FIELD,
+			});
+
+			await saveFromModal({
+				page,
+			});
+		});
+
+		await test.step('Add a new field', async () => {
+			await visualizationModesPage.openAddFieldsModal();
+
+			await visualizationModesPage.selectField({
+				fieldName: SAMPLE_FIELD,
+			});
+
+			await saveFromModal({
+				page,
+			});
+		});
+
+		await test.step('Check if field is added to the last position', async () => {
+			const lastTableRow = visualizationModesPage.page.locator(
+				'table.orderable-table > tbody tr:last-child'
+			);
+
+			await expect(lastTableRow.locator('td').nth(1)).toHaveText(
+				SAMPLE_FIELD
+			);
+
+			await visualizationModesPage.assertTableFieldRowCount(4);
+		});
+
+		await test.step('Focus the last field', async () => {
+			const lastTableRow = visualizationModesPage.page.locator(
+				'table.orderable-table > tbody tr:last-child'
+			);
+
+			await expect(lastTableRow).toBeVisible();
+
+			const firstCell = lastTableRow.locator('td > button').first();
+
+			await expect(firstCell).toBeVisible();
+
+			await firstCell.focus();
+
+			await expect(firstCell).toBeFocused();
+		});
+
+		await test.step('Move the field one place up', async () => {
+			await page.keyboard.press('Enter');
+
+			await page.keyboard.press('ArrowUp');
+
+			await page.keyboard.press('Enter');
+		});
+
+		await test.step('Assert that the field has moved one place up', async () => {
+			const tableRows = visualizationModesPage.page.locator(
+				'table.orderable-table > tbody tr'
+			);
+
+			const tableRowsCount = await tableRows.count();
+
+			expect(tableRowsCount).toEqual(4);
+
+			const expectedTexts = [
+				SAMPLE_SCALAR_FIELD,
+				`${SAMPLE_OBJECT_FIELD}.*`,
+				SAMPLE_FIELD,
+				`${SAMPLE_OBJECT_FIELD}.${SAMPLE_OBJECT_CHILD_FIELD}`,
+			];
+
+			for (let i = 0; i < expectedTexts.length; i++) {
+				const row = tableRows.nth(i);
+
+				await expect(row).toBeVisible();
+
+				const secondColumn = row.locator('td').nth(1);
+
+				await expect(secondColumn).toBeVisible();
+
+				const text = await secondColumn.innerText();
+
+				expect(text).toBe(expectedTexts[i]);
+			}
+		});
+	});
+
 	test('Configure table visualization mode with array fields @LPD-11769', async ({
 		page,
 		visualizationModesPage,

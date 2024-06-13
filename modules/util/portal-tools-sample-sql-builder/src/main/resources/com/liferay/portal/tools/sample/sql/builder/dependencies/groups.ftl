@@ -32,10 +32,15 @@
 		_parentDLFolderId = 0
 	/>
 
-	<#assign homePageContentLayoutModels = dataFactory.newContentPageLayoutModels(groupId, "home") />
+	<#assign
+		homePageContentLayoutModels = dataFactory.newContentPageLayoutModels(groupId, "home")
+		homePageSegmentsExperienceModel = dataFactory.newSegmentsExperienceModel(homePageContentLayoutModels)
+	 />
+
+	 ${dataFactory.toInsertSQL(homePageSegmentsExperienceModel)}
 
 	<@insertContentPageLayout
-		_fragmentEntryLinkModels = dataFactory.newFragmentEntryLinkModels(homePageContentLayoutModels)
+		_fragmentEntryLinkModels = dataFactory.newFragmentEntryLinkModels(homePageContentLayoutModels, homePageSegmentsExperienceModel.getSegmentsExperienceId())
 		_layoutModels = homePageContentLayoutModels
 		_templateFileName = "default-homepage-layout-definition.json"
 	/>
@@ -49,10 +54,15 @@
 	${csvFileWriter.write("repository", virtualHostModel.hostname + "," + groupModel.friendlyURL + "," + groupId + ", " + groupModel.name + "\n")}
 </#list>
 
-<#assign defaultSiteHomePageContentLayoutModels = dataFactory.newContentPageLayoutModels(guestGroupModel.groupId, "home") />
+<#assign
+	defaultSiteHomePageContentLayoutModels = dataFactory.newContentPageLayoutModels(guestGroupModel.groupId, "home")
+	defaultSiteHomePageSegmentsExperienceModel = dataFactory.newSegmentsExperienceModel(defaultSiteHomePageContentLayoutModels)
+/>
+
+${dataFactory.toInsertSQL(defaultSiteHomePageSegmentsExperienceModel)}
 
 <@insertContentPageLayout
-	_fragmentEntryLinkModels = dataFactory.newFragmentEntryLinkModels(defaultSiteHomePageContentLayoutModels)
+	_fragmentEntryLinkModels = dataFactory.newFragmentEntryLinkModels(defaultSiteHomePageContentLayoutModels, homePageSegmentsExperienceModel.getSegmentsExperienceId())
 	_layoutModels = defaultSiteHomePageContentLayoutModels
 	_templateFileName = "default-homepage-layout-definition.json"
 />

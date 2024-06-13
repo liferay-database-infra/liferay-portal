@@ -40,6 +40,7 @@ import com.liferay.object.system.SystemObjectDefinitionManagerRegistry;
 import com.liferay.object.validation.rule.ObjectValidationRuleEngine;
 import com.liferay.object.validation.rule.ObjectValidationRuleEngineRegistry;
 import com.liferay.object.validation.rule.ObjectValidationRuleResult;
+import com.liferay.object.validation.rule.util.ObjectValidationRuleThreadLocal;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.sql.dsl.Column;
 import com.liferay.petra.string.StringBundler;
@@ -392,6 +393,13 @@ public class ObjectValidationRuleLocalServiceImpl
 		for (ObjectValidationRule objectValidationRule :
 				objectValidationRules) {
 
+			if (ObjectValidationRuleThreadLocal.
+					isExecutedObjectValidationRuleId(
+						objectValidationRule.getObjectValidationRuleId())) {
+
+				continue;
+			}
+
 			Map<String, Object> results = new HashMap<>();
 
 			ObjectValidationRuleEngine objectValidationRuleEngine =
@@ -440,6 +448,9 @@ public class ObjectValidationRuleLocalServiceImpl
 				results = objectValidationRuleEngine.execute(
 					(Map<String, Object>)variables.get("entryDTO"), null);
 			}
+
+			ObjectValidationRuleThreadLocal.addExecutedObjectValidationRuleId(
+				objectValidationRule.getObjectValidationRuleId());
 
 			Locale locale = LocaleUtil.getMostRelevantLocale();
 

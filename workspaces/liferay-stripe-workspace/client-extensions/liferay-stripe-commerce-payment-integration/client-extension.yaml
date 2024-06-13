@@ -6,7 +6,7 @@ liferay-stripe-commerce-payment-integration:
     oAuth2ApplicationExternalReferenceCode: liferay-stripe-commerce-payment-integration-oauth-application-user-agent
     paymentIntegrationType: 4
     paymentIntegrationTypeSettings:
-        apiKey: enter your secret key here
+        apiKey:
     type: commercePaymentIntegration
 liferay-stripe-commerce-payment-integration-oauth-application-user-agent:
     .serviceAddress: localhost:58081
