@@ -33,7 +33,7 @@ export class DisplayPageTemplatesPage {
 		name,
 	}: {
 		contentSubtype?: 'Basic Web Content';
-		contentType: 'Web Content Article' | 'Blogs Entry';
+		contentType: string;
 		name: string;
 	}) {
 		await this.newButton.click();
@@ -65,6 +65,21 @@ export class DisplayPageTemplatesPage {
 			)
 			.filter({hasText: name})
 			.getByLabel('More actions')
+			.click();
+	}
+
+	async deleteAllDisplayPageTemplates() {
+		await this.goto();
+
+		await this.page
+			.getByLabel('Select All Items on the Page')
+			.setChecked(true);
+
+		await this.page.getByRole('button', {name: 'Delete'}).click();
+
+		await this.page
+			.getByLabel('Delete Entries- Loading')
+			.getByRole('button', {name: 'Delete'})
 			.click();
 	}
 

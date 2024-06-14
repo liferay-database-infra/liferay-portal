@@ -248,13 +248,13 @@ public class StringUtil_IW {
 		return StringUtil.merge(array, delimiter);
 	}
 
-	public java.lang.String merge(java.util.Collection<?> col) {
-		return StringUtil.merge(col);
+	public java.lang.String merge(java.util.Collection<?> collection) {
+		return StringUtil.merge(collection);
 	}
 
-	public java.lang.String merge(java.util.Collection<?> col,
+	public java.lang.String merge(java.util.Collection<?> collection,
 		java.lang.String delimiter) {
-		return StringUtil.merge(col, delimiter);
+		return StringUtil.merge(collection, delimiter);
 	}
 
 	public java.lang.String merge(double[] array) {
@@ -430,6 +430,11 @@ public class StringUtil_IW {
 		java.lang.String end,
 		java.util.Map<java.lang.String, java.lang.String> values) {
 		return StringUtil.replace(s, begin, end, values);
+	}
+
+	public java.lang.String replace(java.lang.String s,
+		java.lang.String[] oldSubs, java.lang.Object[] newSubs) {
+		return StringUtil.replace(s, oldSubs, newSubs);
 	}
 
 	public java.lang.String replace(java.lang.String s,

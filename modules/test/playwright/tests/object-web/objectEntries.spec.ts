@@ -14,9 +14,9 @@ import {objectPagesTest} from '../../fixtures/objectPagesTest';
 import {pageEditorPagesTest} from '../../fixtures/pageEditorPagesTest';
 import {getRandomInt} from '../../utils/getRandomInt';
 import getRandomString from '../../utils/getRandomString';
-import getCollectionDefinition from '../layout-content-page-editor-web/utils/getCollectionDefinition';
-import getFragmentDefinition from '../layout-content-page-editor-web/utils/getFragmentDefinition';
-import getPageDefinition from '../layout-content-page-editor-web/utils/getPageDefinition';
+import {journalPagesTest} from '../journal-web/fixtures/journalPagesTest';
+import {getFDSDateFormat, getPageEditorDateFormat} from './utils/dateFormat';
+import {mockObjectFields} from './utils/mockObjectFields';
 
 export const test = mergeTests(
 	apiHelpersTest,
@@ -25,10 +25,32 @@ export const test = mergeTests(
 	featureFlagsTest({
 		'LPS-178052': true,
 	}),
+	journalPagesTest,
 	loginTest(),
 	objectPagesTest,
 	pageEditorPagesTest
 );
+
+const customListTypeDefinitions: ListTypeDefinition[] = [];
+const customObjectDefinitions: ObjectDefinition[] = [];
+
+test.afterEach(async ({apiHelpers}) => {
+	if (customObjectDefinitions.length) {
+		for (const customObjectDefinition of customObjectDefinitions) {
+			await apiHelpers.objectAdmin.deleteObjectDefinition(
+				customObjectDefinition.id
+			);
+		}
+	}
+
+	if (customListTypeDefinitions.length) {
+		for (const customListTypeDefinition of customListTypeDefinitions) {
+			await apiHelpers.listTypeAdmin.deleteListTypeDefinition(
+				customListTypeDefinition.id
+			);
+		}
+	}
+});
 
 test.describe('Manage object entries through page templates', () => {
 	test('can view all entries related to an object in the relationship field', async ({
@@ -42,11 +64,15 @@ test.describe('Manage object entries through page templates', () => {
 				status: {code: 0},
 			});
 
+		customObjectDefinitions.push(objectDefinition1);
+
 		const objectDefinition2 =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
 				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
+
+		customObjectDefinitions.push(objectDefinition2);
 
 		const objectRelationshipLabel =
 			'objectRelationshipLabel' + getRandomInt();
@@ -111,129 +137,155 @@ test.describe('Manage object entries through page templates', () => {
 		);
 	});
 
-	test('filters object definition entries of boolean type on an collection display page', async ({
+	test('verify if the object entries are displayed when selecting to preview an object entry on a page template', async ({
 		apiHelpers,
+		displayPageTemplatesPage,
 		page,
 		pageEditorPage,
-		site,
 	}) => {
+		test.slow();
+
+		const objectDefinitionLabel = 'ObjectDefinitionLabel' + getRandomInt();
+		const objectDefinitionName = 'ObjectDefinitionName' + getRandomInt();
+
+		const {
+			listTypeDefinition,
+			objectEntry,
+			objectFields,
+			titleObjectFieldName,
+		} = await mockObjectFields({
+			apiHelpers,
+			objectEntryReturn: {format: 'API'},
+			objectFieldBusinessTypes: [
+				'autoIncrement',
+				'boolean',
+				'date',
+				'decimal',
+				'encrypted',
+				'integer',
+				'longInteger',
+				'longText',
+				'multiselectPicklist',
+				'picklist',
+				'precisionDecimal',
+				'richText',
+				'text',
+			],
+			titleObjectFieldName: 'text',
+		});
+
 		const objectDefinition =
 			await apiHelpers.objectAdmin.postObjectDefinition({
 				active: true,
-				externalReferenceCode: 'customObjectERC',
 				label: {
-					en_US: 'customobject',
+					en_US: objectDefinitionLabel,
 				},
-				name: 'CustomObject',
-				objectFields: [
-					{
-						DBType: 'Boolean',
-						businessType: 'Boolean',
-						externalReferenceCode: 'customBoolean',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: '',
-						label: {en_US: 'customBoolean'},
-						listTypeDefinitionId: 0,
-						name: 'customBoolean',
-						required: false,
-						system: false,
-						type: 'Boolean',
-					},
-				],
+				name: objectDefinitionName,
+				objectFields,
 				pluralLabel: {
-					en_US: 'customobjects',
+					en_US: objectDefinitionLabel,
 				},
 				portlet: true,
 				scope: 'company',
 				status: {
 					code: 0,
 				},
+				titleObjectFieldName,
 			});
 
-		const trueObjectEntry = {
-			customBoolean: true,
-		};
+		customListTypeDefinitions.push(listTypeDefinition);
+		customObjectDefinitions.push(objectDefinition);
 
-		const falseObjectEntry = {
-			customBoolean: false,
-		};
+		const applicationName =
+			'c/' + objectDefinition.name.toLowerCase() + 's';
 
 		await apiHelpers.objectEntry.postObjectEntry(
-			trueObjectEntry,
-			'c/customobjects'
+			objectEntry,
+			applicationName
 		);
 
-		await apiHelpers.objectEntry.postObjectEntry(
-			falseObjectEntry,
-			'c/customobjects'
-		);
+		await displayPageTemplatesPage.goto();
 
-		const collectionDefinition = getCollectionDefinition({
-			id: getRandomString(),
+		const displayPageTemplateName = getRandomString();
+
+		await displayPageTemplatesPage.publishNewTemplate({
+			contentType: objectDefinition.label['en_US'],
+			name: displayPageTemplateName,
 		});
 
-		const headingDefinition = getFragmentDefinition({
-			id: getRandomString(),
-			key: 'BASIC_COMPONENT-heading',
-		});
+		await page.getByTitle(displayPageTemplateName).click();
 
-		const layout = await apiHelpers.headlessDelivery.createSitePage({
-			pageDefinition: getPageDefinition([
-				collectionDefinition,
-				headingDefinition,
-			]),
-			siteId: site.id,
-			title: 'Collection Display filtered by boolean type',
-		});
+		overloop: for (const [
+			index,
+			objectField,
+		] of objectDefinition.objectFields
+			.filter((objectField) => !objectField.system)
+			.entries()) {
+			await pageEditorPage.addFragment('Basic Components', 'Heading');
 
-		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+			await page.getByText('Heading Example', {exact: true}).click();
 
-		await pageEditorPage.selectFragment(collectionDefinition.id);
+			await page.getByLabel('Select element-text').click();
 
-		await pageEditorPage.goToConfigurationTab('General');
+			await pageEditorPage.setMappingConfiguration({
+				entity: objectDefinitionLabel,
+				entry: objectEntry[titleObjectFieldName],
+				field: objectField.label.en_US,
+				recentSelectedItem:
+					index >= 1 ? objectEntry[titleObjectFieldName] : undefined,
+				source: 'content',
+			});
 
-		await pageEditorPage.chooseCollectionDisplayOption(
-			'Collection Providers',
-			'customobjects customobject'
-		);
+			let matchString: string;
 
-		await pageEditorPage.chooseCollectionFilterOption(
-			'customBoolean',
-			'true'
-		);
+			switch (objectField.businessType) {
+				case 'AutoIncrement': {
+					matchString = '1';
 
-		await pageEditorPage.goToSidebarTab('Browser');
+					break;
+				}
+				case 'Date': {
+					const date = new Date(
+						Date.parse(objectEntry[objectField.name])
+					);
 
-		await pageEditorPage.selectFragment(collectionDefinition.id);
+					matchString = getPageEditorDateFormat(date);
 
-		await pageEditorPage.selectFragment(headingDefinition.id);
+					// Defer date validation for CI trace view analysis (issue #LRCI-4253)
 
-		await page
-			.getByLabel('Select Heading')
-			.dragTo(page.getByLabel('Collection Item', {exact: true}));
+					continue overloop;
+				}
+				case 'Picklist': {
+					matchString = (
+						objectEntry[objectField.name] as {key: string}
+					).key;
 
-		await page.getByLabel('Select element-text').click();
+					break;
+				}
+				case 'MultiselectPicklist': {
+					(objectEntry[objectField.name] as string[]).forEach(
+						(listTypeEntry, index) => {
+							index < 1
+								? (matchString = `${listTypeEntry}`)
+								: (matchString += `, ${listTypeEntry}`);
+						}
+					);
 
-		await page
-			.getByLabel('Field')
-			.selectOption('ObjectField_customBoolean');
+					break;
+				}
+				default: {
+					matchString = objectEntry[objectField.name].toString();
+				}
+			}
 
-		await pageEditorPage.publishPage();
-
-		await page.goto(`/web${site.friendlyUrlPath}${layout.friendlyUrlPath}`);
-
-		await expect(page.getByText('true')).toBeVisible();
-
-		await expect(page.getByText('false')).toBeHidden();
+			await expect(
+				page.getByTitle('Edit Text').filter({hasText: matchString})
+			).toBeVisible();
+		}
 
 		// Clean up
 
-		await apiHelpers.jsonWebServicesLayout.deleteLayout(layout.id);
-
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition.id
-		);
+		await displayPageTemplatesPage.deleteAllDisplayPageTemplates();
 	});
 });
 
@@ -243,225 +295,35 @@ test.describe('Manage object entries through View Object Entries', () => {
 		page,
 		viewObjectEntriesPage,
 	}) => {
-		const picklist = await apiHelpers.post(
-			'/o/headless-admin-list-type/v1.0/list-type-definitions',
-			{
-				data: {
-					externalReferenceCode: 'picklistERC',
-					name: 'picklist',
-					name_i18n: {
-						en_US: 'picklist',
-					},
-				},
-			}
-		);
-
-		await apiHelpers.post(
-			`/o/headless-admin-list-type/v1.0/list-type-definitions/${picklist.id}/list-type-entries`,
-			{
-				data: {
-					key: 'item1',
-					name: 'item1',
-					name_i18n: {
-						en_US: 'item1',
-					},
-				},
-			}
-		);
+		const ATTACHMENT_FILE_NAME = 'astronaut.png';
+		const {listTypeDefinition, objectEntry, objectFields} =
+			await mockObjectFields({
+				apiHelpers,
+				objectEntryReturn: {format: 'UI'},
+				objectFieldBusinessTypes: [
+					'attachment',
+					'boolean',
+					'date',
+					'decimal',
+					'integer',
+					'longInteger',
+					'longText',
+					'picklist',
+					'precisionDecimal',
+					'richText',
+					'text',
+				],
+			});
 
 		const objectDefinition =
 			await apiHelpers.objectAdmin.postObjectDefinition({
 				active: true,
-				externalReferenceCode: 'NewObjectERC',
+				externalReferenceCode: getRandomString(),
 				label: {
-					en_US: 'NewObject',
+					en_US: getRandomString(),
 				},
-				name: 'NewObject',
-				objectFields: [
-					{
-						DBType: 'String',
-						businessType: 'Text',
-						externalReferenceCode: 'text',
-						indexed: true,
-						indexedAsKeyword: true,
-						label: {
-							en_US: 'text',
-						},
-						name: 'text',
-						required: false,
-						system: false,
-						type: 'String',
-					},
-					{
-						DBType: 'Long',
-						businessType: 'LongInteger',
-						externalReferenceCode: 'longInteger',
-						id: 33573,
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: '',
-						label: {
-							en_US: 'longInteger',
-						},
-						listTypeDefinitionId: 0,
-						localized: false,
-						name: 'longInteger',
-						required: false,
-						system: false,
-						type: 'Long',
-					},
-					{
-						DBType: 'Date',
-						businessType: 'Date',
-						externalReferenceCode: 'date',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: '',
-						label: {
-							en_US: 'date',
-						},
-						listTypeDefinitionId: 0,
-						localized: false,
-						name: 'date',
-						required: false,
-						system: false,
-						type: 'Date',
-					},
-					{
-						DBType: 'Integer',
-						businessType: 'Integer',
-						externalReferenceCode: 'integer',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: '',
-						label: {
-							en_US: 'integer',
-						},
-						listTypeDefinitionId: 0,
-						localized: false,
-						name: 'integer',
-						required: false,
-						system: false,
-						type: 'Integer',
-					},
-					{
-						DBType: 'Double',
-						businessType: 'Decimal',
-						externalReferenceCode: 'decimal',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: '',
-						label: {
-							en_US: 'decimal',
-						},
-						listTypeDefinitionId: 0,
-						localized: false,
-						name: 'decimal',
-						required: false,
-						system: false,
-						type: 'Double',
-					},
-					{
-						DBType: 'Clob',
-						businessType: 'RichText',
-						externalReferenceCode: 'richText',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: 'en_US',
-						label: {
-							en_US: 'richText',
-						},
-						listTypeDefinitionId: 0,
-						localized: false,
-						name: 'richText',
-						required: false,
-						system: false,
-						type: 'Clob',
-					},
-					{
-						DBType: 'Boolean',
-						businessType: 'Boolean',
-						externalReferenceCode: 'boolean',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: '',
-						label: {en_US: 'boolean'},
-						listTypeDefinitionId: 0,
-						name: 'boolean',
-						required: false,
-						system: false,
-						type: 'Boolean',
-					},
-					{
-						DBType: 'Clob',
-						businessType: 'LongText',
-						externalReferenceCode: 'longText',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: '',
-						label: {en_US: 'longText'},
-						listTypeDefinitionId: 0,
-						name: 'longText',
-						required: false,
-						system: false,
-						type: 'Clob',
-					},
-					{
-						DBType: 'BigDecimal',
-						businessType: 'PrecisionDecimal',
-						externalReferenceCode: 'precisionDecimal',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: '',
-						label: {en_US: 'precisionDecimal'},
-						listTypeDefinitionId: 0,
-						name: 'precisionDecimal',
-						required: false,
-						system: false,
-						type: 'BigDecimal',
-					},
-					{
-						DBType: 'String',
-						businessType: 'Picklist',
-						externalReferenceCode: 'picklist',
-						indexed: true,
-						indexedAsKeyword: false,
-						indexedLanguageId: 'en_US',
-						label: {
-							en_US: 'picklist',
-						},
-						listTypeDefinitionExternalReferenceCode: 'picklistERC',
-						name: 'picklist',
-						required: false,
-						state: false,
-					},
-					{
-						DBType: 'Long',
-						businessType: 'Attachment',
-						indexed: true,
-						indexedAsKeyword: false,
-						label: {
-							en_US: 'attachment',
-						},
-						name: 'attachment',
-						objectFieldSettings: [
-							{
-								name: 'acceptedFileExtensions',
-								value: 'jpeg, jpg, pdf, png',
-							},
-							{
-								name: 'fileSource',
-								value: 'documentsAndMedia',
-							},
-							{
-								name: 'maximumFileSize',
-								value: '100',
-							},
-						],
-						required: false,
-						type: 'Long',
-					},
-				],
+				name: 'ObjectDefinitionName' + getRandomInt(),
+				objectFields,
 				panelCategoryKey: 'control_panel.object',
 				pluralLabel: {
 					en_US: 'NewObject',
@@ -473,55 +335,51 @@ test.describe('Manage object entries through View Object Entries', () => {
 				},
 			});
 
+		customListTypeDefinitions.push(listTypeDefinition);
+		customObjectDefinitions.push(objectDefinition);
+
 		await viewObjectEntriesPage.goto(objectDefinition.id);
 
 		await viewObjectEntriesPage.clickAddObjectEntry();
 
-		await viewObjectEntriesPage.selectFileFromDocumentsAndMedia();
+		for (const objectField of objectFields) {
+			switch (objectField.businessType) {
+				case 'Attachment': {
+					await viewObjectEntriesPage.selectFileFromDocumentsAndMedia(
+						ATTACHMENT_FILE_NAME
+					);
 
-		await page.getByLabel('boolean').check();
+					break;
+				}
+				case 'Boolean': {
+					objectEntry[objectField.name]
+						? await page
+								.getByLabel(objectField.label['en_US'])
+								.check()
+						: await page
+								.getByLabel(objectField.label['en_US'])
+								.uncheck();
 
-		await viewObjectEntriesPage.fillObjectEntry({
-			objectFieldName: 'date',
-			objectFieldValue: '05/14/2024',
-		});
+					break;
+				}
+				case 'Picklist': {
+					await viewObjectEntriesPage.selectDropdownItem(
+						objectField.label['en_US'],
+						objectEntry[objectField.name].key.toString()
+					);
 
-		await viewObjectEntriesPage.fillObjectEntry({
-			objectFieldName: 'decimal',
-			objectFieldValue: '12.34',
-		});
-
-		await viewObjectEntriesPage.fillObjectEntry({
-			objectFieldName: 'integer',
-			objectFieldValue: '1234',
-		});
-
-		await viewObjectEntriesPage.fillObjectEntry({
-			objectFieldName: 'longInteger',
-			objectFieldValue: '1122334455',
-		});
-
-		await viewObjectEntriesPage.fillObjectEntry({
-			objectFieldName: 'longText',
-			objectFieldValue: 'Text written on long text',
-		});
-
-		await viewObjectEntriesPage.selectDropdownItem('picklist', 'item1');
-
-		await viewObjectEntriesPage.fillObjectEntry({
-			objectFieldName: 'precisionDecimal',
-			objectFieldValue: '1.5',
-		});
-
-		await viewObjectEntriesPage.fillObjectEntry({
-			objectFieldBusinessType: 'RichText',
-			objectFieldValue: 'Text written on rich text',
-		});
-
-		await viewObjectEntriesPage.fillObjectEntry({
-			objectFieldName: 'text',
-			objectFieldValue: 'Text written on simple text',
-		});
+					break;
+				}
+				default: {
+					await viewObjectEntriesPage.fillObjectEntry({
+						objectFieldBusinessType: objectField.businessType,
+						objectFieldLabel: objectField.label['en_US'],
+						objectFieldValue:
+							objectEntry[objectField.name].toString(),
+					});
+				}
+			}
+		}
 
 		await viewObjectEntriesPage.saveObjectEntryButton.click();
 
@@ -529,32 +387,57 @@ test.describe('Manage object entries through View Object Entries', () => {
 
 		await viewObjectEntriesPage.backButton.click();
 
-		const objectEntries = [
-			'Yes',
-			'12.34',
-			'1234',
-			'1122334455',
-			'1.5',
-			'Text written on long text',
-			'Text written on simple text',
-			'Text written on rich text',
-			'item1',
-			'astronaut.png',
-		];
+		for (const {businessType, name} of objectFields) {
+			let matchString: string;
 
-		for (let i = 0; i < objectEntries.length; i++) {
-			const entry = objectEntries[i];
+			switch (businessType) {
+				case 'Attachment': {
+					matchString = ATTACHMENT_FILE_NAME;
 
-			await expect(page.getByText(entry)).toBeVisible();
+					break;
+				}
+				case 'Boolean': {
+					matchString = objectEntry[name] ? 'Yes' : 'No';
+
+					break;
+				}
+				case 'Date': {
+					const date = new Date(objectEntry[name]);
+
+					matchString = getFDSDateFormat(date);
+
+					break;
+				}
+				case 'Picklist': {
+					matchString = (objectEntry[name] as {key: string}).key;
+
+					break;
+				}
+				case 'MultiselectPicklist': {
+					(objectEntry[name] as string[]).forEach(
+						(listTypeEntry, index) => {
+							index < 1
+								? (matchString = `${listTypeEntry}`)
+								: (matchString += `, ${listTypeEntry}`);
+						}
+					);
+
+					break;
+				}
+				case 'RichText': {
+					matchString = objectEntry[name].substring(0, 35);
+
+					break;
+				}
+				default: {
+					matchString = objectEntry[name];
+				}
+			}
+
+			await expect(
+				page.locator('.dnd-td').getByText(matchString, {exact: true})
+			).toBeVisible();
 		}
-
-		// Clean up
-
-		await apiHelpers.objectAdmin.deleteObjectDefinition(
-			objectDefinition.id
-		);
-
-		await apiHelpers.listTypeAdmin.deleteListTypeDefinition(picklist.id);
 	});
 
 	test('can view all entries related to an object in the relationship field using autocomplete', async ({

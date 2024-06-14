@@ -30,7 +30,6 @@
 		"@clayui/popover": "^3.113.0",
 		"@clayui/table": "^3.111.0",
 		"@clayui/tooltip": "^3.113.0",
-		"@liferay/jest-junit-reporter": "^1.2.0",
 		"apollo-boost": "^0.1.28",
 		"apollo-cache-inmemory": "^1.6.5",
 		"apollo-client": "^2.6.8",
@@ -169,7 +168,7 @@
 		"format": "eslint --fix \"src/main/js/**/*.+(js|ts)?(x)\"",
 		"lint": "eslint \"src/main/js/**/*.+(js|ts)?(x)\"",
 		"start": "cross-env FARO_ENVIRONMENT_NAME=local webpack-dev-server --config webpack.dev.js",
-		"test": "cross-env TZ=Etc/GMT jest --coverage=false",
+		"test:dev": "cross-env TZ=Etc/GMT jest --coverage=false",
 		"webpack": "webpack --config webpack.prod.js",
 		"webpack:dev": "webpack --config webpack.dev.js"
 	},

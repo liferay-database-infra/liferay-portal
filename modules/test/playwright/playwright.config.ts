@@ -36,6 +36,7 @@ import {config as layoutPageTemplateAdminWeb} from './tests/layout-page-template
 import {config as layoutSetPrototypeWebConfig} from './tests/layout-set-prototype-web/config';
 import {config as lockedItemsConfig} from './tests/locked-items-web/config';
 import {config as loginWebConfig} from './tests/login-web/config';
+import {config as messageBoardsConfig} from './tests/message-boards-web/config';
 import {config as notificationWebConfig} from './tests/notification-web/config';
 import {config as objectWebConfig} from './tests/object-web/config';
 import {config as osbFaroWebConfig} from './tests/osb-faro-web/config';
@@ -93,6 +94,7 @@ export default defineConfig({
 		lockedItemsConfig,
 		loginWebConfig,
 		marketplaceConfig,
+		messageBoardsConfig,
 		notificationWebConfig,
 		objectWebConfig,
 		osbFaroWebConfig,
@@ -134,6 +136,7 @@ export default defineConfig({
 			? process.env.PORTAL_URL
 			: 'http://localhost:8080',
 		screenshot: 'only-on-failure',
+		testIdAttribute: 'data-qa-id',
 		trace: 'retain-on-failure',
 	},
 	workers: 1,

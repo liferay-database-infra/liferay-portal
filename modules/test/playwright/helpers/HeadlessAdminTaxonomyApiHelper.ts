@@ -5,18 +5,23 @@
 
 import {ApiHelpers} from './ApiHelpers';
 
-interface createVocabularyProps {
+interface postVocabularyProps {
 	assetTypes?: AssetType[];
 	name: string;
 	siteId: string;
 }
 
-interface createCategoryProps {
+interface postCategoryProps {
 	name: string;
 	vocabularyId: number;
 }
 
-interface createTagProps {
+interface patchCategoryProps {
+	id: number;
+	name: string;
+}
+
+interface postTagProps {
 	name: string;
 	siteId: string;
 }
@@ -38,11 +43,11 @@ export class HeadlessAdminTaxonomyApiHelper {
 	 * @param [assetTypes] the asset types to which the vocabulary can be used
 	 */
 
-	async createVocabulary({
+	async postVocabulary({
 		assetTypes,
 		name,
 		siteId,
-	}: createVocabularyProps): Promise<{id: number}> {
+	}: postVocabularyProps): Promise<{id: number}> {
 		return this.apiHelpers.post(
 			`${this.apiHelpers.baseUrl}${this.basePath}/sites/${siteId}/taxonomy-vocabularies`,
 			{data: {assetTypes, name}}
@@ -56,13 +61,27 @@ export class HeadlessAdminTaxonomyApiHelper {
 	 * @param vocabularyId the parent vocabulary id
 	 */
 
-	async createCategory({
+	async postCategory({
 		name,
 		vocabularyId,
-	}: createCategoryProps): Promise<{id: number}> {
+	}: postCategoryProps): Promise<{id: number}> {
 		return this.apiHelpers.post(
 			`${this.apiHelpers.baseUrl}${this.basePath}/taxonomy-vocabularies/${vocabularyId}/taxonomy-categories`,
 			{data: {name}}
+		);
+	}
+
+	/**
+	 * It allows update a category name
+	 *
+	 * @param name the new name of the category
+	 * @param id the category id
+	 */
+
+	async patchCategory({id, name}: patchCategoryProps): Promise<{id: number}> {
+		return this.apiHelpers.patch(
+			`${this.apiHelpers.baseUrl}${this.basePath}/taxonomy-categories/${id}`,
+			{name}
 		);
 	}
 
@@ -73,7 +92,7 @@ export class HeadlessAdminTaxonomyApiHelper {
 	 * @param siteId the id of the site in which the tag will be created
 	 */
 
-	async createTag({name, siteId}: createTagProps): Promise<{id: number}> {
+	async postTag({name, siteId}: postTagProps): Promise<{id: number}> {
 		return this.apiHelpers.post(
 			`${this.apiHelpers.baseUrl}${this.basePath}/sites/${siteId}/keywords`,
 			{data: {name}}
