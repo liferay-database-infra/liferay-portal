@@ -5,17 +5,17 @@
 
 import {test} from '@playwright/test';
 
-import {StaticPagesPage} from '../pages/StaticPagesPage';
+import {PageConfigurationPage} from '../pages/PageConfigurationPage';
 import {UtilityPageConfigurationPage} from '../pages/UtilityPageConfigurationPage';
 import {UtilityPagesPage} from '../pages/UtilityPagesPage';
 
 const pagesPagesTest = test.extend<{
-	staticPagesPage: StaticPagesPage;
+	pageConfigurationPage: PageConfigurationPage;
 	utilityPageConfigurationPage: UtilityPageConfigurationPage;
 	utilityPagesPage: UtilityPagesPage;
 }>({
-	staticPagesPage: async ({page}, use) => {
-		await use(new StaticPagesPage(page));
+	pageConfigurationPage: async ({page}, use) => {
+		await use(new PageConfigurationPage(page));
 	},
 	utilityPageConfigurationPage: async ({page}, use) => {
 		await use(new UtilityPageConfigurationPage(page));
