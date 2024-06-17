@@ -40,13 +40,14 @@ import com.liferay.portal.kernel.util.MethodHandler;
 import com.liferay.portal.kernel.util.MethodKey;
 import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.servlet.filters.threadlocal.ThreadLocalFilterThreadLocal;
 
 import java.io.Serializable;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -186,15 +187,21 @@ public class FinderCacheImpl
 			return cacheValue;
 		}
 
-		Map.Entry<String, Serializable> cacheResultEntry =
-			(Map.Entry<String, Serializable>)cacheValue;
+		if (cacheValue instanceof Serializable[]) {
+			Serializable[] primaryKeys = (Serializable[])cacheValue;
 
-		cacheValue = cacheResultEntry.getValue();
+			if (primaryKeys.length == 1) {
+				Serializable result = basePersistence.fetchByPrimaryKey(
+					primaryKeys[0]);
 
-		if (cacheValue instanceof List<?>) {
-			List<Serializable> primaryKeys = (List<Serializable>)cacheValue;
+				if (result == null) {
+					return null;
+				}
 
-			Set<Serializable> primaryKeysSet = new HashSet<>(primaryKeys);
+				return Arrays.asList(result);
+			}
+
+			Set<Serializable> primaryKeysSet = SetUtil.fromArray(primaryKeys);
 
 			Map<Serializable, ? extends BaseModel<?>> map =
 				basePersistence.fetchByPrimaryKeys(primaryKeysSet);
@@ -203,7 +210,7 @@ public class FinderCacheImpl
 				return null;
 			}
 
-			List<Serializable> list = new ArrayList<>(primaryKeys.size());
+			List<Serializable> list = new ArrayList<>(primaryKeys.length);
 
 			for (Serializable curPrimaryKey : primaryKeys) {
 				list.add(map.get(curPrimaryKey));
@@ -249,13 +256,7 @@ public class FinderCacheImpl
 		if (result instanceof BaseModel<?>) {
 			BaseModel<?> model = (BaseModel<?>)result;
 
-			if (finderPath.isBaseModelResult()) {
-				cacheValue = new AbstractMap.SimpleEntry<>(
-					model.getModelClassName(), model.getPrimaryKeyObj());
-			}
-			else {
-				cacheValue = model.getPrimaryKeyObj();
-			}
+			cacheValue = model.getPrimaryKeyObj();
 		}
 		else if (result instanceof List<?>) {
 			List<?> objects = (List<?>)result;
@@ -271,22 +272,15 @@ public class FinderCacheImpl
 				return;
 			}
 			else if (finderPath.isBaseModelResult()) {
-				String baseModelClassName = null;
-				ArrayList<Serializable> primaryKeys = new ArrayList<>(
-					objects.size());
+				Serializable[] primaryKeys = new Serializable[objects.size()];
 
-				for (Object object : objects) {
-					BaseModel<?> baseModel = (BaseModel<?>)object;
+				for (int i = 0; i < objects.size(); i++) {
+					BaseModel<?> baseModel = (BaseModel<?>)objects.get(i);
 
-					if (baseModelClassName == null) {
-						baseModelClassName = baseModel.getModelClassName();
-					}
-
-					primaryKeys.add(baseModel.getPrimaryKeyObj());
+					primaryKeys[i] = baseModel.getPrimaryKeyObj();
 				}
 
-				cacheValue = new AbstractMap.SimpleEntry<String, Serializable>(
-					baseModelClassName, primaryKeys);
+				cacheValue = primaryKeys;
 			}
 		}
 

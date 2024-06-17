@@ -55,7 +55,6 @@ public class AssetTagSAPEntryPortalInstanceLifecycleListener
 
 		String allowedServiceSignatures =
 			AssetTagService.class.getName() + "#search";
-
 		Map<Locale, String> titleMap = ResourceBundleUtil.getLocalizationMap(
 			LanguageResources.PORTAL_RESOURCE_BUNDLE_LOADER,
 			"service-access-policy-entry-default-asset-tag-title");

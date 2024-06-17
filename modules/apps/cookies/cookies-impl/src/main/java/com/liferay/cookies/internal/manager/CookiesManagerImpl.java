@@ -155,6 +155,8 @@ public class CookiesManagerImpl implements CookiesManager {
 			}
 		}
 
+		cookie.setPath(_getContextPath(httpServletRequest));
+
 		// LEP-5175
 
 		cookie.setSecure(secure);
@@ -211,11 +213,11 @@ public class CookiesManagerImpl implements CookiesManager {
 			CookiesConstants.NAME_COOKIE_SUPPORT, "true");
 
 		cookieSupportCookie.setMaxAge(CookiesConstants.MAX_AGE);
-		cookieSupportCookie.setPath(StringPool.SLASH);
 
 		return addCookie(
-			CookiesConstants.CONSENT_TYPE_NECESSARY, cookieSupportCookie, null,
-			httpServletResponse, _portal.isSecure(httpServletRequest));
+			CookiesConstants.CONSENT_TYPE_NECESSARY, cookieSupportCookie,
+			httpServletRequest, httpServletResponse,
+			_portal.isSecure(httpServletRequest));
 	}
 
 	@Override
@@ -242,7 +244,7 @@ public class CookiesManagerImpl implements CookiesManager {
 			}
 
 			cookie.setMaxAge(0);
-			cookie.setPath(StringPool.SLASH);
+			cookie.setPath(_getContextPath(httpServletRequest));
 			cookie.setValue(StringPool.BLANK);
 
 			httpServletResponse.addCookie(cookie);
@@ -487,6 +489,19 @@ public class CookiesManagerImpl implements CookiesManager {
 		}
 
 		return false;
+	}
+
+	private String _getContextPath(HttpServletRequest httpServletRequest) {
+		if (httpServletRequest != null) {
+			String contextPath = _portal.getPathContext(
+				_portal.getOriginalServletRequest(httpServletRequest));
+
+			if (Validator.isNotNull(contextPath)) {
+				return contextPath;
+			}
+		}
+
+		return StringPool.SLASH;
 	}
 
 	private Map<String, Cookie> _getCookiesMap(

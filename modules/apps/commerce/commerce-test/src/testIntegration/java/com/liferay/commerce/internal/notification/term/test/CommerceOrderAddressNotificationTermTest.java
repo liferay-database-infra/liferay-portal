@@ -82,9 +82,7 @@ public class CommerceOrderAddressNotificationTermTest {
 	}
 
 	@Test
-	public void testCommerceOrderAddressNotificationEvaluateTerms()
-		throws Exception {
-
+	public void testEvaluateTerms() throws Exception {
 		String content = StringBundler.concat(
 			"[%COMMERCEORDER_BILLING_ADDRESS_CITY%] | ",
 			"[%COMMERCEORDER_BILLING_ADDRESS_COUNTRY%] | ",

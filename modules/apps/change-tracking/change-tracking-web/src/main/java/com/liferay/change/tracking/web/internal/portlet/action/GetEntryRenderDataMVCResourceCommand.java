@@ -75,6 +75,8 @@ import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
 import com.liferay.portal.kernel.workflow.WorkflowLog;
 import com.liferay.portal.kernel.workflow.WorkflowTask;
 import com.liferay.portal.kernel.workflow.WorkflowTaskManager;
+import com.liferay.portal.kernel.workflow.WorkflowTaskManagerUtil;
+import com.liferay.portal.kernel.workflow.WorkflowTransition;
 import com.liferay.portal.workflow.comparator.WorkflowComparatorFactory;
 import com.liferay.portal.workflow.manager.WorkflowLogManager;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
@@ -1062,16 +1064,16 @@ public class GetEntryRenderDataMVCResourceCommand
 
 		WorkflowTask workflowTask = _getWorkflowTask(ctEntry, model);
 
-		if ((workflowTask == null) || workflowTask.isCompleted()) {
+		if (workflowTask == null) {
 			return null;
 		}
 
 		JSONArray jsonArray = _jsonFactory.createJSONArray();
 
-		if ((workflowTask.getAssigneeUserId() == -1) ||
-			!Objects.equals(
-				workflowTask.getAssigneeUserId(), themeDisplay.getUserId())) {
+		boolean assignedToUserId = Objects.equals(
+			workflowTask.getAssigneeUserId(), themeDisplay.getUserId());
 
+		if ((workflowTask.getAssigneeUserId() == -1) || !assignedToUserId) {
 			jsonArray = jsonArray.put(
 				JSONUtil.put(
 					"href",
@@ -1085,6 +1087,8 @@ public class GetEntryRenderDataMVCResourceCommand
 					).setParameter(
 						"assignMode", "assignToMe"
 					).setParameter(
+						"hideDefaultSuccessMessage", "true"
+					).setParameter(
 						"workflowTaskId", workflowTask.getWorkflowTaskId()
 					).setWindowState(
 						LiferayWindowState.POP_UP
@@ -1097,7 +1101,36 @@ public class GetEntryRenderDataMVCResourceCommand
 				));
 		}
 
-		return jsonArray.put(
+		if (assignedToUserId) {
+			for (WorkflowTransition workflowTransition :
+					WorkflowTaskManagerUtil.getWorkflowTaskWorkflowTransitions(
+						workflowTask.getWorkflowTaskId())) {
+
+				jsonArray = jsonArray.put(
+					JSONUtil.put(
+						"href",
+						PortletURLBuilder.createActionURL(
+							_portal.getLiferayPortletResponse(resourceResponse),
+							PortletKeys.MY_WORKFLOW_TASK
+						).setActionName(
+							"/portal_workflow_task/complete_task"
+						).setRedirect(
+							themeDisplay.getURLCurrent()
+						).setParameter(
+							"assigneeUserId", workflowTask.getAssigneeUserId()
+						).setParameter(
+							"transitionName", workflowTransition.getName()
+						).setParameter(
+							"workflowTaskId", workflowTask.getWorkflowTaskId()
+						).buildString()
+					).put(
+						"label",
+						workflowTransition.getLabel(themeDisplay.getLocale())
+					));
+			}
+		}
+
+		jsonArray.put(
 			JSONUtil.put(
 				"href",
 				PortletURLBuilder.createRenderURL(
@@ -1110,6 +1143,8 @@ public class GetEntryRenderDataMVCResourceCommand
 				).setParameter(
 					"assignMode", "assignTo"
 				).setParameter(
+					"hideDefaultSuccessMessage", "true"
+				).setParameter(
 					"workflowTaskId", workflowTask.getWorkflowTaskId()
 				).setWindowState(
 					LiferayWindowState.POP_UP
@@ -1120,6 +1155,8 @@ public class GetEntryRenderDataMVCResourceCommand
 			).put(
 				"modalHeight", "356px"
 			));
+
+		return jsonArray;
 	}
 
 	private <T extends BaseModel<T>> JSONObject _getWorkflowDataJSONObject(
@@ -1149,7 +1186,8 @@ public class GetEntryRenderDataMVCResourceCommand
 			WorkflowInstanceLink workflowInstanceLink =
 				_getWorkflowInstanceLink(ctEntry, model);
 
-			WorkflowTask workflowTask = _getWorkflowTask(workflowInstanceLink);
+			WorkflowTask workflowTask = _getWorkflowTask(
+				workflowInstanceLink, null);
 
 			if (workflowTask == null) {
 				return null;
@@ -1502,11 +1540,12 @@ public class GetEntryRenderDataMVCResourceCommand
 			CTEntry ctEntry, T model)
 		throws Exception {
 
-		return _getWorkflowTask(_getWorkflowInstanceLink(ctEntry, model));
+		return _getWorkflowTask(
+			_getWorkflowInstanceLink(ctEntry, model), false);
 	}
 
 	private WorkflowTask _getWorkflowTask(
-			WorkflowInstanceLink workflowInstanceLink)
+			WorkflowInstanceLink workflowInstanceLink, Boolean completed)
 		throws Exception {
 
 		if (workflowInstanceLink == null) {
@@ -1516,7 +1555,8 @@ public class GetEntryRenderDataMVCResourceCommand
 		List<WorkflowTask> workflowTasks =
 			_workflowTaskManager.getWorkflowTasksByWorkflowInstance(
 				workflowInstanceLink.getCompanyId(), null,
-				workflowInstanceLink.getWorkflowInstanceId(), null, 0, 1, null);
+				workflowInstanceLink.getWorkflowInstanceId(), completed, 0, 1,
+				null);
 
 		if (workflowTasks.isEmpty()) {
 			return null;

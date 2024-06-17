@@ -82,7 +82,6 @@ public class OAuth2RESTSAPEntryPortalInstanceLifecycleListener
 			}
 
 			String allowedServiceSignatures = sapEntryObjectArray[1];
-
 			Map<Locale, String> map = ResourceBundleUtil.getLocalizationMap(
 				ResourceBundleLoaderUtil.getPortalResourceBundleLoader(), name);
 

@@ -237,6 +237,10 @@ const FrontendDataSet = ({
 	function updateDataSetItems(dataSetData) {
 		setItems(dataSetData.items);
 		setTotal(dataSetData.totalCount);
+
+		if (!dataSetData.items.length && dataSetData.totalCount > 0) {
+			setPageNumber(() => dataSetData.lastPage);
+		}
 	}
 
 	useEffect(() => {

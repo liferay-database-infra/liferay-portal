@@ -2129,6 +2129,83 @@ public class Mutation {
 					Long.valueOf(assetLibraryId), callbackURL, object));
 	}
 
+	@GraphQLField(
+		description = "Deletes the document shortcut and returns a 204 if the operation succeeds."
+	)
+	public boolean deleteDocumentShortcut(
+			@GraphQLName("documentShortcutId") Long documentShortcutId)
+		throws Exception {
+
+		_applyVoidComponentServiceObjects(
+			_documentShortcutResourceComponentServiceObjects,
+			this::_populateResourceContext,
+			documentShortcutResource ->
+				documentShortcutResource.deleteDocumentShortcut(
+					documentShortcutId));
+
+		return true;
+	}
+
+	@GraphQLField
+	public Response deleteDocumentShortcutBatch(
+			@GraphQLName("callbackURL") String callbackURL,
+			@GraphQLName("object") Object object)
+		throws Exception {
+
+		return _applyComponentServiceObjects(
+			_documentShortcutResourceComponentServiceObjects,
+			this::_populateResourceContext,
+			documentShortcutResource ->
+				documentShortcutResource.deleteDocumentShortcutBatch(
+					callbackURL, object));
+	}
+
+	@GraphQLField(
+		description = "Updates only the fields received in the request body, leaving any other fields untouched."
+	)
+	public DocumentShortcut patchDocumentShortcut(
+			@GraphQLName("documentShortcutId") Long documentShortcutId,
+			@GraphQLName("documentShortcut") DocumentShortcut documentShortcut)
+		throws Exception {
+
+		return _applyComponentServiceObjects(
+			_documentShortcutResourceComponentServiceObjects,
+			this::_populateResourceContext,
+			documentShortcutResource ->
+				documentShortcutResource.patchDocumentShortcut(
+					documentShortcutId, documentShortcut));
+	}
+
+	@GraphQLField(
+		description = "Replaces the document shortcut with the information sent in the request body. Any missing fields are deleted, unless they are required."
+	)
+	public DocumentShortcut updateDocumentShortcut(
+			@GraphQLName("documentShortcutId") Long documentShortcutId,
+			@GraphQLName("documentShortcut") DocumentShortcut documentShortcut)
+		throws Exception {
+
+		return _applyComponentServiceObjects(
+			_documentShortcutResourceComponentServiceObjects,
+			this::_populateResourceContext,
+			documentShortcutResource ->
+				documentShortcutResource.putDocumentShortcut(
+					documentShortcutId, documentShortcut));
+	}
+
+	@GraphQLField
+	public Response updateDocumentShortcutBatch(
+			@GraphQLName("callbackURL") String callbackURL,
+			@GraphQLName("object") Object object)
+		throws Exception {
+
+		return _applyComponentServiceObjects(
+			_documentShortcutResourceComponentServiceObjects,
+			this::_populateResourceContext,
+			documentShortcutResource ->
+				documentShortcutResource.putDocumentShortcutBatch(
+					callbackURL, object));
+	}
+
 	@GraphQLField
 	public Response createSiteDocumentShortcutsPageExportBatch(
 			@GraphQLName("siteKey") @NotEmpty String siteKey,

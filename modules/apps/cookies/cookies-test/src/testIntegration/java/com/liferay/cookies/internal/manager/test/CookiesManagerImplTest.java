@@ -14,6 +14,7 @@ import com.liferay.portal.kernel.cookies.CookiesManagerUtil;
 import com.liferay.portal.kernel.cookies.constants.CookiesConstants;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
@@ -22,6 +23,7 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import java.util.List;
 
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequestWrapper;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,6 +54,108 @@ public class CookiesManagerImplTest {
 			HashMapDictionaryBuilder.<String, Object>put(
 				"enabled", true
 			).build());
+	}
+
+	@Test
+	public void testCookiePathIsCustomContextWhenUsingCustomContext()
+		throws Exception {
+
+		Cookie cookie = new Cookie(
+			RandomTestUtil.randomString(), RandomTestUtil.randomString());
+
+		String customContextPath =
+			StringPool.SLASH + RandomTestUtil.randomString();
+
+		MockHttpServletRequest customContextMockHttpServletRequest =
+			new MockHttpServletRequest() {
+
+				@Override
+				public String getContextPath() {
+					return customContextPath;
+				}
+
+			};
+
+		CookiesManagerUtil.addCookie(
+			CookiesConstants.CONSENT_TYPE_NECESSARY, cookie,
+			customContextMockHttpServletRequest, _mockHttpServletResponse);
+
+		Assert.assertEquals(customContextPath, cookie.getPath());
+	}
+
+	@Test
+	public void testCookiePathIsCustomContextWhenUsingCustomContextWithCustomModuleWebContextPath()
+		throws Exception {
+
+		Cookie cookie = new Cookie(
+			RandomTestUtil.randomString(), RandomTestUtil.randomString());
+
+		String customContextPath =
+			StringPool.SLASH + RandomTestUtil.randomString();
+
+		MockHttpServletRequest customContextMockHttpServletRequest =
+			new MockHttpServletRequest() {
+
+				@Override
+				public String getContextPath() {
+					return customContextPath;
+				}
+
+			};
+
+		HttpServletRequestWrapper httpServletRequestWrapper =
+			new HttpServletRequestWrapper(customContextMockHttpServletRequest) {
+
+				@Override
+				public String getContextPath() {
+					return PortalUtil.getPathModule() + StringPool.SLASH +
+						RandomTestUtil.randomString();
+				}
+
+			};
+
+		CookiesManagerUtil.addCookie(
+			CookiesConstants.CONSENT_TYPE_NECESSARY, cookie,
+			httpServletRequestWrapper, _mockHttpServletResponse);
+
+		Assert.assertEquals(customContextPath, cookie.getPath());
+	}
+
+	@Test
+	public void testCookiePathIsSlashWhenUsingRootContext() throws Exception {
+		Cookie cookie = new Cookie(
+			RandomTestUtil.randomString(), RandomTestUtil.randomString());
+
+		CookiesManagerUtil.addCookie(
+			CookiesConstants.CONSENT_TYPE_NECESSARY, cookie,
+			_mockHttpServletRequest, _mockHttpServletResponse);
+
+		Assert.assertEquals(StringPool.SLASH, cookie.getPath());
+	}
+
+	@Test
+	public void testCookiePathIsSlashWhenUsingRootContextWithCustomModuleWebContextPath()
+		throws Exception {
+
+		Cookie cookie = new Cookie(
+			RandomTestUtil.randomString(), RandomTestUtil.randomString());
+
+		HttpServletRequestWrapper httpServletRequestWrapper =
+			new HttpServletRequestWrapper(_mockHttpServletRequest) {
+
+				@Override
+				public String getContextPath() {
+					return PortalUtil.getPathModule() + StringPool.SLASH +
+						RandomTestUtil.randomString();
+				}
+
+			};
+
+		CookiesManagerUtil.addCookie(
+			CookiesConstants.CONSENT_TYPE_NECESSARY, cookie,
+			httpServletRequestWrapper, _mockHttpServletResponse);
+
+		Assert.assertEquals(StringPool.SLASH, cookie.getPath());
 	}
 
 	@Test

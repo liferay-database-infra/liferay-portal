@@ -513,7 +513,11 @@ public class JspAnalyzerPlugin implements AnalyzerPlugin {
 				if ((importX != -1) && (importY != -1)) {
 					String s = content.substring(importX, importY);
 
-					taglibURis.add(s);
+					if (!s.startsWith("urn:jsptagdir") &&
+						!s.startsWith("urn:jsptld")) {
+
+						taglibURis.add(s);
+					}
 				}
 
 				contentY -= 1;

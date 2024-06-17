@@ -59,7 +59,6 @@ public class CalendarSAPEntryPortalInstanceLifecycleListener
 			CalendarBookingService.class.getName(), "#search",
 			StringPool.NEW_LINE, CalendarBookingService.class.getName(),
 			"#searchCount");
-
 		Map<Locale, String> titleMap = ResourceBundleUtil.getLocalizationMap(
 			LanguageResources.PORTAL_RESOURCE_BUNDLE_LOADER,
 			"service-access-policy-entry-default-calendar-title");

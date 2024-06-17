@@ -55,7 +55,6 @@ public class AssetEntrySAPEntryPortalInstanceLifecycleListener
 
 		String allowedServiceSignatures =
 			AssetEntryService.class.getName() + "#incrementViewCounter";
-
 		Map<Locale, String> titleMap = ResourceBundleUtil.getLocalizationMap(
 			LanguageResources.PORTAL_RESOURCE_BUNDLE_LOADER,
 			"service-access-policy-entry-default-asset-entry-title");

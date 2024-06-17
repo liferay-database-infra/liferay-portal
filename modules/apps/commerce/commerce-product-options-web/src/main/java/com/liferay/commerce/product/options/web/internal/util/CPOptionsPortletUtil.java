@@ -17,6 +17,8 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.SortFactoryUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 
+import java.util.Objects;
+
 /**
  * @author Alessio Antonio Rendina
  * @author Andrea Di Giorgi
@@ -61,13 +63,17 @@ public class CPOptionsPortletUtil {
 
 		Sort sort = null;
 
-		if (orderByCol.equals("title")) {
+		if (orderByCol.equals("group")) {
 			sort = SortFactoryUtil.create(
 				Field.TITLE, Sort.STRING_TYPE, reverse);
 		}
 		else if (orderByCol.equals("modified-date")) {
 			sort = SortFactoryUtil.create(
 				Field.MODIFIED_DATE + "_sortable", reverse);
+		}
+		else if (Objects.equals(orderByCol, "priority")) {
+			sort = SortFactoryUtil.create(
+				Field.PRIORITY + "_sortable", reverse);
 		}
 
 		return sort;

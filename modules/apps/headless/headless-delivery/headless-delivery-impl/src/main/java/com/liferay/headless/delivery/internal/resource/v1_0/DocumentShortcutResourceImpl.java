@@ -41,6 +41,13 @@ public class DocumentShortcutResourceImpl
 	extends BaseDocumentShortcutResourceImpl {
 
 	@Override
+	public void deleteDocumentShortcut(Long documentShortcutId)
+		throws Exception {
+
+		_dlAppService.deleteFileShortcut(documentShortcutId);
+	}
+
+	@Override
 	public Page<DocumentShortcut> getAssetLibraryDocumentShortcutsPage(
 			Long assetLibraryId, Pagination pagination)
 		throws Exception {
@@ -122,16 +129,37 @@ public class DocumentShortcutResourceImpl
 			_dlAppService.addFileShortcut(
 				siteId, documentFolderId,
 				documentShortcut.getTargetDocumentId(),
-				_createServiceContext(documentShortcut, siteId)));
+				_createServiceContext(
+					siteId, documentShortcut.getViewableByAsString())));
+	}
+
+	@Override
+	public DocumentShortcut putDocumentShortcut(
+			Long documentShortcutId, DocumentShortcut documentShortcut)
+		throws Exception {
+
+		FileShortcut fileShortcut = _dlAppService.getFileShortcut(
+			documentShortcutId);
+
+		return _toDocumentShortcut(
+			_dlAppService.updateFileShortcut(
+				documentShortcutId, documentShortcut.getFolderId(),
+				documentShortcut.getTargetDocumentId(),
+				_createServiceContext(
+					fileShortcut.getGroupId(),
+					documentShortcut.getViewableByAsString())));
 	}
 
 	private ServiceContext _createServiceContext(
-		DocumentShortcut documentShortcut, long groupId) {
+		long groupId, String viewableBy) {
 
-		return ServiceContextBuilder.create(
-			groupId, contextHttpServletRequest,
-			documentShortcut.getViewableByAsString()
+		ServiceContext serviceContext = ServiceContextBuilder.create(
+			groupId, contextHttpServletRequest, viewableBy
 		).build();
+
+		serviceContext.setUserId(contextUser.getUserId());
+
+		return serviceContext;
 	}
 
 	private Page<DocumentShortcut> _getPage(
