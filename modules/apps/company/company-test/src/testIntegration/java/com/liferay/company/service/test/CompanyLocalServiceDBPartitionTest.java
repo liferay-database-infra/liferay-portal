@@ -358,6 +358,41 @@ public class CompanyLocalServiceDBPartitionTest
 	}
 
 	@Test
+	public void testCacheCleanup() throws Exception {
+		_company1 = CompanyTestUtil.addCompany();
+		_company2 = CompanyTestUtil.addCompany();
+
+		long counter = 0;
+
+		String counterName = RandomTestUtil.randomString();
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setWithSafeCloseable(
+					_company2.getCompanyId())) {
+
+			counter = _counterLocalService.increment(counterName);
+
+			_counterLocalService.reset(counterName, 100000);
+		}
+
+		String virtualHostname = _company2.getVirtualHostname();
+
+		companyLocalService.deleteCompany(_company2);
+
+		_company2 = companyLocalService.copyDBPartitionCompany(
+			_company1.getCompanyId(), _company2.getCompanyId(),
+			_company2.getName(), virtualHostname, _company2.getWebId());
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setWithSafeCloseable(
+					_company2.getCompanyId())) {
+
+			Assert.assertEquals(
+				counter, _counterLocalService.increment(counterName));
+		}
+	}
+
+	@Test
 	public void testCopyDBPartitionCompany() throws Exception {
 		int rulesCount = _getRulesCount(defaultPartitionName);
 
