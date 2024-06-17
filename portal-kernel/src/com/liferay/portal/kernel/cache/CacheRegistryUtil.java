@@ -10,6 +10,7 @@ import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 
 import org.osgi.framework.BundleContext;
 
@@ -28,6 +29,21 @@ public class CacheRegistryUtil {
 			}
 
 			cacheRegistryItem.invalidate();
+		}
+	}
+
+	public static void clear(long companyId) {
+		for (CacheRegistryItem cacheRegistryItem :
+				_cacheRegistryItems.values()) {
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					StringBundler.concat(
+						"Invalidating ", cacheRegistryItem.getRegistryName(),
+						" for company ID ", String.valueOf(companyId)));
+			}
+
+			cacheRegistryItem.invalidate(companyId);
 		}
 	}
 
