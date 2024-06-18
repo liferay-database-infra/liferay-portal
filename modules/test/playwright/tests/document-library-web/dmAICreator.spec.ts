@@ -42,7 +42,7 @@ test('LPD-6717 and LPD-6691 Create AI Image option is hidden when disabled from 
 	await aiCreatorInstanceSettingsPage.enableDalleCreateImages();
 });
 
-test.skip('LPD-6677 Can add images to DM when API Key is provided', async ({
+test('LPD-6677 Can add images to DM when API Key is provided', async ({
 	aiCreatorInstanceSettingsPage,
 	documentLibraryPage,
 	gogoShellPage,
@@ -53,6 +53,10 @@ test.skip('LPD-6677 Can add images to DM when API Key is provided', async ({
 	);
 
 	await aiCreatorInstanceSettingsPage.addApiKey();
+
+	await expect(
+		page.getByText('Success:Your request completed successfully.')
+	).toBeVisible();
 
 	await documentLibraryPage.goto();
 

@@ -5,6 +5,7 @@
 
 package com.liferay.portal.kernel.portlet;
 
+import com.liferay.osgi.service.tracker.collections.map.ServiceReferenceMapper;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 
 /**
  * @author Eduardo García
@@ -25,10 +27,12 @@ public class FriendlyURLResolverRegistryUtil {
 	public static FriendlyURLResolver getFriendlyURLResolver(
 		String urlSeparator) {
 
-		for (FriendlyURLResolver friendlyURLResolver :
-				_serviceTrackerMap.values()) {
+		for (String key : _serviceTrackerMap.keySet()) {
+			FriendlyURLResolver friendlyURLResolver =
+				_serviceTrackerMap.getService(key);
 
-			if (Objects.equals(
+			if ((friendlyURLResolver != null) &&
+				Objects.equals(
 					friendlyURLResolver.getURLSeparator(), urlSeparator)) {
 
 				return friendlyURLResolver;
@@ -42,10 +46,12 @@ public class FriendlyURLResolverRegistryUtil {
 		getFriendlyURLResolverByDefaultURLSeparator(
 			String defaultURLSeparator) {
 
-		for (FriendlyURLResolver friendlyURLResolver :
-				_serviceTrackerMap.values()) {
+		for (String key : _serviceTrackerMap.keySet()) {
+			FriendlyURLResolver friendlyURLResolver =
+				_serviceTrackerMap.getService(key);
 
-			if (Objects.equals(
+			if ((friendlyURLResolver != null) &&
+				Objects.equals(
 					friendlyURLResolver.getDefaultURLSeparator(),
 					defaultURLSeparator)) {
 
@@ -59,14 +65,26 @@ public class FriendlyURLResolverRegistryUtil {
 	public static Collection<FriendlyURLResolver>
 		getFriendlyURLResolversAsCollection() {
 
-		return _serviceTrackerMap.values();
+		List<FriendlyURLResolver> friendlyURLResolvers = new ArrayList<>();
+
+		for (String key : _serviceTrackerMap.keySet()) {
+			FriendlyURLResolver friendlyURLResolver =
+				_serviceTrackerMap.getService(key);
+
+			if (friendlyURLResolver != null) {
+				friendlyURLResolvers.add(friendlyURLResolver);
+			}
+		}
+
+		return friendlyURLResolvers;
 	}
 
 	public static String[] getURLSeparators() {
 		List<String> urlSeparators = new ArrayList<>();
 
-		for (FriendlyURLResolver friendlyURLResolver :
-				_serviceTrackerMap.values()) {
+		for (String key : _serviceTrackerMap.keySet()) {
+			FriendlyURLResolver friendlyURLResolver =
+				_serviceTrackerMap.getService(key);
 
 			if (friendlyURLResolver != null) {
 				urlSeparators.add(friendlyURLResolver.getURLSeparator());
@@ -82,13 +100,24 @@ public class FriendlyURLResolverRegistryUtil {
 	private static final ServiceTrackerMap<String, FriendlyURLResolver>
 		_serviceTrackerMap = ServiceTrackerMapFactory.openSingleValueMap(
 			_bundleContext, FriendlyURLResolver.class, null,
-			(serviceReference, emitter) -> {
-				FriendlyURLResolver friendlyURLResolver =
-					_bundleContext.getService(serviceReference);
+			new ServiceReferenceMapper<String, FriendlyURLResolver>() {
 
-				emitter.emit(friendlyURLResolver.getURLSeparator());
+				@Override
+				public void map(
+					ServiceReference<FriendlyURLResolver> serviceReference,
+					ServiceReferenceMapper.Emitter<String> emitter) {
 
-				_bundleContext.ungetService(serviceReference);
+					FriendlyURLResolver friendlyURLResolver =
+						_bundleContext.getService(serviceReference);
+
+					Class<?> friendlyURLResolverClass =
+						friendlyURLResolver.getClass();
+
+					emitter.emit(friendlyURLResolverClass.getName());
+
+					_bundleContext.ungetService(serviceReference);
+				}
+
 			});
 
 }

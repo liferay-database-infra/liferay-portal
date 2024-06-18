@@ -2,14 +2,11 @@
 	"dependencies": {
 		"recharts": "^2.8.0"
 	},
-	"devDependencies": {
-		"@liferay/npm-bundler": "3.1.0"
-	},
 	"name": "frontend-js-recharts",
 	"scripts": {
-		"build": "cross-env NODE_OPTIONS=--no-experimental-fetch liferay-npm-bundler",
+		"build": "node-scripts build",
 		"checkFormat": "node-scripts format --check",
 		"format": "node-scripts format"
 	},
-	"version": "2.0.15"
+	"version": "2.0.16"
 }

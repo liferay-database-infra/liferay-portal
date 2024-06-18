@@ -5,8 +5,6 @@
 
 package com.liferay.adyen;
 
-import java.util.Map;
-
 import org.apache.commons.logging.Log;
 
 import org.json.JSONObject;
@@ -18,25 +16,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
  * @author Raymond Augé
  * @author Gregory Amerson
  * @author Brian Wing Shun Chan
+ * @author Crescenzo Rega
  */
 public abstract class BaseRestController {
-
-	protected void log(Jwt jwt, Log log) {
-		if (log.isInfoEnabled()) {
-			log.info("JWT Claims: " + jwt.getClaims());
-			log.info("JWT ID: " + jwt.getId());
-			log.info("JWT Subject: " + jwt.getSubject());
-		}
-	}
-
-	protected void log(Jwt jwt, Log log, Map<String, String> parameters) {
-		if (log.isInfoEnabled()) {
-			log.info("JWT Claims: " + jwt.getClaims());
-			log.info("JWT ID: " + jwt.getId());
-			log.info("JWT Subject: " + jwt.getSubject());
-			log.info("Parameters: " + parameters);
-		}
-	}
 
 	protected void log(Jwt jwt, Log log, String json) {
 		if (log.isInfoEnabled()) {
