@@ -32,7 +32,7 @@ export class DisplayPageTemplatesPage {
 		contentType,
 		name,
 	}: {
-		contentSubtype?: 'Basic Web Content';
+		contentSubtype?: string;
 		contentType: string;
 		name: string;
 	}) {
@@ -50,8 +50,15 @@ export class DisplayPageTemplatesPage {
 		}
 
 		await this.page.getByRole('button', {name: 'Save'}).click();
+
+		await waitForSuccessAlert(
+			this.page,
+			'Success:The display page template was created successfully.'
+		);
+
 		await this.publishButton.waitFor();
 		await this.publishButton.click();
+
 		await waitForSuccessAlert(
 			this.page,
 			'Success:The display page template was published successfully.'
@@ -69,8 +76,6 @@ export class DisplayPageTemplatesPage {
 	}
 
 	async deleteAllDisplayPageTemplates() {
-		await this.goto();
-
 		await this.page
 			.getByLabel('Select All Items on the Page')
 			.setChecked(true);
@@ -81,6 +86,21 @@ export class DisplayPageTemplatesPage {
 			.getByLabel('Delete Entries- Loading')
 			.getByRole('button', {name: 'Delete'})
 			.click();
+	}
+
+	async editTemplate(name: string) {
+		await this.clickMoreActions(name);
+
+		await this.page
+			.getByRole('menuitem', {
+				exact: true,
+				name: 'Edit',
+			})
+			.click();
+
+		await this.page
+			.getByText('Select a Page Element', {exact: true})
+			.waitFor();
 	}
 
 	async markAsDefault(name: string) {

@@ -18,9 +18,9 @@ import {useCollectionConfig} from '../../app/contexts/CollectionItemContext';
 import {useDispatch, useSelector} from '../../app/contexts/StoreContext';
 import InfoItemService from '../../app/services/InfoItemService';
 import {CACHE_KEYS} from '../../app/utils/cache';
+import getMappedRelationship from '../../app/utils/editable_value/getMappedRelationship';
 import isMapped from '../../app/utils/editable_value/isMapped';
 import isMappedToInfoItem from '../../app/utils/editable_value/isMappedToInfoItem';
-import isMappedToRelationship from '../../app/utils/editable_value/isMappedToRelationship';
 import isMappedToStructure from '../../app/utils/editable_value/isMappedToStructure';
 import findPageContent from '../../app/utils/findPageContent';
 import getMappingFieldsKey from '../../app/utils/getMappingFieldsKey';
@@ -41,7 +41,7 @@ const MAPPING_SOURCE_TYPES = {
 
 const NOT_SELECTED_OPTION = {
 	label: `-- ${Liferay.Language.get('not-selected')} --`,
-	value: 'not-selected',
+	value: '',
 };
 
 const UNMAPPED_OPTION = {
@@ -136,8 +136,8 @@ function loadMappingFields({item, sourceType}) {
 	return Promise.resolve(null);
 }
 
-function getInitialSourceType(mappedItem) {
-	if (isMappedToRelationship(mappedItem)) {
+function getInitialSourceType(mappedItem, relationship) {
+	if (relationship) {
 		return MAPPING_SOURCE_TYPES.relationship;
 	}
 	else if (
@@ -298,12 +298,12 @@ function MappingSelector({
 	const [typeLabel, setTypeLabel] = useState(null);
 	const [subtypeLabel, setSubtypeLabel] = useState(null);
 
-	const [selectedSourceType, setSelectedSourceType] = useState(
-		getInitialSourceType(mappedItem)
+	const [selectedRelationship, setSelectedRelationship] = useState(
+		getMappedRelationship(mappedItem.mappedField)
 	);
 
-	const [selectedRelationship, setSelectedRelationship] = useState(
-		isMappedToRelationship(mappedItem) ? mappedItem.classNameId : null
+	const [selectedSourceType, setSelectedSourceType] = useState(
+		getInitialSourceType(mappedItem, selectedRelationship)
 	);
 
 	const relationships = useCache({
@@ -339,7 +339,11 @@ function MappingSelector({
 			});
 		}
 
-		if (relationships?.length && Liferay.FeatureFlags['LPD-20213']) {
+		if (
+			relationships?.length &&
+			fieldType !== EDITABLE_TYPES.action &&
+			Liferay.FeatureFlags['LPD-20213']
+		) {
 			types.push({
 				label: Liferay.Language.get('relationship'),
 				value: MAPPING_SOURCE_TYPES.relationship,
@@ -347,7 +351,7 @@ function MappingSelector({
 		}
 
 		return types;
-	}, [relationships, selectedMappingTypes]);
+	}, [fieldType, relationships, selectedMappingTypes]);
 
 	const onInfoItemSelect = (selectedInfoItem) => {
 		setSelectedItem(selectedInfoItem);
@@ -365,12 +369,7 @@ function MappingSelector({
 				? {}
 				: selectedSourceType === MAPPING_SOURCE_TYPES.content
 					? {...selectedItem, fieldId: fieldValue}
-					: selectedSourceType === MAPPING_SOURCE_TYPES.relationship
-						? {
-								classNameId: selectedRelationship,
-								mappedField: fieldValue,
-							}
-						: {mappedField: fieldValue};
+					: {mappedField: fieldValue};
 
 		if (selectedSourceType === MAPPING_SOURCE_TYPES.content) {
 			setSelectedItem((selectedItem) => ({
@@ -516,10 +515,7 @@ function MappingSelector({
 										})
 									),
 								]}
-								value={
-									selectedRelationship ||
-									NOT_SELECTED_OPTION.value
-								}
+								value={selectedRelationship}
 							/>
 						</ClayForm.Group>
 					) : null}

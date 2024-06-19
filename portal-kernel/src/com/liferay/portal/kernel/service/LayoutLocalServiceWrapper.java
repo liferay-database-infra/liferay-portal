@@ -922,6 +922,13 @@ public class LayoutLocalServiceWrapper
 		return _layoutLocalService.getLayoutChildLayouts(parentLayouts);
 	}
 
+	@Override
+	public java.util.List<Layout> getLayouts(
+		java.util.Collection<java.io.Serializable> primaryKeys) {
+
+		return _layoutLocalService.getLayouts(primaryKeys);
+	}
+
 	/**
 	 * Returns a range of all the layouts.
 	 *

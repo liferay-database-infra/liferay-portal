@@ -863,6 +863,12 @@ public class LayoutLocalServiceUtil {
 		return getService().getLayoutChildLayouts(parentLayouts);
 	}
 
+	public static List<Layout> getLayouts(
+		java.util.Collection<Serializable> primaryKeys) {
+
+		return getService().getLayouts(primaryKeys);
+	}
+
 	/**
 	 * Returns a range of all the layouts.
 	 *

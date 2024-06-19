@@ -12,6 +12,7 @@ import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {pageEditorPagesTest} from '../../fixtures/pageEditorPagesTest';
 import {wemSiteTest} from '../../fixtures/wemSiteTest';
+import {ANIMALS_COLLECTION_NAME} from '../../setup/wem-site/constants';
 import getRandomString from '../../utils/getRandomString';
 import addApprovedStructuredContent from '../../utils/structured-content/addApprovedStructuredContent';
 import getBasicWebContentStructureId from '../../utils/structured-content/getBasicWebContentStructureId';
@@ -44,24 +45,13 @@ const test = mergeTests(
 	featureFlagsTest({
 		'LPS-178052': true,
 	}),
-	isolatedSiteTest,
 	journalPagesTest,
 	loginTest(),
 	pageEditorPagesTest,
 	wemSiteTest
 );
 
-const testWithIsolatedSite = mergeTests(
-	apiHelpersTest,
-	collectionsPagesTest,
-	featureFlagsTest({
-		'LPS-178052': true,
-	}),
-	isolatedSiteTest,
-	journalPagesTest,
-	loginTest(),
-	pageEditorPagesTest
-);
+const testWithIsolatedSite = mergeTests(test, isolatedSiteTest);
 
 const selectFilter = async (page, categories) => {
 	await page.getByRole('button', {name: 'Select'}).click();
@@ -95,10 +85,8 @@ test('filters a web content collection by single and multiple categories', async
 
 	// Create definition for a collection mapped to Animals collection
 
-	const collectionName = 'Animals';
-
 	const animalsClassPK = await collectionsPage.getCollectionClassPK(
-		collectionName,
+		ANIMALS_COLLECTION_NAME,
 		wemSite.friendlyUrlPath
 	);
 
@@ -137,7 +125,7 @@ test('filters a web content collection by single and multiple categories', async
 
 	await page.getByLabel('Select', {exact: true}).click();
 
-	await page.getByLabel(collectionName).check();
+	await page.getByLabel(ANIMALS_COLLECTION_NAME).check();
 
 	await page.getByLabel('Filter', {exact: true}).selectOption('category');
 
@@ -145,13 +133,18 @@ test('filters a web content collection by single and multiple categories', async
 
 	await page
 		.frameLocator('iframe[title="Select"]')
-		.getByRole('link', {name: 'Animals'})
+		.getByRole('link', {name: ANIMALS_COLLECTION_NAME})
 		.click();
 
 	await page
 		.frameLocator('iframe[title="Select"]')
 		.getByRole('button', {name: 'Select This Level'})
 		.click();
+
+	await page
+		.locator('.modal-title')
+		.getByText('Select')
+		.waitFor({state: 'hidden'});
 
 	// Check the option to show the label with the selected vocabulary
 
@@ -170,7 +163,9 @@ test('filters a web content collection by single and multiple categories', async
 	).toBeVisible();
 	await expect(page.getByText('Animal 02 - Dogs category')).toBeVisible();
 
-	await expect(page.getByText('Animals', {exact: true})).toBeVisible();
+	await expect(
+		page.getByText(ANIMALS_COLLECTION_NAME, {exact: true})
+	).toBeVisible();
 
 	// Select category filter: Cats
 
@@ -330,10 +325,8 @@ test('enables search field in dropdown list of Collection Filter', async ({
 
 	// Create definition for a collection mapped to Animals collection
 
-	const collectionName = 'Animals';
-
 	const animalsClassPK = await collectionsPage.getCollectionClassPK(
-		collectionName,
+		ANIMALS_COLLECTION_NAME,
 		wemSite.friendlyUrlPath
 	);
 
@@ -372,7 +365,7 @@ test('enables search field in dropdown list of Collection Filter', async ({
 
 	await page.getByLabel('Select', {exact: true}).click();
 
-	await page.getByLabel(collectionName).check();
+	await page.getByLabel(ANIMALS_COLLECTION_NAME).check();
 
 	await page.getByLabel('Filter', {exact: true}).selectOption('category');
 
@@ -380,7 +373,7 @@ test('enables search field in dropdown list of Collection Filter', async ({
 
 	await page
 		.frameLocator('iframe[title="Select"]')
-		.getByRole('link', {name: 'Animals'})
+		.getByRole('link', {name: ANIMALS_COLLECTION_NAME})
 		.click();
 
 	await page
@@ -434,10 +427,8 @@ test('filters the collection content by keywords using two filters', async ({
 
 	// Create definition for a collection mapped to Animals collection
 
-	const collectionName = 'Animals';
-
 	const animalsClassPK = await collectionsPage.getCollectionClassPK(
-		collectionName,
+		ANIMALS_COLLECTION_NAME,
 		wemSite.friendlyUrlPath
 	);
 
@@ -477,7 +468,7 @@ test('filters the collection content by keywords using two filters', async ({
 
 	await page.getByLabel('Select', {exact: true}).click();
 
-	await page.getByLabel(collectionName).check();
+	await page.getByLabel(ANIMALS_COLLECTION_NAME).check();
 
 	await page.getByLabel('Filter', {exact: true}).selectOption('keywords');
 
@@ -487,7 +478,7 @@ test('filters the collection content by keywords using two filters', async ({
 
 	await page.getByLabel('Select', {exact: true}).click();
 
-	await page.getByLabel(collectionName).check();
+	await page.getByLabel(ANIMALS_COLLECTION_NAME).check();
 
 	await page.getByLabel('Filter', {exact: true}).selectOption('keywords');
 

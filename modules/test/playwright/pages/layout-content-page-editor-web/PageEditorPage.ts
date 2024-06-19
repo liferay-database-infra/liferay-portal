@@ -404,6 +404,34 @@ export class PageEditorPage {
 		);
 	}
 
+	/**
+	 * Get id of a fragment that was manually added to the page.
+	 *
+	 * This is for cases in which we are not able to use a page definition to
+	 * create the page, for example when editing display page templates.
+	 *
+	 * It's recommended to change fragment's name before using this method
+	 * so we make sure we get the id for the desired fragment
+	 *
+	 * @param fragmentName Name of the fragment
+	 */
+
+	async getFragmentId(fragmentName: string) {
+		const topper = this.page.locator(
+			`.page-editor__topper[data-name="${fragmentName}"]`
+		);
+
+		const fragmentId = await topper.evaluate((element) =>
+			Array.from(element.classList)
+				.find((cssClass) =>
+					cssClass.includes('lfr-layout-structure-item')
+				)
+				.replace('lfr-layout-structure-item-topper-', '')
+		);
+
+		return fragmentId;
+	}
+
 	async getFragmentStyle(
 		fragmentId: string,
 		style: string,
@@ -447,6 +475,30 @@ export class PageEditorPage {
 
 		return await topper.evaluate((element) =>
 			element.classList.contains('active')
+		);
+	}
+
+	async mapFormFragment(fragmentId: string, type: string, fields: string[]) {
+		const fragment = this.getFragment(fragmentId);
+
+		await fragment.getByLabel('Content Type').selectOption(type);
+
+		const fieldsModal = this.page.frameLocator(
+			'iframe[title="Manage Form Fields"]'
+		);
+
+		for (const field of fields) {
+			await fieldsModal
+				.getByRole('row', {name: field})
+				.getByRole('checkbox')
+				.check();
+		}
+
+		await this.page.locator('.modal-footer').getByText('Save').click();
+
+		await waitForSuccessAlert(
+			this.page,
+			'Success:Your form has been successfully loaded.'
 		);
 	}
 
@@ -540,17 +592,38 @@ export class PageEditorPage {
 		entry,
 		field,
 		recentSelectedItem,
+		relationship,
 		source,
 	}: {
-		entity: string;
-		entry: string;
+		entity?: string;
+		entry?: string;
 		field: string;
 		recentSelectedItem?: string;
-		source?: 'content' | 'structure';
+		relationship?: string;
+		source?: 'content' | 'relationship' | 'structure';
 	}) {
+
+		// Select source and relationship is needed
+
 		if (source) {
 			await this.page.getByLabel('Source').selectOption(source);
 		}
+
+		if (source === 'relationship') {
+			await this.page
+				.getByLabel('Relationship')
+				.selectOption(relationship);
+		}
+
+		// If source is not content, just select the field
+
+		if (source !== 'content') {
+			await this.page.getByLabel('Field').selectOption(field);
+
+			return;
+		}
+
+		// If source is content, select the item and the field
 
 		await this.selectItemMappingButton.click();
 

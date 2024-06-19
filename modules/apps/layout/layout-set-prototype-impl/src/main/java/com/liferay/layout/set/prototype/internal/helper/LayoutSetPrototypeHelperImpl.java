@@ -6,7 +6,6 @@
 package com.liferay.layout.set.prototype.internal.helper;
 
 import com.liferay.layout.set.prototype.helper.LayoutSetPrototypeHelper;
-import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.sql.dsl.expression.Predicate;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -412,8 +411,8 @@ public class LayoutSetPrototypeHelperImpl implements LayoutSetPrototypeHelper {
 	private List<Layout> _getDuplicatedFriendlyURLSiteLayouts(Layout layout)
 		throws PortalException {
 
-		return TransformUtil.transform(
-			(List<Long>)_layoutLocalService.dslQuery(
+		return _layoutLocalService.getLayouts(
+			_layoutLocalService.dslQuery(
 				DSLQueryFactoryUtil.selectDistinct(
 					LayoutTable.INSTANCE.plid
 				).from(
@@ -457,8 +456,7 @@ public class LayoutSetPrototypeHelperImpl implements LayoutSetPrototypeHelper {
 					).and(
 						GroupTable.INSTANCE.groupId.eq(layout.getGroupId())
 					)
-				)),
-			plid -> _layoutLocalService.getLayout(plid));
+				)));
 	}
 
 	private long _getDuplicatedFriendlyURLSiteLayoutsCount(

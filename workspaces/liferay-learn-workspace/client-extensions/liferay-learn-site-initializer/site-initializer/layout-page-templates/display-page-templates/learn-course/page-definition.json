@@ -179,11 +179,7 @@
 											"id": "element-html",
 											"value": {
 												"html": {
-													"mapping": {
-														"fieldKey": "_ddmTemplate_83317",
-														"itemReference": {
-															"contextSource": "DisplayPageItem"
-														}
+													"value_i18n": {
 													}
 												}
 											}
@@ -251,10 +247,12 @@
 							},
 							{
 								"definition": {
+									"customCSS": ".[$FRAGMENT_CLASS$] .course-nav-bottom__banner {\n    background-image: url([$DOCUMENT_URL:/site-initializer/documents/group/vectors/waves_sm.svg$]);\n    background-repeat: no-repeat;\n    background-position: calc(100% + 60px) center;\n    background-size: 220px 220px;\n  }\n\n",
 									"fragmentStyle": {
 										"backgroundColor": "colorNeutral1",
 										"borderRadius": "borderRadiusLg",
 										"marginTop": "4",
+										"maxWidth": "763px",
 										"paddingBottom": "4",
 										"paddingLeft": "4",
 										"paddingRight": "4",
@@ -262,52 +260,42 @@
 									},
 									"indexed": true,
 									"layout": {
+										"contentDisplay": "FlexColumn",
 										"marginTop": 2,
 										"paddingBottom": 2,
 										"paddingLeft": 2,
 										"paddingRight": 2,
-										"paddingTop": 2
+										"paddingTop": 2,
+										"widthType": "Fixed"
 									},
 									"name": "Bottom Nav Container"
 								},
 								"pageElements": [
 									{
 										"definition": {
-											"indexed": true,
-											"layout": {
-											}
-										},
-										"pageElements": [
-											{
-												"definition": {
-													"fragment": {
-														"key": "dialect-text",
-														"siteKey": "Liferay Learn"
-													},
-													"fragmentConfig": {
-														"textType": "h1",
-														"truncateText": false
-													},
-													"fragmentFields": [
-														{
-															"id": "element-text",
-															"value": {
-																"fragmentLink": {
-																},
-																"text": {
-																	"value_i18n": {
-																		"en_US": "Nav Bottom"
-																	}
+											"fragment": {
+												"key": "BASIC_COMPONENT-html"
+											},
+											"fragmentConfig": {
+											},
+											"fragmentFields": [
+												{
+													"id": "element-html",
+													"value": {
+														"html": {
+															"mapping": {
+																"fieldKey": "_ddmTemplate_LEARN_COURSE_NAV_BOTTOM",
+																"itemReference": {
+																	"contextSource": "DisplayPageItem"
 																}
 															}
 														}
-													],
-													"indexed": true
-												},
-												"type": "Fragment"
-											}
-										],
-										"type": "Section"
+													}
+												}
+											],
+											"indexed": true
+										},
+										"type": "Fragment"
 									}
 								],
 								"type": "Section"
@@ -328,5 +316,5 @@
 		},
 		"themeName": "Dialect"
 	},
-	"version": 1.1
+	"version": 1.0
 }

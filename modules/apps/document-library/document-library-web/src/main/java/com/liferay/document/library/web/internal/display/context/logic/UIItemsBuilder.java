@@ -664,7 +664,10 @@ public class UIItemsBuilder {
 
 	public boolean isDeleteVersionActionAvailable() throws PortalException {
 		if ((_fileEntry == null) ||
-			(_fileVersion.getStatus() != WorkflowConstants.STATUS_APPROVED) ||
+			((_fileVersion.getStatus() != WorkflowConstants.STATUS_APPROVED) &&
+			 (_fileVersion.getStatus() != WorkflowConstants.STATUS_EXPIRED) &&
+			 (_fileVersion.getStatus() !=
+				 WorkflowConstants.STATUS_SCHEDULED)) ||
 			!_fileEntryDisplayContextHelper.hasDeletePermission() ||
 			!(_fileEntry.getModel() instanceof DLFileEntry)) {
 
@@ -674,7 +677,16 @@ public class UIItemsBuilder {
 		int fileVersionsCount = _fileEntry.getFileVersionsCount(
 			WorkflowConstants.STATUS_APPROVED);
 
-		if (fileVersionsCount > 1) {
+		fileVersionsCount += _fileEntry.getFileVersionsCount(
+			WorkflowConstants.STATUS_SCHEDULED);
+
+		int fileVersionsExpired = _fileEntry.getFileVersionsCount(
+			WorkflowConstants.STATUS_EXPIRED);
+
+		if ((fileVersionsCount > 1) ||
+			((_fileVersion.getStatus() == WorkflowConstants.STATUS_EXPIRED) &&
+			 ((fileVersionsCount == 1) || (fileVersionsExpired > 1)))) {
+
 			return true;
 		}
 
@@ -776,7 +788,9 @@ public class UIItemsBuilder {
 	}
 
 	public boolean isRevertToVersionActionAvailable() throws PortalException {
-		if ((_fileVersion.getStatus() != WorkflowConstants.STATUS_APPROVED) ||
+		if (((_fileVersion.getStatus() != WorkflowConstants.STATUS_APPROVED) &&
+			 (_fileVersion.getStatus() !=
+				 WorkflowConstants.STATUS_SCHEDULED)) ||
 			!_fileEntryDisplayContextHelper.hasUpdatePermission()) {
 
 			return false;

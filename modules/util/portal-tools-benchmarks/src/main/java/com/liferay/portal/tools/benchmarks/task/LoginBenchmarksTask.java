@@ -5,12 +5,14 @@
 
 package com.liferay.portal.tools.benchmarks.task;
 
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.tools.benchmarks.http.HttpResponse;
 import com.liferay.portal.tools.benchmarks.http.HttpUtil;
+import com.liferay.portal.tools.benchmarks.http.ThreadLocalCookieStore;
 
 import java.net.URL;
 
@@ -33,23 +35,30 @@ public class LoginBenchmarksTask implements BenchmarksTask {
 	}
 
 	public List<ObjectValuePair<String, Long>> execute() throws Exception {
-		HttpResponse httpResponse = HttpUtil.doGet(
-			null, _createURL(StringPool.FORWARD_SLASH));
+		try (SafeCloseable safeCloseable =
+				ThreadLocalCookieStore.withSafeCloseable()) {
 
-		_assertContent(httpResponse, "Liferay.currentURL");
+			HttpResponse httpResponse = HttpUtil.doGet(
+				null, _createURL(StringPool.FORWARD_SLASH));
 
-		return ListUtil.fromArray(
-			new ObjectValuePair<>("viewHomePage", httpResponse.getDuration()),
-			new ObjectValuePair<>(
-				"viewLoginPage", _viewLoginPage(httpResponse.getCSRFToken())),
-			new ObjectValuePair<>(
-				"login",
-				_login(httpResponse.getCSRFToken(), _emailAddress, _password)),
-			new ObjectValuePair<>("logout", _logout()));
+			_assertContent(httpResponse, "Liferay.currentURL");
+
+			return ListUtil.fromArray(
+				new ObjectValuePair<>(
+					"viewHomePage", httpResponse.getDuration()),
+				new ObjectValuePair<>(
+					"viewLoginPage",
+					_viewLoginPage(httpResponse.getCSRFToken())),
+				new ObjectValuePair<>(
+					"login",
+					_login(
+						httpResponse.getCSRFToken(), _emailAddress, _password)),
+				new ObjectValuePair<>("logout", _logout()));
+		}
 	}
 
 	private void _assertContent(HttpResponse httpResponse, String key) {
-		Assert.assertEquals(httpResponse.getStatusCode(), 200);
+		Assert.assertEquals(200, httpResponse.getStatusCode());
 
 		String httpResponseString = httpResponse.toString();
 
@@ -66,7 +75,7 @@ public class LoginBenchmarksTask implements BenchmarksTask {
 		throws Exception {
 
 		Assert.assertEquals(url.toString(), httpResponse.getRedirect());
-		Assert.assertEquals(httpResponse.getStatusCode(), 302);
+		Assert.assertEquals(302, httpResponse.getStatusCode());
 
 		return url;
 	}
@@ -138,10 +147,10 @@ public class LoginBenchmarksTask implements BenchmarksTask {
 		URL url = _assertRedirect(
 			httpResponse1,
 			StringBundler.concat(
-				"/home?", _P_P_ID_NAMESPACE,
-				"_mvcRenderCommandName=/login/login&p_p_id=", _P_P_ID,
-				"&p_p_lifecycle=0&p_p_mode=view&p_p_state=exclusive&",
-				"saveLastPath=false"));
+				"/home?p_p_id=", _P_P_ID,
+				"&p_p_lifecycle=0&p_p_state=exclusive&p_p_mode=view&",
+				_P_P_ID_NAMESPACE,
+				"_mvcRenderCommandName=/login/login&saveLastPath=false"));
 
 		HttpResponse httpResponse2 = HttpUtil.doGet(csrfToken, url);
 

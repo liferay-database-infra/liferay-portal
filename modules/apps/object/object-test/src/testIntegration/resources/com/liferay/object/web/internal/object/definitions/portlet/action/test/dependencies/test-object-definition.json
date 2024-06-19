@@ -198,8 +198,106 @@
 			"state": false,
 			"system": false,
 			"type": "String"
+		},
+		{
+			"DBType": "String",
+			"businessType": "Picklist",
+			"externalReferenceCode": "TESTOBJECTFIELD3",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"indexedLanguageId": "en_US",
+			"label": {
+				"en_US": "Test Object Field 3"
+			},
+			"listTypeDefinitionExternalReferenceCode": "LIST_APPLICATION_STATES",
+			"name": "testObjectField3",
+			"objectFieldSettings": [
+				{
+					"name": "defaultValue",
+					"value": "open"
+				},
+				{
+					"name": "defaultValueType",
+					"value": "inputAsValue"
+				},
+				{
+					"name": "stateFlow",
+					"value": {
+						"objectStates": [
+							{
+								"key": "approved",
+								"objectStateTransitions": [
+									{
+										"key": "underReview"
+									}
+								]
+							},
+							{
+								"key": "denied",
+								"objectStateTransitions": [
+									{
+										"key": "underReview"
+									}
+								]
+							},
+							{
+								"key": "onHold",
+								"objectStateTransitions": [
+									{
+										"key": "open"
+									},
+									{
+										"key": "underReview"
+									}
+								]
+							},
+							{
+								"key": "open",
+								"objectStateTransitions": [
+									{
+										"key": "underReview"
+									},
+									{
+										"key": "withdrawn"
+									}
+								]
+							},
+							{
+								"key": "underReview",
+								"objectStateTransitions": [
+									{
+										"key": "approved"
+									},
+									{
+										"key": "denied"
+									},
+									{
+										"key": "onHold"
+									},
+									{
+										"key": "withdrawn"
+									}
+								]
+							},
+							{
+								"key": "withdrawn",
+								"objectStateTransitions": [
+									{
+										"key": "open"
+									}
+								]
+							}
+						]
+					}
+				}
+			],
+			"required": true,
+			"state": true,
+			"system": false,
+			"type": "String"
 		}
 	],
+	"objectFolderExternalReferenceCode": "default",
 	"objectLayouts": [
 		{
 			"defaultObjectLayout": true,
@@ -232,6 +330,16 @@
 									"objectLayoutColumns": [
 										{
 											"objectFieldName": "testObjectField2",
+											"priority": 0,
+											"size": 12
+										}
+									],
+									"priority": 0
+								},
+								{
+									"objectLayoutColumns": [
+										{
+											"objectFieldName": "testObjectField3",
 											"priority": 0,
 											"size": 12
 										}

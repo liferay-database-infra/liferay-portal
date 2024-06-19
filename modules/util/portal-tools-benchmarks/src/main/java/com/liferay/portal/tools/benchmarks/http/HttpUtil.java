@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -166,6 +169,10 @@ public class HttpUtil {
 		CentralizedThreadLocal.withInitial(() -> new byte[8192]);
 
 	static {
+		CookieHandler.setDefault(
+			new CookieManager(
+				new ThreadLocalCookieStore(), CookiePolicy.ACCEPT_ALL));
+
 		HttpURLConnection.setFollowRedirects(false);
 	}
 
