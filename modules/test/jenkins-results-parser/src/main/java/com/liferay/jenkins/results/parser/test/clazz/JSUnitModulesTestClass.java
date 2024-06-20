@@ -68,11 +68,23 @@ public class JSUnitModulesTestClass extends ModulesTestClass {
 						File currentDirectory = new File(
 							JenkinsResultsParserUtil.getCanonicalPath(file));
 
+						String currentDirectoryPath =
+							currentDirectory.getAbsolutePath();
+
+						if (currentDirectoryPath.contains("modules") &&
+							!(currentDirectoryPath.contains("modules/apps") ||
+							  currentDirectoryPath.contains("modules/dxp"))) {
+
+							return FileVisitResult.SKIP_SUBTREE;
+						}
+
 						if (!testGitrepoJSUnit) {
 							File gitrepoFile = new File(
 								currentDirectory, ".gitrepo");
 
-							if (gitrepoFile.exists()) {
+							if (gitrepoFile.exists() &&
+								!currentDirectoryPath.contains("osb-faro")) {
+
 								return FileVisitResult.SKIP_SUBTREE;
 							}
 						}

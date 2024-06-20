@@ -139,6 +139,10 @@ public class UpgradeCatchAllCheck implements ConfigurationBeanDeclaration {
 		indexer.getClassNames();
 	}
 
+	public void method(Layout layout, String friendlyURL) {
+		LayoutFriendlyURLComposite(layout, friendlyURL);
+	}
+
 	public void method(long commerceOrderId) {
 		CommerceOrderItemLocalServiceUtil.deleteCommerceOrderItems(commerceOrderId);
 		_commerceOrderItemLocalService.deleteCommerceOrderItems(123);
@@ -513,6 +517,14 @@ public class UpgradeCatchAllCheck implements ConfigurationBeanDeclaration {
 		ResourceRequest resourceRequest, ResourceResponse resourceResponse) {
 
 		CaptchaUtil.serveImage(resourceRequest, resourceResponse);
+	}
+
+	public void method(
+		String searchEngineId, long companyId, Collection<Document> documents,
+		boolean commitImmediately) {
+
+		IndexWriterHelperUtil.updateDocument(searchEngineId, companyId, documents, commitImmediately);
+		IndexWriterHelperUtil.updateDocument("test123", 123, null, null);
 	}
 
 	public void method(

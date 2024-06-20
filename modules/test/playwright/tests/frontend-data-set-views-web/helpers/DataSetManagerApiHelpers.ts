@@ -5,7 +5,17 @@
 
 import {ApiHelpers} from '../../../helpers/ApiHelpers';
 import {liferayConfig} from '../../../liferay.config';
-import {DEFAULT_LABEL} from '../utils/constants';
+import {
+	CARDS_SECTION_DATA_SET_RELATIONSHIP,
+	CREATION_ACTION_DATA_SET_RELATIONSHIP,
+	DATE_FILTER_DATA_SET_RELATIONSHIP,
+	DEFAULT_LABEL,
+	ITEM_ACTION_DATA_SET_RELATIONSHIP,
+	LIST_SECTION_DATA_SET_RELATIONSHIP,
+	SELECTION_FILTER_DATA_SET_RELATIONSHIP,
+	SORT_DATA_SET_RELATIONSHIP,
+	TABLE_SECTION_DATA_SET_RELATIONSHIP,
+} from '../utils/constants';
 import {
 	AsyncActionMethod,
 	CreationActionTypes,
@@ -54,40 +64,40 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 	}
 
 	async createDataSetCardsSection({
+		dataSetERC = DEFAULT_DATA_SET_ERC,
 		fieldName = 'name',
 		name = 'title',
-		r_fdsViewFDSCardsSectionRelationship_c_fdsViewERC = DEFAULT_DATA_SET_ERC,
 	}: {
+		dataSetERC?: string;
 		fieldName?: string;
 		name?: string;
-		r_fdsViewFDSCardsSectionRelationship_c_fdsViewERC?: string;
 	}) {
 		const url = `${this.baseUrl}data-set-manager/cards-sections`;
 
 		const data = {
+			[CARDS_SECTION_DATA_SET_RELATIONSHIP]: dataSetERC,
 			fieldName,
 			name,
-			r_fdsViewFDSCardsSectionRelationship_c_fdsViewERC,
 		};
 
 		return this.post(url, {data});
 	}
 
 	async createDataSetCreationAction({
+		dataSetERC = DEFAULT_DATA_SET_ERC,
 		icon,
 		label_i18n = {en_US: 'Default Creation Action'},
 		modalSize = 'full-screen',
 		permissionKey,
-		r_fdsViewFDSCreationActionRelationship_c_fdsViewERC = DEFAULT_DATA_SET_ERC,
 		title_i18n,
 		type = 'link',
 		url = liferayConfig.environment.baseUrl,
 	}: {
+		dataSetERC?: string;
 		icon?: string;
 		label_i18n?: {[key: string]: string};
 		modalSize?: ModalVariantTypes;
 		permissionKey?;
-		r_fdsViewFDSCreationActionRelationship_c_fdsViewERC: string;
 		title_i18n?: {[key: string]: string};
 		type?: CreationActionTypes;
 		url?: string;
@@ -95,11 +105,11 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 		const endpointUrl = `${this.baseUrl}data-set-manager/actions`;
 
 		const data = {
+			[CREATION_ACTION_DATA_SET_RELATIONSHIP]: dataSetERC,
 			icon,
 			label_i18n,
 			modalSize,
 			permissionKey,
-			r_fdsViewFDSCreationActionRelationship_c_fdsViewERC,
 			title_i18n,
 			type,
 			url,
@@ -109,19 +119,19 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 	}
 
 	async createDataSetField({
+		dataSetERC = DEFAULT_DATA_SET_ERC,
 		extraBodyParams = {},
 		label_i18n = {en_US: 'Title'},
 		name = 'title',
-		r_fdsViewFDSFieldRelationship_c_fdsViewERC = DEFAULT_DATA_SET_ERC,
 		renderer = 'default',
 		rendererType = 'internal',
 		sortable = false,
 		type = 'string',
 	}: {
+		dataSetERC?: string;
 		extraBodyParams?: any;
 		label_i18n?: {[key: string]: string};
 		name?: string;
-		r_fdsViewFDSFieldRelationship_c_fdsViewERC?: string;
 		renderer?: string;
 		rendererType?: string;
 		sortable?: boolean;
@@ -130,9 +140,9 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 		const url = `${this.baseUrl}data-set-manager/table-sections`;
 
 		const data = {
+			[TABLE_SECTION_DATA_SET_RELATIONSHIP]: dataSetERC,
 			label_i18n,
 			name,
-			r_fdsViewFDSFieldRelationship_c_fdsViewERC,
 			renderer,
 			rendererType,
 			sortable,
@@ -144,27 +154,27 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 	}
 
 	async createDataSetDateFilter({
+		dataSetERC = DEFAULT_DATA_SET_ERC,
 		fieldName,
 		from = '',
 		label_i18n = {en_US: 'Title'},
-		r_fdsViewFDSDateFilterRelationship_c_fdsViewERC,
 		to = '',
 		type,
 	}: {
+		dataSetERC?: string;
 		fieldName: string;
 		from?: string;
 		label_i18n?: {[key: string]: string};
-		r_fdsViewFDSDateFilterRelationship_c_fdsViewERC: string;
 		to?: string;
 		type: 'date' | 'date-time';
 	}) {
 		const url = `${this.baseUrl}data-set-manager/date-filters`;
 
 		const data = {
+			[DATE_FILTER_DATA_SET_RELATIONSHIP]: dataSetERC,
 			fieldName,
 			from,
 			label_i18n,
-			r_fdsViewFDSDateFilterRelationship_c_fdsViewERC,
 			to,
 			type,
 		};
@@ -173,33 +183,33 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 	}
 
 	async createDataSetSelectionFilter({
+		dataSetERC = DEFAULT_DATA_SET_ERC,
 		fieldName,
 		include = true,
 		label_i18n,
 		multiple = false,
 		preselectedValues = '[]',
-		r_fdsViewFDSDynamicFilterRelationship_c_fdsViewERC,
 		source,
 		sourceType,
 	}: {
+		dataSetERC?: string;
 		fieldName: string;
 		include?: boolean;
 		label_i18n?: {[key: string]: string};
 		multiple?: boolean;
 		preselectedValues?: string;
-		r_fdsViewFDSDynamicFilterRelationship_c_fdsViewERC?: string;
 		source: string;
 		sourceType: string;
 	}) {
 		const url = `${this.baseUrl}data-set-manager/selection-filters`;
 
 		const data = {
+			[SELECTION_FILTER_DATA_SET_RELATIONSHIP]: dataSetERC,
 			fieldName,
 			include,
 			label_i18n,
 			multiple,
 			preselectedValues,
-			r_fdsViewFDSDynamicFilterRelationship_c_fdsViewERC,
 			source,
 			sourceType,
 		};
@@ -210,13 +220,13 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 	async createDataSetItemAction({
 		confirmationMessage_i18n,
 		confirmationMessageType,
+		dataSetERC = DEFAULT_DATA_SET_ERC,
 		errorMessage_i18n,
 		icon,
 		label_i18n = {en_US: 'Default Item Action'},
 		method,
 		modalSize = 'full-screen',
 		permissionKey,
-		r_fdsViewFDSItemActionRelationship_c_fdsViewERC = DEFAULT_DATA_SET_ERC,
 		successMessage_i18n,
 		title_i18n,
 		type = 'link',
@@ -224,13 +234,13 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 	}: {
 		confirmationMessageType?: string;
 		confirmationMessage_i18n?: {[key: string]: string};
+		dataSetERC?: string;
 		errorMessage_i18n?: {[key: string]: string};
 		icon?: string;
 		label_i18n?: {[key: string]: string};
 		method?: AsyncActionMethod;
 		modalSize?: ModalVariantTypes;
 		permissionKey?;
-		r_fdsViewFDSItemActionRelationship_c_fdsViewERC: string;
 		successMessage_i18n?: {[key: string]: string};
 		title_i18n?: {[key: string]: string};
 		type?: ItemActionTypes;
@@ -239,6 +249,7 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 		const endpointUrl = `${this.baseUrl}data-set-manager/actions`;
 
 		const data = {
+			[ITEM_ACTION_DATA_SET_RELATIONSHIP]: dataSetERC,
 			confirmationMessage_i18n,
 			confirmationMessageType,
 			errorMessage_i18n,
@@ -247,7 +258,6 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 			method,
 			modalSize,
 			permissionKey,
-			r_fdsViewFDSItemActionRelationship_c_fdsViewERC,
 			successMessage_i18n,
 			title_i18n,
 			type,
@@ -258,36 +268,38 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 	}
 
 	async createDataSetSort({
+		dataSetERC = DEFAULT_DATA_SET_ERC,
 		defaultValue = false,
 		fieldName = 'dateCreated',
 		label_i18n = {en_US: 'Date Created'},
 		orderType = 'asc',
-		r_fdsViewFDSSortRelationship_c_fdsViewERC = DEFAULT_DATA_SET_ERC,
 	}: {
+		dataSetERC?: string;
 		defaultValue?: boolean;
 		fieldName?: string;
 		label_i18n?: {[key: string]: string};
 		orderType?: string;
-		r_fdsViewFDSSortRelationship_c_fdsViewERC?: string;
 	}) {
 		const url = `${this.baseUrl}data-set-manager/sorts`;
 
 		const data = {
+			[SORT_DATA_SET_RELATIONSHIP]: dataSetERC,
 			default: defaultValue,
 			fieldName,
+			label: label_i18n[Object.keys(label_i18n)[0]],
 			label_i18n,
 			orderType,
-			r_fdsViewFDSSortRelationship_c_fdsViewERC,
 		};
 
 		return this.post(url, {data});
 	}
 
 	async createDataSetListSection({
+		dataSetERC = DEFAULT_DATA_SET_ERC,
 		fieldName = 'name',
 		name = 'title',
-		r_fdsViewFDSListSectionRelationship_c_fdsViewERC = DEFAULT_DATA_SET_ERC,
 	}: {
+		dataSetERC?: string;
 		fieldName?: string;
 		name?: string;
 		r_fdsViewFDSListSectionRelationship_c_fdsViewERC?: string;
@@ -295,9 +307,9 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 		const url = `${this.baseUrl}data-set-manager/list-sections`;
 
 		const data = {
+			[LIST_SECTION_DATA_SET_RELATIONSHIP]: dataSetERC,
 			fieldName,
 			name,
-			r_fdsViewFDSListSectionRelationship_c_fdsViewERC,
 		};
 
 		return this.post(url, {data});

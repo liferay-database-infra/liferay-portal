@@ -15,6 +15,7 @@ import java.net.URL;
 
 import java.time.ZonedDateTime;
 
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.logging.Log;
@@ -137,11 +138,12 @@ public class MarketplaceCommandLineRunner implements CommandLineRunner {
 		for (Order order : page.getItems()) {
 			try {
 				ZonedDateTime nowZonedDateTime = ZonedDateTime.now();
+
+				Map<String, String> customFields =
+					(Map<String, String>)order.getCustomFields();
+
 				ZonedDateTime trialEndDateZonedDateTime = ZonedDateTime.parse(
-					order.getCustomFields(
-					).get(
-						"trial-end-date"
-					).toString());
+					customFields.get("trial-end-date"));
 
 				if (nowZonedDateTime.isAfter(trialEndDateZonedDateTime)) {
 					_postTrialExpire(order.getId());
@@ -153,7 +155,10 @@ public class MarketplaceCommandLineRunner implements CommandLineRunner {
 					continue;
 				}
 
-				if (Objects.equals(
+				if (customFields.get(
+						"trial-notify-end-date"
+					).isEmpty() &&
+					Objects.equals(
 						nowZonedDateTime.getDayOfMonth(),
 						trialEndDateZonedDateTime.minusDays(
 							1

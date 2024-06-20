@@ -326,7 +326,10 @@ public class ObjectEntryDisplayContextImpl
 				_objectDefinitionLocalService.getObjectDefinition(
 					objectDefinition2.getRootObjectDefinitionId());
 
-			if (ObjectEntryServiceUtil.hasPortletResourcePermission(
+			if (ObjectEntryServiceUtil.hasModelResourcePermission(
+					rootObjectDefinition.getObjectDefinitionId(),
+					_objectEntry.getId(), ActionKeys.UPDATE) ||
+				ObjectEntryServiceUtil.hasPortletResourcePermission(
 					objectScopeProvider.getGroupId(
 						_objectRequestHelper.getRequest()),
 					rootObjectDefinition.getObjectDefinitionId(),

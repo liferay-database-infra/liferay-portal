@@ -5,12 +5,19 @@
 
 package com.liferay.adyen;
 
+import java.util.Objects;
+
 import org.apache.commons.logging.Log;
 
 import org.json.JSONObject;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import reactor.core.publisher.Mono;
 
 /**
  * @author Raymond Augé
@@ -19,6 +26,40 @@ import org.springframework.security.oauth2.jwt.Jwt;
  * @author Crescenzo Rega
  */
 public abstract class BaseRestController {
+
+	protected void delete(String authorization, String path) {
+		_getWebClient(
+		).delete(
+		).uri(
+			uriBuilder -> uriBuilder.path(
+				path
+			).build()
+		).header(
+			HttpHeaders.AUTHORIZATION, authorization
+		).retrieve(
+		).bodyToMono(
+			String.class
+		).subscribe();
+	}
+
+	protected JSONObject get(String authorization, String path) {
+		Mono<String> response = _getWebClient(
+		).get(
+		).uri(
+			uriBuilder -> uriBuilder.path(
+				path
+			).build()
+		).header(
+			HttpHeaders.AUTHORIZATION, authorization
+		).retrieve(
+		).bodyToMono(
+			String.class
+		);
+
+		response.subscribe();
+
+		return new JSONObject(Objects.requireNonNull(response.block()));
+	}
 
 	protected void log(Jwt jwt, Log log, String json) {
 		if (log.isInfoEnabled()) {
@@ -37,10 +78,55 @@ public abstract class BaseRestController {
 		}
 	}
 
+	protected void patch(String authorization, String body, String path) {
+		_getWebClient(
+		).patch(
+		).uri(
+			uriBuilder -> uriBuilder.path(
+				path
+			).build()
+		).bodyValue(
+			body
+		).header(
+			HttpHeaders.AUTHORIZATION, authorization
+		).retrieve(
+		).bodyToMono(
+			String.class
+		).subscribe();
+	}
+
+	protected void post(String authorization, String body, String path) {
+		_getWebClient(
+		).post(
+		).uri(
+			uriBuilder -> uriBuilder.path(
+				path
+			).build()
+		).bodyValue(
+			body
+		).header(
+			HttpHeaders.AUTHORIZATION, authorization
+		).retrieve(
+		).bodyToMono(
+			String.class
+		).subscribe();
+	}
+
 	@Value("${com.liferay.lxc.dxp.mainDomain}")
 	protected String lxcDXPMainDomain;
 
 	@Value("${com.liferay.lxc.dxp.server.protocol}")
 	protected String lxcDXPServerProtocol;
+
+	private WebClient _getWebClient() {
+		return WebClient.builder(
+		).baseUrl(
+			lxcDXPServerProtocol + "://" + lxcDXPMainDomain
+		).defaultHeader(
+			HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE
+		).defaultHeader(
+			HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE
+		).build();
+	}
 
 }

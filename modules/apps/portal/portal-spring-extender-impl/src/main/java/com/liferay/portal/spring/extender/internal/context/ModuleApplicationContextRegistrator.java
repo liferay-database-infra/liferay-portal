@@ -19,7 +19,7 @@ import com.liferay.portal.spring.aop.AopConfigurableApplicationContextConfigurat
 import com.liferay.portal.spring.configurator.ConfigurableApplicationContextConfigurator;
 import com.liferay.portal.spring.extender.internal.bean.ApplicationContextServicePublisherUtil;
 import com.liferay.portal.spring.extender.internal.loader.ModuleAggregareClassLoader;
-import com.liferay.portal.spring.extender.internal.release.SchemaCreatorImpl;
+import com.liferay.portal.spring.extender.internal.upgrade.release.SchemaCreatorImpl;
 import com.liferay.portal.upgrade.release.SchemaCreator;
 
 import java.beans.Introspector;

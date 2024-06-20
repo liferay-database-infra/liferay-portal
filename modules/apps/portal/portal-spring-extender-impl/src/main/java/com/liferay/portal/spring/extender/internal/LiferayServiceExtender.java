@@ -21,7 +21,7 @@ import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.spring.extender.internal.jdbc.DataSourceUtil;
 import com.liferay.portal.spring.extender.internal.loader.ModuleAggregareClassLoader;
-import com.liferay.portal.spring.extender.internal.release.SchemaCreatorImpl;
+import com.liferay.portal.spring.extender.internal.upgrade.release.SchemaCreatorImpl;
 import com.liferay.portal.spring.hibernate.PortletHibernateConfiguration;
 import com.liferay.portal.spring.hibernate.PortletTransactionManager;
 import com.liferay.portal.spring.transaction.DefaultTransactionExecutor;

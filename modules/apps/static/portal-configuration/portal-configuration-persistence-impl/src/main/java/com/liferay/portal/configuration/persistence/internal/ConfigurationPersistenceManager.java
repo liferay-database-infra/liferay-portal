@@ -13,6 +13,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.persistence.ConfigurationOverridePropertiesUtil;
 import com.liferay.portal.configuration.persistence.InMemoryOnlyConfigurationThreadLocal;
 import com.liferay.portal.configuration.persistence.ReloadablePersistenceManager;
+import com.liferay.portal.configuration.persistence.internal.upgrade.release.ConfigurationSchemaCreator;
 import com.liferay.portal.configuration.persistence.listener.ConfigurationModelListener;
 import com.liferay.portal.configuration.persistence.listener.ConfigurationModelListenerException;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
@@ -39,7 +40,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 import java.util.Collections;
 import java.util.Dictionary;
@@ -327,15 +327,13 @@ public class ConfigurationPersistenceManager
 	}
 
 	private void _createConfigurationTable() {
-		try (Connection connection = _dataSource.getConnection();
-			Statement statement = connection.createStatement()) {
+		ConfigurationSchemaCreator configurationSchemaCreator =
+			new ConfigurationSchemaCreator();
 
-			statement.executeUpdate(
-				_db.buildSQL(
-					"create table Configuration_ (configurationId " +
-						"VARCHAR(512) not null primary key, dictionary TEXT)"));
+		try {
+			configurationSchemaCreator.create(_bundleContext.getBundle());
 		}
-		catch (IOException | SQLException exception) {
+		catch (Exception exception) {
 			ReflectionUtil.throwException(exception);
 		}
 

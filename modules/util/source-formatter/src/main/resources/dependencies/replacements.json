@@ -32,6 +32,20 @@
 	},
 	{
 		"classNames": [
+			"IndexWriterHelperUtil"
+		],
+		"from": "updateDocument(String paramName, long paramName, Collection<Document> paramName, boolean paramName)",
+		"issueKey": "LPD-8003",
+		"to": "updateDocument(param#1#, param#2#)"
+	},
+	{
+		"from": "LayoutFriendlyURLComposite(Layout paramName, String paramName)",
+		"issueKey": "LPD-8025",
+		"skipParametersValidation": true,
+		"to": "LayoutFriendlyURLComposite(param#0#, param#1#, false)"
+	},
+	{
+		"classNames": [
 			"LayoutItemSelectorCriterion"
 		],
 		"from": "setShowHiddenPages(boolean paramName)",

@@ -1,0 +1,273 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+import {expect, mergeTests} from '@playwright/test';
+
+import {featureFlagsTest} from '../../../../fixtures/featureFlagsTest';
+import {loginTest} from '../../../../fixtures/loginTest';
+import getRandomString from '../../../../utils/getRandomString';
+import {dataSetManagerApiHelpersTest} from '../../fixtures/dataSetManagerApiHelpersTest';
+import {dataSetsPageTest} from './fixtures/dataSetsPageTest';
+import {filtersPageTest} from './fixtures/filtersPageTest';
+
+export const test = mergeTests(
+	dataSetManagerApiHelpersTest,
+	dataSetsPageTest,
+	featureFlagsTest({
+		'LPS-178052': true,
+	}),
+	filtersPageTest,
+	loginTest()
+);
+
+test.describe('Date range filter creation, edition and cancel', () => {
+	let dataSetERC: string;
+	let dataSetLabel: string;
+	const DATE_FIELD_NAME = 'dateCreated';
+	const NAME_COLUMN_INDEX = 1;
+
+	test.beforeEach(async ({dataSetManagerApiHelpers, filtersPage}) => {
+		dataSetERC = getRandomString();
+		dataSetLabel = getRandomString();
+
+		await test.step('Create a data set', async () => {
+			await dataSetManagerApiHelpers.createDataSet({
+				erc: dataSetERC,
+				label: dataSetLabel,
+			});
+		});
+
+		await test.step('Navigate to Filters section', async () => {
+			await filtersPage.goto({
+				dataSetLabel,
+			});
+		});
+	});
+
+	test.afterEach(async ({dataSetManagerApiHelpers}) => {
+		await dataSetManagerApiHelpers.deleteDataSet({erc: dataSetERC});
+	});
+
+	test('When creating a new filter in DSM, date-time field is available for selection @LPD-10754', async ({
+		filtersPage,
+	}) => {
+		await test.step('Open add date range filter modal', async () => {
+			await filtersPage.openNewFilterModal({
+				dropdownItemLabel: 'Date Range',
+			});
+		});
+
+		const dateFilterOption = filtersPage.page.getByRole('option', {
+			name: DATE_FIELD_NAME,
+		});
+
+		await test.step('Check if date-time filter is available', async () => {
+			await filtersPage.newDateRangeFilterModal.filterBySelect.click();
+
+			await expect(dateFilterOption).toBeVisible();
+		});
+
+		await test.step('Check date-time filter modal contains from and to fields @LPS-181281', async () => {
+			await dateFilterOption.click();
+
+			await expect(
+				filtersPage.newDateRangeFilterModal.fromInput
+			).toBeVisible();
+
+			await expect(
+				filtersPage.newDateRangeFilterModal.toInput
+			).toBeVisible();
+
+			await filtersPage.newDateRangeFilterModal.fromDatePickerTrigger.click();
+
+			await expect(
+				filtersPage.newDateRangeFilterModal.datePicker
+			).toBeVisible();
+
+			await filtersPage.page.keyboard.press('Escape');
+		});
+
+		await test.step('Cancel date range filter, check no filters are created @LPS-181281', async () => {
+			await filtersPage.cancelAddFilterModal();
+
+			await filtersPage.assertFiltersTableRowCount(0);
+		});
+	});
+
+	test('Ability to save and edit DSM date filters @LPS-181281', async ({
+		filtersPage,
+	}) => {
+		const filterName = 'Creation Date';
+		const filterNewName = 'Date Created';
+
+		await test.step('Create a date range filter', async () => {
+			await filtersPage.createDateRangeFilter({
+				filterBy: DATE_FIELD_NAME,
+				name: filterName,
+			});
+		});
+
+		await test.step('Assert filter is saved', async () => {
+			await expect(
+				filtersPage
+					.getRowByText(filterName)
+					.locator('td')
+					.nth(NAME_COLUMN_INDEX)
+			).toHaveText(filterName);
+
+			await filtersPage.assertFiltersTableRowCount(1);
+		});
+
+		await test.step('Edit the filter, change its label @LPS-183056', async () => {
+			await filtersPage
+				.getRowByText(filterName)
+				.locator('.actions-cell button')
+				.click();
+
+			const editButton = filtersPage.page.getByRole('menuitem', {
+				name: 'Edit',
+			});
+
+			await expect(editButton).toBeInViewport();
+
+			await editButton.click();
+
+			const nameInput = filtersPage.newDateRangeFilterModal.nameInput;
+
+			await expect(nameInput).toBeInViewport();
+
+			await expect(nameInput).toBeEnabled();
+
+			await nameInput.fill(filterNewName);
+
+			await filtersPage.saveAddFilterModal();
+		});
+
+		await test.step('Assert filter with new name is saved @LPS-183056', async () => {
+			await expect(
+				filtersPage
+					.getRowByText(filterNewName)
+					.locator('td')
+					.nth(NAME_COLUMN_INDEX)
+			).toHaveText(filterNewName);
+
+			await filtersPage.assertFiltersTableRowCount(1);
+		});
+
+		await test.step('Assert "filter by" is disabled when editing a filter @LPS-183056', async () => {
+			await filtersPage
+				.getRowByText(filterNewName)
+				.locator('.actions-cell button')
+				.click();
+
+			const editButton = filtersPage.page.getByRole('menuitem', {
+				name: 'Edit',
+			});
+
+			await expect(editButton).toBeInViewport();
+
+			await editButton.click();
+
+			const filterBySelect =
+				filtersPage.newDateRangeFilterModal.filterBySelect;
+
+			await filterBySelect.click();
+
+			const filterByDropdown =
+				filtersPage.newDateRangeFilterModal.filterByDropdown;
+
+			await expect(filterByDropdown).toBeVisible();
+
+			for (const option of await filterByDropdown
+				.getByRole('button')
+				.all()) {
+				await expect(option).toBeDisabled();
+			}
+
+			await filtersPage.page.keyboard.press('Escape');
+
+			await expect(filterByDropdown).not.toBeVisible();
+		});
+
+		await test.step('Assert date range correctness @LPS-183056', async () => {
+			await filtersPage.newDateRangeFilterModal.fromInput.fill(
+				'2001-12-10'
+			);
+
+			await filtersPage.newDateRangeFilterModal.toInput.fill(
+				'2001-12-09'
+			);
+
+			await filtersPage.assertValidationError('Date range is invalid');
+
+			await filtersPage.cancelAddFilterModal();
+		});
+
+		await test.step('Check a filter can not be created on an already used field @LPS-190851', async () => {
+			await filtersPage.openNewFilterModal({
+				dropdownItemLabel: 'Date Range',
+			});
+
+			await filtersPage.newDateRangeFilterModal.filterBySelect.click();
+
+			const dateFilterOption = filtersPage.page.getByRole('option', {
+				name: DATE_FIELD_NAME,
+			});
+
+			await expect(dateFilterOption).toContainText('In Use');
+
+			await dateFilterOption.click();
+
+			await filtersPage.assertValidationError(
+				'This field is being used by another filter'
+			);
+		});
+	});
+});
+
+test('No date filters can be created if schema has no date fields', async ({
+	dataSetManagerApiHelpers,
+	filtersPage,
+}) => {
+	const dataSetERC = getRandomString();
+	const dataSetLabel = 'No date dataset';
+
+	await test.step('Create Data Set with no date fields', async () => {
+		await dataSetManagerApiHelpers.createDataSet({
+			erc: dataSetERC,
+			label: dataSetLabel,
+			restApplication: '/headless-delivery/v1.0',
+			restEndpoint: '/v1.0/sites/{siteId}/blog-posting-images',
+			restSchema: 'BlogPostingImage',
+		});
+	});
+
+	await test.step('Navigate to Filters section', async () => {
+		await filtersPage.goto({
+			dataSetLabel,
+		});
+	});
+
+	await test.step('Create a date range filter', async () => {
+		await filtersPage.openNewFilterModal({
+			dropdownItemLabel: 'Date Range',
+			expectSaveHidden: true,
+		});
+	});
+
+	await test.step('Create a date range filter', async () => {
+		await expect(
+			filtersPage.newDateRangeFilterModal.modalBody
+		).toContainText(
+			'There are no fields compatible with this type of filter.'
+		);
+
+		await filtersPage.newDateRangeFilterModal.closeButton.click();
+
+		await dataSetManagerApiHelpers.deleteDataSet({
+			erc: dataSetERC,
+		});
+	});
+});

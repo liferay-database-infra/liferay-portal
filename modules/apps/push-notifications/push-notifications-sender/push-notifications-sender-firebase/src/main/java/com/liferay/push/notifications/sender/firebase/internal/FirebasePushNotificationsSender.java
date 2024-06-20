@@ -5,24 +5,39 @@
 
 package com.liferay.push.notifications.sender.firebase.internal;
 
-import com.liferay.mobile.fcm.Message;
-import com.liferay.mobile.fcm.Notification;
-import com.liferay.mobile.fcm.Sender;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
+
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
-import com.liferay.portal.kernel.json.JSONFactory;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.json.JSONUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.servlet.HttpHeaders;
+import com.liferay.portal.kernel.util.ContentTypes;
+import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.SetUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.push.notifications.constants.PushNotificationsConstants;
 import com.liferay.push.notifications.exception.PushNotificationsException;
 import com.liferay.push.notifications.sender.PushNotificationsSender;
 import com.liferay.push.notifications.sender.firebase.internal.configuration.FirebasePushNotificationsSenderConfiguration;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -35,179 +50,390 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	configurationPid = "com.liferay.push.notifications.sender.firebase.internal.configuration.FirebasePushNotificationsSenderConfiguration",
-	property = "platform=" + FirebasePushNotificationsSender.PLATFORM,
-	service = PushNotificationsSender.class
+	property = "platform=firebase", service = PushNotificationsSender.class
 )
 public class FirebasePushNotificationsSender
 	implements PushNotificationsSender {
-
-	public static final String PLATFORM = "firebase";
 
 	@Override
 	public void send(List<String> tokens, JSONObject payloadJSONObject)
 		throws Exception {
 
-		if (_sender == null) {
+		if (_googleCredentials == null) {
 			throw new PushNotificationsException(
 				"Firebase push notifications sender is not configured " +
 					"properly");
 		}
 
-		_sender.send(_buildMessage(tokens, payloadJSONObject));
+		String accessToken = _getAccessToken();
+
+		if (tokens.size() > 1) {
+			DeviceGroup deviceGroup = _createDeviceGroup(accessToken, tokens);
+
+			try {
+				_send(accessToken, payloadJSONObject, deviceGroup.getId());
+			}
+			finally {
+				_removeDeviceGroup(accessToken, deviceGroup, tokens);
+			}
+		}
+		else {
+			_send(accessToken, payloadJSONObject, tokens.get(0));
+		}
 	}
 
 	@Activate
 	@Modified
-	protected void activate(Map<String, Object> properties) {
+	protected void activate(Map<String, Object> properties)
+		throws PortalException {
+
 		_firebasePushNotificationsSenderConfiguration =
 			ConfigurableUtil.createConfigurable(
 				FirebasePushNotificationsSenderConfiguration.class, properties);
 
-		String apiKey = _firebasePushNotificationsSenderConfiguration.apiKey();
+		if (Validator.isNull(
+				_firebasePushNotificationsSenderConfiguration.
+					firebaseCloudMessagingURL()) ||
+			Validator.isNull(
+				_firebasePushNotificationsSenderConfiguration.
+					projectNumber())) {
 
-		if (Validator.isNull(apiKey)) {
-			_sender = null;
+			_googleCredentials = null;
 
 			return;
 		}
 
-		_sender = new Sender(apiKey);
+		_initGoogleCloudServices();
 	}
 
 	@Deactivate
 	protected void deactivate() {
-		_sender = null;
+		_googleCredentials = null;
 	}
 
-	private Message _buildMessage(
-		List<String> tokens, JSONObject payloadJSONObject) {
+	private JSONObject _buildAndroidData(JSONObject payloadJSONObject) {
+		return JSONUtil.put(
+			"notification",
+			JSONUtil.put(
+				"body",
+				() -> payloadJSONObject.get(PushNotificationsConstants.KEY_BODY)
+			).put(
+				"body_loc_args",
+				() -> {
+					JSONArray bodyLocalizedArgumentsJSONArray =
+						payloadJSONObject.getJSONArray(
+							PushNotificationsConstants.
+								KEY_BODY_LOCALIZED_ARGUMENTS);
 
-		Message.Builder builder = new Message.Builder();
+					if (bodyLocalizedArgumentsJSONArray == null) {
+						return null;
+					}
 
-		boolean silent = payloadJSONObject.getBoolean(
-			PushNotificationsConstants.KEY_SILENT);
+					List<String> bodyLocalizedArguments = new ArrayList<>();
 
-		if (silent) {
-			builder.contentAvailable(silent);
-		}
+					for (int i = 0;
+						 i < bodyLocalizedArgumentsJSONArray.length(); i++) {
 
-		builder.notification(_buildNotification(payloadJSONObject));
-		builder.to(tokens);
+						bodyLocalizedArguments.add(
+							bodyLocalizedArgumentsJSONArray.getString(i));
+					}
 
-		JSONObject newPayloadJSONObject = _jsonFactory.createJSONObject();
+					return bodyLocalizedArguments;
+				}
+			).put(
+				"body_loc_key",
+				() -> payloadJSONObject.get(
+					PushNotificationsConstants.KEY_BODY_LOCALIZED)
+			).put(
+				"notification_count",
+				() -> {
+					if (payloadJSONObject.has(
+							PushNotificationsConstants.KEY_BADGE)) {
 
-		Iterator<String> iterator = payloadJSONObject.keys();
+						return payloadJSONObject.getInt(
+							PushNotificationsConstants.KEY_BADGE);
+					}
 
-		while (iterator.hasNext()) {
-			String key = iterator.next();
+					return null;
+				}
+			).put(
+				"sound",
+				() -> payloadJSONObject.get(
+					PushNotificationsConstants.KEY_SOUND)
+			).put(
+				"title",
+				() -> payloadJSONObject.get(
+					PushNotificationsConstants.KEY_TITLE)
+			).put(
+				"title_loc_args",
+				() -> {
+					JSONArray titleLocalizedArgumentsJSONArray =
+						payloadJSONObject.getJSONArray(
+							PushNotificationsConstants.
+								KEY_TITLE_LOCALIZED_ARGUMENTS);
 
-			if (!key.equals(PushNotificationsConstants.KEY_BADGE) &&
-				!key.equals(PushNotificationsConstants.KEY_BODY) &&
-				!key.equals(PushNotificationsConstants.KEY_BODY_LOCALIZED) &&
-				!key.equals(
-					PushNotificationsConstants.KEY_BODY_LOCALIZED_ARGUMENTS) &&
-				!key.equals(PushNotificationsConstants.KEY_SOUND) &&
-				!key.equals(PushNotificationsConstants.KEY_SILENT)) {
+					if (titleLocalizedArgumentsJSONArray == null) {
+						return null;
+					}
 
-				newPayloadJSONObject.put(key, payloadJSONObject.get(key));
+					List<String> localizedArguments = new ArrayList<>();
+
+					for (int i = 0;
+						 i < titleLocalizedArgumentsJSONArray.length(); i++) {
+
+						localizedArguments.add(
+							titleLocalizedArgumentsJSONArray.getString(i));
+					}
+
+					return localizedArguments;
+				}
+			).put(
+				"title_loc_key",
+				() -> payloadJSONObject.get(
+					PushNotificationsConstants.KEY_TITLE_LOCALIZED)
+			));
+	}
+
+	private JSONObject _buildMessagePayload(JSONObject payloadJSONObject) {
+		Iterator<String> keysIterator = payloadJSONObject.keys();
+
+		JSONObject jsonObject = _jsonFactoryUtil.createJSONObject();
+
+		while (keysIterator.hasNext()) {
+			String key = keysIterator.next();
+
+			if (!_keys.contains(key)) {
+				jsonObject.put(key, payloadJSONObject.get(key));
 			}
 		}
 
-		if (newPayloadJSONObject.length() > 0) {
-			builder.data(
-				HashMapBuilder.put(
-					PushNotificationsConstants.KEY_PAYLOAD,
-					newPayloadJSONObject.toString()
-				).build());
-		}
-
-		return builder.build();
+		return JSONUtil.put("payload", jsonObject.toString());
 	}
 
-	private Notification _buildNotification(JSONObject payloadJSONObject) {
-		Notification.Builder builder = new Notification.Builder();
+	private DeviceGroup _createDeviceGroup(
+			String authorizationToken, List<String> tokens)
+		throws Exception {
 
-		if (payloadJSONObject.has(PushNotificationsConstants.KEY_BADGE)) {
-			builder.badge(
-				payloadJSONObject.getInt(PushNotificationsConstants.KEY_BADGE));
+		Http.Options options = new Http.Options();
+
+		options.addHeader("access_token_auth", "true");
+		options.addHeader("project_id", _projectNumber);
+		options.addHeader(
+			HttpHeaders.AUTHORIZATION, "Bearer " + authorizationToken);
+		options.addHeader(
+			HttpHeaders.CONTENT_TYPE, ContentTypes.APPLICATION_JSON);
+
+		String name = StringUtil.randomString();
+
+		options.setBody(
+			JSONUtil.put(
+				"notification_key_name", name
+			).put(
+				"operation", "create"
+			).put(
+				"registration_ids", tokens
+			).toString(),
+			ContentTypes.APPLICATION_JSON, StringPool.UTF8);
+
+		options.setLocation(_firebaseCloudMessagingURL + "/fcm/notification");
+		options.setPost(true);
+
+		String responseString = _http.URLtoString(options);
+
+		Http.Response optionsResponse = options.getResponse();
+
+		if (optionsResponse.getResponseCode() != _OK_CODE) {
+			throw new PushNotificationsException(
+				"Unable to create notification group");
 		}
 
-		String body = payloadJSONObject.getString(
-			PushNotificationsConstants.KEY_BODY);
+		JSONObject responseJSONObject = _jsonFactoryUtil.createJSONObject(
+			responseString);
 
-		if (Validator.isNotNull(body)) {
-			builder.body(body);
-		}
-
-		String bodyLocalizedKey = payloadJSONObject.getString(
-			PushNotificationsConstants.KEY_BODY_LOCALIZED);
-
-		if (Validator.isNotNull(bodyLocalizedKey)) {
-			builder.bodyLocalizationKey(bodyLocalizedKey);
-		}
-
-		JSONArray bodyLocalizedArgumentsJSONArray =
-			payloadJSONObject.getJSONArray(
-				PushNotificationsConstants.KEY_BODY_LOCALIZED_ARGUMENTS);
-
-		if (bodyLocalizedArgumentsJSONArray != null) {
-			List<String> bodyLocalizedArguments = new ArrayList<>();
-
-			for (int i = 0; i < bodyLocalizedArgumentsJSONArray.length(); i++) {
-				bodyLocalizedArguments.add(
-					bodyLocalizedArgumentsJSONArray.getString(i));
-			}
-
-			builder.bodyLocalizationArguments(bodyLocalizedArguments);
-		}
-
-		String sound = payloadJSONObject.getString(
-			PushNotificationsConstants.KEY_SOUND);
-
-		if (Validator.isNotNull(sound)) {
-			builder.sound(sound);
-		}
-
-		String title = payloadJSONObject.getString(
-			PushNotificationsConstants.KEY_TITLE);
-
-		if (Validator.isNotNull(title)) {
-			builder.title(title);
-		}
-
-		JSONArray titleLocalizedArgumentsJSONArray =
-			payloadJSONObject.getJSONArray(
-				PushNotificationsConstants.KEY_TITLE_LOCALIZED_ARGUMENTS);
-
-		if (titleLocalizedArgumentsJSONArray != null) {
-			List<String> localizedArguments = new ArrayList<>();
-
-			for (int i = 0; i < titleLocalizedArgumentsJSONArray.length();
-				 i++) {
-
-				localizedArguments.add(
-					titleLocalizedArgumentsJSONArray.getString(i));
-			}
-
-			builder.titleLocalizationArguments(localizedArguments);
-		}
-
-		String titleLocalizedKey = payloadJSONObject.getString(
-			PushNotificationsConstants.KEY_TITLE_LOCALIZED);
-
-		if (Validator.isNotNull(titleLocalizedKey)) {
-			builder.titleLocalizationKey(titleLocalizedKey);
-		}
-
-		return builder.build();
+		return new DeviceGroup(
+			responseJSONObject.getString("notification_key"), name);
 	}
 
+	private String _getAccessToken() throws Exception {
+		try {
+			_googleCredentials.refresh();
+
+			return _googleCredentials.getAccessToken(
+			).getTokenValue();
+		}
+		catch (Exception exception) {
+			throw new PushNotificationsException(
+				"Unable to get access token", exception);
+		}
+	}
+
+	private void _initGoogleCloudServices() throws PortalException {
+		_firebaseCloudMessagingURL =
+			_firebasePushNotificationsSenderConfiguration.
+				firebaseCloudMessagingURL();
+
+		_projectNumber =
+			_firebasePushNotificationsSenderConfiguration.projectNumber();
+
+		String serviceAccountKey =
+			_firebasePushNotificationsSenderConfiguration.serviceAccountKey();
+
+		try {
+			if (Validator.isBlank(serviceAccountKey)) {
+				if (_log.isInfoEnabled()) {
+					_log.info(
+						"Using application default credentials because " +
+							"service account key was not set");
+				}
+
+				_googleCredentials =
+					ServiceAccountCredentials.getApplicationDefault();
+			}
+			else {
+				_googleCredentials = ServiceAccountCredentials.fromStream(
+					new ByteArrayInputStream(serviceAccountKey.getBytes())
+				).createScoped(
+					Arrays.asList(
+						"https://www.googleapis.com/auth/firebase.messaging")
+				);
+			}
+		}
+		catch (IOException ioException) {
+			throw new PortalException(
+				"Unable to authenticate with Firebase", ioException);
+		}
+	}
+
+	private void _removeDeviceGroup(
+			String authorizationToken, DeviceGroup deviceGroup,
+			List<String> tokens)
+		throws Exception {
+
+		Http.Options options = new Http.Options();
+
+		options.addHeader("access_token_auth", "true");
+		options.addHeader("project_id", _projectNumber);
+		options.addHeader(
+			HttpHeaders.AUTHORIZATION, "Bearer " + authorizationToken);
+		options.addHeader(
+			HttpHeaders.CONTENT_TYPE, ContentTypes.APPLICATION_JSON);
+		options.setBody(
+			JSONUtil.put(
+				"notification_key", deviceGroup.getId()
+			).put(
+				"notification_key_name", deviceGroup.getName()
+			).put(
+				"operation", "remove"
+			).put(
+				"registration_ids", tokens
+			).toString(),
+			ContentTypes.APPLICATION_JSON, StringPool.UTF8);
+		options.setLocation(_firebaseCloudMessagingURL + "/fcm/notification");
+		options.setPost(true);
+
+		_http.URLtoString(options);
+
+		Http.Response optionsResponse = options.getResponse();
+
+		if (optionsResponse.getResponseCode() != _OK_CODE) {
+			_log.error(
+				StringBundler.concat(
+					"Unable to remove notification group with ID ",
+					deviceGroup.getId(), " and name ", deviceGroup.getName()));
+		}
+	}
+
+	private void _send(
+			String accessToken, JSONObject payloadJSONObject, String token)
+		throws Exception {
+
+		Http.Options options = new Http.Options();
+
+		options.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+		options.addHeader(
+			HttpHeaders.CONTENT_TYPE, ContentTypes.APPLICATION_JSON);
+		options.setBody(
+			JSONUtil.put(
+				"message",
+				JSONUtil.put(
+					"android", _buildAndroidData(payloadJSONObject)
+				).put(
+					"data", _buildMessagePayload(payloadJSONObject)
+				).put(
+					"token", token
+				)
+			).toString(),
+			ContentTypes.APPLICATION_JSON, StringPool.UTF8);
+
+		ServiceAccountCredentials serviceAccountCredentials =
+			(ServiceAccountCredentials)_googleCredentials;
+
+		options.setLocation(
+			StringBundler.concat(
+				_firebaseCloudMessagingURL, "/v1/projects/",
+				serviceAccountCredentials.getProjectId(), "/messages:send"));
+
+		options.setPost(true);
+
+		String responseString = _http.URLtoString(options);
+
+		Http.Response response = options.getResponse();
+
+		if (response.getResponseCode() != _OK_CODE) {
+			_log.error(
+				StringBundler.concat(
+					"Unable to send notification with token ", token,
+					" and reason ", responseString));
+
+			throw new PushNotificationsException(
+				"Unable to send push notification");
+		}
+	}
+
+	private static final int _OK_CODE = 200;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		FirebasePushNotificationsSender.class);
+
+	private static final Set<String> _keys = SetUtil.fromArray(
+		PushNotificationsConstants.KEY_BADGE,
+		PushNotificationsConstants.KEY_BODY,
+		PushNotificationsConstants.KEY_BODY_LOCALIZED,
+		PushNotificationsConstants.KEY_BODY_LOCALIZED_ARGUMENTS,
+		PushNotificationsConstants.KEY_SOUND,
+		PushNotificationsConstants.KEY_SILENT);
+
+	private String _firebaseCloudMessagingURL;
 	private volatile FirebasePushNotificationsSenderConfiguration
 		_firebasePushNotificationsSenderConfiguration;
+	private volatile GoogleCredentials _googleCredentials;
 
 	@Reference
-	private JSONFactory _jsonFactory;
+	private Http _http;
 
-	private volatile Sender _sender;
+	@Reference
+	private JSONFactoryUtil _jsonFactoryUtil;
+
+	private String _projectNumber;
+
+	private class DeviceGroup {
+
+		public DeviceGroup(String id, String name) {
+			_id = id;
+			_name = name;
+		}
+
+		public String getId() {
+			return _id;
+		}
+
+		public String getName() {
+			return _name;
+		}
+
+		private final String _id;
+		private final String _name;
+
+	}
 
 }

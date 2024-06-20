@@ -3,7 +3,6 @@ $selector: '.page-editor__layout-viewport';
 html#{$cadmin-selector} #{$selector} {
 	align-items: stretch;
 	display: flex;
-	justify-content: center;
 	position: relative;
 
 	&:not(.page-editor__layout-viewport--size-desktop) {
@@ -19,12 +18,14 @@ html#{$cadmin-selector} #{$selector} {
 		&-landscapeMobile,
 		&-portraitMobile {
 			height: 100%;
+			justify-content: center;
 			left: 0;
 			position: absolute;
 			top: 0;
 			transition:
 				margin-left ease $defaultTransitionDuration,
 				margin-right ease $defaultTransitionDuration;
+			padding-left: $sidebarButtonWidth;
 			width: 100%;
 			will-change: margin-left, margin-right;
 			z-index: 1;

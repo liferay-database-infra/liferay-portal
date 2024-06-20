@@ -654,7 +654,7 @@ public class UpgradeCatchAllCheck extends BaseFileCheck {
 	}
 
 	private static final String _CONSTRUCTOR_REGEX =
-		"n?e?w? ?(:?[A-Z][a-z]+)+\\(.*\\)";
+		"n?e?w? ?(:?[A-Z][a-z]*)+\\(.*\\)";
 
 	private static final Pattern _parameterNamePattern = Pattern.compile(
 		"\\w+#(\\d+)#");
