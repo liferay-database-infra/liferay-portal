@@ -27,9 +27,10 @@ import com.liferay.portal.kernel.scheduler.TimeUnit;
 import com.liferay.portal.kernel.scheduler.Trigger;
 import com.liferay.portal.kernel.scheduler.TriggerFactory;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
-import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.test.rule.Inject;
 
 import java.sql.Connection;
@@ -44,8 +45,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-
-import javax.sql.DataSource;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -544,32 +543,9 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 	private void _populateResourcePermissionTable() throws Exception {
 		long companyId = CompanyThreadLocal.getCompanyId();
 
-		DataSource dataSource = InfrastructureUtil.getDataSource();
-
-		try (Connection connection = dataSource.getConnection();
-			PreparedStatement preparedStatement = connection.prepareStatement(
-				StringBundler.concat(
-					"insert into ResourcePermission (mvccVersion, ",
-					"ctCollectionId, resourcePermissionId, companyId, name, ",
-					"scope, primKey, primKeyId, roleId, ownerId, actionIds, ",
-					"viewActionId) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ",
-					"?)"))) {
-
-			preparedStatement.setLong(1, 0);
-			preparedStatement.setLong(2, 0);
-			preparedStatement.setLong(3, 1);
-			preparedStatement.setLong(4, companyId);
-			preparedStatement.setString(5, Role.class.getName());
-			preparedStatement.setInt(6, ResourceConstants.SCOPE_COMPANY);
-			preparedStatement.setLong(7, companyId);
-			preparedStatement.setLong(8, companyId);
-			preparedStatement.setLong(9, 1);
-			preparedStatement.setInt(10, 0);
-			preparedStatement.setInt(11, 1);
-			preparedStatement.setInt(12, 1);
-
-			preparedStatement.executeUpdate();
-		}
+		_resourcePermissionLocalService.addResourcePermission(
+			companyId, Role.class.getName(), ResourceConstants.SCOPE_COMPANY,
+			String.valueOf(companyId), 1, ActionKeys.VIEW);
 	}
 
 	private void _scheduleJob(long companyId, String jobName) throws Exception {
@@ -621,5 +597,8 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 		filter = "component.name=com.liferay.portal.scheduler.quartz.internal.QuartzTriggerFactory"
 	)
 	private static TriggerFactory _triggerFactory;
+
+	@Inject
+	private ResourcePermissionLocalService _resourcePermissionLocalService;
 
 }
