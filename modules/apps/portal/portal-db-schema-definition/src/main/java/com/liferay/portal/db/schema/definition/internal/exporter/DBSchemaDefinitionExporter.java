@@ -10,6 +10,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.db.schema.definition.internal.configuration.DBSchemaDefinitionExporterConfiguration;
 import com.liferay.portal.db.schema.definition.internal.processor.SQLFilesProcessor;
+import com.liferay.portal.db.schema.definition.internal.validation.DBSchemaDefinitionExporterValidation;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -109,6 +110,9 @@ public class DBSchemaDefinitionExporter {
 					"Finished database schema definition export to " +
 						file.getAbsolutePath());
 			}
+
+			DBSchemaDefinitionExporterValidation.validateSchemaExport(
+				dbSchemaDefinitionExporterConfiguration.path());
 		}
 		catch (Exception exception) {
 			_log.error(
