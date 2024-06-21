@@ -5,14 +5,18 @@
 
 package com.liferay.layout.internal.exporter;
 
+import com.liferay.headless.delivery.dto.v1_0.ContentSubtype;
+import com.liferay.headless.delivery.dto.v1_0.ContentType;
 import com.liferay.headless.delivery.dto.v1_0.DisplayPageTemplate;
 import com.liferay.headless.delivery.dto.v1_0.MasterPage;
 import com.liferay.headless.delivery.dto.v1_0.PageDefinition;
 import com.liferay.headless.delivery.dto.v1_0.PageTemplate;
 import com.liferay.headless.delivery.dto.v1_0.PageTemplateCollection;
 import com.liferay.headless.delivery.dto.v1_0.UtilityPageTemplate;
+import com.liferay.info.item.InfoItemFormVariation;
+import com.liferay.info.item.InfoItemServiceRegistry;
+import com.liferay.info.item.provider.InfoItemFormVariationsProvider;
 import com.liferay.layout.exporter.LayoutsExporter;
-import com.liferay.layout.internal.headless.delivery.dto.v1_0.util.DisplayPageTemplateUtil;
 import com.liferay.layout.internal.headless.delivery.dto.v1_0.util.MasterPageUtil;
 import com.liferay.layout.internal.headless.delivery.dto.v1_0.util.PageTemplateCollectionUtil;
 import com.liferay.layout.internal.headless.delivery.dto.v1_0.util.PageTemplateUtil;
@@ -333,6 +337,30 @@ public class LayoutsExporterImpl implements LayoutsExporter {
 		return null;
 	}
 
+	private String _getSubtypeKey(
+		LayoutPageTemplateEntry layoutPageTemplateEntry) {
+
+		InfoItemFormVariationsProvider<?> infoItemFormVariationsProvider =
+			_infoItemServiceRegistry.getFirstInfoItemService(
+				InfoItemFormVariationsProvider.class,
+				layoutPageTemplateEntry.getClassName());
+
+		if (infoItemFormVariationsProvider == null) {
+			return null;
+		}
+
+		InfoItemFormVariation infoItemFormVariation =
+			infoItemFormVariationsProvider.getInfoItemFormVariation(
+				layoutPageTemplateEntry.getGroupId(),
+				String.valueOf(layoutPageTemplateEntry.getClassTypeId()));
+
+		if (infoItemFormVariation == null) {
+			return null;
+		}
+
+		return infoItemFormVariation.getExternalReferenceCode();
+	}
+
 	private void _populateDisplayPagesZipWriter(
 			LayoutPageTemplateCollection layoutPageTemplateCollection,
 			String path, ZipWriter zipWriter)
@@ -360,9 +388,8 @@ public class LayoutsExporterImpl implements LayoutsExporter {
 			path + "/display-page-templates/" +
 				layoutPageTemplateEntry.getLayoutPageTemplateEntryKey();
 
-		DisplayPageTemplate displayPageTemplate =
-			DisplayPageTemplateUtil.toDisplayPageTemplate(
-				layoutPageTemplateEntry);
+		DisplayPageTemplate displayPageTemplate = _toDisplayPageTemplate(
+			layoutPageTemplateEntry);
 
 		zipWriter.addEntry(
 			displayPagePath + StringPool.SLASH +
@@ -553,11 +580,49 @@ public class LayoutsExporterImpl implements LayoutsExporter {
 		}
 	}
 
+	private DisplayPageTemplate _toDisplayPageTemplate(
+		LayoutPageTemplateEntry layoutPageTemplateEntry) {
+
+		return new DisplayPageTemplate() {
+			{
+				setContentSubtype(
+					() -> {
+						if (layoutPageTemplateEntry.getClassTypeId() < 0) {
+							return null;
+						}
+
+						return new ContentSubtype() {
+							{
+								setSubtypeId(
+									() ->
+										layoutPageTemplateEntry.
+											getClassTypeId());
+
+								setSubtypeKey(
+									() -> _getSubtypeKey(
+										layoutPageTemplateEntry));
+							}
+						};
+					});
+				setContentType(
+					() -> new ContentType() {
+						{
+							setClassName(layoutPageTemplateEntry::getClassName);
+						}
+					});
+				setName(layoutPageTemplateEntry::getName);
+			}
+		};
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		LayoutsExporterImpl.class);
 
 	@Reference
 	private DTOConverterRegistry _dtoConverterRegistry;
+
+	@Reference
+	private InfoItemServiceRegistry _infoItemServiceRegistry;
 
 	@Reference
 	private LayoutLocalService _layoutLocalService;

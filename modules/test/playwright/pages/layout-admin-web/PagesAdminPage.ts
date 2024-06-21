@@ -11,6 +11,7 @@ import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
 import {PORTLET_URLS} from '../../utils/portletUrls';
 import {reloadUntilVisible} from '../../utils/reloadUntilVisible';
 import {waitForSuccessAlert} from '../../utils/waitForSuccessAlert';
+import {PageEditorPage} from '../layout-content-page-editor-web/PageEditorPage';
 import {UIElementsPage} from '../uielements/UIElementsPage';
 
 export class PagesAdminPage {
@@ -26,6 +27,8 @@ export class PagesAdminPage {
 	readonly pageTitleBox: Locator;
 	readonly uiElementsPage: UIElementsPage;
 	readonly widgetPageButton: Locator;
+	readonly newButton: Locator;
+	readonly pageEditorPage: PageEditorPage;
 
 	constructor(page: Page) {
 		this.configurationSaveButton = page.getByRole('button', {
@@ -50,6 +53,10 @@ export class PagesAdminPage {
 			'input[id="_com_liferay_layout_admin_web_portlet_GroupPagesPortlet_name"]'
 		);
 		this.widgetPageButton = page.getByRole('button', {name: 'Widget Page'});
+		this.newButton = page
+			.locator('.management-bar')
+			.getByRole('button', {name: 'New'});
+		this.pageEditorPage = new PageEditorPage(this.page);
 	}
 
 	async addContentPage(pageName: string) {
@@ -81,6 +88,7 @@ export class PagesAdminPage {
 			.getByText('Success:The page was updated successfully.')
 			.waitFor({state: 'visible'});
 	}
+
 	async checkIfWebContentAddedToHome(
 		siteName: string,
 		webContentBody: string
@@ -139,6 +147,44 @@ export class PagesAdminPage {
 		await this.page.goto(
 			`/group${siteUrl || '/guest'}${PORTLET_URLS.pages}`
 		);
+	}
+
+	async createNewPage(name: string, template?: string) {
+		await this.newButton.click();
+
+		await this.page
+			.getByRole('menuitem')
+			.getByText('Page', {exact: true})
+			.click();
+
+		await this.page
+			.locator('.card-page-item')
+			.filter({hasText: template})
+			.click();
+
+		const loadingAnimation = this.page.locator(
+			'.modal-body-iframe .loading-animation'
+		);
+		await loadingAnimation.waitFor();
+		await loadingAnimation.waitFor({state: 'hidden'});
+
+		const modalFrame = await this.page.frameLocator(
+			'iframe[title="Add Page"]'
+		);
+		const inputName = await modalFrame.getByPlaceholder('Add Page Name');
+		await inputName.fill(name);
+
+		await modalFrame.getByRole('button', {name: 'Add'}).click();
+
+		await this.pageEditorPage.publishPage();
+	}
+
+	async editPage(name: string) {
+		await this.clickOnAction('Edit', name);
+
+		await this.page
+			.getByText('Select a Page Element', {exact: true})
+			.waitFor();
 	}
 
 	async gotoPagesConfiguration() {

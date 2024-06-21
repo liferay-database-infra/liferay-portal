@@ -2482,15 +2482,12 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 			ContentType contentType = displayPageTemplate.getContentType();
 
-			long classNameId = _portal.getClassNameId(
-				contentType.getClassName());
-
-			long classTypeId = _getClassTypeId(
-				displayPageTemplate, classNameId);
-
 			LayoutPageTemplateEntry layoutPageTemplateEntry =
 				_processLayoutPageTemplateEntry(
-					classNameId, classTypeId, _groupId,
+					_portal.getClassNameId(contentType.getClassName()),
+					_getClassTypeId(
+						contentType.getClassName(), displayPageTemplate),
+					_groupId,
 					LayoutPageTemplateConstants.
 						PARENT_LAYOUT_PAGE_TEMPLATE_COLLECTION_ID_DEFAULT,
 					_layoutsImporterResultEntries, _layoutsImportStrategy,
@@ -2530,34 +2527,27 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 		}
 
 		private long _getClassTypeId(
-			DisplayPageTemplate displayPageTemplate, long classNameId) {
+			String className, DisplayPageTemplate displayPageTemplate) {
 
 			ContentSubtype contentSubtype =
 				displayPageTemplate.getContentSubtype();
 
 			if (contentSubtype == null) {
-				return 0;
-			}
-
-			Long subtypeId = contentSubtype.getSubtypeId();
-
-			if (subtypeId != null) {
-				return subtypeId;
+				return -1;
 			}
 
 			String subtypeKey = contentSubtype.getSubtypeKey();
 
 			if (Validator.isNull(subtypeKey)) {
-				return 0;
+				return GetterUtil.getLong(contentSubtype.getSubtypeId(), -1);
 			}
 
 			InfoItemFormVariationsProvider<?> infoItemFormVariationsProvider =
 				_infoItemServiceRegistry.getFirstInfoItemService(
-					InfoItemFormVariationsProvider.class,
-					_portal.getClassName(classNameId));
+					InfoItemFormVariationsProvider.class, className);
 
 			if (infoItemFormVariationsProvider == null) {
-				return 0;
+				return -1;
 			}
 
 			InfoItemFormVariation infoItemFormVariation =
@@ -2565,10 +2555,17 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 					_groupId, subtypeKey);
 
 			if (infoItemFormVariation == null) {
-				return 0;
+				infoItemFormVariation =
+					infoItemFormVariationsProvider.
+						getInfoItemFormVariationByExternalReferenceCode(
+							subtypeKey, _groupId);
 			}
 
-			return GetterUtil.getLong(infoItemFormVariation.getKey());
+			if (infoItemFormVariation != null) {
+				return GetterUtil.getLong(infoItemFormVariation.getKey());
+			}
+
+			return -1;
 		}
 
 		private final DisplayPageTemplateEntry _displayPageTemplateEntry;

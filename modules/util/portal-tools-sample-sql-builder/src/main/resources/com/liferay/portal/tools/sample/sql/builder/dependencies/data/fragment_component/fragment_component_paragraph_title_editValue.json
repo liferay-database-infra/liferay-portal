@@ -2,9 +2,9 @@
 	"com.liferay.fragment.entry.processor.editable.EditableFragmentEntryProcessor": {
 		"element-text": {
 			"config": {
+				"mapperType": "link"
 			},
-			"defaultValue": "Heading Example",
-			"en_US": "Hello World"
+			"defaultValue": "Welcome liferay"
 		}
 	}
 }

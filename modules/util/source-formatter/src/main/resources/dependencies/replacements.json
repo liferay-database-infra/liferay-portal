@@ -1,6 +1,14 @@
 [
 	{
 		"classNames": [
+			"Product"
+		],
+		"from": "getConfiguration",
+		"issueKey": "LPD-7749",
+		"to": "getProductConfiguration"
+	},
+	{
+		"classNames": [
 			"CommerceCatalogLocalService",
 			"CommerceCatalogLocalServiceUtil"
 		],
@@ -29,6 +37,14 @@
 			"com.liferay.info.item.InfoItemReference"
 		],
 		"to": "getFriendlyURL(new InfoItemReference(param#0#, param#1#), param#2#)"
+	},
+	{
+		"classNames": [
+			"IndexableActionableDynamicQuery"
+		],
+		"from": "setSearchEngineId(String paramName)",
+		"issueKey": "LPD-8002",
+		"to": ""
 	},
 	{
 		"classNames": [

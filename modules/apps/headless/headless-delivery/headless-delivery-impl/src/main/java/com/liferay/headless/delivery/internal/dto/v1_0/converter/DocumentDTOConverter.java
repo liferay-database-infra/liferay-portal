@@ -54,6 +54,7 @@ import com.liferay.layout.page.template.service.LayoutPageTemplateEntryService;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.comment.CommentManager;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
@@ -155,7 +156,15 @@ public class DocumentDTOConverter
 						fileEntry.getCompanyId(),
 						dtoConverterContext.getLocale()));
 				setDateCreated(fileEntry::getCreateDate);
+				setDateExpired(fileEntry::getExpirationDate);
 				setDateModified(fileEntry::getModifiedDate);
+
+				if (FeatureFlagManagerUtil.isEnabled(
+						fileEntry.getCompanyId(), "LPD-10701")) {
+
+					setDatePublished(fileEntry::getDisplayDate);
+				}
+
 				setDescription(fileEntry::getDescription);
 				setDocumentFolderId(fileEntry::getFolderId);
 				setDocumentType(

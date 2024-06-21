@@ -513,10 +513,22 @@ public class UpgradeCatchAllCheck implements ConfigurationBeanDeclaration {
 		portletDisplay.getPortletInstanceConfiguration(null);
 	}
 
+	public void method(Product product) {
+		product.getConfiguration();
+	}
+
 	public void method(
 		ResourceRequest resourceRequest, ResourceResponse resourceResponse) {
 
 		CaptchaUtil.serveImage(resourceRequest, resourceResponse);
+	}
+
+	public void method(String searchEngineId) {
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+			new IndexableActionableDynamicQuery();
+
+		indexableActionableDynamicQuery.setSearchEngineId("test123");
+		indexableActionableDynamicQuery.setSearchEngineId(searchEngineId);
 	}
 
 	public void method(

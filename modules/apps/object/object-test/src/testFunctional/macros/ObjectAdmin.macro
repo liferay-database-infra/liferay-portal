@@ -191,7 +191,7 @@ definition {
 	}
 
 	@summary = "Default summary"
-	macro addObjectFieldViaAPI(isRequired = null, userPassword = null, fieldName = null, indexed = null, outputOption = null, fileSource = null, showFilesInDocumentsAndMedia = null, userEmailAddress = null, fieldBusinessType = null, readOnlyExpression = null, picklistName = null, indexedAsKeyword = null, isReadOnly = null, formulaScript = null, fieldLabelName = null, indexedLanguageId = null, objectName = null, fieldType = null, timeStorageOption = null, externalReferenceCode = null) {
+	macro addObjectFieldViaAPI(externalReferenceCode = null, fieldName = null, fieldBusinessType = null, fieldLabelName = null, fieldType = null, fileSource = null, formulaScript = null, indexed = null, indexedAsKeyword = null, indexedLanguageId = null, isReadOnly = null, isRequired = null, objectName = null, outputOption = null, picklistName = null, readOnlyExpression = null, showFilesInDocumentsAndMedia = null, timeStorageOption = null, userEmailAddress = null, userPassword = null) {
 		if ((${fieldBusinessType} == "Formula") || (${fieldBusinessType} == "Aggregation")) {
 			var indexed = "false";
 		}

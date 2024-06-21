@@ -6,6 +6,17 @@
 package com.liferay.layout.page.template.admin.web.internal.portlet.action.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.document.library.kernel.model.DLFileEntryType;
+import com.liferay.document.library.kernel.model.DLFileEntryTypeConstants;
+import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
+import com.liferay.dynamic.data.mapping.constants.DDMStructureConstants;
+import com.liferay.dynamic.data.mapping.model.DDMForm;
+import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
+import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
+import com.liferay.dynamic.data.mapping.storage.StorageType;
+import com.liferay.dynamic.data.mapping.test.util.DDMStructureTestUtil;
+import com.liferay.dynamic.data.mapping.util.DDM;
 import com.liferay.info.item.InfoItemFormVariation;
 import com.liferay.info.item.InfoItemServiceRegistry;
 import com.liferay.info.item.provider.InfoItemFormVariationsProvider;
@@ -21,6 +32,7 @@ import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.util.structure.RootLayoutStructureItem;
 import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.Repository;
@@ -40,8 +52,10 @@ import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -53,6 +67,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -87,27 +103,187 @@ public class ExportImportDisplayPagesTest {
 
 	@Test
 	public void testExportImportDisplayPage() throws Exception {
-		String className = "com.liferay.journal.model.JournalArticle";
+		_assertExportImportDisplayPage(
+			_portal.getClassNameId(
+				"com.liferay.asset.kernel.model.AssetCategory"),
+			0, null, 0);
+	}
 
-		long classNameId = _portal.getClassNameId(className);
+	@Test
+	public void testFileEntryExportImportDisplayPage() throws Exception {
+		_assertExportImportDisplayPageWithInfoItemFormVariation(
+			"com.liferay.portal.kernel.repository.model.FileEntry");
+	}
 
-		InfoItemFormVariationsProvider<?> infoItemFormVariationsProvider =
-			_infoItemServiceRegistry.getFirstInfoItemService(
-				InfoItemFormVariationsProvider.class, className);
+	@Test
+	public void testFileEntryExportImportDisplayPageWithSiteTiedVariation()
+		throws Exception {
 
-		List<InfoItemFormVariation> infoItemFormVariations = new ArrayList<>(
-			infoItemFormVariationsProvider.getInfoItemFormVariations(
-				_serviceContext1.getScopeGroupId()));
+		long ddmStructureClassNameId = _portal.getClassNameId(
+			"com.liferay.document.library.kernel.model.DLFileEntryMetadata");
 
-		Assert.assertFalse(infoItemFormVariations.isEmpty());
+		String ddmStructureKey = RandomTestUtil.randomString();
 
-		infoItemFormVariations.sort(
-			Comparator.comparing(InfoItemFormVariation::getKey));
+		Locale locale = _portal.getSiteDefaultLocale(_group1);
 
-		InfoItemFormVariation infoItemFormVariation =
-			infoItemFormVariations.get(0);
+		Map<Locale, String> ddmStructureNameMap =
+			RandomTestUtil.randomLocaleStringMap(locale);
 
-		long classTypeId = GetterUtil.getLong(infoItemFormVariation.getKey());
+		DDMForm ddmForm = DDMStructureTestUtil.getSampleDDMForm(
+			"name", new Locale[] {locale}, locale);
+
+		DDMFormLayout ddmFormLayout = _ddm.getDefaultDDMFormLayout(ddmForm);
+
+		DDMStructure ddmStructure1 = _ddmStructureLocalService.addStructure(
+			TestPropsValues.getUserId(), _group1.getGroupId(), 0L,
+			ddmStructureClassNameId, ddmStructureKey, ddmStructureNameMap, null,
+			ddmForm, ddmFormLayout, StorageType.DEFAULT.toString(),
+			DDMStructureConstants.TYPE_DEFAULT, _serviceContext1);
+
+		String fileEntryTypeKey = RandomTestUtil.randomString();
+
+		Map<Locale, String> dlFileEntryTypeNameMap =
+			RandomTestUtil.randomLocaleStringMap(locale);
+
+		DLFileEntryType dlFileEntryType1 =
+			_dlFileEntryTypeLocalService.addFileEntryType(
+				TestPropsValues.getUserId(), _group1.getGroupId(),
+				ddmStructure1.getStructureId(), fileEntryTypeKey,
+				dlFileEntryTypeNameMap, null,
+				DLFileEntryTypeConstants.FILE_ENTRY_TYPE_SCOPE_DEFAULT,
+				_serviceContext1);
+
+		DDMStructure ddmStructure2 = _ddmStructureLocalService.addStructure(
+			TestPropsValues.getUserId(), _group2.getGroupId(), 0L,
+			ddmStructureClassNameId, ddmStructureKey, ddmStructureNameMap, null,
+			ddmForm, ddmFormLayout, StorageType.DEFAULT.toString(),
+			DDMStructureConstants.TYPE_DEFAULT, _serviceContext2);
+
+		DLFileEntryType dlFileEntryType2 =
+			_dlFileEntryTypeLocalService.addFileEntryType(
+				TestPropsValues.getUserId(), _group2.getGroupId(),
+				ddmStructure2.getStructureId(), fileEntryTypeKey,
+				dlFileEntryTypeNameMap, null,
+				DLFileEntryTypeConstants.FILE_ENTRY_TYPE_SCOPE_DEFAULT,
+				_serviceContext2);
+
+		_assertExportImportDisplayPage(
+			_portal.getClassNameId(
+				"com.liferay.portal.kernel.repository.model.FileEntry"),
+			dlFileEntryType1.getFileEntryTypeId(), null,
+			dlFileEntryType2.getFileEntryTypeId());
+	}
+
+	@Test
+	public void testFileEntryExportImportDisplayPageWithSiteTiedVariationMissingInTargetSite()
+		throws Exception {
+
+		Locale locale = _portal.getSiteDefaultLocale(_group1);
+
+		DDMForm ddmForm = DDMStructureTestUtil.getSampleDDMForm(
+			"name", new Locale[] {locale}, locale);
+
+		DDMStructure ddmStructure = _ddmStructureLocalService.addStructure(
+			TestPropsValues.getUserId(), _group1.getGroupId(), 0L,
+			_portal.getClassNameId(
+				"com.liferay.document.library.kernel.model." +
+					"DLFileEntryMetadata"),
+			RandomTestUtil.randomString(),
+			RandomTestUtil.randomLocaleStringMap(locale), null, ddmForm,
+			_ddm.getDefaultDDMFormLayout(ddmForm),
+			StorageType.DEFAULT.toString(), DDMStructureConstants.TYPE_DEFAULT,
+			_serviceContext1);
+
+		DLFileEntryType dlFileEntryType =
+			_dlFileEntryTypeLocalService.addFileEntryType(
+				TestPropsValues.getUserId(), _group1.getGroupId(),
+				ddmStructure.getStructureId(), RandomTestUtil.randomString(),
+				RandomTestUtil.randomLocaleStringMap(locale), null,
+				DLFileEntryTypeConstants.FILE_ENTRY_TYPE_SCOPE_DEFAULT,
+				_serviceContext1);
+
+		_assertExportImportDisplayPage(
+			_portal.getClassNameId(
+				"com.liferay.portal.kernel.repository.model.FileEntry"),
+			dlFileEntryType.getFileEntryTypeId(),
+			"x-could-not-be-imported-because-its-content-type-or-subtype-is-" +
+				"missing",
+			0);
+	}
+
+	@Test
+	public void testJournalArticleExportImportDisplayPage() throws Exception {
+		_assertExportImportDisplayPageWithInfoItemFormVariation(
+			"com.liferay.journal.model.JournalArticle");
+	}
+
+	@Test
+	public void testJournalArticleExportImportDisplayPageWithSiteTiedVariation()
+		throws Exception {
+
+		long classNameId = _portal.getClassNameId(
+			"com.liferay.journal.model.JournalArticle");
+
+		String ddmStructureKey = RandomTestUtil.randomString();
+
+		Locale locale = _portal.getSiteDefaultLocale(_group1);
+
+		Map<Locale, String> nameMap = RandomTestUtil.randomLocaleStringMap(
+			locale);
+
+		DDMForm ddmForm = DDMStructureTestUtil.getSampleDDMForm(
+			"name", new Locale[] {locale}, locale);
+
+		DDMFormLayout ddmFormLayout = _ddm.getDefaultDDMFormLayout(ddmForm);
+
+		DDMStructure ddmStructure1 = _ddmStructureLocalService.addStructure(
+			TestPropsValues.getUserId(), _group1.getGroupId(), 0L, classNameId,
+			ddmStructureKey, nameMap, null, ddmForm, ddmFormLayout,
+			StorageType.DEFAULT.toString(), DDMStructureConstants.TYPE_DEFAULT,
+			_serviceContext1);
+
+		DDMStructure ddmStructure2 = _ddmStructureLocalService.addStructure(
+			TestPropsValues.getUserId(), _group2.getGroupId(), 0L, classNameId,
+			ddmStructureKey, nameMap, null, ddmForm, ddmFormLayout,
+			StorageType.DEFAULT.toString(), DDMStructureConstants.TYPE_DEFAULT,
+			_serviceContext2);
+
+		_assertExportImportDisplayPage(
+			classNameId, ddmStructure1.getStructureId(), null,
+			ddmStructure2.getStructureId());
+	}
+
+	@Test
+	public void testJournalArticleExportImportDisplayPageWithSiteTiedVariationMissingInTargetSite()
+		throws Exception {
+
+		long classNameId = _portal.getClassNameId(
+			"com.liferay.journal.model.JournalArticle");
+
+		Locale locale = _portal.getSiteDefaultLocale(_group1);
+
+		DDMForm ddmForm = DDMStructureTestUtil.getSampleDDMForm(
+			"name", new Locale[] {locale}, locale);
+
+		DDMStructure ddmStructure = _ddmStructureLocalService.addStructure(
+			TestPropsValues.getUserId(), _group1.getGroupId(), 0L, classNameId,
+			RandomTestUtil.randomString(),
+			RandomTestUtil.randomLocaleStringMap(locale), null, ddmForm,
+			_ddm.getDefaultDDMFormLayout(ddmForm),
+			StorageType.DEFAULT.toString(), DDMStructureConstants.TYPE_DEFAULT,
+			_serviceContext1);
+
+		_assertExportImportDisplayPage(
+			classNameId, ddmStructure.getStructureId(),
+			"x-could-not-be-imported-because-its-content-type-or-subtype-is-" +
+				"missing",
+			0);
+	}
+
+	private void _assertExportImportDisplayPage(
+			long classNameId, long classTypeId, String errorMessageKey,
+			long expectedClassTypeId)
+		throws Exception {
 
 		LayoutPageTemplateEntry layoutPageTemplateEntry1 =
 			_layoutPageTemplateEntryLocalService.addLayoutPageTemplateEntry(
@@ -174,6 +350,21 @@ public class ExportImportDisplayPagesTest {
 		LayoutsImporterResultEntry layoutPageTemplateImportEntry =
 			layoutsImporterResultEntries.get(0);
 
+		if (Validator.isNotNull(errorMessageKey)) {
+			Assert.assertEquals(
+				LayoutsImporterResultEntry.Status.INVALID,
+				layoutPageTemplateImportEntry.getStatus());
+
+			Assert.assertEquals(
+				_language.format(
+					LocaleUtil.getMostRelevantLocale(), errorMessageKey,
+					"display-page-templates/display-page-template-one" +
+						"/display-page-template.json"),
+				layoutPageTemplateImportEntry.getErrorMessage());
+
+			return;
+		}
+
 		Assert.assertEquals(
 			LayoutsImporterResultEntry.Status.IMPORTED,
 			layoutPageTemplateImportEntry.getStatus());
@@ -188,7 +379,10 @@ public class ExportImportDisplayPagesTest {
 			_layoutPageTemplateEntryLocalService.fetchLayoutPageTemplateEntry(
 				_group2.getGroupId(), layoutPageTemplateEntryKey);
 
-		Assert.assertNotNull(layoutPageTemplateEntry2);
+		Assert.assertEquals(
+			classNameId, layoutPageTemplateEntry2.getClassNameId());
+		Assert.assertEquals(
+			expectedClassTypeId, layoutPageTemplateEntry2.getClassTypeId());
 
 		Layout layout2 = _layoutLocalService.fetchLayout(
 			layoutPageTemplateEntry2.getPlid());
@@ -228,6 +422,34 @@ public class ExportImportDisplayPagesTest {
 				layoutStructure2.getMainLayoutStructureItem());
 	}
 
+	private void _assertExportImportDisplayPageWithInfoItemFormVariation(
+			String className)
+		throws Exception {
+
+		long classNameId = _portal.getClassNameId(className);
+
+		InfoItemFormVariationsProvider<?> infoItemFormVariationsProvider =
+			_infoItemServiceRegistry.getFirstInfoItemService(
+				InfoItemFormVariationsProvider.class, className);
+
+		List<InfoItemFormVariation> infoItemFormVariations = new ArrayList<>(
+			infoItemFormVariationsProvider.getInfoItemFormVariations(
+				_serviceContext1.getScopeGroupId()));
+
+		Assert.assertFalse(infoItemFormVariations.isEmpty());
+
+		infoItemFormVariations.sort(
+			Comparator.comparing(InfoItemFormVariation::getKey));
+
+		InfoItemFormVariation infoItemFormVariation =
+			infoItemFormVariations.get(0);
+
+		long classTypeId = GetterUtil.getLong(infoItemFormVariation.getKey());
+
+		_assertExportImportDisplayPage(
+			classNameId, classTypeId, null, classTypeId);
+	}
+
 	private String _read(String fileName) throws Exception {
 		return new String(
 			FileUtil.getBytes(getClass(), "dependencies/" + fileName));
@@ -258,6 +480,15 @@ public class ExportImportDisplayPagesTest {
 			actualRootLayoutStructureItem.getParentItemId());
 	}
 
+	@Inject
+	private DDM _ddm;
+
+	@Inject
+	private DDMStructureLocalService _ddmStructureLocalService;
+
+	@Inject
+	private DLFileEntryTypeLocalService _dlFileEntryTypeLocalService;
+
 	@DeleteAfterTestRun
 	private Group _group1;
 
@@ -266,6 +497,9 @@ public class ExportImportDisplayPagesTest {
 
 	@Inject
 	private InfoItemServiceRegistry _infoItemServiceRegistry;
+
+	@Inject
+	private Language _language;
 
 	@Inject
 	private LayoutLocalService _layoutLocalService;

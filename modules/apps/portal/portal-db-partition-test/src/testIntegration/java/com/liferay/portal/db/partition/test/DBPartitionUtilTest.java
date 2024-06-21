@@ -163,6 +163,8 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 				createAndPopulateTable(
 					testObjectTableNamePrefix + COMPANY_IDS[0]);
+
+				_populateResourcePermissionTable(COMPANY_IDS[0]);
 			}
 
 			Assert.assertTrue(
@@ -204,6 +206,8 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 					toTableName, _getCount(COMPANY_IDS[0], fromTableName),
 					_getCount(companyId, toTableName));
 			}
+
+			_assertResourcePermissionTable(companyId);
 		}
 		finally {
 			ReflectionTestUtil.setFieldValue(
@@ -432,6 +436,22 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 		Assert.assertEquals(_JOBS_COUNT, _getJobsCount(defaultPartitionName));
 	}
 
+	private void _assertResourcePermissionTable(long companyId)
+		throws Exception {
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setWithSafeCloseable(companyId);
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				"select primKey, primKeyId from ResourcePermission");
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			Assert.assertTrue(resultSet.next());
+
+			Assert.assertEquals(companyId, resultSet.getLong("primKey"));
+			Assert.assertEquals(companyId, resultSet.getLong("primKeyId"));
+		}
+	}
+
 	private int _getCount(long companyId, String tableName) throws Exception {
 		String whereClause = StringPool.BLANK;
 
@@ -530,6 +550,22 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 		List<String> viewNames = _getObjectNames("VIEW", companyId);
 
 		return viewNames.size();
+	}
+
+	private void _populateResourcePermissionTable(Long companyId)
+		throws Exception {
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				"insert into ResourcePermission (resourcePermissionId, " +
+					"scope, primKey, primKeyId) values (?, ?, ?, ?)")) {
+
+			preparedStatement.setLong(1, 1);
+			preparedStatement.setLong(2, 1);
+			preparedStatement.setString(3, companyId.toString());
+			preparedStatement.setLong(4, companyId);
+
+			preparedStatement.executeUpdate();
+		}
 	}
 
 	private void _scheduleJob(long companyId, String jobName) throws Exception {

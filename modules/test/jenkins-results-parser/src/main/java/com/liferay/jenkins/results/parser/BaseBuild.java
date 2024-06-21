@@ -263,6 +263,24 @@ public abstract class BaseBuild implements Build {
 	}
 
 	@Override
+	public BuildDatabase getBuildDatabase() {
+		if (_buildDatabase != null) {
+			return _buildDatabase;
+		}
+
+		TopLevelBuild topLevelBuild = getTopLevelBuild();
+
+		if ((topLevelBuild != null) && (topLevelBuild != this)) {
+			_buildDatabase = topLevelBuild.getBuildDatabase();
+		}
+		else {
+			_buildDatabase = BuildDatabaseUtil.getBuildDatabase(this);
+		}
+
+		return _buildDatabase;
+	}
+
+	@Override
 	public String getBuildDescription() {
 		if ((_buildDescription == null) && (getBuildURL() != null)) {
 			JSONObject descriptionJSONObject = getBuildJSONObject(
@@ -341,18 +359,6 @@ public abstract class BaseBuild implements Build {
 
 		if (!JenkinsResultsParserUtil.isNullOrEmpty(archiveFileContent)) {
 			return new JSONObject(archiveFileContent);
-		}
-
-		Invocation currentInvocation = getCurrentInvocation();
-
-		if (currentInvocation != null) {
-			String currentBuildURL = currentInvocation.getBuildURL();
-
-			if (JenkinsResultsParserUtil.isNullOrEmpty(currentBuildURL)) {
-				return null;
-			}
-
-			return JenkinsAPIUtil.getAPIJSONObject(currentBuildURL, tree);
 		}
 
 		String buildURL = getBuildURL();
@@ -1551,7 +1557,7 @@ public abstract class BaseBuild implements Build {
 
 	@Override
 	public void saveBuildURLInBuildDatabase() {
-		BuildDatabase buildDatabase = BuildDatabaseUtil.getBuildDatabase(this);
+		BuildDatabase buildDatabase = getBuildDatabase();
 
 		buildDatabase.putProperty(
 			BUILD_URLS_PROPERTIES_KEY, getJobVariant(), getBuildURL());
@@ -2771,8 +2777,7 @@ public abstract class BaseBuild implements Build {
 		Map<String, String> tempMap = new HashMap<>();
 
 		if (!fromArchive) {
-			BuildDatabase buildDatabase = BuildDatabaseUtil.getBuildDatabase(
-				this);
+			BuildDatabase buildDatabase = getBuildDatabase();
 
 			Properties properties = buildDatabase.getProperties(tempMapName);
 
@@ -3468,6 +3473,7 @@ public abstract class BaseBuild implements Build {
 	private final Map<String, BranchInformation> _branchInformationMap =
 		new HashMap<>();
 	private String _branchName;
+	private BuildDatabase _buildDatabase;
 	private String _buildDescription;
 	private Boolean _buildDurationsEnabled;
 	private final BuildUpdater _buildUpdater;
