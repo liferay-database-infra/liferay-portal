@@ -111,6 +111,7 @@ import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.ContentTypes;
+import com.liferay.portal.kernel.util.GroupThreadLocal;
 import com.liferay.portal.kernel.util.HtmlParser;
 import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -502,8 +503,10 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 
 			// Attachments
 
-			_portletFileRepository.deletePortletFolder(
-				kbArticle.getAttachmentsFolderId());
+			if (!GroupThreadLocal.isDeleteInProcess()) {
+				_portletFileRepository.deletePortletFolder(
+					kbArticle.getAttachmentsFolderId());
+			}
 
 			// Subscriptions
 
@@ -929,7 +932,7 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 			}
 			else {
 				curKBArticles = kbArticlePersistence.findByR_S(
-					ArrayUtil.toArray(params[1]), status);
+					ArrayUtil.toArray(params[1]), new int[] {status});
 			}
 
 			kbArticles.addAll(curKBArticles);
@@ -1022,6 +1025,26 @@ public class KBArticleLocalServiceImpl extends KBArticleLocalServiceBaseImpl {
 
 		return kbArticlePersistence.findByR_S_First(
 			resourcePrimKey, status, new KBArticleVersionComparator());
+	}
+
+	@Override
+	public KBArticle getLatestKBArticle(long resourcePrimKey, int[] statuses)
+		throws PortalException {
+
+		if (ArrayUtil.contains(statuses, WorkflowConstants.STATUS_ANY)) {
+			return kbArticlePersistence.findByResourcePrimKey_First(
+				resourcePrimKey, new KBArticleVersionComparator());
+		}
+
+		List<KBArticle> kbArticles = kbArticlePersistence.findByR_S(
+			new long[] {resourcePrimKey}, statuses, 0, 1,
+			new KBArticleVersionComparator());
+
+		if (!kbArticles.isEmpty()) {
+			return kbArticles.get(0);
+		}
+
+		return null;
 	}
 
 	@Override

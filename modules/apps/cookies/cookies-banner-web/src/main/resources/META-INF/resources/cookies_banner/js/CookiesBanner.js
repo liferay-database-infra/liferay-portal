@@ -149,6 +149,7 @@ export default function ({
 				displayType: 'primary',
 				height: '70vh',
 				id: 'cookiesBannerConfiguration',
+				iframeBodyCssClass: '',
 				onClose: onCloseFunction || undefined,
 				size: 'lg',
 				title: customTitle || title,

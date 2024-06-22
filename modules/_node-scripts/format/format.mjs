@@ -29,17 +29,21 @@ async function getFilesToCheck(rootDir) {
 	const prettierIgnoreFilePath = path.join(rootDir, PRETTIER_IGNORE_FILE);
 	const gitIgnoreFilePath = path.join(rootDir, GIT_IGNORE_FILE);
 
-	const eslintIgnores = readIgnoreFile(eslintIgnoreFilePath);
-	const prettierIgnores = readIgnoreFile(prettierIgnoreFilePath);
-	const gitIgnores = readIgnoreFile(gitIgnoreFilePath);
+	const [eslintIgnores, prettierIgnores, gitIgnores] = await Promise.all([
+		readIgnoreFile(eslintIgnoreFilePath),
+		readIgnoreFile(prettierIgnoreFilePath),
+		readIgnoreFile(gitIgnoreFilePath),
+	]);
 
-	return await fg(
+	const files = await fg(
 		[
+			'**/*.',
 			'*.{graphql,js,mjs,scss,ts,tsx}',
 			'**/*.{graphql,js,mjs,scss,ts,tsx}',
 			'**/src/**/*.{jsp,jspf}',
 		],
 		{
+			cwd: rootDir,
 			dot: true,
 			ignore: [
 				'**/src/test/**',
@@ -64,18 +68,41 @@ async function getFilesToCheck(rootDir) {
 			}),
 		}
 	);
+
+	return files.map((filepath) => path.join(rootDir, filepath));
 }
 
 const FALLBACK_FILE_PATH = '__fallback__.js';
 
-export default async function format(fix, filePath = undefined) {
+export default async function format(
+	fix,
+	{allFiles, filePath} = {allFiles: false, filePath: undefined}
+) {
 	const rootDir = await getRootDir();
+	const workspacesDir = path.join(rootDir, '..', 'workspaces');
+	const playwrightDir = path.join(rootDir, 'test', 'playwright');
 
-	let filepaths = filePath ? [filePath] : await getFilesToCheck(rootDir);
+	let filepaths = filePath
+		? [filePath]
+		: (
+				await Promise.all([
+					getFilesToCheck(rootDir),
+					getFilesToCheck(workspacesDir),
+					getFilesToCheck(playwrightDir),
+				])
+			).flat();
 
-	filepaths = await filterChangedFiles(filepaths);
+	if (!allFiles) {
+		filepaths = await filterChangedFiles(filepaths);
+	}
 
-	console.log(`Formatting ${filepaths.length} files`);
+	if (!filepaths.length) {
+		console.log('ℹ️ No files to format');
+
+		return;
+	}
+
+	console.log(`📝 Formatting ${filepaths.length} files`);
 
 	const [eslintConfig, prettierConfig, stylelintConfig] = await Promise.all([
 		getEslintConfig(rootDir),
@@ -87,6 +114,7 @@ export default async function format(fix, filePath = undefined) {
 		baseConfig: eslintConfig,
 		fix: true,
 		ignorePath: path.join(rootDir, ESLINT_IGNORE_FILE),
+		resolvePluginsRelativeTo: rootDir,
 	});
 
 	const badFiles = [];
@@ -237,7 +265,7 @@ export default async function format(fix, filePath = undefined) {
 		catch (error) {
 
 			// eslint-disable-next-line no-console
-			console.log(`${filepath}: ${error}`);
+			console.log(`🚨 ${filepath}: ${error}`);
 		}
 
 		if (transformedContent !== source) {
