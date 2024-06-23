@@ -65,6 +65,7 @@ const autoSaveAsDraftTest = mergeTests(
 	baseTest,
 	featureFlagsTest({
 		'LPD-11228': true,
+		'LPD-15596': true,
 	})
 );
 
@@ -77,7 +78,12 @@ const prefixUrlTest = mergeTests(
 	})
 );
 
-const scheduleTest = mergeTests(baseTest);
+const scheduleTest = mergeTests(
+	baseTest,
+	featureFlagsTest({
+		'LPD-15596': true,
+	})
+);
 
 const translationTest = mergeTests(
 	baseTest,
@@ -482,6 +488,7 @@ prefixUrlTest(
 		await friendlyUrlInstanceSettingsPage.resetSeparator(
 			'_com_liferay_configuration_admin_web_portlet_InstanceSettingsPortlet_com.liferay.journal.model.JournalArticle-reset-to-default-value'
 		);
+
 		expect(
 			await page.request.get(
 				'/group' + site.friendlyUrlPath + '/w/' + articleTitle
@@ -1066,27 +1073,6 @@ baseTest(
 		await expect(
 			DMItemSelectorPage.getByRole('menuitem', {name: 'Create AI Image'})
 		).toBeVisible();
-	}
-);
-
-baseTest(
-	'Add a web content article and see it in the content management list',
-	async ({apiHelpers, journalPage, site}) => {
-		const contentStructureId =
-			await getBasicWebContentStructureId(apiHelpers);
-
-		const title = getRandomString();
-
-		await addApprovedStructuredContent({
-			apiHelpers,
-			contentStructureId,
-			siteId: site.id,
-			title,
-		});
-
-		await journalPage.goto(site.friendlyUrlPath);
-
-		await journalPage.assertTitle(title);
 	}
 );
 

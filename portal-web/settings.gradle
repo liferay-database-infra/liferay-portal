@@ -1,0 +1,5 @@
+buildscript {
+	apply from: file("../modules/build-develocity-buildscript.gradle"), to: buildscript
+}
+
+apply from: "../modules/build-develocity.gradle"

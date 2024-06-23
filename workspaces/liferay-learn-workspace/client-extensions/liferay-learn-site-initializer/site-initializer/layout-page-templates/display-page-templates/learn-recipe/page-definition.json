@@ -1,6 +1,5 @@
 {
 	"pageElement": {
-		"id": "0fe1e83a-d6a4-2e5f-a2e3-82466368f9a5",
 		"pageElements": [
 			{
 				"definition": {
@@ -25,7 +24,6 @@
 					},
 					"name": "Container"
 				},
-				"id": "8ae26349-326e-5959-c185-b7586a58c0d3",
 				"pageElements": [
 					{
 						"definition": {
@@ -43,7 +41,6 @@
 							},
 							"name": "Site Nav Container"
 						},
-						"id": "54ef52d6-a690-6ba3-64d3-dbeab36056fc",
 						"pageElements": [
 							{
 								"definition": {
@@ -69,7 +66,6 @@
 									],
 									"indexed": true
 								},
-								"id": "f1c96945-20a9-3da7-af1c-66e59f570936",
 								"type": "Fragment"
 							},
 							{
@@ -112,7 +108,6 @@
 									},
 									"indexed": true
 								},
-								"id": "ef9dde1e-0eaa-2bcd-8029-e8ef127da037",
 								"type": "Fragment"
 							}
 						],
@@ -133,7 +128,6 @@
 							},
 							"name": "Main Container"
 						},
-						"id": "f33f0319-bf65-a3f2-9719-8d72f542e339",
 						"pageElements": [
 							{
 								"definition": {
@@ -149,7 +143,6 @@
 									},
 									"name": "Content Container"
 								},
-								"id": "7a80c225-04f3-07ad-3455-b614b9703029",
 								"pageElements": [
 									{
 										"definition": {
@@ -176,7 +169,6 @@
 											},
 											"name": "Header Container"
 										},
-										"id": "144d9c43-e62d-f97b-836f-95ae80c13763",
 										"pageElements": [
 											{
 												"definition": {
@@ -187,7 +179,6 @@
 													},
 													"name": "Container"
 												},
-												"id": "73560a6e-9b0f-d67e-2049-fda40015c9d3",
 												"pageElements": [
 													{
 														"definition": {
@@ -230,7 +221,6 @@
 															},
 															"indexed": true
 														},
-														"id": "f21240f1-bad4-351a-2669-dacafeb7360f",
 														"type": "Fragment"
 													},
 													{
@@ -241,7 +231,6 @@
 															},
 															"name": "Publish Date Container"
 														},
-														"id": "d413e51d-eb60-78cb-9bf4-00335ed71b24",
 														"pageElements": [
 															{
 																"definition": {
@@ -273,7 +262,6 @@
 																	},
 																	"indexed": true
 																},
-																"id": "0b481f6a-c7ef-f702-f1b8-b0bd8669cc4e",
 																"type": "Fragment"
 															}
 														],
@@ -313,7 +301,6 @@
 													},
 													"indexed": true
 												},
-												"id": "060c54d2-8352-1f35-8e35-23acb633f6a3",
 												"type": "Fragment"
 											},
 											{
@@ -346,7 +333,6 @@
 													},
 													"indexed": true
 												},
-												"id": "85c625fe-06e4-8385-09be-a2f43b864998",
 												"type": "Fragment"
 											}
 										],
@@ -383,7 +369,6 @@
 											},
 											"indexed": true
 										},
-										"id": "2cd85ab3-dfb6-ec83-2c39-685ac2abfebe",
 										"type": "Fragment"
 									},
 									{
@@ -415,7 +400,6 @@
 											},
 											"name": "Container"
 										},
-										"id": "aad9ebb7-c9e5-6e43-c9fa-ca0859861ab1",
 										"pageElements": [
 											{
 												"definition": {
@@ -430,7 +414,6 @@
 													},
 													"name": "Upvotes Container"
 												},
-												"id": "0682eeda-92e8-1adb-9982-c490fa1168f2",
 												"pageElements": [
 													{
 														"definition": {
@@ -463,7 +446,6 @@
 															},
 															"indexed": true
 														},
-														"id": "e1ed97bc-919c-c497-7c60-1e2471f863fb",
 														"type": "Fragment"
 													},
 													{
@@ -481,7 +463,6 @@
 															},
 															"indexed": true
 														},
-														"id": "35f40ca1-02f5-1f3d-9328-ee8a2cadef6d",
 														"type": "Fragment"
 													}
 												],
@@ -509,7 +490,6 @@
 											},
 											"indexed": true
 										},
-										"id": "4e7c2875-8c1a-b897-e208-b9320fa0994f",
 										"type": "Fragment"
 									},
 									{
@@ -525,11 +505,10 @@
 											},
 											"name": "Tags Container"
 										},
-										"id": "1405c17e-4f65-ef53-155f-f702159264c3",
 										"pageElements": [
 											{
 												"definition": {
-													"customCSS": ".[$FRAGMENT_CLASS$] {\n.tag-container {\n    background: var(--color-neutral-0, #fff);\n    border: 1px solid var(--color-brand-primary, #0b5fff);\n    border-radius: var(--border-radius-lg);\n    gap: 0.25rem;\n    padding: 0.25rem 0.75rem;\n}\n  \n \n  .learn-recipe-category-title {\n    color: var(--color-neutral-10, #282934);\n    font-size: 0.875rem;\n    font-style: normal;\n    font-weight: 600;\n    line-height: 1rem;\n  }\n  \n  .deploymentapproach-tag {\n    display: none !important;\n  }\n}",
+													"customCSS": ".[$FRAGMENT_CLASS$] {\n  .deployment-approach-tag, .applicable-versions-tag {\n    display: none !important;\n  }\n  \n  .label {\n    background: var(--color-neutral-0, #fff);\n    border: 1px solid var(--color-brand-primary, #0b5fff);\n    border-radius: var(--border-radius-lg);\n    gap: 0.25rem;\n    padding: 0.25rem 0.75rem;\n   }\n \n  .learn-recipe-category-title {\n    color: var(--color-neutral-10, #282934);\n    font-size: 0.875rem;\n    font-style: normal;\n    font-weight: 600;\n    line-height: 1rem;\n  }\n}",
 													"fragment": {
 														"key": "BASIC_COMPONENT-html"
 													},
@@ -552,7 +531,6 @@
 													],
 													"indexed": true
 												},
-												"id": "14a93274-4393-0e36-6851-dc3b4b8739a6",
 												"type": "Fragment"
 											}
 										],
@@ -571,7 +549,6 @@
 									},
 									"name": "Side Menu Container"
 								},
-								"id": "63cb77fe-c96e-ac6c-d113-ff836a96f808",
 								"pageElements": [
 									{
 										"definition": {
@@ -600,7 +577,6 @@
 											},
 											"name": "Page Nav Header"
 										},
-										"id": "717b13c4-10b5-7ea8-66da-a60233559131",
 										"pageElements": [
 											{
 												"definition": {
@@ -610,7 +586,6 @@
 														"contentDisplay": "FlexRow"
 													}
 												},
-												"id": "9ccaa5dc-b9b1-7362-0427-db028be3ac6a",
 												"pageElements": [
 													{
 														"definition": {
@@ -645,7 +620,6 @@
 															},
 															"indexed": true
 														},
-														"id": "1776bd0f-6118-f8b9-7c66-3364e3499e0c",
 														"type": "Fragment"
 													}
 												],
@@ -658,7 +632,6 @@
 														"contentDisplay": "FlexRow"
 													}
 												},
-												"id": "6f7d79b5-8075-91cd-c5f3-7652636e3f3a",
 												"pageElements": [
 													{
 														"definition": {
@@ -671,7 +644,6 @@
 																"contentDisplay": "FlexRow"
 															}
 														},
-														"id": "905377e8-24ba-2d8d-b335-7279da3a9cf0",
 														"pageElements": [
 															{
 																"definition": {
@@ -704,7 +676,6 @@
 																	},
 																	"indexed": true
 																},
-																"id": "99809529-d183-39ce-89ce-52c3495c7284",
 																"type": "Fragment"
 															},
 															{
@@ -733,7 +704,6 @@
 																	],
 																	"indexed": true
 																},
-																"id": "63cc75a7-1060-55dc-cbee-743c9766ccde",
 																"type": "Fragment"
 															}
 														],
@@ -771,7 +741,6 @@
 											},
 											"name": "Page Nav Content"
 										},
-										"id": "cff143be-5bd9-4a44-e2dd-f43bbca0baee",
 										"pageElements": [
 											{
 												"definition": {
@@ -810,7 +779,6 @@
 													},
 													"indexed": true
 												},
-												"id": "85516ea2-820d-4119-4da1-50bfdac135b7",
 												"type": "Fragment"
 											},
 											{
@@ -849,7 +817,6 @@
 													},
 													"indexed": true
 												},
-												"id": "21800a72-7bee-89a9-8f1b-55c6a11d288d",
 												"type": "Fragment"
 											},
 											{
@@ -888,7 +855,6 @@
 													},
 													"indexed": true
 												},
-												"id": "f5faa99c-8c3f-4ecf-0184-23b5711176e2",
 												"type": "Fragment"
 											},
 											{
@@ -927,7 +893,6 @@
 													},
 													"indexed": true
 												},
-												"id": "6dc556a8-3b4b-cdab-0592-42f4557fe010",
 												"type": "Fragment"
 											},
 											{
@@ -967,7 +932,6 @@
 													},
 													"indexed": true
 												},
-												"id": "f72636f8-d673-4d64-d91a-b27f61eae57b",
 												"type": "Fragment"
 											}
 										],
@@ -996,7 +960,6 @@
 											},
 											"name": "Capability Container"
 										},
-										"id": "1361bba0-78c9-eb98-d018-c5766e918273",
 										"pageElements": [
 											{
 												"definition": {
@@ -1028,12 +991,11 @@
 													},
 													"indexed": true
 												},
-												"id": "62a0993f-ac88-f6a5-bbfe-6cd2c08352cc",
 												"type": "Fragment"
 											},
 											{
 												"definition": {
-													"customCSS": ".[$FRAGMENT_CLASS$] {\n  .capability-tag, .feature-tag {\n     display: none !important;\n  }\n  \n  .label {\n    background-color: #E6EBF5;\n    color: #1C3667;\n    font-family: \"Source Sans 3\";\n    font-weight: 400;\n    font-size: 11px;\n    border-style: none;\n  }\n}",
+													"customCSS": ".[$FRAGMENT_CLASS$] {\n  .capability-tag, .feature-tag, .applicable-versions-tag, .learn-recipe-category-title  {\n     display: none !important;\n  }\n  \n  .label {\n    background-color: #E6EBF5;\n    color: #1C3667;\n    font-family: \"Source Sans 3\";\n    font-weight: 400;\n    font-size: 11px;\n    border-style: none;\n    padding: 0px 8px;\n  }\n}",
 													"fragment": {
 														"key": "BASIC_COMPONENT-html"
 													},
@@ -1056,7 +1018,66 @@
 													],
 													"indexed": true
 												},
-												"id": "ce32f89f-b653-2603-45c0-74811bb94788",
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"fragment": {
+														"key": "dialect-text",
+														"siteKey": "Liferay Learn"
+													},
+													"fragmentConfig": {
+														"textType": "text-paragraph",
+														"truncateText": false
+													},
+													"fragmentFields": [
+														{
+															"id": "element-text",
+															"value": {
+																"fragmentLink": {
+																},
+																"text": {
+																	"value_i18n": {
+																		"en_US": "Applicable Versions"
+																	}
+																}
+															}
+														}
+													],
+													"fragmentStyle": {
+														"fontWeight": "fontWeightBold",
+														"marginBottom": "2",
+														"marginTop": "3"
+													},
+													"indexed": true
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"customCSS": ".[$FRAGMENT_CLASS$] {\n  .capability-tag, .deployment-approach-tag, .feature-tag, .learn-recipe-category-title {\n     display: none !important;\n  }\n  \n  .label {\n    background-color: #E6EBF5;\n    color: #1C3667;\n    font-family: \"Source Sans 3\";\n    font-weight: 400;\n    font-size: 11px;\n    border-style: none;\n    padding: 0px 8px;\n  }\n}",
+													"fragment": {
+														"key": "BASIC_COMPONENT-html"
+													},
+													"fragmentConfig": {
+													},
+													"fragmentFields": [
+														{
+															"id": "element-html",
+															"value": {
+																"html": {
+																	"mapping": {
+																		"fieldKey": "_ddmTemplate_LEARN_RECIPE_TAGS",
+																		"itemReference": {
+																			"contextSource": "DisplayPageItem"
+																		}
+																	}
+																}
+															}
+														}
+													],
+													"indexed": true
+												},
 												"type": "Fragment"
 											},
 											{
@@ -1076,7 +1097,6 @@
 													},
 													"indexed": true
 												},
-												"id": "eb647f3a-59c0-1c79-ca39-8fac4ae2ddf3",
 												"type": "Fragment"
 											},
 											{
@@ -1090,7 +1110,6 @@
 													},
 													"name": "Upvote Container"
 												},
-												"id": "f0a33981-debd-c556-9324-ad071b74a968",
 												"pageElements": [
 													{
 														"definition": {
@@ -1123,7 +1142,6 @@
 															},
 															"indexed": true
 														},
-														"id": "e9fb8f21-a262-9ee4-f10e-e88dab57d4c6",
 														"type": "Fragment"
 													},
 													{
@@ -1138,7 +1156,6 @@
 															],
 															"indexed": true
 														},
-														"id": "05cfbbf7-12fe-a8f7-a498-09d639f7a2af",
 														"type": "Fragment"
 													}
 												],
