@@ -10,6 +10,7 @@ import com.liferay.change.tracking.constants.CTConstants;
 import com.liferay.change.tracking.constants.CTPortletKeys;
 import com.liferay.change.tracking.model.CTCollection;
 import com.liferay.change.tracking.model.CTEntry;
+import com.liferay.change.tracking.service.CTCollectionLocalService;
 import com.liferay.change.tracking.service.CTEntryLocalService;
 import com.liferay.change.tracking.spi.display.CTDisplayRendererRegistry;
 import com.liferay.change.tracking.web.internal.configuration.helper.CTSettingsConfigurationHelper;
@@ -61,6 +62,7 @@ public class ViewConflictsDisplayContext {
 		long activeCtCollectionId,
 		Map<Long, List<ConflictInfo>> conflictInfoMap,
 		CTCollection ctCollection,
+		CTCollectionLocalService ctCollectionLocalService,
 		CTDisplayRendererRegistry ctDisplayRendererRegistry,
 		CTEntryLocalService ctEntryLocalService,
 		CTSettingsConfigurationHelper ctSettingsConfigurationHelper,
@@ -70,6 +72,7 @@ public class ViewConflictsDisplayContext {
 		_activeCtCollectionId = activeCtCollectionId;
 		_conflictInfoMap = conflictInfoMap;
 		_ctCollection = ctCollection;
+		_ctCollectionLocalService = ctCollectionLocalService;
 		_ctDisplayRendererRegistry = ctDisplayRendererRegistry;
 		_ctEntryLocalService = ctEntryLocalService;
 		_ctSettingsConfigurationHelper = ctSettingsConfigurationHelper;
@@ -114,6 +117,8 @@ public class ViewConflictsDisplayContext {
 
 		return HashMapBuilder.<String, Object>put(
 			"hasUnapprovedChanges", _hasUnapprovedChanges
+		).put(
+			"isEmpty", _ctCollection.isEmpty()
 		).put(
 			"learnLink",
 			() -> {
@@ -483,6 +488,7 @@ public class ViewConflictsDisplayContext {
 	private final long _activeCtCollectionId;
 	private final Map<Long, List<ConflictInfo>> _conflictInfoMap;
 	private final CTCollection _ctCollection;
+	private final CTCollectionLocalService _ctCollectionLocalService;
 	private final CTDisplayRendererRegistry _ctDisplayRendererRegistry;
 	private final CTEntryLocalService _ctEntryLocalService;
 	private final CTSettingsConfigurationHelper _ctSettingsConfigurationHelper;

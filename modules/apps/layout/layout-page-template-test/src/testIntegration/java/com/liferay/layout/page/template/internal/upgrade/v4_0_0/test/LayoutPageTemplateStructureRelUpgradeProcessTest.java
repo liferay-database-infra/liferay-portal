@@ -67,7 +67,10 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeWithNumberOfItemsPerPage() throws Exception {
+	public void testUpgrade() throws Exception {
+
+		// Upgrade with "numberOfItemsPerPage"
+
 		int numberOfItems = RandomTestUtil.randomInt();
 		int numberOfItemsPerPage = RandomTestUtil.randomInt();
 
@@ -91,10 +94,9 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 				"paginationType",
 				CollectionPaginationUtil.PAGINATION_TYPE_NUMERIC
 			).build());
-	}
 
-	@Test
-	public void testUpgradeWithPaginationTypeNone() throws Exception {
+		// Upgrade with "paginationType" "none"
+
 		_assertUpgradeWithItemConfig(
 			HashMapBuilder.<String, Object>put(
 				"displayAllItems", false
@@ -104,10 +106,9 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 			HashMapBuilder.<String, Object>put(
 				"paginationType", CollectionPaginationUtil.PAGINATION_TYPE_NONE
 			).build());
-	}
 
-	@Test
-	public void testUpgradeWithPaginationTypeNull() throws Exception {
+		// Upgrade with "paginationType" null
+
 		_assertUpgradeWithItemConfig(
 			HashMapBuilder.<String, Object>put(
 				"displayAllItems", false
@@ -117,10 +118,9 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 			HashMapBuilder.<String, Object>put(
 				"paginationType", StringPool.BLANK
 			).build());
-	}
 
-	@Test
-	public void testUpgradeWithPaginationTypeNumeric() throws Exception {
+		// Upgrade with "paginationType" numeric
+
 		_assertUpgradeWithItemConfig(
 			HashMapBuilder.<String, Object>put(
 				"displayAllItems", false
@@ -132,10 +132,9 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 				"paginationType",
 				CollectionPaginationUtil.PAGINATION_TYPE_NUMERIC
 			).build());
-	}
 
-	@Test
-	public void testUpgradeWithPaginationTypeRandom() throws Exception {
+		// Upgrade with "paginationType" random
+
 		_assertUpgradeWithItemConfig(
 			HashMapBuilder.<String, Object>put(
 				"displayAllItems", false
@@ -145,10 +144,9 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 			HashMapBuilder.<String, Object>put(
 				"paginationType", RandomTestUtil.randomString()
 			).build());
-	}
 
-	@Test
-	public void testUpgradeWithPaginationTypeRegular() throws Exception {
+		// Upgrade with "paginationType" regular
+
 		_assertUpgradeWithItemConfig(
 			HashMapBuilder.<String, Object>put(
 				"displayAllItems", false
@@ -160,10 +158,9 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 				"paginationType",
 				CollectionPaginationUtil.PAGINATION_TYPE_REGULAR
 			).build());
-	}
 
-	@Test
-	public void testUpgradeWithPaginationTypeSimple() throws Exception {
+		// Upgrade with "paginationType" simple
+
 		_assertUpgradeWithItemConfig(
 			HashMapBuilder.<String, Object>put(
 				"displayAllItems", false
@@ -175,25 +172,8 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 				"paginationType",
 				CollectionPaginationUtil.PAGINATION_TYPE_SIMPLE
 			).build());
-	}
 
-	@Test
-	public void testUpgradeWithShowAllItems() throws Exception {
-		_assertUpgradeWithItemConfig(
-			HashMapBuilder.<String, Object>put(
-				"displayAllItems", false
-			).put(
-				"displayAllPages", true
-			).put(
-				"paginationType",
-				CollectionPaginationUtil.PAGINATION_TYPE_NUMERIC
-			).build(),
-			HashMapBuilder.<String, Object>put(
-				"paginationType",
-				CollectionPaginationUtil.PAGINATION_TYPE_NUMERIC
-			).put(
-				"showAllItems", true
-			).build());
+		// Upgrade with "showAllItems" disabled
 
 		_assertUpgradeWithItemConfig(
 			HashMapBuilder.<String, Object>put(
@@ -209,6 +189,24 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 				CollectionPaginationUtil.PAGINATION_TYPE_NUMERIC
 			).put(
 				"showAllItems", false
+			).build());
+
+		// Upgrade with "showAllItems" enabled
+
+		_assertUpgradeWithItemConfig(
+			HashMapBuilder.<String, Object>put(
+				"displayAllItems", false
+			).put(
+				"displayAllPages", true
+			).put(
+				"paginationType",
+				CollectionPaginationUtil.PAGINATION_TYPE_NUMERIC
+			).build(),
+			HashMapBuilder.<String, Object>put(
+				"paginationType",
+				CollectionPaginationUtil.PAGINATION_TYPE_NUMERIC
+			).put(
+				"showAllItems", true
 			).build());
 	}
 

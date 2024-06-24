@@ -23,156 +23,23 @@ definition {
 			layoutTemplate = "1 Column");
 	}
 
-	@description = "View the widget template applied to Breadcrumb widget."
-	@priority = 5
-	test ViewWidgetTemplateAppliedToBreadcrumb {
-		property portal.acceptance = "true";
-
-		task ("Add a Breadcrumb to page") {
-			JSONLayout.addWidgetToPublicLayout(
-				groupName = "Test Site Name",
-				layoutName = "ADT Test Page",
-				widgetName = "Breadcrumb");
-		}
-
-		task ("Select the Arrows widget template in Breadcrumb") {
-			Navigator.gotoSitePage(
-				pageName = "ADT Test Page",
-				siteName = "Test Site Name");
-
-			AssertVisible(locator1 = "BreadcrumbPortlet#BREADCRUMB");
-
-			Portlet.gotoPortletOptions(
-				portletName = "Breadcrumb",
-				portletOption = "Configuration");
-
-			Breadcrumb.configureBreadcrumb(selectAdtType = "Arrows");
-		}
-
-		task ("View the widget template applied to Breadcrumb") {
-			Navigator.gotoSitePage(
-				pageName = "ADT Test Page",
-				siteName = "Test Site Name");
-
-			Breadcrumb.viewADTApplied(breadcrumbAdtType = "arrows");
-		}
-	}
-
-	@description = "View the widget template based on script file applied to RSS Publisher widget."
-	@priority = 3
-	test ViewWidgetTemplateBasedOnScriptFileAppliedToRSSPublisher {
-		task ("Add a RSS Publisher to page") {
-			JSONLayout.addWidgetToPublicLayout(
-				groupName = "Test Site Name",
-				layoutName = "ADT Test Page",
-				widgetName = "RSS Publisher");
-		}
-
-		task ("Add a RSS Feed") {
-			Navigator.gotoSitePage(
-				pageName = "ADT Test Page",
-				siteName = "Test Site Name");
-
-			RSSPortlet.addFeed(
-				feedRowIndexNumber = 0,
-				feedTitle = "Technology",
-				feedType = "file",
-				feedURLLink = "Technology.xml");
-		}
-
-		task ("Add a widget template based on script file for RSS Publisher") {
-			WidgetTemplates.openWidgetTemplatesAdmin(siteURLKey = "test-site-name");
-
-			WidgetTemplates.addCP(
-				adtFile = "adt_rss_navigation.ftl",
-				adtType = "RSS Publisher");
-		}
-
-		task ("Select the widget template") {
-			Navigator.gotoSitePage(
-				pageName = "ADT Test Page",
-				siteName = "Test Site Name");
-
-			WidgetTemplates.selectPortletADT(templateName = "RSS Publisher Test ADT");
-		}
-
-		task ("View the widget template applied to RSS Publisher") {
-			Navigator.gotoSitePage(
-				pageName = "ADT Test Page",
-				siteName = "Test Site Name");
-
-			RSSPortlet.viewNavigationDisplayFeedTitle(
-				feedTitle = "Technology",
-				navigationNullAdt = "true");
-		}
-	}
-
-	@description = "This is a use case for LPS-71944."
-	@priority = 5
-	test ViewWidgetTemplateEmbeddedWidgetAppliedToAssetPublisher {
-		property portal.acceptance = "true";
-		property test.liferay.virtual.instance = "false";
-		property test.run.type = "single";
-
-		task ("Execute reindex all search indexes") {
-			SearchAdministration.executeReindex();
-		}
-
-		task ("Edit Rich Summary widget template") {
-			WidgetTemplates.openWidgetTemplatesAdmin(siteURLKey = "global");
-
-			WidgetTemplates.searchGlobalADT(templateName = "Rich Summary");
-
-			WidgetTemplates.gotoWidgetTemplatesEllipsisItem(
-				item = "Edit",
-				widgetTemplateName = "Rich Summary");
-
-			var script = '''
-	<@liferay_portlet["runtime"]
-		defaultPreferences="${freeMarkerPortletPreferences}"
-		instanceId="whateverV1"
-		portletProviderAction=portletProviderAction.VIEW
-		portletProviderClassName="com.liferay.portal.kernel.servlet.taglib.ui.BreadcrumbEntry"/>
-					''';
-
-			WidgetTemplates.editADTScript(adtScript = ${script});
-		}
-
-		task ("Add an Asset Publisher to page") {
-			JSONLayout.addWidgetToPublicLayout(
-				groupName = "Test Site Name",
-				layoutName = "ADT Test Page",
-				widgetName = "Asset Publisher");
-		}
-
-		task ("Select the Rich Summary widget template in Asset Publisher") {
-			Navigator.gotoSitePage(
-				pageName = "ADT Test Page",
-				siteName = "Test Site Name");
-
-			Portlet.gotoPortletOptions(
-				portletName = "Asset Publisher",
-				portletOption = "Configuration");
-
-			AssetPublisherPortlet.configureDisplayTemplatePG(displayTemplate = "Rich Summary");
-		}
-
-		task ("View the widget template applied to Asset Publisher") {
-			Navigator.gotoSitePage(
-				pageName = "ADT Test Page",
-				siteName = "Test Site Name");
-
-			AssertElementPresent(
-				key_portletName = "Breadcrumb",
-				locator1 = "Portlet#TITLE");
-
-			AssertConsoleTextNotPresent(value1 = "UnexpectedCharException");
-		}
-	}
-
-	@description = "View the widget template with corrupt script applied to RSS Publisher widget."
+	@description = "View the widget template based on script file applied and with corrupt script applied to RSS Publisher widget."
 	@priority = 3
 	test ViewWidgetTemplateWithCorruptScriptAppliedToRSSPublisher {
+		task ("Add a widget template for RSS Publisher") {
+			JSONDDMtemplate.addWidgetTemplate(
+				groupName = "Test Site Name",
+				itemType = "RSS Publisher",
+				name = "RSS Publisher Navigation",
+				script = "<#if entries?has_content><#list entries as curEntry>${htmlUtil.escape(curEntry.getTitle())}</#list></#if>");
+
+			JSONDDMtemplate.addWidgetTemplate(
+				groupName = "Test Site Name",
+				itemType = "RSS Publisher",
+				name = "RSS Publisher Navigation Corrupt",
+				script = "<#if entries?has_content><#list rssFeedEntries as rssFeedEntry>${rssFeedEntry.getSanitizedContent()}");
+		}
+
 		task ("Add a RSS Publisher to page") {
 			JSONLayout.addWidgetToPublicLayout(
 				groupName = "Test Site Name",
@@ -192,20 +59,26 @@ definition {
 				feedURLLink = "rss2.0.xml");
 		}
 
-		task ("Add a widget template for RSS Publisher") {
-			WidgetTemplates.openWidgetTemplatesAdmin(siteURLKey = "test-site-name");
-
-			WidgetTemplates.addCP(
-				adtFile = "adt_rss_navigation_corrupt.ftl",
-				adtType = "RSS Publisher");
-		}
-
 		task ("Select the widget template in RSS Publisher") {
 			Navigator.gotoSitePage(
 				pageName = "ADT Test Page",
 				siteName = "Test Site Name");
 
-			WidgetTemplates.selectPortletADT(templateName = "RSS Publisher Test ADT");
+			WidgetTemplates.selectPortletADT(templateName = "RSS Publisher Navigation");
+		}
+
+		task ("View the widget template applied to RSS Publisher") {
+			Navigator.gotoSitePage(
+				pageName = "ADT Test Page",
+				siteName = "Test Site Name");
+
+			AssertTextPresent(
+				locator1 = "//div[@class='portlet-body']",
+				value1 = "Latimes");
+		}
+
+		task ("Select the widget template in RSS Publisher") {
+			WidgetTemplates.selectPortletADT(templateName = "RSS Publisher Navigation Corrupt");
 		}
 
 		task ("View the widget template with corrupt script applied to RSS Publisher widget") {
