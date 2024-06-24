@@ -6,6 +6,9 @@
 package com.liferay.portlet.friendly.url.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.LayoutFriendlyURLComposite;
 import com.liferay.portal.kernel.portlet.FriendlyURLResolver;
 import com.liferay.portal.kernel.portlet.FriendlyURLResolverRegistryUtil;
 import com.liferay.portal.kernel.util.HashMapDictionary;
@@ -13,7 +16,10 @@ import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.junit.AfterClass;
@@ -76,6 +82,71 @@ public class FriendlyURLResolverRegistryUtilTest {
 			_friendlyURLResolver,
 			FriendlyURLResolverRegistryUtil.
 				getFriendlyURLResolverByDefaultURLSeparator(_SEPARATOR));
+	}
+
+	@Test
+	public void testGetFriendlyURLResolverWithHigherServiceRanking() {
+		FriendlyURLResolver sampleFriendlyURLResolver =
+			new SampleFriendlyURLResolver();
+
+		FriendlyURLResolver defaultCanonicalURLSeparatorFriendlyURLResolver =
+			FriendlyURLResolverRegistryUtil.getFriendlyURLResolver(
+				_CANONICAL_URL_SEPARATOR);
+
+		ServiceRegistration<FriendlyURLResolver> serviceRegistration =
+			_bundleContext.registerService(
+				FriendlyURLResolver.class, sampleFriendlyURLResolver,
+				MapUtil.singletonDictionary("service.ranking", 1000));
+
+		try {
+			_assertFriendlyURLResolver(
+				sampleFriendlyURLResolver,
+				defaultCanonicalURLSeparatorFriendlyURLResolver);
+		}
+		finally {
+			serviceRegistration.unregister();
+		}
+	}
+
+	@Test
+	public void testGetFriendlyURLResolverWithLowerServiceRanking() {
+		FriendlyURLResolver defaultCanonicalURLSeparatorFriendlyURLResolver =
+			FriendlyURLResolverRegistryUtil.getFriendlyURLResolver(
+				_CANONICAL_URL_SEPARATOR);
+
+		List<ServiceRegistration<FriendlyURLResolver>> list = new ArrayList<>();
+
+		FriendlyURLResolver sampleFriendlyURLResolver1 =
+			new SampleFriendlyURLResolver();
+
+		list.add(
+			_bundleContext.registerService(
+				FriendlyURLResolver.class, sampleFriendlyURLResolver1,
+				MapUtil.singletonDictionary("service.ranking", 1000)));
+
+		try {
+			_assertFriendlyURLResolver(
+				sampleFriendlyURLResolver1,
+				defaultCanonicalURLSeparatorFriendlyURLResolver);
+
+			FriendlyURLResolver sampleFriendlyURLResolver2 =
+				new SampleFriendlyURLResolver();
+
+			list.add(
+				_bundleContext.registerService(
+					FriendlyURLResolver.class, sampleFriendlyURLResolver2,
+					MapUtil.singletonDictionary("service.ranking", 500)));
+
+			_assertFriendlyURLResolver(
+				sampleFriendlyURLResolver1, sampleFriendlyURLResolver2);
+		}
+		finally {
+			for (ServiceRegistration<FriendlyURLResolver> serviceRegistration :
+					list) {
+
+				serviceRegistration.unregister();
+			}
+		}
 	}
 
 	@Test
@@ -147,6 +218,20 @@ public class FriendlyURLResolverRegistryUtilTest {
 			});
 	}
 
+	private void _assertFriendlyURLResolver(
+		FriendlyURLResolver expectedFriendlyURLResolver,
+		FriendlyURLResolver notExpectedFriendlyURLResolver) {
+
+		FriendlyURLResolver curFriendlyURLResolver =
+			FriendlyURLResolverRegistryUtil.getFriendlyURLResolver(
+				_CANONICAL_URL_SEPARATOR);
+
+		Assert.assertEquals(
+			expectedFriendlyURLResolver, curFriendlyURLResolver);
+		Assert.assertNotEquals(
+			notExpectedFriendlyURLResolver, curFriendlyURLResolver);
+	}
+
 	private void _assertGetFriendlyURLResolvers() {
 		Collection<FriendlyURLResolver> friendlyURLResolvers =
 			FriendlyURLResolverRegistryUtil.
@@ -156,11 +241,44 @@ public class FriendlyURLResolverRegistryUtilTest {
 			friendlyURLResolvers.toString(), friendlyURLResolvers.isEmpty());
 	}
 
+	private static final String _CANONICAL_URL_SEPARATOR = "/-/";
+
 	private static final String _SEPARATOR = "/-foo-";
 
 	private static BundleContext _bundleContext;
 	private static FriendlyURLResolver _friendlyURLResolver;
 	private static ServiceRegistration<FriendlyURLResolver>
 		_serviceRegistration;
+
+	private static class SampleFriendlyURLResolver
+		implements FriendlyURLResolver {
+
+		@Override
+		public String getActualURL(
+				long companyId, long groupId, boolean privateLayout,
+				String mainPath, String friendlyURL,
+				Map<String, String[]> params,
+				Map<String, Object> requestContext)
+			throws PortalException {
+
+			return StringPool.BLANK;
+		}
+
+		@Override
+		public LayoutFriendlyURLComposite getLayoutFriendlyURLComposite(
+				long companyId, long groupId, boolean privateLayout,
+				String friendlyURL, Map<String, String[]> params,
+				Map<String, Object> requestContext)
+			throws PortalException {
+
+			return null;
+		}
+
+		@Override
+		public String getURLSeparator() {
+			return _CANONICAL_URL_SEPARATOR;
+		}
+
+	}
 
 }

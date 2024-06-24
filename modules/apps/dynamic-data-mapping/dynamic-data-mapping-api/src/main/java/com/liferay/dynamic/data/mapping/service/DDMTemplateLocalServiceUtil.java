@@ -55,6 +55,7 @@ public class DDMTemplateLocalServiceUtil {
 	/**
 	 * Adds a template.
 	 *
+	 * @param externalReferenceCode the template's external reference code
 	 * @param userId the primary key of the template's creator/owner
 	 * @param groupId the primary key of the group
 	 * @param classNameId the primary key of the class name for the template's
@@ -78,21 +79,24 @@ public class DDMTemplateLocalServiceUtil {
 	 * @throws PortalException if a portal exception occurred
 	 */
 	public static DDMTemplate addTemplate(
-			long userId, long groupId, long classNameId, long classPK,
-			long resourceClassNameId, Map<java.util.Locale, String> nameMap,
+			String externalReferenceCode, long userId, long groupId,
+			long classNameId, long classPK, long resourceClassNameId,
+			Map<java.util.Locale, String> nameMap,
 			Map<java.util.Locale, String> descriptionMap, String type,
 			String mode, String language, String script,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws PortalException {
 
 		return getService().addTemplate(
-			userId, groupId, classNameId, classPK, resourceClassNameId, nameMap,
-			descriptionMap, type, mode, language, script, serviceContext);
+			externalReferenceCode, userId, groupId, classNameId, classPK,
+			resourceClassNameId, nameMap, descriptionMap, type, mode, language,
+			script, serviceContext);
 	}
 
 	/**
 	 * Adds a template with additional parameters.
 	 *
+	 * @param externalReferenceCode the template's external reference code
 	 * @param userId the primary key of the template's creator/owner
 	 * @param groupId the primary key of the group
 	 * @param classNameId the primary key of the class name for the template's
@@ -124,9 +128,9 @@ public class DDMTemplateLocalServiceUtil {
 	 * @throws PortalException if a portal exception occurred
 	 */
 	public static DDMTemplate addTemplate(
-			long userId, long groupId, long classNameId, long classPK,
-			long resourceClassNameId, String templateKey,
-			Map<java.util.Locale, String> nameMap,
+			String externalReferenceCode, long userId, long groupId,
+			long classNameId, long classPK, long resourceClassNameId,
+			String templateKey, Map<java.util.Locale, String> nameMap,
 			Map<java.util.Locale, String> descriptionMap, String type,
 			String mode, String language, String script, boolean cacheable,
 			boolean smallImage, String smallImageURL,
@@ -135,10 +139,10 @@ public class DDMTemplateLocalServiceUtil {
 		throws PortalException {
 
 		return getService().addTemplate(
-			userId, groupId, classNameId, classPK, resourceClassNameId,
-			templateKey, nameMap, descriptionMap, type, mode, language, script,
-			cacheable, smallImage, smallImageURL, smallImageFile,
-			serviceContext);
+			externalReferenceCode, userId, groupId, classNameId, classPK,
+			resourceClassNameId, templateKey, nameMap, descriptionMap, type,
+			mode, language, script, cacheable, smallImage, smallImageURL,
+			smallImageFile, serviceContext);
 	}
 
 	/**
@@ -322,6 +326,13 @@ public class DDMTemplateLocalServiceUtil {
 		getService().deleteTemplate(templateId);
 	}
 
+	public static DDMTemplate deleteTemplate(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		return getService().deleteTemplate(externalReferenceCode, groupId);
+	}
+
 	/**
 	 * Deletes all the templates of the group.
 	 *
@@ -427,6 +438,13 @@ public class DDMTemplateLocalServiceUtil {
 		return getService().fetchDDMTemplate(templateId);
 	}
 
+	public static DDMTemplate fetchDDMTemplateByExternalReferenceCode(
+		String externalReferenceCode, long groupId) {
+
+		return getService().fetchDDMTemplateByExternalReferenceCode(
+			externalReferenceCode, groupId);
+	}
+
 	/**
 	 * Returns the ddm template matching the UUID and group.
 	 *
@@ -514,6 +532,14 @@ public class DDMTemplateLocalServiceUtil {
 		throws PortalException {
 
 		return getService().getDDMTemplate(templateId);
+	}
+
+	public static DDMTemplate getDDMTemplateByExternalReferenceCode(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		return getService().getDDMTemplateByExternalReferenceCode(
+			externalReferenceCode, groupId);
 	}
 
 	/**

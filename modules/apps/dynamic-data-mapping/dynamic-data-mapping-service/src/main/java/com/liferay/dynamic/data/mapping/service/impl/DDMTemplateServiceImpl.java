@@ -57,6 +57,7 @@ public class DDMTemplateServiceImpl extends DDMTemplateServiceBaseImpl {
 	/**
 	 * Adds a template.
 	 *
+	 * @param  externalReferenceCode the template's external reference code
 	 * @param  groupId the primary key of the group
 	 * @param  classNameId the primary key of the class name for template's
 	 *         related model
@@ -80,8 +81,8 @@ public class DDMTemplateServiceImpl extends DDMTemplateServiceBaseImpl {
 	 */
 	@Override
 	public DDMTemplate addTemplate(
-			long groupId, long classNameId, long classPK,
-			long resourceClassNameId, Map<Locale, String> nameMap,
+			String externalReferenceCode, long groupId, long classNameId,
+			long classPK, long resourceClassNameId, Map<Locale, String> nameMap,
 			Map<Locale, String> descriptionMap, String type, String mode,
 			String language, String script, ServiceContext serviceContext)
 		throws PortalException {
@@ -90,14 +91,15 @@ public class DDMTemplateServiceImpl extends DDMTemplateServiceBaseImpl {
 			getPermissionChecker(), groupId, classNameId, resourceClassNameId);
 
 		return ddmTemplateLocalService.addTemplate(
-			getUserId(), groupId, classNameId, classPK, resourceClassNameId,
-			null, nameMap, descriptionMap, type, mode, language, script, false,
-			false, null, null, serviceContext);
+			externalReferenceCode, getUserId(), groupId, classNameId, classPK,
+			resourceClassNameId, null, nameMap, descriptionMap, type, mode,
+			language, script, false, false, null, null, serviceContext);
 	}
 
 	/**
 	 * Adds a template with additional parameters.
 	 *
+	 * @param  externalReferenceCode the template's external reference code
 	 * @param  groupId the primary key of the group
 	 * @param  classNameId the primary key of the class name for template's
 	 *         related model
@@ -129,8 +131,8 @@ public class DDMTemplateServiceImpl extends DDMTemplateServiceBaseImpl {
 	 */
 	@Override
 	public DDMTemplate addTemplate(
-			long groupId, long classNameId, long classPK,
-			long resourceClassNameId, String templateKey,
+			String externalReferenceCode, long groupId, long classNameId,
+			long classPK, long resourceClassNameId, String templateKey,
 			Map<Locale, String> nameMap, Map<Locale, String> descriptionMap,
 			String type, String mode, String language, String script,
 			boolean cacheable, boolean smallImage, String smallImageURL,
@@ -141,10 +143,10 @@ public class DDMTemplateServiceImpl extends DDMTemplateServiceBaseImpl {
 			getPermissionChecker(), groupId, classNameId, resourceClassNameId);
 
 		return ddmTemplateLocalService.addTemplate(
-			getUserId(), groupId, classNameId, classPK, resourceClassNameId,
-			templateKey, nameMap, descriptionMap, type, mode, language, script,
-			cacheable, smallImage, smallImageURL, smallImageFile,
-			serviceContext);
+			externalReferenceCode, getUserId(), groupId, classNameId, classPK,
+			resourceClassNameId, templateKey, nameMap, descriptionMap, type,
+			mode, language, script, cacheable, smallImage, smallImageURL,
+			smallImageFile, serviceContext);
 	}
 
 	/**
@@ -245,6 +247,21 @@ public class DDMTemplateServiceImpl extends DDMTemplateServiceBaseImpl {
 		ddmTemplateLocalService.deleteTemplate(templateId);
 	}
 
+	@Override
+	public DDMTemplate deleteTemplate(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		DDMTemplate ddmTemplate = ddmTemplatePersistence.findByERC_G(
+			externalReferenceCode, groupId);
+
+		_ddmTemplateModelResourcePermission.check(
+			getPermissionChecker(), ddmTemplate.getTemplateId(),
+			ActionKeys.DELETE);
+
+		return ddmTemplateLocalService.deleteTemplate(ddmTemplate);
+	}
+
 	/**
 	 * Returns the template matching the group and template key.
 	 *
@@ -337,6 +354,21 @@ public class DDMTemplateServiceImpl extends DDMTemplateServiceBaseImpl {
 
 		DDMTemplate ddmTemplate = ddmTemplateLocalService.getTemplate(
 			groupId, classNameId, templateKey, includeAncestorTemplates);
+
+		_ddmTemplateModelResourcePermission.check(
+			getPermissionChecker(), ddmTemplate, ActionKeys.VIEW);
+
+		return ddmTemplate;
+	}
+
+	@Override
+	public DDMTemplate getTemplateByExternalReferenceCode(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		DDMTemplate ddmTemplate =
+			ddmTemplateLocalService.getDDMTemplateByExternalReferenceCode(
+				externalReferenceCode, groupId);
 
 		_ddmTemplateModelResourcePermission.check(
 			getPermissionChecker(), ddmTemplate, ActionKeys.VIEW);
