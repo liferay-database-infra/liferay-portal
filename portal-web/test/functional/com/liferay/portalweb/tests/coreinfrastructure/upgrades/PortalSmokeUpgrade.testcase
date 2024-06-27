@@ -36,6 +36,22 @@ definition {
 		property test.assert.warning.exceptions = "true";
 
 		ValidateSmokeUpgrade.viewUpgrade();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=upgraded -Ddatabase.schema.name=lportal");
+
+		AntCommands.runCommand("build-test.xml", "rebuild-database -Ddatabase.type=mysql -Dsql.dir=sql/create-bare/ -Dsql.file=create-bare-mysql.sql");
+
+		Portlet.startServer();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=fresh -Ddatabase.schema.name=lportal");
+
+		UpgradeSchema.validateSchemas(
+			freshDBSchemaName = "lportal",
+			upgradedDBSchemaName = "lportal");
 	}
 
 	@priority = 5
@@ -46,6 +62,22 @@ definition {
 		property test.assert.warning.exceptions = "true";
 
 		ValidateSmokeUpgrade.viewUpgrade();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=upgraded -Ddatabase.schema.name=lportal");
+
+		AntCommands.runCommand("build-test.xml", "rebuild-database -Ddatabase.type=mysql -Dsql.dir=sql/create-bare/ -Dsql.file=create-bare-mysql.sql");
+
+		Portlet.startServer();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=fresh -Ddatabase.schema.name=lportal");
+
+		UpgradeSchema.validateSchemas(
+			freshDBSchemaName = "lportal",
+			upgradedDBSchemaName = "lportal");
 	}
 
 	@priority = 5
@@ -58,6 +90,22 @@ definition {
 		property test.run.environment = "EE";
 
 		ValidateSmokeUpgrade.viewUpgrade();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=upgraded -Ddatabase.schema.name=lportal");
+
+		AntCommands.runCommand("build-test.xml", "rebuild-database -Ddatabase.type=mysql -Dsql.dir=sql/create-bare/ -Dsql.file=create-bare-mysql.sql");
+
+		Portlet.startServer();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=fresh -Ddatabase.schema.name=lportal");
+
+		UpgradeSchema.validateSchemas(
+			freshDBSchemaName = "lportal",
+			upgradedDBSchemaName = "lportal");
 	}
 
 	@priority = 5
@@ -69,6 +117,22 @@ definition {
 		property test.run.environment = "EE";
 
 		ValidateSmokeUpgrade.viewUpgrade();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=upgraded -Ddatabase.schema.name=lportal");
+
+		AntCommands.runCommand("build-test.xml", "rebuild-database -Ddatabase.type=mysql -Dsql.dir=sql/create-bare/ -Dsql.file=create-bare-mysql.sql");
+
+		Portlet.startServer();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=fresh -Ddatabase.schema.name=lportal");
+
+		UpgradeSchema.validateSchemas(
+			freshDBSchemaName = "lportal",
+			upgradedDBSchemaName = "lportal");
 	}
 
 	@priority = 5
@@ -81,6 +145,22 @@ definition {
 		property test.run.environment = "EE";
 
 		ValidateSmokeUpgrade.viewUpgrade();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=upgraded -Ddatabase.schema.name=lportal");
+
+		AntCommands.runCommand("build-test.xml", "rebuild-database -Ddatabase.type=mysql -Dsql.dir=sql/create-bare/ -Dsql.file=create-bare-mysql.sql");
+
+		Portlet.startServer();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=fresh -Ddatabase.schema.name=lportal");
+
+		UpgradeSchema.validateSchemas(
+			freshDBSchemaName = "lportal",
+			upgradedDBSchemaName = "lportal");
 	}
 
 	@priority = 5
@@ -93,6 +173,22 @@ definition {
 		property test.assert.warning.exceptions = "true";
 
 		ValidateSmokeUpgrade.viewUpgrade();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=upgraded -Ddatabase.schema.name=lportal");
+
+		AntCommands.runCommand("build-test.xml", "rebuild-database -Ddatabase.type=mysql -Dsql.dir=sql/create-bare/ -Dsql.file=create-bare-mysql.sql");
+
+		Portlet.startServer();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=fresh -Ddatabase.schema.name=lportal");
+
+		UpgradeSchema.validateSchemas(
+			freshDBSchemaName = "lportal",
+			upgradedDBSchemaName = "lportal");
 	}
 
 	@description = "This is a use case for LPS-105035."
@@ -104,6 +200,22 @@ definition {
 		property test.assert.warning.exceptions = "true";
 
 		ValidateSmokeUpgrade.viewUpgrade();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=upgraded -Ddatabase.schema.name=lportal");
+
+		AntCommands.runCommand("build-test.xml", "rebuild-database -Ddatabase.type=mysql -Dsql.dir=sql/create-bare/ -Dsql.file=create-bare-mysql.sql");
+
+		Portlet.startServer();
+
+		Portlet.shutdownServer();
+
+		AntCommands.runCommand("build-test.xml", "export-database-schema -Ddatabase.file.prefix=fresh -Ddatabase.schema.name=lportal");
+
+		UpgradeSchema.validateSchemas(
+			freshDBSchemaName = "lportal",
+			upgradedDBSchemaName = "lportal");
 	}
 
 }
