@@ -7,6 +7,7 @@ import {Locator, Page, expect} from '@playwright/test';
 
 import {liferayConfig} from '../../liferay.config';
 import getPageDefinition from '../../tests/layout-content-page-editor-web/utils/getPageDefinition';
+import {clickAndExpectToBeHidden} from '../../utils/clickAndExpectToBeHidden';
 import fillAndClickOutside from '../../utils/fillAndClickOutside';
 import getRandomString from '../../utils/getRandomString';
 import {waitForSuccessAlert} from '../../utils/waitForSuccessAlert';
@@ -16,6 +17,7 @@ export class PageEditorPage {
 	readonly page: Page;
 
 	readonly experienceSelector: Locator;
+	readonly languageSelector: Locator;
 	readonly publishButton: Locator;
 	readonly publishMasterButton: Locator;
 	readonly redoButton: Locator;
@@ -31,6 +33,7 @@ export class PageEditorPage {
 		this.experienceSelector = page.locator(
 			'.page-editor__experience-selector'
 		);
+		this.languageSelector = page.getByLabel('Select a language');
 		this.publishButton = page.getByLabel('Publish', {exact: true});
 		this.publishMasterButton = page.getByLabel('Publish Master', {
 			exact: true,
@@ -49,7 +52,7 @@ export class PageEditorPage {
 		);
 	}
 
-	async addFragment(setName: string, name: string) {
+	async addFragment(setName: string, name: string, dropTarget?: Locator) {
 		await this.goToSidebarTab('Fragments and Widgets');
 
 		const header = this.page.getByRole('menuitem', {
@@ -65,10 +68,30 @@ export class PageEditorPage {
 			await header.click();
 		}
 
-		await this.page.getByLabel(`Add ${name}`).focus();
+		if (dropTarget) {
+			await this.page.getByRole('menuitem', {name}).first().hover();
 
-		await this.page.keyboard.press('Enter');
-		await this.page.keyboard.press('Enter');
+			await this.page.mouse.down();
+			await dropTarget.hover();
+
+			const boundingClientRect = await dropTarget.evaluate((element) =>
+				element.getBoundingClientRect()
+			);
+
+			await dropTarget.hover({
+				position: {
+					x: boundingClientRect.width / 2,
+					y: boundingClientRect.height / 2,
+				},
+			});
+			await this.page.mouse.up();
+		}
+		else {
+			await this.page.getByLabel(`Add ${name}`).focus();
+
+			await this.page.keyboard.press('Enter');
+			await this.page.keyboard.press('Enter');
+		}
 
 		await this.waitForChangesSaved();
 	}
@@ -229,10 +252,13 @@ export class PageEditorPage {
 			.frameLocator('iframe[title="Select"]')
 			.getByRole('link', {name: collectionType})
 			.click();
-		await this.page
-			.frameLocator('iframe[title="Select"]')
-			.getByRole('button', {name: 'Select ' + collectionTitle})
-			.click();
+
+		await clickAndExpectToBeHidden({
+			target: this.page.locator('.modal-dialog'),
+			trigger: this.page
+				.frameLocator('iframe[title="Select"]')
+				.getByRole('button', {name: 'Select ' + collectionTitle}),
+		});
 	}
 
 	async chooseCollectionFilterOption(fieldName: string, option: string) {
@@ -301,7 +327,7 @@ export class PageEditorPage {
 	async deleteExperience(name: string) {
 		await this.openExperienceSelector();
 
-		await this.page.on('dialog', async (dialog) => await dialog.accept());
+		this.page.on('dialog', async (dialog) => await dialog.accept());
 
 		await this.page
 			.locator('.dropdown-menu__experience', {
@@ -657,7 +683,7 @@ export class PageEditorPage {
 
 		const isActive = await this.isActive(fragmentId, isDesktop);
 
-		await expect(isActive).toBe(true);
+		expect(isActive).toBe(true);
 	}
 
 	async selectEditable(
@@ -755,6 +781,16 @@ export class PageEditorPage {
 		await expect(this.experienceSelector).toContainText(experience);
 
 		await this.closeExperienceSelector();
+	}
+
+	async switchLanguage(language: string) {
+		await this.languageSelector.click();
+
+		await this.page
+			.getByRole('option', {
+				name: `${language} Language`,
+			})
+			.click();
 	}
 
 	async switchViewport(viewport: Viewport) {
