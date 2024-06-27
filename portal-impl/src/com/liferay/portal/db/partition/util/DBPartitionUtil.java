@@ -20,16 +20,19 @@ import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
-import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
+import com.liferay.portal.kernel.scheduler.SchedulerEngine;
+import com.liferay.portal.kernel.scheduler.SchedulerEngineHelperUtil;
+import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
@@ -39,7 +42,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.spring.hibernate.DialectDetector;
 import com.liferay.portal.util.PropsValues;
 
-import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -473,6 +475,21 @@ public class DBPartitionUtil {
 			}
 
 			throw new PortalException(exception1);
+		}
+
+		try {
+			_reloadCompanyIdQuartzJobs(fromCompanyId, toCompanyId);
+		}
+		catch (PortalException portalException1) {
+			try {
+				_removeCompanyIdQuartzJobs(toCompanyId);
+			}
+			catch (PortalException portalException2) {
+				throw new PortalException(
+					"Unable to roll back schema creation", portalException2);
+			}
+
+			throw portalException1;
 		}
 	}
 
@@ -1097,6 +1114,56 @@ public class DBPartitionUtil {
 		_deleteData(tableName, fromPartitionName, statement, whereClause);
 	}
 
+	private static void _reloadCompanyIdQuartzJobs(
+			long fromCompanyId, long toCompanyId)
+		throws PortalException {
+
+		for (SchedulerResponse schedulerResponse :
+				SchedulerEngineHelperUtil.getScheduledJobs()) {
+
+			Message message = schedulerResponse.getMessage();
+
+			String jobName = schedulerResponse.getJobName();
+
+			if ((message.getLong("companyId") != fromCompanyId) ||
+				!jobName.contains(String.valueOf(toCompanyId))) {
+
+				continue;
+			}
+
+			message.remove(SchedulerEngine.JOB_STATE);
+
+			message.put("companyId", toCompanyId);
+
+			SchedulerEngineHelperUtil.delete(
+				jobName, schedulerResponse.getGroupName(),
+				schedulerResponse.getStorageType());
+			SchedulerEngineHelperUtil.schedule(
+				schedulerResponse.getTrigger(),
+				schedulerResponse.getStorageType(),
+				schedulerResponse.getDescription(),
+				schedulerResponse.getDestinationName(), message);
+		}
+	}
+
+	private static void _removeCompanyIdQuartzJobs(long companyId)
+		throws PortalException {
+
+		for (SchedulerResponse schedulerResponse :
+				SchedulerEngineHelperUtil.getScheduledJobs()) {
+
+			String jobName = schedulerResponse.getJobName();
+
+			if (!jobName.contains(String.valueOf(companyId))) {
+				continue;
+			}
+
+			SchedulerEngineHelperUtil.delete(
+				schedulerResponse.getJobName(),
+				schedulerResponse.getGroupName(),
+				schedulerResponse.getStorageType());
+		}
+	}
 
 	private static void _replaceQuartzColumnCompanyId(
 			String partitionName, long fromCompanyId, String tableName,
@@ -1155,46 +1222,6 @@ public class DBPartitionUtil {
 		statement.executeUpdate(
 			_dbPartitionDB.getCreateViewSQL(
 				_defaultPartitionName, partitionName, tableName));
-	}
-
-	private static void _updateQuartzJobDataCompanyId(
-			String partitionTableName, long fromCompanyId, long toCompanyId,
-			Statement statement)
-		throws Exception {
-
-		Connection connection = statement.getConnection();
-
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
-				StringBundler.concat(
-					"select job_name, job_data from ", partitionTableName,
-					" where job_name like '%@", toCompanyId, "'"));
-			PreparedStatement preparedStatement2 =
-				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
-					connection,
-					StringBundler.concat(
-						"update ", partitionTableName,
-						" set job_data = ? where job_name = ?"));
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
-
-			while (resultSet.next()) {
-				Blob jobData = resultSet.getBlob("job_data");
-
-				String jobDataString = StringUtil.replace(
-					new String(jobData.getBytes(1, (int)jobData.length())),
-					String.valueOf(fromCompanyId), String.valueOf(toCompanyId));
-
-				jobData.setBytes(1, jobDataString.getBytes());
-
-				preparedStatement2.setBlob(1, jobData);
-
-				preparedStatement2.setString(
-					2, resultSet.getString("job_name"));
-
-				preparedStatement2.addBatch();
-			}
-
-			preparedStatement2.executeBatch();
-		}
 	}
 
 	private static Statement _wrapStatement(Statement statement) {
