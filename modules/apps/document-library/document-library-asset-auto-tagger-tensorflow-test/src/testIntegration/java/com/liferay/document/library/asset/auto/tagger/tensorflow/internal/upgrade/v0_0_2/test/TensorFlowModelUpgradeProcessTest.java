@@ -48,22 +48,22 @@ public class TensorFlowModelUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessTensorFlowDisabled() throws Exception {
+	public void testUpgradeTensorFlowDisabled() throws Exception {
 		_withTensorflowConfiguration(
 			false,
 			() -> {
-				_runUpgradeProcess();
+				_runUpgrade();
 
 				Assert.assertEquals(0, _getDownloadedFilesCount());
 			});
 	}
 
 	@Test
-	public void testUpgradeProcessTensorFlowEnabled() throws Exception {
+	public void testUpgradeTensorFlowEnabled() throws Exception {
 		_withTensorflowConfiguration(
 			true,
 			() -> {
-				_runUpgradeProcess();
+				_runUpgrade();
 
 				Assert.assertEquals(2, _getDownloadedFilesCount());
 			});
@@ -77,7 +77,7 @@ public class TensorFlowModelUpgradeProcessTest {
 		return fileNames.length;
 	}
 
-	private void _runUpgradeProcess() throws Exception {
+	private void _runUpgrade() throws Exception {
 		UpgradeProcess upgradeProcess = UpgradeTestUtil.getUpgradeStep(
 			_upgradeStepRegistrator,
 			"com.liferay.document.library.asset.auto.tagger.tensorflow." +

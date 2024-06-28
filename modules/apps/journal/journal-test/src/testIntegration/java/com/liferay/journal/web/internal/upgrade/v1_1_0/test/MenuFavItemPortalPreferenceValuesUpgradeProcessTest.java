@@ -53,7 +53,7 @@ public class MenuFavItemPortalPreferenceValuesUpgradeProcessTest {
 			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		Company company = _companyLocalService.getCompany(
 			TestPropsValues.getCompanyId());
 

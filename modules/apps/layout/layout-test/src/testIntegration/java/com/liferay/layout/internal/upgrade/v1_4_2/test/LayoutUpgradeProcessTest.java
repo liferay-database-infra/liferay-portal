@@ -69,7 +69,7 @@ public class LayoutUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		LayoutPageTemplateEntry layoutPageTemplateEntry =
 			_layoutPageTemplateEntryLocalService.addLayoutPageTemplateEntry(
 				null, TestPropsValues.getUserId(), _group.getGroupId(), 0,
@@ -136,7 +136,7 @@ public class LayoutUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessWhenPrivateLayoutAlreadyExists()
+	public void testUpgradeWhenPrivateLayoutAlreadyExists()
 		throws Exception {
 
 		LayoutPageTemplateEntry layoutPageTemplateEntry =

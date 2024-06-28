@@ -5,6 +5,8 @@
 
 package com.liferay.account.admin.web.internal.dao.search;
 
+import com.liferay.account.admin.web.internal.security.permission.resource.AccountEntryPermission;
+import com.liferay.account.constants.AccountActionKeys;
 import com.liferay.account.constants.AccountPortletKeys;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -15,10 +17,15 @@ import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.PortletURLUtil;
 import com.liferay.portal.kernel.portlet.SearchOrderByUtil;
 import com.liferay.portal.kernel.search.SortFactoryUtil;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
+
+import java.util.LinkedHashMap;
 
 /**
  * @author Pei-Jung Lan
@@ -53,11 +60,29 @@ public class AssignableAccountOrganizationSearchContainerFactory {
 			(ThemeDisplay)liferayPortletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
+		PermissionChecker permissionChecker =
+			themeDisplay.getPermissionChecker();
+
+		LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+		if (!AccountEntryPermission.contains(
+				permissionChecker, accountEntryId,
+				AccountActionKeys.MANAGE_ORGANIZATIONS) &&
+			!permissionChecker.hasPermission(
+				null, Organization.class.getName(),
+				Organization.class.getName(), ActionKeys.VIEW)) {
+
+			params.put(
+				"organizationsTree",
+				OrganizationLocalServiceUtil.getUserOrganizations(
+					PortalUtil.getUserId(liferayPortletRequest), true));
+		}
+
 		searchContainer.setResultsAndTotal(
 			OrganizationLocalServiceUtil.searchOrganizations(
 				themeDisplay.getCompanyId(),
 				OrganizationConstants.ANY_PARENT_ORGANIZATION_ID, keywords,
-				null, searchContainer.getStart(), searchContainer.getEnd(),
+				params, searchContainer.getStart(), searchContainer.getEnd(),
 				SortFactoryUtil.getSort(
 					Organization.class, searchContainer.getOrderByCol(),
 					searchContainer.getOrderByType())));

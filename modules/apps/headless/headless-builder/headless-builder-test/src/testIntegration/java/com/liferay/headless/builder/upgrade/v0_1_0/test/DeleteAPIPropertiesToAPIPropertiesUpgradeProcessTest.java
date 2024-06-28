@@ -72,7 +72,7 @@ public class DeleteAPIPropertiesToAPIPropertiesUpgradeProcessTest
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		ObjectDefinition objectDefinition =
 			_objectDefinitionLocalService.
 				fetchObjectDefinitionByExternalReferenceCode(

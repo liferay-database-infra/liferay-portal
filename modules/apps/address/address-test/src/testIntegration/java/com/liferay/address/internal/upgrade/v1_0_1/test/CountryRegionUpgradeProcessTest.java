@@ -79,7 +79,7 @@ public class CountryRegionUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessRegionCreation() throws Exception {
+	public void testUpgradeRegionCreation() throws Exception {
 		_companyLocalService.forEachCompanyId(
 			companyId -> {
 				Country country = _countryLocalService.fetchCountryByA2(

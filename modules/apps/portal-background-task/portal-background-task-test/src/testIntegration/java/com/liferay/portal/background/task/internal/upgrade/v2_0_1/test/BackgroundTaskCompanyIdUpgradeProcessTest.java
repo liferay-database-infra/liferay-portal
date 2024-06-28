@@ -60,7 +60,7 @@ public class BackgroundTaskCompanyIdUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		Map<String, Serializable> taskContextMap =
 			_backgroundTask.getTaskContextMap();
 

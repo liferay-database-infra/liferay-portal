@@ -32,7 +32,7 @@ public class BrowserSnifferTemplateUpgradeProcessTest
 			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Test
-	public void testUpgradeProcessTemplateRemoveBrowserSniffer()
+	public void testUpgradeTemplateRemoveBrowserSniffer()
 		throws Exception {
 
 		addDDMTemplate(".v5_3_3/ddm-template-browser-sniffer-content.ftl");

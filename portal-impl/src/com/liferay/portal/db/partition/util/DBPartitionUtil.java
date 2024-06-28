@@ -26,9 +26,14 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
+import com.liferay.portal.kernel.scheduler.SchedulerEngine;
+import com.liferay.portal.kernel.scheduler.SchedulerEngineHelperUtil;
+import com.liferay.portal.kernel.scheduler.SchedulerException;
+import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
@@ -151,6 +156,30 @@ public class DBPartitionUtil {
 				}
 			}
 		}
+	}
+
+	public static List<String> getConfigurationPids(long companyId)
+		throws SQLException {
+
+		List<String> pids = new ArrayList<>();
+
+		Connection connection = CurrentConnectionUtil.getConnection(
+			InfrastructureUtil.getDataSource());
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				StringBundler.concat(
+					"select configurationId from ",
+					_getPartitionName(companyId),
+					".Configuration_ where dictionary like ",
+					"'%org.apache.felix.configadmin.revision%'"));
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			while (resultSet.next()) {
+				pids.add(resultSet.getString(1));
+			}
+		}
+
+		return pids;
 	}
 
 	public static boolean insertDBPartition(long companyId)
@@ -392,8 +421,8 @@ public class DBPartitionUtil {
 
 						if (_isCopyableQuartzTable(fromTableName)) {
 							_copyQuartzTableRow(
-								_defaultPartitionName, fromCompanyId,
-								fromTableName, toCompanyId, statement);
+								fromCompanyId, fromTableName, toCompanyId,
+								statement);
 
 							quartzTableNames.add(fromTableName);
 						}
@@ -451,9 +480,13 @@ public class DBPartitionUtil {
 			}
 
 			connection.commit();
+
+			_reloadQuartzJobs(fromCompanyId, toCompanyId);
 		}
 		catch (Exception exception1) {
-			if (!_dbPartitionDB.isDDLTransactional()) {
+			if (!_dbPartitionDB.isDDLTransactional() ||
+				(exception1 instanceof SchedulerException)) {
+
 				try (Statement statement = connection.createStatement()) {
 					statement.executeUpdate(
 						_dbPartitionDB.getDropPartitionSQL(toPartitionName));
@@ -475,36 +508,27 @@ public class DBPartitionUtil {
 	}
 
 	private static void _copyQuartzTableRow(
-			String partitionName, long fromCompanyId, String tableName,
-			long toCompanyId, Statement statement)
+			long fromCompanyId, String tableName, long toCompanyId,
+			Statement statement)
 		throws Exception {
 
-		List<String> columnNames = _getColumnNames(
-			statement.getConnection(), tableName);
-
-		String columnName = "";
-
 		if (StringUtil.endsWith(tableName, "JOB_DETAILS")) {
-			columnNames.removeIf(value -> value.equalsIgnoreCase("job_name"));
+			_replaceCompanyIdQuartzColumns(
+				fromCompanyId, toCompanyId, tableName, statement, "job_name");
+		}
+		else if (StringUtil.equalsIgnoreCase(tableName, "QUARTZ_TRIGGERS") ||
+				 StringUtil.equalsIgnoreCase(
+					 tableName, "QUARTZ_FIRED_TRIGGERS")) {
 
-			columnName = "job_name";
+			_replaceCompanyIdQuartzColumns(
+				fromCompanyId, toCompanyId, tableName, statement, "job_name",
+				"trigger_name");
 		}
 		else {
-			columnNames.removeIf(
-				value -> value.equalsIgnoreCase("trigger_name"));
-
-			columnName = "trigger_name";
+			_replaceCompanyIdQuartzColumns(
+				fromCompanyId, toCompanyId, tableName, statement,
+				"trigger_name");
 		}
-
-		statement.executeUpdate(
-			StringBundler.concat(
-				"insert into ", partitionName, StringPool.PERIOD, tableName,
-				"(", columnName, ", ", StringUtil.merge(columnNames),
-				") select replace (", columnName, ", '@", fromCompanyId,
-				"', '@", toCompanyId, "') as ", columnName, ", ",
-				StringUtil.merge(columnNames), " from ", partitionName,
-				StringPool.PERIOD, tableName,
-				_getQuartzWhereClauseSQL(fromCompanyId, tableName)));
 	}
 
 	private static void _deleteCompanyData(
@@ -1101,6 +1125,68 @@ public class DBPartitionUtil {
 				whereClause));
 
 		_deleteData(tableName, fromPartitionName, statement, whereClause);
+	}
+
+	private static void _reloadQuartzJobs(long fromCompanyId, long toCompanyId)
+		throws SchedulerException {
+
+		for (SchedulerResponse schedulerResponse :
+				SchedulerEngineHelperUtil.getScheduledJobs()) {
+
+			Message message = schedulerResponse.getMessage();
+
+			String jobName = schedulerResponse.getJobName();
+
+			if ((message.getLong("companyId") != fromCompanyId) ||
+				!jobName.contains(String.valueOf(toCompanyId))) {
+
+				continue;
+			}
+
+			SchedulerEngineHelperUtil.delete(
+				jobName, schedulerResponse.getGroupName(),
+				schedulerResponse.getStorageType());
+
+			message.remove(SchedulerEngine.JOB_STATE);
+
+			message.put("companyId", toCompanyId);
+
+			SchedulerEngineHelperUtil.schedule(
+				schedulerResponse.getTrigger(),
+				schedulerResponse.getStorageType(),
+				schedulerResponse.getDescription(),
+				schedulerResponse.getDestinationName(), message);
+		}
+	}
+
+	private static void _replaceCompanyIdQuartzColumns(
+			long fromCompanyId, long toCompanyId, String tableName,
+			Statement statement, String... replaceColumnNames)
+		throws Exception {
+
+		List<String> columnNames = _getColumnNames(
+			statement.getConnection(), tableName);
+
+		List<String> replaceSQLs = new ArrayList<>();
+
+		for (String replaceColumnName : replaceColumnNames) {
+			replaceSQLs.add(
+				StringBundler.concat(
+					"replace (", replaceColumnName, ", '@", fromCompanyId,
+					"', '@", toCompanyId, "') as ", replaceColumnName));
+
+			columnNames.removeIf(
+				value -> value.equalsIgnoreCase(replaceColumnName));
+		}
+
+		statement.executeUpdate(
+			StringBundler.concat(
+				"insert into ", tableName, "(",
+				StringUtil.merge(replaceColumnNames), ", ",
+				StringUtil.merge(columnNames), ") select ",
+				StringUtil.merge(replaceSQLs), ", ",
+				StringUtil.merge(columnNames), " from ", tableName,
+				_getQuartzWhereClauseSQL(fromCompanyId, tableName)));
 	}
 
 	private static void _restoreView(

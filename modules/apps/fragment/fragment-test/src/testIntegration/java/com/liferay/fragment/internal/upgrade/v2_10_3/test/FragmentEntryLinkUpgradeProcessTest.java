@@ -55,7 +55,7 @@ public class FragmentEntryLinkUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
 
 		Layout draftLayout = layout.fetchDraftLayout();

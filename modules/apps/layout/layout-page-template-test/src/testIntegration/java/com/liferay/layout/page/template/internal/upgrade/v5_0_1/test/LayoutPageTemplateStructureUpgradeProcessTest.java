@@ -96,7 +96,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessDisplaPageWithFragments() throws Exception {
+	public void testUpgradeDisplaPageWithFragments() throws Exception {
 		LayoutPageTemplateEntry layoutPageTemplateEntry =
 			_layoutPageTemplateEntryLocalService.addLayoutPageTemplateEntry(
 				null, TestPropsValues.getUserId(), _group.getGroupId(), 0, 0, 0,
@@ -143,7 +143,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessDisplaPageWithoutFragments()
+	public void testUpgradeDisplaPageWithoutFragments()
 		throws Exception {
 
 		LayoutPageTemplateEntry layoutPageTemplateEntry =
@@ -189,7 +189,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessLayoutWithFragments() throws Exception {
+	public void testUpgradeLayoutWithFragments() throws Exception {
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
 
 		_deleteLayoutPageTemplateStructure(layout);
@@ -227,7 +227,7 @@ public class LayoutPageTemplateStructureUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessLayoutWithoutFragments() throws Exception {
+	public void testUpgradeLayoutWithoutFragments() throws Exception {
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
 
 		_deleteLayoutPageTemplateStructure(layout);

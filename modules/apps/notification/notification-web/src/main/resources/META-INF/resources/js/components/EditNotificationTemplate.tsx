@@ -23,7 +23,7 @@ import {BasicInfoContainer} from './BasicInfoContainer/BasicInfoContainer';
 import ContentContainer from './ContentContainer/ContentContainer';
 import DefinitionOfTermsContainer from './DefinitionOfTermsContainer/DefinitionOfTermsContainer';
 import {SettingsContainer} from './SettingsContainer/SettingsContainer';
-import {getEmailNotificationRoles} from './SettingsContainer/rolesUtils';
+import {getEmailNotificationRoles} from './SettingsContainer/rolesUtil';
 
 import './EditNotificationTemplate.scss';
 
@@ -136,20 +136,28 @@ export default function EditNotificationTemplate({
 			!Liferay.FeatureFlags['LPD-11165'] &&
 			notification.type === 'email'
 		) {
-			const recipients = notification.recipients[0] as EmailRecipients;
+			const recipient = notification.recipients[0] as EmailRecipients;
+
+			let newRecipient = {
+				bcc: recipient.bcc,
+				cc: recipient.cc,
+				from: recipient.from,
+				fromName: recipient.fromName,
+				singleRecipient: recipient.singleRecipient,
+				to: recipient.to,
+			} as EmailRecipients;
+
+			if (Liferay.FeatureFlags['LPD-21580']) {
+				newRecipient = {
+					...newRecipient,
+					usePreferredLocaleForGuestUsers:
+						recipient.usePreferredLocaleForGuestUsers,
+				};
+			}
 
 			notificationValue = {
 				...notification,
-				recipients: [
-					{
-						bcc: recipients.bcc,
-						cc: recipients.cc,
-						from: recipients.from,
-						fromName: recipients.fromName,
-						singleRecipient: recipients.singleRecipient,
-						to: recipients.to,
-					},
-				],
+				recipients: [newRecipient],
 			};
 		}
 
@@ -200,23 +208,30 @@ export default function EditNotificationTemplate({
 		notificationTemplateType === '' ||
 		notificationTemplateType === 'email'
 	) {
-		recipientInitialValue = [
-			{
-				bcc: '',
-				bccType: 'email',
-				cc: '',
-				ccType: 'email',
-				from: '',
-				fromName: {
-					[defaultLanguageId]: '',
-				},
-				singleRecipient: false,
-				to: {
-					[defaultLanguageId]: '',
-				},
-				toType: 'email',
-			} as EmailRecipients,
-		];
+		let recipient = {
+			bcc: '',
+			bccType: 'email',
+			cc: '',
+			ccType: 'email',
+			from: '',
+			fromName: {
+				[defaultLanguageId]: '',
+			},
+			singleRecipient: false,
+			to: {
+				[defaultLanguageId]: '',
+			},
+			toType: 'email',
+		} as EmailRecipients;
+
+		if (Liferay.FeatureFlags['LPD-21580']) {
+			recipient = {
+				...recipient,
+				usePreferredLocaleForGuestUsers: true,
+			};
+		}
+
+		recipientInitialValue = [recipient];
 	}
 	else {
 		recipientInitialValue = [];

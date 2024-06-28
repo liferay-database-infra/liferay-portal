@@ -70,7 +70,7 @@ public class AssetDisplayLayoutUpgradeProcessTest
 	}
 
 	@Test
-	public void testUpgradeProcessTypeDefaultAssetDisplayPage()
+	public void testUpgradeTypeDefaultAssetDisplayPage()
 		throws Exception {
 
 		JournalArticle journalArticle = JournalTestUtil.addArticle(
@@ -89,7 +89,7 @@ public class AssetDisplayLayoutUpgradeProcessTest
 	}
 
 	@Test
-	public void testUpgradeProcessTypeNoneAssetDisplayPage() throws Exception {
+	public void testUpgradeTypeNoneAssetDisplayPage() throws Exception {
 		JournalArticle journalArticle = JournalTestUtil.addArticle(
 			_group.getGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
@@ -106,7 +106,7 @@ public class AssetDisplayLayoutUpgradeProcessTest
 	}
 
 	@Test
-	public void testUpgradeProcessTypeSpecificAssetDisplayPage()
+	public void testUpgradeTypeSpecificAssetDisplayPage()
 		throws Exception {
 
 		JournalArticle journalArticle = JournalTestUtil.addArticle(
@@ -130,7 +130,7 @@ public class AssetDisplayLayoutUpgradeProcessTest
 	}
 
 	@Test
-	public void testUpgradeProcessTypeSpecificAssetDisplayPageWithWrongPlid()
+	public void testUpgradeTypeSpecificAssetDisplayPageWithWrongPlid()
 		throws Exception {
 
 		JournalArticle journalArticle = JournalTestUtil.addArticle(

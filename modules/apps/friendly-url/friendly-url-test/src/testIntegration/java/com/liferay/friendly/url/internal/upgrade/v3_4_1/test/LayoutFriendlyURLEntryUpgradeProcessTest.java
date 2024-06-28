@@ -78,7 +78,7 @@ public class LayoutFriendlyURLEntryUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		Layout layout1 = LayoutTestUtil.addTypeContentLayout(_group);
 
 		Layout draftLayout1 = layout1.fetchDraftLayout();
@@ -95,7 +95,7 @@ public class LayoutFriendlyURLEntryUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessFriendlyURLEntryLocalizationMissingForSomeLanguage()
+	public void testUpgradeFriendlyURLEntryLocalizationMissingForSomeLanguage()
 		throws Exception {
 
 		Layout privateLayout1 = _addTypePortletLayout(true);
@@ -116,7 +116,7 @@ public class LayoutFriendlyURLEntryUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessIsIdempotent() throws Exception {
+	public void testUpgradeIsIdempotent() throws Exception {
 		Layout layout1 = LayoutTestUtil.addTypeContentLayout(_group);
 
 		Layout draftLayout1 = layout1.fetchDraftLayout();
@@ -160,7 +160,7 @@ public class LayoutFriendlyURLEntryUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessNoFriendlyURLEntryLocalization()
+	public void testUpgradeNoFriendlyURLEntryLocalization()
 		throws Exception {
 
 		Layout layout1 = LayoutTestUtil.addTypeContentLayout(_group);
@@ -179,7 +179,7 @@ public class LayoutFriendlyURLEntryUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessNoFriendlyURLEntryMapping() throws Exception {
+	public void testUpgradeNoFriendlyURLEntryMapping() throws Exception {
 		Layout layout1 = LayoutTestUtil.addTypeContentLayout(_group);
 
 		Layout draftLayout1 = layout1.fetchDraftLayout();

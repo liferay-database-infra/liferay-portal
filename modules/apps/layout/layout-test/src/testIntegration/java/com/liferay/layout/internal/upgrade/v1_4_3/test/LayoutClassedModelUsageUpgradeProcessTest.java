@@ -62,7 +62,7 @@ public class LayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		_layoutClassedModelUsage = addLayoutClassedModelUsage();
 
 		_runUpgrade();

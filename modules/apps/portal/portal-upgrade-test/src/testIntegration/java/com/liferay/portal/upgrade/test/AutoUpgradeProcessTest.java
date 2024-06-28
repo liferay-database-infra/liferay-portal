@@ -110,7 +110,7 @@ public class AutoUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessWhenAutoUpgradeEnabled() throws Exception {
+	public void testUpgradeWhenAutoUpgradeEnabled() throws Exception {
 		_releaseLocalService.addRelease(_SERVLET_CONTEXT_NAME, "1.0.0");
 
 		PropsUtil.set(PropsKeys.UPGRADE_DATABASE_AUTO_RUN, "true");

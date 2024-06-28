@@ -151,7 +151,7 @@ public class JournalArticleLayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		_assertAssetEntryLayoutClassedModelUsages();
 
 		Group stagingGroup = _liveGroup.getStagingGroup();
@@ -181,7 +181,7 @@ public class JournalArticleLayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessExistingLayoutClassedModelUsagesByPlid()
+	public void testUpgradeExistingLayoutClassedModelUsagesByPlid()
 		throws Exception {
 
 		_assertAssetEntryLayoutClassedModelUsages();

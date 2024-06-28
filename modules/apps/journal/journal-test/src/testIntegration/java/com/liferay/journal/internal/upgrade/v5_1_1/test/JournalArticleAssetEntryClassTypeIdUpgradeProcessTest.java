@@ -77,7 +77,7 @@ public class JournalArticleAssetEntryClassTypeIdUpgradeProcessTest
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		DDMStructure ddmStructure = DDMStructureTestUtil.addStructure(
 			_group.getGroupId(), JournalArticle.class.getName());
 
@@ -109,7 +109,7 @@ public class JournalArticleAssetEntryClassTypeIdUpgradeProcessTest
 	}
 
 	@Test
-	public void testUpgradeProcessNoChanges() throws Exception {
+	public void testUpgradeNoChanges() throws Exception {
 		DDMStructure ddmStructure = DDMStructureTestUtil.addStructure(
 			_group.getGroupId(), JournalArticle.class.getName());
 

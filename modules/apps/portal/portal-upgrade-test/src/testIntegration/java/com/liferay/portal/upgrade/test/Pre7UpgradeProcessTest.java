@@ -27,7 +27,7 @@ public class Pre7UpgradeProcessTest {
 		new LiferayIntegrationTestRule();
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		Pre7UpgradeProcess pre7UpgradeProcess = new Pre7UpgradeProcess() {
 
 			@Override

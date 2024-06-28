@@ -62,7 +62,7 @@ public class ObjectDefinitionUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		UpgradeProcess upgradeProcess = UpgradeTestUtil.getUpgradeStep(
 			_upgradeStepRegistrator,
 			"com.liferay.object.internal.upgrade.v9_2_0." +

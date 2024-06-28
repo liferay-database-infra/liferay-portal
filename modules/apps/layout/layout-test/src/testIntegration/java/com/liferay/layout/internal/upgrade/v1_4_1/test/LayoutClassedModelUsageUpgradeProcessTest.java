@@ -76,7 +76,7 @@ public class LayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		JournalArticle journalArticle = JournalTestUtil.addArticle(
 			_group.getGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
@@ -93,7 +93,7 @@ public class LayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessExistingUsages() throws Exception {
+	public void testUpgradeExistingUsages() throws Exception {
 		JournalArticle journalArticle = JournalTestUtil.addArticle(
 			_group.getGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
@@ -111,7 +111,7 @@ public class LayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessMultipleEditableFields() throws Exception {
+	public void testUpgradeMultipleEditableFields() throws Exception {
 		JournalArticle journalArticle1 = JournalTestUtil.addArticle(
 			_group.getGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
@@ -135,7 +135,7 @@ public class LayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessSameContentMappedInMultipleEditables()
+	public void testUpgradeSameContentMappedInMultipleEditables()
 		throws Exception {
 
 		JournalArticle journalArticle = JournalTestUtil.addArticle(

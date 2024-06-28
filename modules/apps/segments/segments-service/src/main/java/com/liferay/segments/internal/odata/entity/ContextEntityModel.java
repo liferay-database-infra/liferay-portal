@@ -10,7 +10,6 @@ import com.liferay.portal.odata.entity.CollectionEntityField;
 import com.liferay.portal.odata.entity.ComplexEntityField;
 import com.liferay.portal.odata.entity.DateEntityField;
 import com.liferay.portal.odata.entity.DateTimeEntityField;
-import com.liferay.portal.odata.entity.DoubleEntityField;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.odata.entity.StringEntityField;
@@ -49,18 +48,8 @@ public class ContextEntityModel implements EntityModel {
 					Context.LAST_SIGN_IN_DATE_TIME,
 					locale -> Context.LAST_SIGN_IN_DATE_TIME,
 					locale -> Context.LAST_SIGN_IN_DATE_TIME),
-				new DoubleEntityField(
-					Context.DEVICE_SCREEN_RESOLUTION_HEIGHT,
-					locale -> Context.DEVICE_SCREEN_RESOLUTION_HEIGHT),
-				new DoubleEntityField(
-					Context.DEVICE_SCREEN_RESOLUTION_WIDTH,
-					locale -> Context.DEVICE_SCREEN_RESOLUTION_WIDTH),
 				new StringEntityField(
 					Context.BROWSER, locale -> Context.BROWSER),
-				new StringEntityField(
-					Context.DEVICE_BRAND, locale -> Context.DEVICE_BRAND),
-				new StringEntityField(
-					Context.DEVICE_MODEL, locale -> Context.DEVICE_MODEL),
 				new StringEntityField(
 					Context.HOSTNAME, locale -> Context.HOSTNAME),
 				new StringEntityField(

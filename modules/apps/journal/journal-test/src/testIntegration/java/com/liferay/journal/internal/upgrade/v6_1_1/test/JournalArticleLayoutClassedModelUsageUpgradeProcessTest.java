@@ -110,7 +110,7 @@ public class JournalArticleLayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		Map<Layout, List<String>> expectedLayoutPortletIdsMap =
 			_addPortletsToLayouts();
 
@@ -120,7 +120,7 @@ public class JournalArticleLayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessExistingDefaultLayoutClassedModelUsage()
+	public void testUpgradeExistingDefaultLayoutClassedModelUsage()
 		throws Exception {
 
 		_addPortletsToLayouts();
@@ -136,7 +136,7 @@ public class JournalArticleLayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessManualAssetPublisherSelection()
+	public void testUpgradeManualAssetPublisherSelection()
 		throws Exception {
 
 		JournalArticle journalArticle1 = JournalTestUtil.addArticle(
@@ -203,7 +203,7 @@ public class JournalArticleLayoutClassedModelUsageUpgradeProcessTest {
 	}
 
 	@Test
-	public void testUpgradeProcessManualAssetPublisherSelectionLocalStagingEnabled()
+	public void testUpgradeManualAssetPublisherSelectionLocalStagingEnabled()
 		throws Exception {
 
 		try {

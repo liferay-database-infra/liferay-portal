@@ -47,7 +47,7 @@ public class JournalArticleSmallImageSourceUpgradeProcessTest {
 			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Test
-	public void testUpgradeProcess() throws Exception {
+	public void testUpgrade() throws Exception {
 		_group = GroupTestUtil.addGroup();
 
 		JournalArticle journalArticleWithoutSmallImage =
