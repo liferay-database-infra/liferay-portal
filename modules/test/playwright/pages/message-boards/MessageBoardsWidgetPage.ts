@@ -21,10 +21,10 @@ export class MessageBoardsWidgetPage {
 	}
 
 	async addMessageBoardsPortlet(site: Site) {
-		const layout = await this.apiHelpers.jsonWebServicesLayout.addLayout(
-			site.id,
-			getRandomString()
-		);
+		const layout = await this.apiHelpers.jsonWebServicesLayout.addLayout({
+			groupId: site.id,
+			title: getRandomString(),
+		});
 
 		await this.page.goto(
 			`/web${site.friendlyUrlPath}${layout.friendlyURL}`
@@ -53,5 +53,26 @@ export class MessageBoardsWidgetPage {
 		await messageBodyIframe.getByRole('textbox').fill('test guest');
 
 		await this.page.getByRole('button', {name: buttonName}).click();
+	}
+
+	async addCategory(site: Site, layout: Layout, categoryName: string) {
+		await this.page.goto(
+			`/web${site.friendlyUrlPath}${layout.friendlyURL}`
+		);
+
+		const categoryMenu = this.page.getByRole('link', {
+			name: 'Add Category',
+		});
+
+		await categoryMenu.waitFor();
+		await categoryMenu.click();
+
+		await this.page
+			.locator(
+				'[id="_com_liferay_message_boards_web_portlet_MBPortlet_name"]'
+			)
+			.fill(categoryName);
+
+		await this.page.getByRole('button', {name: 'Save'}).click();
 	}
 }

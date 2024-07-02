@@ -22,13 +22,35 @@ import java.util.Set;
  */
 public class RelevantRuleEngine {
 
-	public RelevantRuleEngine(File baseDir) {
-		_baseDir = baseDir;
+	public static void clear() {
+		_relevantRuleEngine = null;
 	}
 
-	public RelevantRuleEngine(File baseDir, String testSuiteName) {
-		_baseDir = baseDir;
-		_testSuiteName = testSuiteName;
+	public static RelevantRuleEngine getInstance() {
+		if (_relevantRuleEngine == null) {
+			throw new IllegalStateException("Relevant rule engine is null");
+		}
+
+		return _relevantRuleEngine;
+	}
+
+	public static RelevantRuleEngine getInstance(File baseDir) {
+		if (_relevantRuleEngine == null) {
+			_relevantRuleEngine = new RelevantRuleEngine(baseDir);
+		}
+
+		return _relevantRuleEngine;
+	}
+
+	public static RelevantRuleEngine getInstance(
+		File baseDir, String testSuiteName) {
+
+		if (_relevantRuleEngine == null) {
+			_relevantRuleEngine = new RelevantRuleEngine(
+				baseDir, testSuiteName);
+		}
+
+		return _relevantRuleEngine;
 	}
 
 	public File getBaseDir() {
@@ -64,6 +86,19 @@ public class RelevantRuleEngine {
 		return _testSuiteName;
 	}
 
+	private RelevantRuleEngine(File baseDir) {
+		_baseDir = baseDir;
+
+		_relevantRuleEngine = this;
+	}
+
+	private RelevantRuleEngine(File baseDir, String testSuiteName) {
+		_baseDir = baseDir;
+		_testSuiteName = testSuiteName;
+
+		_relevantRuleEngine = this;
+	}
+
 	private RelevantRule _getRelevantRule(
 		String filePath, String relevantRuleName, Properties properties) {
 
@@ -76,7 +111,7 @@ public class RelevantRuleEngine {
 		}
 
 		RelevantRule relevantRule = new RelevantRule(
-			filePath, relevantRuleName, properties, getTestSuiteName());
+			filePath, relevantRuleName, properties);
 
 		_relevantRuleMap.put(relevantRule, new HashSet<>());
 
@@ -186,6 +221,8 @@ public class RelevantRuleEngine {
 			}
 		}
 	}
+
+	private static RelevantRuleEngine _relevantRuleEngine;
 
 	private final File _baseDir;
 	private final Map<RelevantRule, Set<File>> _relevantRuleMap =

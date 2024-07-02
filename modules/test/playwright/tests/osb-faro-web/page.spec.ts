@@ -10,15 +10,9 @@ import {dataApiHelpersTest} from '../../fixtures/dataApiHelpersTest';
 import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
 import {loginAnalyticsCloudTest} from '../../fixtures/loginAnalyticsCloudTest';
 import {loginTest} from '../../fixtures/loginTest';
-import {ApiHelpers} from '../../helpers/ApiHelpers';
 import {liferayConfig} from '../../liferay.config';
 import getRandomString from '../../utils/getRandomString';
-import {
-	navigateToSitePage,
-	syncAnalyticsCloud,
-} from '../analytics-settings-web/utils/analyticsSettings';
-import getFragmentDefinition from '../layout-content-page-editor-web/utils/getFragmentDefinition';
-import getPageDefinition from '../layout-content-page-editor-web/utils/getPageDefinition';
+import {syncAnalyticsCloud} from '../analytics-settings-web/utils/analyticsSettings';
 import {createChannel, switchChannel} from './utils/channel';
 import {createIndividuals} from './utils/individuals';
 import {
@@ -26,6 +20,7 @@ import {
 	navigateToACSitesPageViaURL,
 	navigateToACWorkspace,
 } from './utils/navigation';
+import {createSitePage, navigateToSitePage} from './utils/portal';
 import {changeTimeFilter} from './utils/time-filter';
 import {expectNotToBeVisible, expectToBeVisible} from './utils/utils';
 
@@ -38,35 +33,6 @@ export const test = mergeTests(
 	loginAnalyticsCloudTest(),
 	loginTest()
 );
-
-const createSitePage = async function ({
-	apiHelpers,
-	pageTitle,
-}: {
-	apiHelpers: ApiHelpers;
-	pageTitle: string;
-}) {
-	const company =
-		await apiHelpers.jsonWebServicesCompany.getCompanyByWebId(
-			'liferay.com'
-		);
-
-	const group = await apiHelpers.jsonWebServicesGroup.getGroupByKey(
-		company.companyId,
-		'Guest'
-	);
-
-	return await apiHelpers.headlessDelivery.createSitePage({
-		pageDefinition: getPageDefinition([
-			getFragmentDefinition({
-				id: getRandomString(),
-				key: 'BASIC_COMPONENT-heading',
-			}),
-		]),
-		siteId: group.groupId,
-		title: pageTitle,
-	});
-};
 
 const goToWithReferrer = async function ({
 	page,

@@ -188,6 +188,10 @@ public class PortalInstances {
 		return PortalInstancePool.getCompanyIds();
 	}
 
+	public static Long getCopyInProcessCompanyId() {
+		return _copyInProcessCompanyId;
+	}
+
 	/**
 	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
 	 *             PortalInstancePool#getDefaultCompanyId}
@@ -321,6 +325,14 @@ public class PortalInstances {
 		return false;
 	}
 
+	public static boolean isCompanyInCopyProcess() {
+		if (_copyInProcessCompanyId != null) {
+			return true;
+		}
+
+		return false;
+	}
+
 	public static boolean isCompanyInDeletionProcess(long companyId) {
 		return _companyIdsInDeletionProcess.contains(companyId);
 	}
@@ -363,6 +375,17 @@ public class PortalInstances {
 		_companyIdsInDeletionProcess.add(companyId);
 
 		return () -> _companyIdsInDeletionProcess.remove(companyId);
+	}
+
+	public static SafeCloseable setCopyInProcessCompanyId(long companyId) {
+		if (_copyInProcessCompanyId != null) {
+			throw new UnsupportedOperationException(
+				"Company in process company ID is not null");
+		}
+
+		_copyInProcessCompanyId = companyId;
+
+		return () -> _copyInProcessCompanyId = null;
 	}
 
 	private static long _getCompanyIdByHost(
@@ -483,6 +506,7 @@ public class PortalInstances {
 	private static final Set<String> _autoLoginIgnorePaths;
 	private static final List<Long> _companyIdsInDeletionProcess =
 		new CopyOnWriteArrayList<>();
+	private static Long _copyInProcessCompanyId;
 	private static final Set<String> _virtualHostsIgnoreHosts;
 	private static final Set<String> _virtualHostsIgnorePaths;
 

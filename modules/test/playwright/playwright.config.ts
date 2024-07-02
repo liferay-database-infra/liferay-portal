@@ -22,7 +22,7 @@ import {config as documentLibraryWebConfig} from './tests/document-library-web/c
 import {config as dynamicDataMappingFormWebConfig} from './tests/dynamic-data-mapping-form-web/config';
 import {config as exportImportWebConfig} from './tests/export-import-web/config';
 import {config as featureFlagWebConfig} from './tests/feature-flag-web/config';
-import {config as frontendDataSetViewsWebConfig} from './tests/frontend-data-set-views-web/config';
+import {config as frontendDataSetAdminWebConfig} from './tests/frontend-data-set-admin-web/config';
 import {config as frontendDataSetWebConfig} from './tests/frontend-data-set-web/config';
 import {config as frontendJsSpaWebConfig} from './tests/frontend-js-spa-web/config';
 import {config as frontendTaglibClayConfig} from './tests/frontend-taglib-clay/config';
@@ -51,12 +51,14 @@ import {config as productNavigationProductMenuWeb} from './tests/product-navigat
 import {config as productNavigationUserPersonalBarWebConfig} from './tests/product-navigation-user-personal-bar-web/config';
 import {config as questionsWebConfig} from './tests/questions-web/config';
 import {config as rolesAdminWebConfig} from './tests/roles-admin-web/config';
+import {config as searchExperiencesWebConfig} from './tests/search-experiences-web/config';
 import {config as siteAdminWebConfig} from './tests/site-admin-web/config';
 import {config as siteNavigationAdminWebConfig} from './tests/site-navigation-admin-web/config';
 import {config as stableConfig} from './tests/stable/config';
 import {config as stylebookWebConfig} from './tests/style-book-web/config';
 import {config as usersAdminWebConfig} from './tests/users-admin-web/config';
 import {config as wikiWebConfig} from './tests/wiki-web/config';
+import {config as jethr0Config} from './tests/workspaces/liferay-workspace-jethr0/config';
 import {config as marketplaceConfig} from './tests/workspaces/liferay-workspace-marketplace/config';
 
 const setupProjects = [wemSiteSetup, wemSiteTeardown];
@@ -83,12 +85,13 @@ export default defineConfig({
 		dynamicDataMappingFormWebConfig,
 		exportImportWebConfig,
 		featureFlagWebConfig,
-		frontendDataSetViewsWebConfig,
+		frontendDataSetAdminWebConfig,
 		frontendDataSetWebConfig,
 		frontendJsSpaWebConfig,
 		frontendTaglibClayConfig,
 		headlessBuilderImplConfig,
 		headlessBuilderWebConfig,
+		jethr0Config,
 		journalWebConfig,
 		knowledgeBaseWebConfig,
 		layoutAdminWebConfig,
@@ -113,6 +116,7 @@ export default defineConfig({
 		productNavigationUserPersonalBarWebConfig,
 		questionsWebConfig,
 		rolesAdminWebConfig,
+		searchExperiencesWebConfig,
 		siteAdminWebConfig,
 		siteNavigationAdminWebConfig,
 		stableConfig,

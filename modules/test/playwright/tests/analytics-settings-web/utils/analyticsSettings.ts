@@ -9,14 +9,7 @@ import {ApiHelpers} from '../../../helpers/ApiHelpers';
 import {liferayConfig} from '../../../liferay.config';
 import {createChannel} from '../../osb-faro-web/utils/channel';
 import {createDataSource} from '../../osb-faro-web/utils/dataSource';
-
-export async function acceptsCookiesBanner(page: Page) {
-	const cookiesBannerButton = page.getByRole('button', {name: 'Accept All'});
-
-	if (await cookiesBannerButton.isVisible()) {
-		await cookiesBannerButton.click();
-	}
-}
+import {acceptsCookiesBanner} from '../../osb-faro-web/utils/portal';
 
 export async function connectToAnalyticsCloud(page: Page) {
 	await page.getByPlaceholder('Paste token here.').click();
@@ -58,32 +51,6 @@ export async function goToAnalyticsCloudInstanceSettings(page: Page) {
 	});
 }
 
-export async function navigateToSitePage({
-	page,
-	pageName,
-	siteName,
-}: {
-	page: Page;
-	pageName: string;
-	siteName?: string;
-}) {
-	const pageNameURL = pageName.replace(/ /g, '-').toLowerCase();
-
-	if (siteName) {
-		const siteNameURL = siteName.replace(/ /g, '-').toLowerCase();
-
-		await page.goto(
-			`${liferayConfig.environment.baseUrl}/web/${siteNameURL}/` +
-				`${pageNameURL}`
-		);
-	}
-	else {
-		await page.goto(
-			`${liferayConfig.environment.baseUrl}/web/guest/${pageNameURL}`
-		);
-	}
-}
-
 export async function syncAllContacts(page: Page) {
 	const wizard = page.locator('[data-testid="VIEW_WIZARD_MODE"]');
 
@@ -106,12 +73,14 @@ export async function syncAnalyticsCloud({
 	apiHelpers,
 	channelName,
 	page,
+	siteName,
 }: {
 	apiHelpers: ApiHelpers;
 	channelName: string;
 	page: Page;
+	siteName?: string;
 }) {
-	await createChannel({
+	const {channel, project} = await createChannel({
 		apiHelpers,
 		channelName,
 	});
@@ -129,19 +98,27 @@ export async function syncAnalyticsCloud({
 	await syncSite({
 		channelName,
 		page,
+		siteName,
 	});
 
 	await syncAllContacts(page);
 
 	await page.getByRole('button', {name: 'Finish'}).click();
+
+	return {
+		channel,
+		project,
+	};
 }
 
 export async function syncSite({
 	channelName,
 	page,
+	siteName = 'Liferay DXP',
 }: {
 	channelName: string;
 	page: Page;
+	siteName?: string;
 }) {
 	await expect(
 		page.getByRole('heading', {name: 'Property Assignment'})
@@ -172,6 +149,12 @@ export async function syncSite({
 	await page.getByRole('tab', {name: 'Sites'}).click();
 
 	await page.waitForSelector('div[aria-modal="true"] tbody');
+
+	await page.locator('.active').getByPlaceholder('Search').fill(siteName);
+
+	await page.locator('.active').getByRole('button', {name: 'Search'}).click();
+
+	await expect(page.locator('span[data-testid="loading"]')).toBeHidden();
 
 	const checkbox = await page.$(
 		'.modal table.table tbody tr:first-child input[type="checkbox"]'

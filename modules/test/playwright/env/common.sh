@@ -90,6 +90,8 @@ function deploy_client_extensions {
 				local gradlew=$(get_gradlew)
 
 				${gradlew} deploy -Pliferay.workspace.home.dir=${LIFERAY_HOME}
+
+				wait_for_portal_log_inactivity
 			else
 				echo "The directory ${client_extension_dir} does not exist."
 			fi
@@ -137,6 +139,8 @@ function deploy_osgi_modules {
 				local gradlew=$(get_gradlew)
 
 				${gradlew} deploy
+
+				wait_for_portal_log_inactivity
 			else
 				echo "The directory ${osgi_module_dir} does not exist."
 			fi
@@ -258,6 +262,10 @@ function get_playwright_project_dir {
 	find ${_PLAYWRIGHT_BASE_DIR} -name config.ts -type f -print | xargs grep "name: '${PLAYWRIGHT_PROJECT_NAME}'" | sed -n 's/\(.*\)\/config.ts.*/\1/p'
 }
 
+function get_portal_log_file_size {
+	wc --lines --total=always ${LIFERAY_HOME}/logs/liferay.*.log | grep total | awk '{print $1}'
+}
+
 function get_tomcat_dir {
 	find ${LIFERAY_HOME} -type d -name "tomcat*"
 }
@@ -319,7 +327,57 @@ function start_app_server {
 		sleep 5
 	done
 
+	wait_for_portal_log_inactivity
+
 	echo "${LIFERAY_PORTAL_URL} is now available."
+}
+
+function start_client_extension_spring_boot_application {
+	local client_extension_dir=${_PORTAL_PROJECT_DIR}/${1}
+
+	if [[ -d ${client_extension_dir} ]]
+	then
+		local spring_boot_class_name=$(find ${client_extension_dir} -name "*SpringBootApplication.java" | grep "SpringBootApplication.java" | xargs basename | sed 's/.java//')
+
+		echo "Starting ${spring_boot_class_name}."
+
+		cd ${client_extension_dir}
+
+		local portal_url_hostname=$(echo ${LIFERAY_PORTAL_URL} | awk -F:// '{print $2}')
+
+		echo "${portal_url_hostname}" > ${LIFERAY_HOME}/routes/default/dxp/com.liferay.lxc.dxp.domains
+		echo "${portal_url_hostname}" > ${LIFERAY_HOME}/routes/default/dxp/com.liferay.lxc.dxp.main.domain
+		echo "${portal_url_hostname}" > ${LIFERAY_HOME}/routes/default/dxp/com.liferay.lxc.dxp.mainDomain
+
+		local portal_url_scheme=$(echo ${LIFERAY_PORTAL_URL} | awk -F:// '{print $1}')
+
+		echo "${portal_url_scheme}" > ${LIFERAY_HOME}/routes/default/dxp/com.liferay.lxc.dxp.server.protocol
+
+		$(get_gradlew) bootRun -Pliferay.workspace.home.dir=${LIFERAY_HOME} &
+
+		local sleep_duration=60
+		local sleep_interval=5
+		local total_duration=0
+
+		while ! curl --output /dev/null --silent --head --fail http://localhost:58081/ready
+		do
+			if [ ${total_duration} -ge ${sleep_duration} ]; then
+				echo "Unable to start ${spring_boot_class_name}."
+
+				exit 1
+			fi
+
+			sleep ${sleep_interval}
+
+			total_duration=$((total_duration + sleep_interval))
+		done
+
+		sleep ${sleep_interval}
+
+		echo "Started ${spring_boot_class_name}."
+	else
+		echo "The directory ${client_extension_dir} does not exist."
+	fi
 }
 
 function stop_analytics_cloud {
@@ -341,6 +399,42 @@ function stop_app_server {
 	echo "${LIFERAY_PORTAL_URL} is no longer available."
 }
 
+function stop_client_extension_spring_boot_application {
+	local client_extension_dir=${_PORTAL_PROJECT_DIR}/${1}
+
+	if [[ -d ${client_extension_dir} ]]
+	then
+		local spring_boot_class_name=$(find ${client_extension_dir} -name "*SpringBootApplication.java" | grep "SpringBootApplication.java" | xargs basename | sed 's/.java//')
+
+		echo "Stopping ${spring_boot_class_name}."
+
+		kill -SIGTERM $(jps | grep ${spring_boot_class_name} | awk '{print $1}')
+
+		local sleep_duration=60
+		local sleep_interval=5
+		local total_duration=0
+
+		while curl --output /dev/null --silent --head --fail http://localhost:58081/ready
+		do
+			if [ ${total_duration} -ge ${sleep_duration} ]; then
+				echo "Unable to start ${spring_boot_class_name}."
+
+				exit 1
+			fi
+
+			sleep ${sleep_interval}
+
+			total_duration=$((total_duration + sleep_interval))
+		done
+
+		sleep ${sleep_interval}
+
+		echo "Stopped ${spring_boot_class_name}."
+	else
+		echo "The directory ${client_extension_dir} does not exist."
+	fi
+}
+
 function update_portal_ext_properties {
 	combine_properties_files \
 		$(get_tomcat_portal_ext_properties_file) \
@@ -348,6 +442,34 @@ function update_portal_ext_properties {
 		$(get_parent_portal_ext_properties_files) \
 		\
 		$(get_playwright_project_dir)/env/portal-ext.properties
+}
+
+function wait_for_portal_log_inactivity {
+	local portal_log_file_size=$(get_portal_log_file_size)
+
+	local sleep_interval=15
+	local sleep_duration=180
+	local total_duration=0
+
+	sleep ${sleep_interval}
+
+	while [[ ${portal_log_file_size} != $(get_portal_log_file_size) ]]
+	do
+		portal_log_file_size=$(get_portal_log_file_size)
+
+		if [[ ${total_duration} -ge ${sleep_duration} ]]
+		then
+			break
+		fi
+
+		sleep ${sleep_interval}
+
+		total_duration=$((total_duration + sleep_interval))
+
+		echo "Waiting for portal log inactivity"
+	done
+
+	echo "No portal activity in ${sleep_interval}s"
 }
 
 main "${@}"

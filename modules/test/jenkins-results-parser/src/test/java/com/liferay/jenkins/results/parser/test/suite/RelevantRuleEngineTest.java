@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,10 +26,43 @@ import org.junit.Test;
  */
 public class RelevantRuleEngineTest {
 
+	@After
+	public void tearDown() {
+		RelevantRuleEngine.clear();
+	}
+
+	@Test
+	public void testExcludedModifiedFileInModule1Dir() {
+		RelevantRuleEngine relevantRuleEngine = RelevantRuleEngine.getInstance(
+			_baseDir);
+
+		List<RelevantRule> relevantRules =
+			relevantRuleEngine.getMatchingRelevantRules(
+				Arrays.asList(
+					new File(_baseDir, "modules/module-1/file_1.excluded"),
+					new File(_baseDir, "text_file_0.txt")));
+
+		List<String> expectedRelevantRuleNames = Arrays.asList(
+			"functional-smoke-0-rule");
+
+		List<String> actualRelevantRuleNames = new ArrayList<>();
+
+		for (RelevantRule relevantRule : relevantRules) {
+			actualRelevantRuleNames.add(relevantRule.getName());
+		}
+
+		Collections.sort(actualRelevantRuleNames);
+		Collections.sort(expectedRelevantRuleNames);
+
+		Assert.assertEquals(expectedRelevantRuleNames, actualRelevantRuleNames);
+	}
+
 	@Test
 	public void testModifiedFileForPlaywrightBatch() {
-		RelevantRuleEngine relevantRuleEngine = new RelevantRuleEngine(
+		RelevantRuleEngine relevantRuleEngine = RelevantRuleEngine.getInstance(
 			_baseDir);
+
+		System.out.println(relevantRuleEngine);
 
 		List<RelevantRule> relevantRules =
 			relevantRuleEngine.getMatchingRelevantRules(
@@ -72,7 +106,7 @@ public class RelevantRuleEngineTest {
 
 	@Test
 	public void testModifiedFileInBaseDir() {
-		RelevantRuleEngine relevantRuleEngine = new RelevantRuleEngine(
+		RelevantRuleEngine relevantRuleEngine = RelevantRuleEngine.getInstance(
 			_baseDir);
 
 		List<RelevantRule> relevantRules =
@@ -94,8 +128,10 @@ public class RelevantRuleEngineTest {
 
 	@Test
 	public void testModifiedFileInBaseDirAndModule1Dir() {
-		RelevantRuleEngine relevantRuleEngine = new RelevantRuleEngine(
+		RelevantRuleEngine relevantRuleEngine = RelevantRuleEngine.getInstance(
 			_baseDir);
+
+		System.out.println(relevantRuleEngine);
 
 		List<RelevantRule> relevantRules =
 			relevantRuleEngine.getMatchingRelevantRules(
@@ -121,7 +157,7 @@ public class RelevantRuleEngineTest {
 
 	@Test
 	public void testModifiedFileInBaseDirAndModule2Dir() {
-		RelevantRuleEngine relevantRuleEngine = new RelevantRuleEngine(
+		RelevantRuleEngine relevantRuleEngine = RelevantRuleEngine.getInstance(
 			_baseDir);
 
 		List<RelevantRule> relevantRules =

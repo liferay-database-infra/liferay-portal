@@ -130,9 +130,10 @@ export function ReviewAndSubmitAppPage({
 
 				if (
 					[
+						'supportemailaddress',
 						'supporturl',
 						'publisherwebsiteurl',
-						'ppusagetermsurl',
+						'appusagetermsurl',
 						'appdocumentationurl',
 						'appinstallationguideurl',
 					].includes(specificationKey)

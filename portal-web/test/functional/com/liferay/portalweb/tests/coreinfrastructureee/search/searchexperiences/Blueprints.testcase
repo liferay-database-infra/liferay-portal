@@ -895,6 +895,8 @@ definition {
 
 		Click(locator1 = "Link#DOWNLOAD");
 
+		Alert.viewSuccessMessage();
+
 		var outputDir = PropsUtil.get("output.dir.name");
 
 		var fileContent = FileUtil.read("${outputDir}/sxpElement.json");
@@ -964,6 +966,8 @@ definition {
 		SelectFrameTop();
 
 		Click(locator1 = "Link#DOWNLOAD");
+
+		Alert.viewSuccessMessage();
 
 		var outputDir = PropsUtil.get("output.dir.name");
 
@@ -1622,6 +1626,8 @@ definition {
 
 		Click(locator1 = "Link#DOWNLOAD");
 
+		Alert.viewSuccessMessage();
+
 		Blueprints.viewDownloadedContent(
 			fileName = "sxpElement.json",
 			text = "clauses");
@@ -1647,6 +1653,8 @@ definition {
 
 		Click(locator1 = "Link#DOWNLOAD");
 
+		Alert.viewSuccessMessage();
+
 		Blueprints.viewDownloadedContent(
 			fileName = "sxpElement.json",
 			text = "queryConfiguration");
@@ -1668,6 +1676,8 @@ definition {
 
 		Click(locator1 = "Link#DOWNLOAD");
 
+		Alert.viewSuccessMessage();
+
 		Blueprints.viewDownloadedContent(
 			fileName = "raw_response.json",
 			text = "hits");
@@ -1688,6 +1698,8 @@ definition {
 		SelectFrameTop();
 
 		Click(locator1 = "Link#DOWNLOAD");
+
+		Alert.viewSuccessMessage();
 
 		Blueprints.viewDownloadedContent(
 			fileName = "score_explanation.json",
@@ -3919,9 +3931,15 @@ definition {
 
 		Navigator.gotoNavNested(navNested = "Query Settings");
 
-		Button.click(button = "Customize Contributors");
+		AssertChecked.assertCheckedNotVisible(
+			locator1 = "Radio#ANY",
+			radioLabel = "Disable All");
 
-		AssertElementNotPresent(locator1 = "Blueprints#BLUEPRINTS_CLAUSE_CONTRIBUTOR_TOGGLE_ENABLED");
+		Check.checkNotVisible(
+			locator1 = "Radio#ANY",
+			radioLabel = "Customize");
+
+		Button.click(button = "Customize Contributors");
 
 		ManagementBar.clickSelectAllCheckbox();
 
@@ -4818,6 +4836,10 @@ definition {
 		SelectWindow(value1 = "Creating and Managing Search Blueprints - Liferay Learn");
 
 		Close.closeAndSelectWindow(value1 = "Edit Blueprint - ${siteName}");
+
+		Check.checkNotVisible(
+			locator1 = "Radio#ANY",
+			radioLabel = "Enable All");
 
 		Navigator.gotoNavTab(navTab = "Configuration");
 

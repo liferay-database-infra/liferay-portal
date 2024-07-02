@@ -23,14 +23,10 @@ import java.util.Properties;
  */
 public class RelevantRule {
 
-	public RelevantRule(
-		String filePath, String name, Properties properties, String suiteName) {
-
+	public RelevantRule(String filePath, String name, Properties properties) {
 		_filePath = filePath;
 		_name = name;
 		_properties = properties;
-
-		_testSuiteName = suiteName;
 	}
 
 	public String getFilePath() {
@@ -46,15 +42,32 @@ public class RelevantRule {
 			return _modifiedFilesExcludesPathMatchers;
 		}
 
+		List<PathMatcher> modifiedFilesExcludesPathMatchers = new ArrayList<>();
+
 		String modifiedFilesExcludes = JenkinsResultsParserUtil.getProperty(
 			getProperties(), "modified.files.excludes", getName(),
 			getTestSuiteName());
 
 		if (modifiedFilesExcludes != null) {
-			_modifiedFilesExcludesPathMatchers =
+			modifiedFilesExcludesPathMatchers.addAll(
 				JenkinsResultsParserUtil.toPathMatchers(
 					_getParentFilePath() + "/",
-					modifiedFilesExcludes.split(","));
+					modifiedFilesExcludes.split(",")));
+		}
+
+		String modifiedFilesGlobalExcludes = _getBaseDirTestProperty(
+			"modified.files.global.excludes");
+
+		if (modifiedFilesGlobalExcludes != null) {
+			modifiedFilesExcludesPathMatchers.addAll(
+				JenkinsResultsParserUtil.toPathMatchers(
+					_getParentFilePath() + "/",
+					modifiedFilesGlobalExcludes.split(",")));
+		}
+
+		if (!modifiedFilesExcludesPathMatchers.isEmpty()) {
+			_modifiedFilesExcludesPathMatchers =
+				modifiedFilesExcludesPathMatchers;
 		}
 
 		return _modifiedFilesExcludesPathMatchers;
@@ -77,6 +90,16 @@ public class RelevantRule {
 				JenkinsResultsParserUtil.toPathMatchers(
 					_getParentFilePath() + "/",
 					modifiedFilesIncludes.split(","));
+		}
+
+		String modifiedFilesGlobalIncludes = _getBaseDirTestProperty(
+			"modified.files.global.includes");
+
+		if (modifiedFilesGlobalIncludes != null) {
+			_modifiedFilesIncludesPathMatchers.addAll(
+				JenkinsResultsParserUtil.toPathMatchers(
+					_getParentFilePath() + "/",
+					modifiedFilesGlobalIncludes.split(",")));
 		}
 
 		return _modifiedFilesIncludesPathMatchers;
@@ -117,13 +140,32 @@ public class RelevantRule {
 	}
 
 	public String getTestSuiteName() {
-		return _testSuiteName;
+		RelevantRuleEngine relevantRuleEngine =
+			RelevantRuleEngine.getInstance();
+
+		return relevantRuleEngine.getTestSuiteName();
 	}
 
 	public boolean matches(File modifiedFile) {
 		return JenkinsResultsParserUtil.isFileIncluded(
 			getModifiedFilesExcludesPathMatchers(),
 			getModifiedFilesIncludesPathMatchers(), modifiedFile);
+	}
+
+	private String _getBaseDirTestProperty(String propertyName) {
+		RelevantRuleEngine relevantRuleEngine =
+			RelevantRuleEngine.getInstance();
+
+		File baseTestPropertiesFile = new File(
+			relevantRuleEngine.getBaseDir(), "test.properties");
+
+		if (!baseTestPropertiesFile.exists()) {
+			return null;
+		}
+
+		return JenkinsResultsParserUtil.getProperty(
+			JenkinsResultsParserUtil.getProperties(baseTestPropertiesFile),
+			propertyName, getTestSuiteName());
 	}
 
 	private String _getParentFilePath() {
@@ -138,6 +180,5 @@ public class RelevantRule {
 	private final String _name;
 	private final Properties _properties;
 	private List<TestBatch> _testBatches;
-	private final String _testSuiteName;
 
 }

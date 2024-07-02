@@ -1,3 +1,5 @@
+[#assign currentDisplayIdsParameterized = "" /]
+
 [#if themeDisplay?has_content]
 	[#assign displayPortalURLs = (themeDisplay.getURLCurrent()?split("release-notes/"))! /]
 
@@ -6,12 +8,25 @@
 	[#assign currentTabId = (currentDisplayPaths?first)! /]
 
 	[#assign currentDisplayIds = (displayPortalURLs?last?split(currentTabId)?last)! /]
+
+	[#assign
+		parameter = "&start="
+		parameterValue = "1"
+	/]
+
+	[#assign paginationParameterIndex = currentDisplayIds?index_of(parameter) /]
+
+	[#if paginationParameterIndex != -1]
+		[#assign beforePaginationParameter = currentDisplayIds?substring(0, paginationParameterIndex + parameter?length) /]
+
+		[#assign currentDisplayIdsParameterized = beforePaginationParameter + parameterValue /]
+	[/#if]
 [/#if]
 
 [#macro tab key label]
 	[#assign
 		activeTab = currentTabId == key
-		inputURL = displayPortalURLs?first + "release-notes/" + key + currentDisplayIds
+		inputURL = displayPortalURLs?first + "release-notes/" + key + (paginationParameterIndex != -1)?then(currentDisplayIdsParameterized, currentDisplayIds)
 	/]
 
 	<li aria-label="${activeTab?then('Current Page', '')}" class="nav-item">

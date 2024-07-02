@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 
 import {Header} from '../../../../../../components/Header/Header';
 import {Input} from '../../../../../../components/Input/Input';
@@ -14,6 +14,10 @@ import {useAppContext} from '../AppContext/AppManageState';
 import {TYPES} from '../AppContext/actionTypes';
 
 import './ProvideAppSupportAndHelpPage.scss';
+import {
+	PRODUCT_PRICE_MODEL,
+	PRODUCT_SUPPORT_SPECIFICATION_KEY,
+} from '../../../../../../enums/Product';
 import useFeaturePreview from '../../../../../../hooks/useFeaturePreview';
 
 interface ProvideAppSupportAndHelpPageProps {
@@ -33,7 +37,9 @@ export function ProvideAppSupportAndHelpPage({
 			appInstallationGuideURL,
 			appProductId,
 			appUsageTermsURL,
+			priceModel,
 			publisherWebsiteURL,
+			supportEmail,
 			supportURL,
 		},
 		dispatch,
@@ -45,6 +51,50 @@ export function ProvideAppSupportAndHelpPage({
 		appId,
 		productId: appProductId,
 	});
+
+	const bodySpecification = useMemo(
+		() => [
+			{
+				specificationKey: PRODUCT_SUPPORT_SPECIFICATION_KEY.SUPPORT_URL,
+				value: supportURL?.value,
+			},
+			{
+				specificationKey:
+					PRODUCT_SUPPORT_SPECIFICATION_KEY.PUBLISHER_WEBSITE_URL,
+				value: publisherWebsiteURL?.value,
+			},
+			{
+				specificationKey:
+					PRODUCT_SUPPORT_SPECIFICATION_KEY.SUPPORT_EMAIL,
+				value: supportEmail?.value,
+			},
+			{
+				specificationKey:
+					PRODUCT_SUPPORT_SPECIFICATION_KEY.APP_USAGE_TERMS_URL,
+				value: appUsageTermsURL?.value,
+			},
+			{
+				specificationKey:
+					PRODUCT_SUPPORT_SPECIFICATION_KEY.APP_DOCUMENTATION_URL,
+				value: appDocumentationURL?.value,
+			},
+			{
+				specificationKey:
+					PRODUCT_SUPPORT_SPECIFICATION_KEY.APP_INSTALLATION_GUIDE_URL,
+				value: appInstallationGuideURL?.value,
+			},
+		],
+		[
+			appDocumentationURL?.value,
+			appInstallationGuideURL?.value,
+			appUsageTermsURL?.value,
+			publisherWebsiteURL?.value,
+			supportEmail?.value,
+			supportURL?.value,
+		]
+	);
+
+	const isPaidApp = priceModel.value === PRODUCT_PRICE_MODEL.PAID;
 
 	return (
 		<div className="provide-app-support-and-help-page-container">
@@ -87,7 +137,24 @@ export function ProvideAppSupportAndHelpPage({
 						})
 					}
 					placeholder="http:// Enter app name"
+					required={isPaidApp}
 					value={publisherWebsiteURL?.value}
+				/>
+
+				<Input
+					label="Support Email"
+					onChange={({target}) =>
+						dispatch({
+							payload: {
+								id: supportEmail?.id,
+								value: target.value,
+							},
+							type: TYPES.UPDATE_APP_SUPPORT_EMAIL,
+						})
+					}
+					placeholder="Enter Support Email Address"
+					required={isPaidApp}
+					value={supportEmail.value}
 				/>
 
 				<Input
@@ -137,154 +204,23 @@ export function ProvideAppSupportAndHelpPage({
 			</Section>
 
 			<NewAppPageFooterButtons
-				disableContinueButton={processing}
+				disableContinueButton={
+					!isPaidApp
+						? processing
+						: processing ||
+							!supportEmail.value.length ||
+							!publisherWebsiteURL.value.length
+				}
 				isLoading={processing}
 				onClickBack={() => onClickBack()}
 				onClickContinue={async () => {
 					setProcessing(true);
-					const supportURLSpecificationId = await submitSpecification(
-						_tempProductId,
-						supportURL?.id,
-						'supportURL',
-						'Support URL',
-						supportURL?.value
+
+					await submitSpecification(
+						_tempProductId as number,
+						bodySpecification
 					);
 
-					if (supportURLSpecificationId !== -1) {
-						dispatch({
-							payload: {
-								id: supportURLSpecificationId,
-								value: supportURL.value,
-							},
-							type: TYPES.UPDATE_APP_SUPPORT_URL,
-						});
-					}
-					else {
-						dispatch({
-							payload: {
-								id: supportURL?.id,
-								value: supportURL.value,
-							},
-							type: TYPES.UPDATE_APP_SUPPORT_URL,
-						});
-					}
-
-					if (publisherWebsiteURL?.value) {
-						const publisherWebsiteURLSpecificationId =
-							await submitSpecification(
-								_tempProductId,
-								publisherWebsiteURL?.id,
-								'publisherWebsiteURL',
-								'Publisher Web site URL',
-								publisherWebsiteURL?.value
-							);
-
-						if (publisherWebsiteURLSpecificationId !== -1) {
-							dispatch({
-								payload: {
-									id: publisherWebsiteURLSpecificationId,
-									value: publisherWebsiteURL.value,
-								},
-								type: TYPES.UPDATE_APP_PUBLISHER_WEBSITE_URL,
-							});
-						}
-						else {
-							dispatch({
-								payload: {
-									id: publisherWebsiteURL?.id,
-									value: publisherWebsiteURL.value,
-								},
-								type: TYPES.UPDATE_APP_PUBLISHER_WEBSITE_URL,
-							});
-						}
-					}
-					if (appUsageTermsURL?.value) {
-						const appUsageTermsURLSpecificationId =
-							await submitSpecification(
-								_tempProductId,
-								appUsageTermsURL?.id,
-								'appUsageTermsURL',
-								'App Usage Terms URL',
-								appUsageTermsURL?.value
-							);
-
-						if (appUsageTermsURLSpecificationId !== -1) {
-							dispatch({
-								payload: {
-									id: appUsageTermsURLSpecificationId,
-									value: appUsageTermsURL.value,
-								},
-								type: TYPES.UPDATE_APP_USAGE_TERMS_URL,
-							});
-						}
-						else {
-							dispatch({
-								payload: {
-									id: appUsageTermsURL?.id,
-									value: appUsageTermsURL.value,
-								},
-								type: TYPES.UPDATE_APP_USAGE_TERMS_URL,
-							});
-						}
-					}
-					if (appDocumentationURL?.value) {
-						const appDocumentationURLSpecificationId =
-							await submitSpecification(
-								_tempProductId,
-								appDocumentationURL?.id,
-								'appDocumentationURL',
-								'App Documentation URL',
-								appDocumentationURL?.value
-							);
-
-						if (appDocumentationURLSpecificationId !== -1) {
-							dispatch({
-								payload: {
-									id: appDocumentationURLSpecificationId,
-									value: appDocumentationURL.value,
-								},
-								type: TYPES.UPDATE_APP_DOCUMENTATION_URL,
-							});
-						}
-						else {
-							dispatch({
-								payload: {
-									id: appDocumentationURL?.id,
-									value: appDocumentationURL.value,
-								},
-								type: TYPES.UPDATE_APP_DOCUMENTATION_URL,
-							});
-						}
-					}
-					if (appInstallationGuideURL?.value) {
-						const appInstallationGuideURLSpecificationId =
-							await submitSpecification(
-								_tempProductId,
-								appInstallationGuideURL?.id,
-								'appInstallationGuideURL',
-								'App Installation Guide URL',
-								appInstallationGuideURL?.value
-							);
-
-						if (appInstallationGuideURLSpecificationId !== -1) {
-							dispatch({
-								payload: {
-									id: appInstallationGuideURLSpecificationId,
-									value: appInstallationGuideURL.value,
-								},
-								type: TYPES.UPDATE_APP_INSTALLATION_AND_UNINSTALLATION_GUIDE_URL,
-							});
-						}
-						else {
-							dispatch({
-								payload: {
-									id: appInstallationGuideURL?.id,
-									value: appInstallationGuideURL.value,
-								},
-								type: TYPES.UPDATE_APP_INSTALLATION_AND_UNINSTALLATION_GUIDE_URL,
-							});
-						}
-					}
 					setProcessing(false);
 
 					onClickContinue();
