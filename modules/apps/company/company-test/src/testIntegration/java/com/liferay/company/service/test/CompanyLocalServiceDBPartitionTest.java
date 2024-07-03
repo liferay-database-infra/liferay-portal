@@ -61,7 +61,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import org.osgi.framework.BundleListener;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 
@@ -473,14 +472,9 @@ public class CompanyLocalServiceDBPartitionTest
 			ArrayUtil.contains(_getCompanyIdsBySQL(), company.getCompanyId()));
 		Assert.assertEquals(dbPartitionsCount - 1, _getDBPartitionsCount());
 
-		BundleListener configurationManager = ReflectionTestUtil.invoke(
-			_configurationAdmin, "getConfigurationManager", new Class<?>[0],
-			null);
-
 		Assert.assertNull(
-			ReflectionTestUtil.invoke(
-				configurationManager, "getConfiguration",
-				new Class<?>[] {String.class}, configuration.getPid()));
+			_configurationAdmin.listConfigurations(
+				"(service.pid=" + configuration.getPid() + ")"));
 
 		Assert.assertFalse(_persistenceManager.exists(configuration.getPid()));
 	}
