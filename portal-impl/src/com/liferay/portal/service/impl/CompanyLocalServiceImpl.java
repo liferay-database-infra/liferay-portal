@@ -540,7 +540,14 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		SafeCloseable safeCloseable1 =
 			PortalInstances.setCopyInProcessCompanyId(fromCompanyId);
 
-		DBPartitionUtil.copyDBPartition(fromCompanyId, toCompanyId);
+		try {
+			DBPartitionUtil.copyDBPartition(fromCompanyId, toCompanyId);
+		}
+		catch (Throwable throwable) {
+			safeCloseable1.close();
+
+			throw throwable;
+		}
 
 		SafeCloseable safeCloseable2 = CompanyThreadLocal.setWithSafeCloseable(
 			toCompanyId);
