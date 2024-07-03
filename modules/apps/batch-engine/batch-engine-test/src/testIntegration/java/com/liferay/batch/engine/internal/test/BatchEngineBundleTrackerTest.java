@@ -16,7 +16,9 @@ import com.liferay.batch.engine.unit.BundleBatchEngineUnit;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
@@ -28,6 +30,7 @@ import com.liferay.portal.kernel.zip.ZipWriter;
 import com.liferay.portal.kernel.zip.ZipWriterFactory;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.tools.DBUpgrader;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -43,8 +46,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.apache.commons.lang.time.StopWatch;
+
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -68,6 +75,18 @@ public class BatchEngineBundleTrackerTest {
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
 		new LiferayIntegrationTestRule();
+
+	@BeforeClass
+	public static void setUpClass() {
+		_originalStopWatch = ReflectionTestUtil.getAndSetFieldValue(
+			DBUpgrader.class, "_stopWatch", null);
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		ReflectionTestUtil.setFieldValue(
+			DBUpgrader.class, "_stopWatch", _originalStopWatch);
+	}
 
 	@Before
 	public void setUp() {
@@ -104,6 +123,18 @@ public class BatchEngineBundleTrackerTest {
 		_testProcessBatchEngineBundle(
 			"batch9", "/batch9/data.batch-engine-data.json",
 			"/batch9/data.batch-engine-data.json");
+	}
+
+	@Test
+	public void testProcessBatchEngineBundleOnUpgrade() throws Exception {
+		try {
+			StartupHelperUtil.setUpgrading(true);
+
+			_testProcessBatchEngineBundle("batch1");
+		}
+		finally {
+			StartupHelperUtil.setUpgrading(false);
+		}
 	}
 
 	private String _getDataFileName(
@@ -263,6 +294,8 @@ public class BatchEngineBundleTrackerTest {
 
 		return new FileInputStream(zipWriter.getFile());
 	}
+
+	private static StopWatch _originalStopWatch;
 
 	@Inject
 	private BatchEngineImportTaskExecutor _batchEngineImportTaskExecutor;

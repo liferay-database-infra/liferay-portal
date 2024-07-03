@@ -60,6 +60,18 @@ type TUserAccount = {
 	password?: string;
 };
 
+type TExportBatch = {
+	className?: string;
+	contentType?: string;
+	errorMessage?: string;
+	executeStatus?: string;
+	externalReferenceCode?: string;
+	id?: number;
+	processedItemsCount?: number;
+	startTime?: string;
+	totalItemsCount?: number;
+};
+
 export class HeadlessAdminUserApiHelper {
 	readonly apiHelpers: ApiHelpers | DataApiHelpers;
 	readonly basePath: string;
@@ -122,12 +134,6 @@ export class HeadlessAdminUserApiHelper {
 	async deleteOrganization(organizationId: string) {
 		return this.apiHelpers.delete(
 			`${this.apiHelpers.baseUrl}${this.basePath}/organizations/${organizationId}`
-		);
-	}
-
-	async deleteUserAccount(userAccountId: number) {
-		return this.apiHelpers.delete(
-			`${this.apiHelpers.baseUrl}${this.basePath}/user-accounts/${userAccountId}`
 		);
 	}
 
@@ -244,6 +250,12 @@ export class HeadlessAdminUserApiHelper {
 		return this.apiHelpers.postResponse(
 			`${this.apiHelpers.baseUrl}${this.basePath}/roles/${roleId}/association/user-account/${userAccountId}`,
 			{data: {}, failOnStatusCode: true}
+		);
+	}
+
+	async postRolesPageExportBatch(): Promise<TExportBatch> {
+		return this.apiHelpers.post(
+			`${this.apiHelpers.baseUrl}${this.basePath}/roles/export-batch`
 		);
 	}
 
