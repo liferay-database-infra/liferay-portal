@@ -166,7 +166,7 @@ export class PageEditorPage {
 
 		// Change value in different way depending on field type
 
-		const field = await this.page.getByLabel(fieldLabel, {
+		const field = this.page.getByLabel(fieldLabel, {
 			exact: true,
 		});
 
@@ -175,7 +175,7 @@ export class PageEditorPage {
 				.getByLabel('Value from Stylebook', {exact: true})
 				.click();
 
-			const valueButton = await this.page.getByTitle(value as string, {
+			const valueButton = this.page.getByTitle(value as string, {
 				exact: true,
 			});
 
@@ -733,17 +733,26 @@ export class PageEditorPage {
 	}
 
 	async selectFragment(fragmentId: string, isDesktop = true) {
-		if (await this.isActive(fragmentId, isDesktop)) {
+		const isActive = await this.isActive(fragmentId, isDesktop);
+
+		if (isActive) {
 			return;
 		}
 
-		const fragment = await this.getFragment(fragmentId, isDesktop);
+		const fragment = this.getFragment(fragmentId, isDesktop);
 
 		await fragment.click();
 
-		const isActive = await this.isActive(fragmentId, isDesktop);
+		const treeNode = this.page.locator(
+			`.treeview-link[data-id*="${fragmentId}"]`
+		);
 
-		expect(isActive).toBe(true);
+		// Click the tree node again to make sure we activate it
+		// This is specific for Collection Display fragment
+
+		await treeNode.click();
+
+		await expect(treeNode).toHaveClass(/focus/);
 	}
 
 	async selectEditable(
@@ -753,11 +762,7 @@ export class PageEditorPage {
 	) {
 		await this.selectFragment(fragmentId, isDesktop);
 
-		const editable = await this.getEditable(
-			fragmentId,
-			editableId,
-			isDesktop
-		);
+		const editable = this.getEditable(fragmentId, editableId, isDesktop);
 
 		await editable.click();
 

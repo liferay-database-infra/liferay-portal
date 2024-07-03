@@ -9,6 +9,7 @@ import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
 import {isolatedLayoutTest} from '../../fixtures/isolatedLayoutTest';
 import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
+import {pageViewModePagesTest} from '../../fixtures/pageViewModePagesTest';
 import getRandomString from '../../utils/getRandomString';
 import {questionsPagesTest} from './fixtures/questionsPagesTest';
 
@@ -17,7 +18,8 @@ export const baseTest = mergeTests(
 	isolatedLayoutTest({publish: false, type: 'portlet'}),
 	isolatedSiteTest,
 	loginTest(),
-	questionsPagesTest
+	questionsPagesTest,
+	pageViewModePagesTest
 );
 
 const tagWithSpaces = mergeTests(baseTest);
@@ -30,14 +32,14 @@ tagWithSpaces(
 		questionsPage,
 		questionsTopicsPage,
 		site,
-		widgetPage,
+		widgetPagePage,
 	}) => {
 		const layout = await apiHelpers.jsonWebServicesLayout.addLayout({
 			groupId: site.id,
 			title: getRandomString(),
 		});
 		await page.goto('/web' + site.friendlyUrlPath + layout.friendlyURL);
-		await widgetPage.addPortlet('Questions');
+		await widgetPagePage.addPortlet('Questions');
 
 		await questionsTopicsPage.addNewTopic('New topic');
 		await questionsTopicsPage.goToTopic('New topic');

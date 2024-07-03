@@ -64,7 +64,28 @@ export default function getCollectionDefinition({
 				},
 				collectionType: classPK ? 'Collection' : 'CollectionProvider',
 			},
-			listStyle: LIST_STYLES[listStyle],
+			collectionViewports: [
+				{
+					collectionViewportDefinition: {
+						numberOfColumns: 1,
+					},
+					id: 'landscapeMobile',
+				},
+				{
+					collectionViewportDefinition: {
+						numberOfColumns: 1,
+					},
+					id: 'portraitMobile',
+				},
+				{
+					collectionViewportDefinition: {
+						numberOfColumns: 1,
+					},
+					id: 'tablet',
+				},
+			],
+
+			listStyle: LIST_STYLES[listStyle] || '',
 		},
 		id,
 		pageElements,

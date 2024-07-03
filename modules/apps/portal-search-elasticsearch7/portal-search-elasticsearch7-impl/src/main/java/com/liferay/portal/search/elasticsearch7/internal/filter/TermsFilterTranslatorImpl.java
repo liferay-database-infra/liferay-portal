@@ -6,9 +6,9 @@
 package com.liferay.portal.search.elasticsearch7.internal.filter;
 
 import com.liferay.portal.kernel.search.filter.TermsFilter;
+import com.liferay.portal.search.elasticsearch7.internal.util.QueryUtil;
 
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 
 import org.osgi.service.component.annotations.Component;
 
@@ -20,7 +20,7 @@ public class TermsFilterTranslatorImpl implements TermsFilterTranslator {
 
 	@Override
 	public QueryBuilder translate(TermsFilter termsFilter) {
-		return QueryBuilders.termsQuery(
+		return QueryUtil.translateTerms(
 			termsFilter.getField(), termsFilter.getValues());
 	}
 
