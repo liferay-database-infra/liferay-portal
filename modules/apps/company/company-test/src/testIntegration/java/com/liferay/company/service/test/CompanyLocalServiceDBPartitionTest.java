@@ -662,13 +662,14 @@ public class CompanyLocalServiceDBPartitionTest
 				).build());
 		}
 
-		Configuration configuration = _configurationAdmin.getConfiguration(pid);
+		Configuration[] configurations = _configurationAdmin.listConfigurations(
+			"(service.pid=" + pid + ")");
 
-		Assert.assertNotNull(configuration);
+		Assert.assertNotNull(configurations);
 
 		Assert.assertTrue(_persistenceManager.exists(pid));
 
-		return configuration;
+		return configurations[0];
 	}
 
 	private void _checkPartitionDoesNotExist(long companyId)
