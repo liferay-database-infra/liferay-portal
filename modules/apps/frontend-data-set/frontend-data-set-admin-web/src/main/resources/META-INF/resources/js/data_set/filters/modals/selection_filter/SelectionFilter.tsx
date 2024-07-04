@@ -14,14 +14,12 @@ import ClayIcon from '@clayui/icon';
 import ClayLayout from '@clayui/layout';
 import ClayModal from '@clayui/modal';
 import classNames from 'classnames';
-import {fetch} from 'frontend-js-web';
 import fuzzy from 'fuzzy';
 import React, {useEffect, useState} from 'react';
 
 import CheckboxMultiSelect from '../../../../components/CheckboxMultiSelect';
 import RequiredMark from '../../../../components/RequiredMark';
 import getAllPicklists from '../../../../utils/getAllPicklists';
-import openDefaultFailureToast from '../../../../utils/openDefaultFailureToast';
 import {
 	ESelectionFilterSourceType,
 	IField,
@@ -124,20 +122,6 @@ function Body({
 
 	const isValidSingleMode =
 		multiple || (!multiple && !(preselectedValues.length > 1));
-
-	async function getAPIValues(source: string) {
-		const response = await fetch(`/o${source}`);
-
-		if (!response.ok) {
-			openDefaultFailureToast();
-
-			return [];
-		}
-
-		const responseJSON = await response.json();
-
-		return responseJSON;
-	}
 
 	const isi18nFilterLabelsValid = (
 		i18nFilterLabels: Partial<Liferay.Language.FullyLocalizedValue<string>>
@@ -250,7 +234,10 @@ function Body({
 						itemKey: selectedItemKey,
 						itemLabel: selectedItemLabel,
 						preselectedValues: JSON.stringify(
-							preselectedValues.map((item: any) => item.value)
+							preselectedValues.map((item: any) => ({
+								label: item.label,
+								value: item.value,
+							}))
 						),
 						restApplication: selectedRESTApplication,
 						restEndpoint: selectedRESTEndpoint,
@@ -294,35 +281,16 @@ function Body({
 		}
 	};
 
-	useEffect(() => {
-		if (source && sourceType === ESelectionFilterSourceType.API_HEADLESS) {
-			getAPIValues(source as string).then((apiValues) => {
-				setFilteredSourceItems(
-					!apiValues.items.length
-						? []
-						: apiValues.items
-								.filter((item: any) =>
-									fuzzy.match(
-										preselectedValueInput,
-										item[selectedItemLabel]
-									)
-								)
-								.map((item: any) => {
-									return {
-										label: item[selectedItemLabel],
-										value: item[selectedItemKey],
-									};
-								})
-				);
-			});
+	function getAPIHeadlessSourceURL(
+		restApplication: string | null,
+		restEndpoint: string | null
+	): string | null {
+		if (!restApplication || !restEndpoint) {
+			return null;
 		}
-	}, [
-		preselectedValueInput,
-		selectedItemKey,
-		selectedItemLabel,
-		source,
-		sourceType,
-	]);
+
+		return `/o${restApplication.replace('v1.0/', '')}${restEndpoint}`;
+	}
 
 	useEffect(() => {
 		if (
@@ -378,12 +346,16 @@ function Body({
 				source &&
 				sourceType === ESelectionFilterSourceType.API_HEADLESS
 			) {
+				const filterPreselectedValues = JSON.parse(
+					(filter as ISelectionFilter).preselectedValues || '[]'
+				);
+
 				validSavedPreselectedValues = filteredSourceItems.filter(
 					(item) =>
-						JSON.parse(
-							(filter as ISelectionFilter).preselectedValues ||
-								'[]'
-						).includes(item.value)
+						filterPreselectedValues.find(
+							(filterValue: {label: string; value: string}) =>
+								filterValue.value === item.value
+						)
 				);
 			}
 
@@ -511,6 +483,7 @@ function Body({
 
 											setSource(undefined);
 											setPreselectedValueInput('');
+
 											setPreselectedValues([]);
 										}}
 										options={[
@@ -592,40 +565,49 @@ function Body({
 												selectedRESTApplication,
 												selectedRESTEndpoint,
 												selectedRESTSchema,
+												sourceItems,
 											}) => {
-												let apiSource;
+												const restApplication =
+													selectedRESTApplication!.replace(
+														'/v1.0',
+														''
+													);
 
-												if (
-													selectedRESTApplication &&
-													selectedRESTEndpoint
-												) {
-													apiSource = `${selectedRESTApplication}${selectedRESTEndpoint}`;
-													setSource(apiSource);
-													setSourceValidationError(
+												setSelectedRESTApplication(
+													restApplication
+												);
+												if (selectedRESTApplication) {
+													setRequiredRESTApplicationValidationError(
 														false
 													);
 												}
 
-												setSelectedRESTApplication(
-													selectedRESTApplication
-												);
-												setRequiredRESTApplicationValidationError(
-													!selectedRESTApplication
-												);
-
 												setSelectedRESTEndpoint(
 													selectedRESTEndpoint
 												);
-												setRESTEndpointValidationError(
-													!selectedRESTEndpoint
-												);
+												if (selectedRESTEndpoint) {
+													setRESTEndpointValidationError(
+														false
+													);
+												}
+
+												const source =
+													getAPIHeadlessSourceURL(
+														restApplication,
+														selectedRESTEndpoint
+													);
+
+												setSource(source as string);
+												setSourceValidationError(false);
 
 												setSelectedRESTSchema(
 													selectedRESTSchema
 												);
-												setRESTSchemaValidationError(
-													!selectedRESTSchema
-												);
+												if (selectedRESTSchema) {
+													setRESTSchemaValidationError(
+														false
+													);
+												}
 
 												setSelectedItemKey(
 													selectedItemKey
@@ -640,7 +622,15 @@ function Body({
 												setItemLabelValidationError(
 													false
 												);
+
+												setPreselectedValues([]);
+												setFilteredSourceItems(
+													sourceItems
+												);
 											}}
+											preselectedValueInput={
+												preselectedValueInput
+											}
 											requiredRESTApplicationValidationError={
 												requiredRESTApplicationValidationError
 											}
@@ -651,6 +641,7 @@ function Body({
 											restSchemaValidationError={
 												restSchemaValidationError
 											}
+											source={source as string}
 										/>
 									)}
 
@@ -716,12 +707,8 @@ function Body({
 															ESelectionFilterSourceType.API_HEADLESS
 														) {
 															valueItem = {
-																label: item[
-																	selectedItemLabel
-																],
-																value: item[
-																	selectedItemKey
-																],
+																label: item.label,
+																value: item.value,
 															};
 														}
 

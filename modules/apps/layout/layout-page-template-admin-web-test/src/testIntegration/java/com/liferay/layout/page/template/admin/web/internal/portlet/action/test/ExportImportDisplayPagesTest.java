@@ -110,6 +110,19 @@ public class ExportImportDisplayPagesTest {
 	}
 
 	@Test
+	public void testExportImportDisplayPageWithoutVariation() throws Exception {
+		Assert.assertNull(
+			_infoItemServiceRegistry.getFirstInfoItemService(
+				InfoItemFormVariationsProvider.class,
+				"com.liferay.commerce.product.model.CPDefinition"));
+
+		_assertExportImportDisplayPage(
+			_portal.getClassNameId(
+				"com.liferay.commerce.product.model.CPDefinition"),
+			0, null, 0);
+	}
+
+	@Test
 	public void testFileEntryExportImportDisplayPage() throws Exception {
 		_assertExportImportDisplayPageWithInfoItemFormVariation(
 			"com.liferay.portal.kernel.repository.model.FileEntry");
@@ -347,30 +360,30 @@ public class ExportImportDisplayPagesTest {
 			layoutsImporterResultEntries.toString(), 1,
 			layoutsImporterResultEntries.size());
 
-		LayoutsImporterResultEntry layoutPageTemplateImportEntry =
+		LayoutsImporterResultEntry layoutsImporterResultEntry =
 			layoutsImporterResultEntries.get(0);
 
 		if (Validator.isNotNull(errorMessageKey)) {
 			Assert.assertEquals(
 				LayoutsImporterResultEntry.Status.INVALID,
-				layoutPageTemplateImportEntry.getStatus());
+				layoutsImporterResultEntry.getStatus());
 
 			Assert.assertEquals(
 				_language.format(
 					LocaleUtil.getMostRelevantLocale(), errorMessageKey,
 					"display-page-templates/display-page-template-one" +
 						"/display-page-template.json"),
-				layoutPageTemplateImportEntry.getErrorMessage());
+				layoutsImporterResultEntry.getErrorMessage());
 
 			return;
 		}
 
 		Assert.assertEquals(
 			LayoutsImporterResultEntry.Status.IMPORTED,
-			layoutPageTemplateImportEntry.getStatus());
+			layoutsImporterResultEntry.getStatus());
 
 		String layoutPageTemplateEntryKey = StringUtil.toLowerCase(
-			layoutPageTemplateImportEntry.getName());
+			layoutsImporterResultEntry.getName());
 
 		layoutPageTemplateEntryKey = StringUtil.replace(
 			layoutPageTemplateEntryKey, CharPool.SPACE, CharPool.DASH);

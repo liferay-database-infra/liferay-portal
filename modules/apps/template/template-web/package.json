@@ -8,7 +8,7 @@
 		"@clayui/loading-indicator": "3.111.0",
 		"@clayui/modal": "3.116.0",
 		"@clayui/panel": "3.116.0",
-		"@clayui/popover": "3.116.0",
+		"@clayui/popover": "3.116.1",
 		"@liferay/frontend-js-codemirror-web": "*",
 		"@liferay/frontend-js-react-web": "*",
 		"classnames": "2.3.1",

@@ -6,10 +6,11 @@
 import ClayButton from '@clayui/button';
 import ClayDropDown from '@clayui/drop-down';
 import ClayForm from '@clayui/form';
+import {TItem} from '@clayui/form/lib/SelectBox';
 import classNames from 'classnames';
 import {fetch} from 'frontend-js-web';
 import fuzzy from 'fuzzy';
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 
 import RequiredMark from '../../../../../components/RequiredMark';
 import ValidationFeedback from '../../../../../components/ValidationFeedback';
@@ -36,17 +37,21 @@ interface IApiRestApplicationModalContentProps {
 		selectedRESTApplication,
 		selectedRESTEndpoint,
 		selectedRESTSchema,
+		sourceItems,
 	}: {
 		selectedItemKey: string;
 		selectedItemLabel: string;
 		selectedRESTApplication: string | null;
 		selectedRESTEndpoint: string | null;
 		selectedRESTSchema: string | null;
+		sourceItems: TItem[];
 	}) => void;
+	preselectedValueInput: string;
 	requiredRESTApplicationValidationError: boolean;
 	restApplications: string[];
 	restEndpointValidationError: boolean;
 	restSchemaValidationError: boolean;
+	source: string;
 }
 
 function ApiRestApplication({
@@ -55,10 +60,12 @@ function ApiRestApplication({
 	itemLabelValidationError,
 	namespace,
 	onChange,
+	preselectedValueInput,
 	requiredRESTApplicationValidationError,
 	restApplications,
 	restEndpointValidationError,
 	restSchemaValidationError,
+	source,
 }: IApiRestApplicationModalContentProps) {
 	const [fields, setFields] = useState<IField[]>([]);
 	const [selectedItemKey, setSelectedItemKey] = useState<string>(
@@ -100,11 +107,61 @@ function ApiRestApplication({
 		return true;
 	};
 
+	async function getSourceItems({
+		preselectedValueInput,
+		selectedItemKey,
+		selectedItemLabel,
+		source,
+	}: {
+		preselectedValueInput: string;
+		selectedItemKey: string;
+		selectedItemLabel: string;
+		source: string | null;
+	}) {
+		const isValidSource =
+			source && !(source as string).match(/\{[A-Za-z0-9]+\}/g);
+
+		if (!isValidSource || !selectedItemKey || !selectedItemLabel) {
+			return;
+		}
+
+		const sourceItems = await fetch(source as string)
+			.then((response) => {
+				if (!response.ok) {
+					openDefaultFailureToast();
+
+					return [];
+				}
+
+				const responseJSON = response.json();
+
+				return responseJSON;
+			})
+			.then((apiValues) => {
+				return !apiValues.items.length
+					? []
+					: apiValues.items
+							.filter((item: any) => {
+								return fuzzy.match(
+									preselectedValueInput,
+									String(item[selectedItemLabel])
+								);
+							})
+							.map((item: any) => {
+								return {
+									label: String(item[selectedItemLabel]),
+									value: String(item[selectedItemKey]),
+								};
+							});
+			});
+
+		return sourceItems;
+	}
+
 	const getRESTSchemas = async (restApplication: string) => {
 		if (!restApplication) {
 			return;
 		}
-
 		const response = await fetch(`/o${restApplication}/openapi.json`);
 
 		if (!response.ok) {
@@ -142,6 +199,9 @@ function ApiRestApplication({
 			});
 		});
 
+		setSelectedItemKey('');
+		setSelectedItemLabel('');
+
 		if (schemaEndpoints.size === 0) {
 			setSelectedRESTSchema(null);
 			setSelectedRESTEndpoint(null);
@@ -149,11 +209,12 @@ function ApiRestApplication({
 			setNoEnpointsRESTApplicationValidationError(true);
 
 			onChange({
-				selectedItemKey,
-				selectedItemLabel,
+				selectedItemKey: '',
+				selectedItemLabel: '',
 				selectedRESTApplication: restApplication,
 				selectedRESTEndpoint: null,
 				selectedRESTSchema: null,
+				sourceItems: [],
 			});
 		}
 		else if (schemaEndpoints.size === 1) {
@@ -170,13 +231,31 @@ function ApiRestApplication({
 			setNoEnpointsRESTApplicationValidationError(false);
 
 			onChange({
-				selectedItemKey,
-				selectedItemLabel,
+				selectedItemKey: '',
+				selectedItemLabel: '',
 				selectedRESTApplication: restApplication,
 				selectedRESTEndpoint:
 					paths?.length === 1 ? paths[0] : selectedRESTEndpoint,
 				selectedRESTSchema: schema,
+				sourceItems: [],
 			});
+
+			if (restApplication && schema) {
+				getFields({
+					restApplication,
+					restSchema: schema,
+				}).then((fields: IField[]) => {
+					if (fields) {
+						setFields(
+							fields.filter(
+								(field) =>
+									field.type !== 'array' &&
+									field.type !== 'object'
+							)
+						);
+					}
+				});
+			}
 		}
 		else {
 			setSelectedRESTSchema(null);
@@ -185,11 +264,12 @@ function ApiRestApplication({
 			setNoEnpointsRESTApplicationValidationError(false);
 
 			onChange({
-				selectedItemKey,
-				selectedItemLabel,
+				selectedItemKey: '',
+				selectedItemLabel: '',
 				selectedRESTApplication: restApplication,
 				selectedRESTEndpoint: null,
 				selectedRESTSchema: null,
+				sourceItems: [],
 			});
 		}
 
@@ -231,6 +311,7 @@ function ApiRestApplication({
 						selectedRESTApplication: item,
 						selectedRESTEndpoint,
 						selectedRESTSchema,
+						sourceItems: [],
 					});
 				}}
 				restApplications={restApplications}
@@ -280,7 +361,25 @@ function ApiRestApplication({
 								? endpoint
 								: selectedRESTEndpoint,
 						selectedRESTSchema: item,
+						sourceItems: [],
 					});
+
+					if (selectedRESTApplication && item) {
+						getFields({
+							restApplication: selectedRESTApplication,
+							restSchema: item,
+						}).then((fields: IField[]) => {
+							if (fields) {
+								setFields(
+									fields.filter(
+										(field) =>
+											field.type !== 'array' &&
+											field.type !== 'object'
+									)
+								);
+							}
+						});
+					}
 				}}
 				restSchemas={Array.from(restSchemaEndpoints.keys())}
 			/>
@@ -315,6 +414,7 @@ function ApiRestApplication({
 						selectedRESTApplication,
 						selectedRESTEndpoint: item,
 						selectedRESTSchema,
+						sourceItems: [],
 					});
 				}}
 				restEndpoints={
@@ -323,25 +423,6 @@ function ApiRestApplication({
 			/>
 		</ClayDropDown>
 	);
-
-	useEffect(() => {
-		if (selectedRESTApplication && selectedRESTSchema) {
-			getFields({
-				restApplication: selectedRESTApplication,
-				restSchema: selectedRESTSchema,
-			}).then((fields: IField[]) => {
-				if (fields) {
-					setFields(
-						fields.filter(
-							(field) =>
-								field.type !== 'array' &&
-								field.type !== 'object'
-						)
-					);
-				}
-			});
-		}
-	}, [selectedRESTApplication, selectedRESTSchema]);
 
 	const ItemKeyDropdownMenu = ({
 		itemKeys: initialItemKeys,
@@ -592,13 +673,21 @@ function ApiRestApplication({
 									onItemClick={(item: string) => {
 										setSelectedItemKey(item);
 
-										onChange({
+										getSourceItems({
+											preselectedValueInput,
 											selectedItemKey: item,
 											selectedItemLabel,
-											selectedRESTApplication,
-											selectedRESTEndpoint,
-											selectedRESTSchema,
-										});
+											source,
+										}).then((sourceItems) =>
+											onChange({
+												selectedItemKey: item,
+												selectedItemLabel,
+												selectedRESTApplication,
+												selectedRESTEndpoint,
+												selectedRESTSchema,
+												sourceItems,
+											})
+										);
 									}}
 								/>
 							</ClayDropDown>
@@ -645,13 +734,21 @@ function ApiRestApplication({
 									onItemClick={(item: string) => {
 										setSelectedItemLabel(item);
 
-										onChange({
+										getSourceItems({
+											preselectedValueInput,
 											selectedItemKey,
 											selectedItemLabel: item,
-											selectedRESTApplication,
-											selectedRESTEndpoint,
-											selectedRESTSchema,
-										});
+											source,
+										}).then((sourceItems) =>
+											onChange({
+												selectedItemKey,
+												selectedItemLabel: item,
+												selectedRESTApplication,
+												selectedRESTEndpoint,
+												selectedRESTSchema,
+												sourceItems,
+											})
+										);
 									}}
 								/>
 							</ClayDropDown>

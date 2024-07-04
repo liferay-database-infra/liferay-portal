@@ -8,6 +8,8 @@ package com.liferay.layout.page.template.admin.web.internal.importer.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.change.tracking.model.CTCollection;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
+import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.fragment.constants.FragmentConstants;
 import com.liferay.fragment.contributor.FragmentCollectionContributorRegistry;
 import com.liferay.fragment.entry.processor.constants.FragmentEntryProcessorConstants;
@@ -40,6 +42,7 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
+import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.CompanyConstants;
@@ -59,22 +62,32 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.kernel.zip.ZipWriter;
+import com.liferay.portal.kernel.zip.ZipWriterFactory;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.segments.service.SegmentsExperienceLocalService;
 
 import java.io.File;
+import java.io.InputStream;
 
+import java.net.URL;
+
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -82,6 +95,9 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 
 /**
  * @author Rubén Pulido
@@ -105,6 +121,45 @@ public class LayoutsImporterTest {
 			_group1, TestPropsValues.getUserId());
 		_serviceContext2 = ServiceContextTestUtil.getServiceContext(
 			_group2, TestPropsValues.getUserId());
+	}
+
+	@Test
+	public void testImportDisplayPageTemplates() throws Exception {
+		List<LayoutsImporterResultEntry> layoutsImporterResultEntries = null;
+
+		ServiceContextThreadLocal.pushServiceContext(_serviceContext1);
+
+		try {
+			layoutsImporterResultEntries = _layoutsImporter.importFile(
+				TestPropsValues.getUserId(), _group1.getGroupId(), 0,
+				_getFile(), LayoutsImportStrategy.DO_NOT_OVERWRITE, true);
+		}
+		finally {
+			ServiceContextThreadLocal.popServiceContext();
+		}
+
+		Assert.assertNotNull(layoutsImporterResultEntries);
+
+		Assert.assertEquals(
+			layoutsImporterResultEntries.toString(), 2,
+			layoutsImporterResultEntries.size());
+
+		for (LayoutsImporterResultEntry layoutsImporterResultEntry :
+				layoutsImporterResultEntries) {
+
+			Assert.assertEquals(
+				LayoutsImporterResultEntry.Status.IMPORTED,
+				layoutsImporterResultEntry.getStatus());
+			Assert.assertEquals(
+				LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE,
+				layoutsImporterResultEntry.getType());
+
+			_assertLayoutPageTemplateEntry(
+				StringUtil.replace(
+					StringUtil.toLowerCase(
+						layoutsImporterResultEntry.getName()),
+					CharPool.SPACE, CharPool.DASH));
+		}
 	}
 
 	@Test
@@ -352,6 +407,97 @@ public class LayoutsImporterTest {
 			fragmentEntryLink.getRendererKey());
 	}
 
+	private void _assertLayoutPageTemplateEntry(
+			long classNameId, long classTypeId,
+			LayoutPageTemplateEntry layoutPageTemplateEntry, String mappedField)
+		throws Exception {
+
+		Assert.assertEquals(
+			classNameId, layoutPageTemplateEntry.getClassNameId());
+		Assert.assertEquals(
+			classTypeId, layoutPageTemplateEntry.getClassTypeId());
+
+		LayoutPageTemplateStructure layoutPageTemplateStructure =
+			_layoutPageTemplateStructureLocalService.
+				fetchLayoutPageTemplateStructure(
+					layoutPageTemplateEntry.getGroupId(),
+					layoutPageTemplateEntry.getPlid());
+
+		LayoutStructure layoutStructure = LayoutStructure.of(
+			layoutPageTemplateStructure.getDefaultSegmentsExperienceData());
+
+		Map<Long, LayoutStructureItem> fragmentLayoutStructureItems =
+			layoutStructure.getFragmentLayoutStructureItems();
+
+		Assert.assertEquals(
+			MapUtil.toString(fragmentLayoutStructureItems), 1,
+			fragmentLayoutStructureItems.size());
+
+		FragmentEntryLink fragmentEntryLink =
+			_fragmentEntryLinkLocalService.getFragmentEntryLink(
+				SetUtil.randomElement(fragmentLayoutStructureItems.keySet()));
+
+		Assert.assertEquals(
+			"BASIC_COMPONENT-heading", fragmentEntryLink.getRendererKey());
+
+		Assert.assertTrue(
+			Validator.isNotNull(fragmentEntryLink.getEditableValues()));
+
+		JSONObject editableValuesJSONObject = _jsonFactory.createJSONObject(
+			fragmentEntryLink.getEditableValues());
+
+		JSONObject editableJSONObject = editableValuesJSONObject.getJSONObject(
+			FragmentEntryProcessorConstants.
+				KEY_EDITABLE_FRAGMENT_ENTRY_PROCESSOR);
+
+		JSONObject elementTextJSONObject = editableJSONObject.getJSONObject(
+			"element-text");
+
+		Assert.assertEquals(
+			mappedField, elementTextJSONObject.getString("mappedField"));
+	}
+
+	private void _assertLayoutPageTemplateEntry(
+			String layoutPageTemplateEntryKey)
+		throws Exception {
+
+		Assert.assertTrue(
+			layoutPageTemplateEntryKey,
+			ArrayUtil.contains(
+				_DISPLAY_PAGE_LAYOUT_PAGE_TEMPLATE_ENTRY_KEYS,
+				layoutPageTemplateEntryKey));
+
+		LayoutPageTemplateEntry layoutPageTemplateEntry =
+			_layoutPageTemplateEntryLocalService.fetchLayoutPageTemplateEntry(
+				_group1.getGroupId(), layoutPageTemplateEntryKey);
+
+		Assert.assertNotNull(
+			layoutPageTemplateEntryKey, layoutPageTemplateEntry);
+
+		if (Objects.equals(
+				layoutPageTemplateEntryKey,
+				"basic-web-content-display-page-template")) {
+
+			long classNameId = _portal.getClassNameId(
+				"com.liferay.journal.model.JournalArticle");
+
+			DDMStructure ddmStructure =
+				_ddmStructureLocalService.fetchStructure(
+					layoutPageTemplateEntry.getGroupId(), classNameId,
+					"BASIC-WEB-CONTENT", true);
+
+			_assertLayoutPageTemplateEntry(
+				classNameId, ddmStructure.getStructureId(),
+				layoutPageTemplateEntry, "JournalArticle_title");
+		}
+		else {
+			_assertLayoutPageTemplateEntry(
+				_portal.getClassNameId(
+					"com.liferay.commerce.product.model.CPDefinition"),
+				0, layoutPageTemplateEntry, "CPDefinition_name");
+		}
+	}
+
 	private void _assertLayoutsImporterResultEntries(
 			FragmentEntry fragmentEntry,
 			List<LayoutsImporterResultEntry> layoutsImporterResultEntries)
@@ -489,6 +635,32 @@ public class LayoutsImporterTest {
 			layoutStructureItem instanceof ContainerStyledLayoutStructureItem);
 
 		return (ContainerStyledLayoutStructureItem)layoutStructureItem;
+	}
+
+	private File _getFile() throws Exception {
+		Bundle bundle = FrameworkUtil.getBundle(getClass());
+
+		Enumeration<URL> enumeration = bundle.findEntries(
+			_RESOURCES_PATH, "*", true);
+
+		ZipWriter zipWriter = _zipWriterFactory.getZipWriter();
+
+		while (enumeration.hasMoreElements()) {
+			URL url = enumeration.nextElement();
+
+			String path = url.getPath();
+
+			if (!path.endsWith(StringPool.SLASH)) {
+				try (InputStream inputStream = url.openStream()) {
+					zipWriter.addEntry(
+						StringUtil.removeSubstring(
+							url.getPath(), _RESOURCES_PATH),
+						inputStream);
+				}
+			}
+		}
+
+		return zipWriter.getFile();
 	}
 
 	private LayoutStructureItem _getMainChildLayoutStructureItem(
@@ -696,8 +868,21 @@ public class LayoutsImporterTest {
 			actualRowStyledLayoutStructureItem.getNumberOfColumns());
 	}
 
+	private static final String[]
+		_DISPLAY_PAGE_LAYOUT_PAGE_TEMPLATE_ENTRY_KEYS = {
+			"basic-web-content-display-page-template",
+			"product-display-page-template"
+		};
+
+	private static final String _RESOURCES_PATH =
+		"com/liferay/layout/page/template/admin/web/internal/importer/test" +
+			"/dependencies/display-page-templates";
+
 	@Inject
 	private CTCollectionLocalService _ctCollectionLocalService;
+
+	@Inject
+	private DDMStructureLocalService _ddmStructureLocalService;
 
 	@Inject
 	private FragmentCollectionContributorRegistry
@@ -717,6 +902,9 @@ public class LayoutsImporterTest {
 
 	@DeleteAfterTestRun
 	private Group _group2;
+
+	@Inject
+	private JSONFactory _jsonFactory;
 
 	@Inject
 	private LayoutLocalService _layoutLocalService;
@@ -742,9 +930,15 @@ public class LayoutsImporterTest {
 	private MVCResourceCommand _mvcResourceCommand;
 
 	@Inject
+	private Portal _portal;
+
+	@Inject
 	private SegmentsExperienceLocalService _segmentsExperienceLocalService;
 
 	private ServiceContext _serviceContext1;
 	private ServiceContext _serviceContext2;
+
+	@Inject
+	private ZipWriterFactory _zipWriterFactory;
 
 }

@@ -29,6 +29,14 @@ type Props = {
 	};
 };
 
+const SEPARATOR = '__';
+
+export function getOptionData(option: string) {
+	const [groupId, groupKey, ...value] = option.split(SEPARATOR);
+
+	return {groupId, groupKey, value: value.join('-')};
+}
+
 export default function DisplayTemplateSelector({namespace, props}: Props) {
 	const {displayStyle, displayStyleGroupId, displayStyleGroupKey, items} =
 		props;
@@ -46,16 +54,16 @@ export default function DisplayTemplateSelector({namespace, props}: Props) {
 			return;
 		}
 
-		const [groupId, groupKey, ...value] = option.split('-');
+		const {groupId, groupKey, value} = getOptionData(option);
 
 		setSelectedDisplayStyle({
 			groupId,
 			groupKey,
-			name: value.join('-'),
+			name: value,
 		});
 
 		Liferay.fire('templateSelector:changedTemplate', {
-			value: value.join('-'),
+			value,
 		});
 	};
 
@@ -93,7 +101,7 @@ export default function DisplayTemplateSelector({namespace, props}: Props) {
 					id={`${namespace}displayStyle`}
 					items={items}
 					onSelectionChange={onSelectionChangeHandlder}
-					selectedKey={`${selectedDisplayStyle.groupId}-${selectedDisplayStyle.groupKey}-${selectedDisplayStyle.name}`}
+					selectedKey={`${selectedDisplayStyle.groupId}${SEPARATOR}${selectedDisplayStyle.groupKey}${SEPARATOR}${selectedDisplayStyle.name}`}
 				>
 					{(group) => (
 						<DropDown.Group
@@ -106,11 +114,11 @@ export default function DisplayTemplateSelector({namespace, props}: Props) {
 										item.groupId
 											? item.groupId
 											: displayStyleGroupId
-									}-${
+									}${SEPARATOR}${
 										item.groupKey
 											? item.groupKey
 											: displayStyleGroupKey
-									}-${item.value}`}
+									}${SEPARATOR}${item.value}`}
 								>
 									{item.label}
 								</Option>
