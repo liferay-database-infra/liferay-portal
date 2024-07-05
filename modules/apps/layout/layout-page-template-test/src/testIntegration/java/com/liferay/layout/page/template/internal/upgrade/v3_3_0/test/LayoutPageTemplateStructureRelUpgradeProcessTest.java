@@ -31,6 +31,7 @@ import com.liferay.portal.kernel.model.PortletPreferences;
 import com.liferay.portal.kernel.service.PortletLocalService;
 import com.liferay.portal.kernel.service.PortletPreferenceValueLocalService;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
@@ -46,6 +47,9 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.version.Version;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -95,11 +99,6 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 		_languageId = LocaleUtil.toLanguageId(
 			_portal.getSiteDefaultLocale(_group));
 
-		_layoutPageTemplateStructure =
-			_layoutPageTemplateStructureLocalService.
-				fetchLayoutPageTemplateStructure(
-					_group.getGroupId(), _layout.getPlid());
-
 		SegmentsExperience segmentsExperience1 =
 			SegmentsTestUtil.addSegmentsExperience(
 				_group.getGroupId(), _layout.getPlid());
@@ -125,7 +124,7 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 	@Test
 	public void testUpgrade() throws Exception {
 		FragmentEntryLink fragmentEntryLink =
-			_addFragmentStyledLayoutStructureItems();
+			_addFragmentStyledLayoutStructureItems(_layout);
 
 		String defaultSegmentsExperienceValue = RandomTestUtil.randomString();
 		String segmentsExperience1Value = RandomTestUtil.randomString();
@@ -156,104 +155,56 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 		_fragmentEntryLinkLocalService.updateFragmentEntryLink(
 			fragmentEntryLink);
 
-		_assertGetFragmentEntryLinksBySegmentsExperienceId();
+		_assertGetFragmentEntryLinksBySegmentsExperienceId(_layout.getPlid());
 
 		_runUpgrade();
 
-		_assertGetFragmentEntryLinksByPlid(3);
+		_assertGetFragmentEntryLinksByPlid(3, _layout.getPlid());
 
 		_assertFragmentEntryLink(
-			defaultSegmentsExperienceValue, _SEGMENTS_EXPERIENCE_ID_DEFAULT);
+			defaultSegmentsExperienceValue, _layout.getPlid(),
+			_SEGMENTS_EXPERIENCE_ID_DEFAULT);
 		_assertFragmentEntryLink(
-			segmentsExperience1Value, _segmentsExperienceId1);
+			segmentsExperience1Value, _layout.getPlid(),
+			_segmentsExperienceId1);
 		_assertFragmentEntryLink(
-			segmentsExperience2Value, _segmentsExperienceId2);
+			segmentsExperience2Value, _layout.getPlid(),
+			_segmentsExperienceId2);
 	}
 
 	@Test
 	public void testUpgradeWithFragmentEntryLinkTypePortlet() throws Exception {
-		Bundle bundle = FrameworkUtil.getBundle(getClass());
+		_assertUpgradeWithFragmentEntryLinkTypePortlet(_layout);
+	}
 
-		BundleContext bundleContext = bundle.getBundleContext();
+	@Test
+	public void testUpgradeWithFragmentEntryLinkTypePortletAndDraftLayout()
+		throws Exception {
 
-		String portletId = RandomTestUtil.randomString();
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.configuration.module.configuration." +
+					"internal.model.listener.PortletPreferencesModelListener",
+				LoggerTestUtil.ERROR)) {
 
-		ServiceRegistration<?> serviceRegistration =
-			bundleContext.registerService(
-				Portlet.class, new TestPortlet(),
-				HashMapDictionaryBuilder.put(
-					"com.liferay.portlet.instanceable", "true"
-				).put(
-					"javax.portlet.name", portletId
-				).build());
+			_assertUpgradeWithFragmentEntryLinkTypePortlet(
+				_layout.fetchDraftLayout());
 
-		try {
-			com.liferay.portal.kernel.model.Portlet portlet =
-				_portletLocalService.fetchPortletById(
-					TestPropsValues.getCompanyId(), portletId);
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			FragmentEntryLink fragmentEntryLink =
-				_addTypePortletFragmentStyledLayoutStructureItems(portletId);
-
-			String name = RandomTestUtil.randomString();
-
-			String defaultSegmentsExperienceValue =
-				RandomTestUtil.randomString();
-
-			_addPortletPreferenceValue(
-				portlet,
-				StringBundler.concat(
-					portletId, _INSTANCE_SEPARATOR,
-					fragmentEntryLink.getNamespace()),
-				name, defaultSegmentsExperienceValue);
-
-			String segmentsExperience1Value = RandomTestUtil.randomString();
-
-			_addPortletPreferenceValue(
-				portlet,
-				StringBundler.concat(
-					portletId, _INSTANCE_SEPARATOR,
-					fragmentEntryLink.getNamespace(),
-					_SEGMENTS_EXPERIENCE_SEPARATOR_1, _segmentsExperienceId1),
-				name, segmentsExperience1Value);
-
-			String segmentsExperience2Value = RandomTestUtil.randomString();
-
-			_addPortletPreferenceValue(
-				portlet,
-				StringBundler.concat(
-					portletId, _INSTANCE_SEPARATOR,
-					fragmentEntryLink.getNamespace(),
-					_SEGMENTS_EXPERIENCE_SEPARATOR_2, _segmentsExperienceId2),
-				name, segmentsExperience2Value);
-
-			_assertGetFragmentEntryLinksBySegmentsExperienceId();
-
-			_runUpgrade();
-
-			_assertGetFragmentEntryLinksByPlid(3);
-
-			_assertFragmentEntryLink(
-				defaultSegmentsExperienceValue, name, portletId,
-				_SEGMENTS_EXPERIENCE_ID_DEFAULT);
-			_assertFragmentEntryLink(
-				segmentsExperience1Value, name, portletId,
-				_segmentsExperienceId1);
-			_assertFragmentEntryLink(
-				segmentsExperience2Value, name, portletId,
-				_segmentsExperienceId2);
-		}
-		finally {
-			serviceRegistration.unregister();
+			Assert.assertTrue(logEntries.isEmpty());
 		}
 	}
 
 	private void _addFragmentStyledLayoutStructureItem(
-			long fragmentEntryLinkId, long segmentsExperienceId)
+			long fragmentEntryLinkId, long plid, long segmentsExperienceId)
 		throws Exception {
 
+		LayoutPageTemplateStructure layoutPageTemplateStructure =
+			_layoutPageTemplateStructureLocalService.
+				fetchLayoutPageTemplateStructure(_group.getGroupId(), plid);
+
 		LayoutStructure layoutStructure = LayoutStructure.of(
-			_layoutPageTemplateStructure.getData(segmentsExperienceId));
+			layoutPageTemplateStructure.getData(segmentsExperienceId));
 
 		Map<Long, LayoutStructureItem> fragmentLayoutStructureItems =
 			layoutStructure.getFragmentLayoutStructureItems();
@@ -265,17 +216,17 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 		layoutStructure.addFragmentStyledLayoutStructureItem(
 			fragmentEntryLinkId, layoutStructure.getMainItemId(), 0);
 
-		_layoutPageTemplateStructure =
-			_layoutPageTemplateStructureLocalService.
-				updateLayoutPageTemplateStructureData(
-					_group.getGroupId(), _layout.getPlid(),
-					segmentsExperienceId, layoutStructure.toString());
+		_layoutPageTemplateStructureLocalService.
+			updateLayoutPageTemplateStructureData(
+				_group.getGroupId(), plid, segmentsExperienceId,
+				layoutStructure.toString());
 
 		_assertFragmentStyledLayoutStructureItem(
-			fragmentEntryLinkId, segmentsExperienceId);
+			fragmentEntryLinkId, plid, segmentsExperienceId);
 	}
 
-	private FragmentEntryLink _addFragmentStyledLayoutStructureItems()
+	private FragmentEntryLink _addFragmentStyledLayoutStructureItems(
+			Layout layout)
 		throws Exception {
 
 		FragmentEntry fragmentEntry =
@@ -286,33 +237,35 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 			ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
 				null, fragmentEntry.getCss(), fragmentEntry.getConfiguration(),
 				fragmentEntry.getFragmentEntryId(), fragmentEntry.getHtml(),
-				fragmentEntry.getJs(), _layout,
+				fragmentEntry.getJs(), layout,
 				fragmentEntry.getFragmentEntryKey(),
 				_SEGMENTS_EXPERIENCE_ID_DEFAULT, fragmentEntry.getType());
 
 		_assertFragmentStyledLayoutStructureItem(
-			fragmentEntryLink.getFragmentEntryLinkId(),
+			fragmentEntryLink.getFragmentEntryLinkId(), layout.getPlid(),
 			_SEGMENTS_EXPERIENCE_ID_DEFAULT);
 
 		_addFragmentStyledLayoutStructureItem(
-			fragmentEntryLink.getFragmentEntryLinkId(), _segmentsExperienceId1);
+			fragmentEntryLink.getFragmentEntryLinkId(), layout.getPlid(),
+			_segmentsExperienceId1);
 		_addFragmentStyledLayoutStructureItem(
-			fragmentEntryLink.getFragmentEntryLinkId(), _segmentsExperienceId2);
+			fragmentEntryLink.getFragmentEntryLinkId(), layout.getPlid(),
+			_segmentsExperienceId2);
 
 		return fragmentEntryLink;
 	}
 
 	private void _addPortletPreferenceValue(
-			com.liferay.portal.kernel.model.Portlet portlet, String portletId,
-			String name, String value)
+			long plid, com.liferay.portal.kernel.model.Portlet portlet,
+			String portletId, String name, String value)
 		throws Exception {
 
 		PortletPreferences portletPreferences =
 			_portletPreferencesLocalService.addPortletPreferences(
 				TestPropsValues.getCompanyId(),
 				PortletKeys.PREFS_OWNER_ID_DEFAULT,
-				PortletKeys.PREFS_OWNER_TYPE_LAYOUT, _layout.getPlid(),
-				portletId, portlet, null);
+				PortletKeys.PREFS_OWNER_TYPE_LAYOUT, plid, portletId, portlet,
+				null);
 
 		javax.portlet.PortletPreferences jxPortletPreferences =
 			_portletPreferenceValueLocalService.getPreferences(
@@ -322,18 +275,18 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 
 		_portletPreferencesLocalService.updatePreferences(
 			PortletKeys.PREFS_OWNER_ID_DEFAULT,
-			PortletKeys.PREFS_OWNER_TYPE_LAYOUT, _layout.getPlid(), portletId,
+			PortletKeys.PREFS_OWNER_TYPE_LAYOUT, plid, portletId,
 			jxPortletPreferences);
 	}
 
 	private FragmentEntryLink _addTypePortletFragmentStyledLayoutStructureItems(
-			String portletId)
+			Layout layout, String portletId)
 		throws Exception {
 
 		FragmentEntryLink fragmentEntryLink =
 			ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
 				null, StringPool.BLANK, StringPool.BLANK, 0, StringPool.BLANK,
-				StringPool.BLANK, _layout, StringPool.BLANK,
+				StringPool.BLANK, layout, StringPool.BLANK,
 				_SEGMENTS_EXPERIENCE_ID_DEFAULT,
 				FragmentConstants.TYPE_PORTLET);
 
@@ -349,26 +302,27 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 				fragmentEntryLink);
 
 		_assertFragmentStyledLayoutStructureItem(
-			fragmentEntryLink.getFragmentEntryLinkId(),
+			fragmentEntryLink.getFragmentEntryLinkId(), layout.getPlid(),
 			_SEGMENTS_EXPERIENCE_ID_DEFAULT);
 
 		_addFragmentStyledLayoutStructureItem(
-			fragmentEntryLink.getFragmentEntryLinkId(), _segmentsExperienceId1);
+			fragmentEntryLink.getFragmentEntryLinkId(), layout.getPlid(),
+			_segmentsExperienceId1);
 		_addFragmentStyledLayoutStructureItem(
-			fragmentEntryLink.getFragmentEntryLinkId(), _segmentsExperienceId2);
+			fragmentEntryLink.getFragmentEntryLinkId(), layout.getPlid(),
+			_segmentsExperienceId2);
 
 		return fragmentEntryLink;
 	}
 
 	private void _assertFragmentEntryLink(
-			String expectedValue, long segmentsExperienceId)
+			String expectedValue, long plid, long segmentsExperienceId)
 		throws Exception {
 
 		List<FragmentEntryLink> fragmentEntryLinks =
 			_fragmentEntryLinkLocalService.
 				getFragmentEntryLinksBySegmentsExperienceId(
-					_group.getGroupId(), segmentsExperienceId,
-					_layout.getPlid());
+					_group.getGroupId(), segmentsExperienceId, plid);
 
 		Assert.assertEquals(
 			fragmentEntryLinks.toString(), 1, fragmentEntryLinks.size());
@@ -397,15 +351,14 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 	}
 
 	private void _assertFragmentEntryLink(
-			String expected, String name, String portletId,
+			String expected, String name, long plid, String portletId,
 			long segmentsExperienceId)
 		throws Exception {
 
 		List<FragmentEntryLink> fragmentEntryLinks =
 			_fragmentEntryLinkLocalService.
 				getFragmentEntryLinksBySegmentsExperienceId(
-					_group.getGroupId(), segmentsExperienceId,
-					_layout.getPlid());
+					_group.getGroupId(), segmentsExperienceId, plid);
 
 		Assert.assertEquals(
 			fragmentEntryLinks.toString(), 1, fragmentEntryLinks.size());
@@ -429,15 +382,19 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 		Assert.assertEquals(fragmentEntryLink.getNamespace(), instanceId);
 
 		_assertPortletPreferenceValue(
-			expected, name,
+			expected, name, plid,
 			StringBundler.concat(portletId, _INSTANCE_SEPARATOR, instanceId));
 	}
 
 	private void _assertFragmentStyledLayoutStructureItem(
-		long fragmentEntryLinkId, long segmentsExperienceId) {
+		long fragmentEntryLinkId, long plid, long segmentsExperienceId) {
+
+		LayoutPageTemplateStructure layoutPageTemplateStructure =
+			_layoutPageTemplateStructureLocalService.
+				fetchLayoutPageTemplateStructure(_group.getGroupId(), plid);
 
 		LayoutStructure layoutStructure = LayoutStructure.of(
-			_layoutPageTemplateStructure.getData(segmentsExperienceId));
+			layoutPageTemplateStructure.getData(segmentsExperienceId));
 
 		Map<Long, LayoutStructureItem> fragmentLayoutStructureItems =
 			layoutStructure.getFragmentLayoutStructureItems();
@@ -455,52 +412,138 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 			fragmentStyledLayoutStructureItem.getFragmentEntryLinkId());
 	}
 
-	private void _assertGetFragmentEntryLinksByPlid(int count) {
+	private void _assertGetFragmentEntryLinksByPlid(int count, long plid) {
 		List<FragmentEntryLink> fragmentEntryLinks =
 			_fragmentEntryLinkLocalService.getFragmentEntryLinksByPlid(
-				_group.getGroupId(), _layout.getPlid());
+				_group.getGroupId(), plid);
 
 		Assert.assertEquals(
 			fragmentEntryLinks.toString(), count, fragmentEntryLinks.size());
 	}
 
-	private void _assertGetFragmentEntryLinksBySegmentsExperienceId() {
-		_assertGetFragmentEntryLinksByPlid(1);
-
-		_assertGetFragmentEntryLinksBySegmentsExperienceId(
-			1, _SEGMENTS_EXPERIENCE_ID_DEFAULT);
-		_assertGetFragmentEntryLinksBySegmentsExperienceId(
-			0, _segmentsExperienceId1);
-		_assertGetFragmentEntryLinksBySegmentsExperienceId(
-			0, _segmentsExperienceId2);
-	}
-
 	private void _assertGetFragmentEntryLinksBySegmentsExperienceId(
-		int count, long segmentsExperienceId) {
+		int count, long plid, long segmentsExperienceId) {
 
 		List<FragmentEntryLink> fragmentEntryLinks =
 			_fragmentEntryLinkLocalService.
 				getFragmentEntryLinksBySegmentsExperienceId(
-					_group.getGroupId(), segmentsExperienceId,
-					_layout.getPlid());
+					_group.getGroupId(), segmentsExperienceId, plid);
 
 		Assert.assertEquals(
 			fragmentEntryLinks.toString(), count, fragmentEntryLinks.size());
 	}
 
+	private void _assertGetFragmentEntryLinksBySegmentsExperienceId(long plid) {
+		_assertGetFragmentEntryLinksByPlid(1, plid);
+
+		_assertGetFragmentEntryLinksBySegmentsExperienceId(
+			1, plid, _SEGMENTS_EXPERIENCE_ID_DEFAULT);
+		_assertGetFragmentEntryLinksBySegmentsExperienceId(
+			0, plid, _segmentsExperienceId1);
+		_assertGetFragmentEntryLinksBySegmentsExperienceId(
+			0, plid, _segmentsExperienceId2);
+	}
+
 	private void _assertPortletPreferenceValue(
-			String expected, String name, String portletId)
+			String expected, String name, long plid, String portletId)
 		throws Exception {
 
 		javax.portlet.PortletPreferences jxPortletPreferences =
 			_portletPreferenceValueLocalService.getPreferences(
 				_portletPreferencesLocalService.getPortletPreferences(
 					PortletKeys.PREFS_OWNER_ID_DEFAULT,
-					PortletKeys.PREFS_OWNER_TYPE_LAYOUT, _layout.getPlid(),
-					portletId));
+					PortletKeys.PREFS_OWNER_TYPE_LAYOUT, plid, portletId));
 
 		Assert.assertEquals(
 			expected, jxPortletPreferences.getValue(name, null));
+	}
+
+	private void _assertUpgradeWithFragmentEntryLinkTypePortlet(Layout layout)
+		throws Exception {
+
+		Bundle bundle = FrameworkUtil.getBundle(getClass());
+
+		BundleContext bundleContext = bundle.getBundleContext();
+
+		String portletId = RandomTestUtil.randomString();
+
+		ServiceRegistration<?> serviceRegistration =
+			bundleContext.registerService(
+				Portlet.class, new TestPortlet(),
+				HashMapDictionaryBuilder.put(
+					"com.liferay.portlet.instanceable", "true"
+				).put(
+					"javax.portlet.name", portletId
+				).build());
+
+		try {
+			com.liferay.portal.kernel.model.Portlet portlet =
+				_portletLocalService.fetchPortletById(
+					TestPropsValues.getCompanyId(), portletId);
+
+			FragmentEntryLink fragmentEntryLink =
+				_addTypePortletFragmentStyledLayoutStructureItems(
+					layout, portletId);
+
+			String name = RandomTestUtil.randomString();
+
+			String defaultSegmentsExperienceValue =
+				RandomTestUtil.randomString();
+
+			_addPortletPreferenceValue(
+				layout.getPlid(), portlet,
+				StringBundler.concat(
+					portletId, _INSTANCE_SEPARATOR,
+					fragmentEntryLink.getNamespace()),
+				name, defaultSegmentsExperienceValue);
+
+			String segmentsExperience1Value = RandomTestUtil.randomString();
+
+			_addPortletPreferenceValue(
+				layout.getPlid(), portlet,
+				StringBundler.concat(
+					portletId, _INSTANCE_SEPARATOR,
+					fragmentEntryLink.getNamespace(),
+					_SEGMENTS_EXPERIENCE_SEPARATOR_1, _segmentsExperienceId1),
+				name, segmentsExperience1Value);
+
+			String segmentsExperience2Value = RandomTestUtil.randomString();
+
+			_addPortletPreferenceValue(
+				layout.getPlid(), portlet,
+				StringBundler.concat(
+					portletId, _INSTANCE_SEPARATOR,
+					fragmentEntryLink.getNamespace(),
+					_SEGMENTS_EXPERIENCE_SEPARATOR_2, _segmentsExperienceId2),
+				name, segmentsExperience2Value);
+
+			_assertGetFragmentEntryLinksBySegmentsExperienceId(
+				layout.getPlid());
+
+			ServiceContextThreadLocal.pushServiceContext(new ServiceContext());
+
+			try {
+				_runUpgrade();
+			}
+			finally {
+				ServiceContextThreadLocal.popServiceContext();
+			}
+
+			_assertGetFragmentEntryLinksByPlid(3, layout.getPlid());
+
+			_assertFragmentEntryLink(
+				defaultSegmentsExperienceValue, name, layout.getPlid(),
+				portletId, _SEGMENTS_EXPERIENCE_ID_DEFAULT);
+			_assertFragmentEntryLink(
+				segmentsExperience1Value, name, layout.getPlid(), portletId,
+				_segmentsExperienceId1);
+			_assertFragmentEntryLink(
+				segmentsExperience2Value, name, layout.getPlid(), portletId,
+				_segmentsExperienceId2);
+		}
+		finally {
+			serviceRegistration.unregister();
+		}
 	}
 
 	private void _runUpgrade() throws Exception {
@@ -547,7 +590,6 @@ public class LayoutPageTemplateStructureRelUpgradeProcessTest {
 
 	private String _languageId;
 	private Layout _layout;
-	private LayoutPageTemplateStructure _layoutPageTemplateStructure;
 
 	@Inject
 	private LayoutPageTemplateStructureLocalService

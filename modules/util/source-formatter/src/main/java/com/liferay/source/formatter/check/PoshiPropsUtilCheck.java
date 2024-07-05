@@ -27,7 +27,9 @@ public class PoshiPropsUtilCheck extends BaseFileCheck {
 			String fileName, String absolutePath, String content)
 		throws IOException {
 
-		if (!fileName.endsWith(".testcase") || SourceUtil.isXML(content)) {
+		if ((!fileName.endsWith(".macro") && !fileName.endsWith(".testcase")) ||
+			SourceUtil.isXML(content)) {
+
 			return content;
 		}
 
@@ -50,13 +52,38 @@ public class PoshiPropsUtilCheck extends BaseFileCheck {
 		Matcher matcher = _propsUtilGetPasswordPattern.matcher(content);
 
 		while (matcher.find()) {
-			addMessage(
-				fileName,
-				StringBundler.concat(
-					"Pass '", matcher.group(2),
-					"' directly instead of assigning value to variable '",
-					matcher.group(1), "'"),
-				getLineNumber(content, matcher.start()) + 1);
+			String previousCodeBlock = content.substring(0, matcher.start());
+
+			if (!previousCodeBlock.contains("\tmacro ") &&
+				!previousCodeBlock.contains("\ttest ")) {
+
+				continue;
+			}
+
+			int x = previousCodeBlock.lastIndexOf("if (");
+
+			if (x != -1) {
+				String s = previousCodeBlock.substring(x);
+
+				if (!s.contains("\tmacro ") && !s.contains("\ttest ") &&
+					(getLevel(s, "{", "}") == 1)) {
+
+					continue;
+				}
+			}
+
+			String followingCode = _getFollowingCode(content, matcher.end());
+			String variableName = matcher.group(1);
+
+			if (_isUnnecessaryAssign(followingCode, variableName)) {
+				addMessage(
+					fileName,
+					StringBundler.concat(
+						"Pass '", matcher.group(2),
+						"' directly instead of assigning value to variable '",
+						variableName, "'"),
+					getLineNumber(content, matcher.start()) + 1);
+			}
 		}
 
 		String password = properties.getProperty(
@@ -92,6 +119,12 @@ public class PoshiPropsUtilCheck extends BaseFileCheck {
 		return content;
 	}
 
+	private String _getFollowingCode(String content, int end) {
+		int x = content.indexOf("\n\t}", end);
+
+		return content.substring(end, x);
+	}
+
 	private boolean _isInsideTripleQuotes(String content, int pos) {
 		String s = content.substring(pos);
 
@@ -108,6 +141,28 @@ public class PoshiPropsUtilCheck extends BaseFileCheck {
 		}
 
 		return false;
+	}
+
+	private boolean _isUnnecessaryAssign(String content, String variableName) {
+		int x = -1;
+
+		while (true) {
+			x = content.indexOf("${" + variableName + "}", x + 1);
+
+			if (x == -1) {
+				return true;
+			}
+
+			if (_isInsideTripleQuotes(content, x)) {
+				return false;
+			}
+
+			String line = getLine(content, getLineNumber(content, x));
+
+			if (line.contains("curl") || line.contains("if (")) {
+				return false;
+			}
+		}
 	}
 
 	private static final Pattern _propsUtilGetPasswordPattern = Pattern.compile(

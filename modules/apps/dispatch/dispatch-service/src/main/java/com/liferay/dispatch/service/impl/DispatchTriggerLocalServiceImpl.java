@@ -15,8 +15,8 @@ import com.liferay.dispatch.executor.DispatchTaskExecutor;
 import com.liferay.dispatch.executor.DispatchTaskExecutorRegistry;
 import com.liferay.dispatch.internal.helper.DispatchTriggerHelper;
 import com.liferay.dispatch.model.DispatchTrigger;
+import com.liferay.dispatch.service.DispatchLogLocalService;
 import com.liferay.dispatch.service.base.DispatchTriggerLocalServiceBaseImpl;
-import com.liferay.dispatch.service.persistence.DispatchLogPersistence;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -118,7 +118,7 @@ public class DispatchTriggerLocalServiceImpl
 			return dispatchTrigger;
 		}
 
-		_dispatchLogPersistence.removeByDispatchTriggerId(
+		_dispatchLogLocalService.deleteDispatchLogs(
 			dispatchTrigger.getDispatchTriggerId());
 
 		dispatchTriggerPersistence.remove(dispatchTrigger);
@@ -400,7 +400,7 @@ public class DispatchTriggerLocalServiceImpl
 		DispatchTriggerLocalServiceImpl.class);
 
 	@Reference
-	private DispatchLogPersistence _dispatchLogPersistence;
+	private DispatchLogLocalService _dispatchLogLocalService;
 
 	@Reference
 	private DispatchTaskExecutorRegistry _dispatchTaskExecutorRegistry;
