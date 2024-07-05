@@ -5,6 +5,8 @@
 
 package com.liferay.jenkins.results.parser.test.suite;
 
+import com.liferay.jenkins.results.parser.PortalAcceptancePullRequestJob;
+import com.liferay.jenkins.results.parser.PortalGitWorkingDirectory;
 import com.liferay.jenkins.results.parser.test.batch.TestBatch;
 
 import java.io.File;
@@ -21,6 +23,18 @@ public class RelevantTestSuite {
 		_modifiedFiles = modifiedFiles;
 
 		_relevantRuleEngine = RelevantRuleEngine.getInstance(baseDir);
+	}
+
+	public RelevantTestSuite(
+		PortalAcceptancePullRequestJob portalAcceptancePullRequestJob) {
+
+		PortalGitWorkingDirectory portalGitWorkingDirectory =
+			portalAcceptancePullRequestJob.getPortalGitWorkingDirectory();
+
+		_modifiedFiles = portalGitWorkingDirectory.getModifiedFilesList();
+
+		_relevantRuleEngine = RelevantRuleEngine.getInstance(
+			portalAcceptancePullRequestJob);
 	}
 
 	public List<TestBatch> getTestBatches() {
@@ -47,7 +61,11 @@ public class RelevantTestSuite {
 		return testBatches;
 	}
 
-	private final List<File> _modifiedFiles;
+	public void setModifiedFiles(List<File> modifiedFiles) {
+		_modifiedFiles = modifiedFiles;
+	}
+
+	private List<File> _modifiedFiles;
 	private final RelevantRuleEngine _relevantRuleEngine;
 
 }

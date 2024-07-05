@@ -11,8 +11,8 @@ import com.liferay.batch.engine.unit.BatchEngineUnitMetaInfo;
 import com.liferay.batch.engine.unit.BatchEngineUnitProcessor;
 import com.liferay.batch.engine.unit.BatchEngineUnitReader;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
+import com.liferay.portal.tools.DBUpgrader;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,7 +72,7 @@ public class BatchEngineBundleTracker {
 
 		@Override
 		public Bundle addingBundle(Bundle bundle, BundleEvent bundleEvent) {
-			if (StartupHelperUtil.isUpgrading()) {
+			if (DBUpgrader.isUpgradeClient()) {
 				return null;
 			}
 

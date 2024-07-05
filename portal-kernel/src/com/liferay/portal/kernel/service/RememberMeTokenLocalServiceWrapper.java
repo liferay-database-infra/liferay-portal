@@ -28,6 +28,16 @@ public class RememberMeTokenLocalServiceWrapper
 		_rememberMeTokenLocalService = rememberMeTokenLocalService;
 	}
 
+	@Override
+	public com.liferay.portal.kernel.model.RememberMeToken addRememberMeToken(
+			long companyId, long userId, java.util.Date expirationDate,
+			java.util.function.Consumer<String> valueConsumer)
+		throws com.liferay.portal.kernel.exception.PwdEncryptorException {
+
+		return _rememberMeTokenLocalService.addRememberMeToken(
+			companyId, userId, expirationDate, valueConsumer);
+	}
+
 	/**
 	 * Adds the remember me token to the database. Also notifies the appropriate model listeners.
 	 *
@@ -68,6 +78,11 @@ public class RememberMeTokenLocalServiceWrapper
 
 		return _rememberMeTokenLocalService.createRememberMeToken(
 			rememberMeTokenId);
+	}
+
+	@Override
+	public void deleteExpiredRememberMeTokens(long userId) {
+		_rememberMeTokenLocalService.deleteExpiredRememberMeTokens(userId);
 	}
 
 	/**
@@ -230,6 +245,15 @@ public class RememberMeTokenLocalServiceWrapper
 
 		return _rememberMeTokenLocalService.fetchRememberMeToken(
 			rememberMeTokenId);
+	}
+
+	@Override
+	public com.liferay.portal.kernel.model.RememberMeToken fetchRememberMeToken(
+			long rememberMeTokenId, String value)
+		throws com.liferay.portal.kernel.exception.PwdEncryptorException {
+
+		return _rememberMeTokenLocalService.fetchRememberMeToken(
+			rememberMeTokenId, value);
 	}
 
 	@Override

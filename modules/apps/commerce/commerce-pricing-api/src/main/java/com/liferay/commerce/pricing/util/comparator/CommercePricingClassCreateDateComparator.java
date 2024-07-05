@@ -11,7 +11,9 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 
 /**
  * @author Riccardo Alberti
+ * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
  */
+@Deprecated
 public class CommercePricingClassCreateDateComparator
 	extends OrderByComparator<CommercePricingClass> {
 
@@ -21,12 +23,14 @@ public class CommercePricingClassCreateDateComparator
 
 	public static final String[] ORDER_BY_FIELDS = {"createDate"};
 
-	public CommercePricingClassCreateDateComparator() {
-		this(false);
-	}
+	public static CommercePricingClassCreateDateComparator getInstance(
+		boolean ascending) {
 
-	public CommercePricingClassCreateDateComparator(boolean ascending) {
-		_ascending = ascending;
+		if (ascending) {
+			return _INSTANCE_ASCENDING;
+		}
+
+		return _INSTANCE_DESCENDING;
 	}
 
 	@Override
@@ -63,6 +67,18 @@ public class CommercePricingClassCreateDateComparator
 	public boolean isAscending() {
 		return _ascending;
 	}
+
+	private CommercePricingClassCreateDateComparator(boolean ascending) {
+		_ascending = ascending;
+	}
+
+	private static final CommercePricingClassCreateDateComparator
+		_INSTANCE_ASCENDING = new CommercePricingClassCreateDateComparator(
+			true);
+
+	private static final CommercePricingClassCreateDateComparator
+		_INSTANCE_DESCENDING = new CommercePricingClassCreateDateComparator(
+			false);
 
 	private final boolean _ascending;
 

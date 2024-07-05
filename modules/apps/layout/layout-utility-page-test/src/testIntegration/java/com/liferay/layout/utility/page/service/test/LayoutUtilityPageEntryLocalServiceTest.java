@@ -6,6 +6,7 @@
 package com.liferay.layout.utility.page.service.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.layout.utility.page.exception.DuplicateLayoutUtilityPageEntryExternalReferenceCodeException;
 import com.liferay.layout.utility.page.model.LayoutUtilityPageEntry;
 import com.liferay.layout.utility.page.service.LayoutUtilityPageEntryLocalService;
 import com.liferay.layout.utility.page.service.LayoutUtilityPageEntryService;
@@ -21,9 +22,11 @@ import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.test.rule.PersistenceTestRule;
+import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -43,7 +46,8 @@ public class LayoutUtilityPageEntryLocalServiceTest {
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
 		new AggregateTestRule(
-			new LiferayIntegrationTestRule(), PersistenceTestRule.INSTANCE);
+			new LiferayIntegrationTestRule(),
+			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
@@ -58,6 +62,56 @@ public class LayoutUtilityPageEntryLocalServiceTest {
 	@After
 	public void tearDown() {
 		ServiceContextThreadLocal.popServiceContext();
+	}
+
+	@Test
+	public void testAddLayoutUtilityPageEntry() throws Exception {
+		LayoutUtilityPageEntry layoutUtilityPageEntry =
+			_layoutUtilityPageEntryLocalService.addLayoutUtilityPageEntry(
+				null, TestPropsValues.getUserId(), _group.getGroupId(), 0, 0,
+				true, RandomTestUtil.randomString(),
+				RandomTestUtil.randomString(), 0, _serviceContext);
+
+		Assert.assertTrue(
+			Validator.isNotNull(
+				layoutUtilityPageEntry.getExternalReferenceCode()));
+	}
+
+	@Test(
+		expected = DuplicateLayoutUtilityPageEntryExternalReferenceCodeException.class
+	)
+	public void testAddLayoutUtilityPageEntryWithExistingExternalReferenceCode()
+		throws Exception {
+
+		String externalReferenceCode = RandomTestUtil.randomString();
+
+		_layoutUtilityPageEntryLocalService.addLayoutUtilityPageEntry(
+			externalReferenceCode, TestPropsValues.getUserId(),
+			_group.getGroupId(), 0, 0, true, RandomTestUtil.randomString(),
+			RandomTestUtil.randomString(), 0, _serviceContext);
+		_layoutUtilityPageEntryLocalService.addLayoutUtilityPageEntry(
+			externalReferenceCode, TestPropsValues.getUserId(),
+			_group.getGroupId(), 0, 0, true, RandomTestUtil.randomString(),
+			RandomTestUtil.randomString(), 0, _serviceContext);
+	}
+
+	@Test
+	public void testDeleteLayoutUtilityPageEntryByExternalReferenceCode()
+		throws Exception {
+
+		LayoutUtilityPageEntry layoutUtilityPageEntry =
+			_layoutUtilityPageEntryLocalService.addLayoutUtilityPageEntry(
+				null, TestPropsValues.getUserId(), _group.getGroupId(), 0, 0,
+				true, RandomTestUtil.randomString(),
+				RandomTestUtil.randomString(), 0, _serviceContext);
+
+		_layoutUtilityPageEntryLocalService.deleteLayoutUtilityPageEntry(
+			layoutUtilityPageEntry.getExternalReferenceCode(),
+			layoutUtilityPageEntry.getGroupId());
+
+		Assert.assertNull(
+			_layoutUtilityPageEntryLocalService.fetchLayoutUtilityPageEntry(
+				layoutUtilityPageEntry.getLayoutUtilityPageEntryId()));
 	}
 
 	@Test

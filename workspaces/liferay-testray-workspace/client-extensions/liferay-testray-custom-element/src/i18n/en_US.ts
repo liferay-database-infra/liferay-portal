@@ -185,10 +185,12 @@ export default {
 	'export-cases': 'Export Cases',
 	'export-csv': 'Export CSV',
 	'failed': 'Failed',
+	'false': 'False',
 	'filter-results': 'Filter Results',
 	'filters-pinned-successfully': 'Filters pinned successfully.',
 	'filters-unpinned-successfully': 'Filters unpinned successfully.',
 	'first-name': 'First Name',
+	'flaky': 'Flaky',
 	'git-hash': 'Git Hash',
 	'github-compare-urls': 'GitHub Compare URLs',
 	'go-to-homepage': 'Go to homepage',
@@ -427,6 +429,7 @@ export default {
 	'this-builds-task-has-been-abandoned':
 		"This build's task has been abandoned.",
 	'this-field-is-required': 'This field is required.',
+	'this-is-a-possible-flaky-test': 'This is a possible flaky test.',
 	'this-role-is-for-general-liferay-employees-and-enables-authenticated-users-to-view-test-results':
 		'This role is for general Liferay employees and enables authenticated users to view test results.',
 	'this-subtask-has-been-merged-wihth-x':
@@ -438,6 +441,7 @@ export default {
 	'total-completed': 'Total Completed',
 	'total-estimated-time': 'Total Estimated Time',
 	'total-test-cases': 'Total test cases',
+	'true': 'True',
 	'type': 'Type',
 	'type-is-a-required-field': 'Type is a required field',
 	'unable-to-find-more-than-one-run': 'Unable to find more than one run.',

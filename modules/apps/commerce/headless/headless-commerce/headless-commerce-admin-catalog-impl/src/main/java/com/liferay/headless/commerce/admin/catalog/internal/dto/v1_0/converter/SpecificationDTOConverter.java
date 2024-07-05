@@ -50,6 +50,8 @@ public class SpecificationDTOConverter
 				setFacetable(cpSpecificationOption::isFacetable);
 				setId(cpSpecificationOption::getCPSpecificationOptionId);
 				setKey(cpSpecificationOption::getKey);
+				setListTypeDefinitionId(
+					cpSpecificationOption::getListTypeDefinitionId);
 				setOptionCategory(
 					() -> {
 						CPOptionCategory cpOptionCategory =

@@ -35,6 +35,14 @@ public class RememberMeTokenLocalServiceUtil {
 	 *
 	 * Never modify this class directly. Add custom service methods to <code>com.liferay.portal.service.impl.RememberMeTokenLocalServiceImpl</code> and rerun ServiceBuilder to regenerate this class.
 	 */
+	public static RememberMeToken addRememberMeToken(
+			long companyId, long userId, java.util.Date expirationDate,
+			java.util.function.Consumer<String> valueConsumer)
+		throws com.liferay.portal.kernel.exception.PwdEncryptorException {
+
+		return getService().addRememberMeToken(
+			companyId, userId, expirationDate, valueConsumer);
+	}
 
 	/**
 	 * Adds the remember me token to the database. Also notifies the appropriate model listeners.
@@ -72,6 +80,10 @@ public class RememberMeTokenLocalServiceUtil {
 		long rememberMeTokenId) {
 
 		return getService().createRememberMeToken(rememberMeTokenId);
+	}
+
+	public static void deleteExpiredRememberMeTokens(long userId) {
+		getService().deleteExpiredRememberMeTokens(userId);
 	}
 
 	/**
@@ -204,6 +216,13 @@ public class RememberMeTokenLocalServiceUtil {
 
 	public static RememberMeToken fetchRememberMeToken(long rememberMeTokenId) {
 		return getService().fetchRememberMeToken(rememberMeTokenId);
+	}
+
+	public static RememberMeToken fetchRememberMeToken(
+			long rememberMeTokenId, String value)
+		throws com.liferay.portal.kernel.exception.PwdEncryptorException {
+
+		return getService().fetchRememberMeToken(rememberMeTokenId, value);
 	}
 
 	public static com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery

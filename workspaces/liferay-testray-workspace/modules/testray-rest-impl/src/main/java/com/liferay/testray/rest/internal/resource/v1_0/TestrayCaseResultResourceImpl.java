@@ -86,23 +86,9 @@ public class TestrayCaseResultResourceImpl
 			params.add("%" + error + "%");
 		}
 
-		if (Validator.isBoolean(String.valueOf(noError))) {
-			sb.append("and (cr.errors_ is null or cr.errors_ = '') ");
-		}
-
 		if (Validator.isNotNull(issues)) {
 			sb.append("and cr.issues_ like ? ");
 			params.add("%" + issues + "%");
-		}
-
-		if (Validator.isBoolean(String.valueOf(noIssues))) {
-			sb.append("and (cr.issues_ is null or cr.issues_ = '') ");
-		}
-
-		if (Validator.isNotNull(status)) {
-			sb.append("and cr.dueStatus_ in (");
-			sb.append(TestrayUtil.interpolateParams(params, status));
-			sb.append(") ");
 		}
 
 		if (Validator.isNotNull(maxExecutionDate)) {
@@ -113,6 +99,20 @@ public class TestrayCaseResultResourceImpl
 		if (Validator.isNotNull(minExecutionDate)) {
 			sb.append("and b.dueDate_ >= ?");
 			params.add(minExecutionDate);
+		}
+
+		if (noError != null) {
+			sb.append("and (cr.errors_ is null or cr.errors_ = '') ");
+		}
+
+		if (noIssues != null) {
+			sb.append("and (cr.issues_ is null or cr.issues_ = '') ");
+		}
+
+		if (Validator.isNotNull(status)) {
+			sb.append("and cr.dueStatus_ in (");
+			sb.append(TestrayUtil.interpolateParams(params, status));
+			sb.append(") ");
 		}
 
 		if (Validator.isNotNull(testrayProductVersionIds)) {
@@ -209,31 +209,32 @@ public class TestrayCaseResultResourceImpl
 
 	@Override
 	public Page<TestrayCaseResult> getTestrayCaseResultsTestrayBuildPage(
-			Long testrayBuildId, String comment, String error, String issues,
-			Boolean noComment, Boolean noError, Boolean noIssues,
+			Long testrayBuildId, String comment, String error, Boolean flaky,
+			String issues, Boolean noComment, Boolean noError, Boolean noIssues,
 			String priority, String status, String testrayCaseName,
 			String testrayCaseTypeIds, String testrayComponentIds,
 			String testrayRunId, String testrayRunName, String testrayTeamIds,
 			String testrayUserId, Pagination pagination)
 		throws Exception {
 
-		StringBundler sb = new StringBundler(47);
+		StringBundler sb = new StringBundler(49);
 
 		sb.append("select cr.c_caseResultId_, cr.comment_, cr.dueStatus_, ");
 		sb.append("cr.errors_, cr.issues_, ct.name_ as caseTypeName, c.name_ ");
-		sb.append("as caseName, c.priority_, r.name_ as runName, r.number_ ");
-		sb.append("as runNumber, co.name_ as componentName, t.name_ as ");
-		sb.append("teamName,u.firstName, u.lastName, u.middleName, u.uuid_, ");
-		sb.append("u.portraitId from O_[%COMPANY_ID%]_Build b, ");
-		sb.append("O_[%COMPANY_ID%]_CaseResult cr left outer join User_ u on ");
-		sb.append("u.userId = cr.r_userToCaseResults_userId, ");
-		sb.append("O_[%COMPANY_ID%]_Case c, O_[%COMPANY_ID%]_CaseType ct, ");
+		sb.append("as caseName, c.priority_, cx.flaky_, r.name_ as runName, ");
+		sb.append("r.number_ as runNumber, co.name_ as componentName, ");
+		sb.append("t.name_ as teamName, u.firstName, u.lastName, ");
+		sb.append("u.middleName, u.uuid_, u.portraitId from ");
+		sb.append("O_[%COMPANY_ID%]_Build b, O_[%COMPANY_ID%]_CaseResult cr ");
+		sb.append("left outer join User_ u on u.userId = ");
+		sb.append("cr.r_userToCaseResults_userId, O_[%COMPANY_ID%]_Case c, ");
+		sb.append("O_[%COMPANY_ID%]_Case_x cx, O_[%COMPANY_ID%]_CaseType ct, ");
 		sb.append("O_[%COMPANY_ID%]_Component co, O_[%COMPANY_ID%]_Run r, ");
 		sb.append("O_[%COMPANY_ID%]_Team t where b.c_buildId_ = ? and ");
-		sb.append("cr.r_buildToCaseResult_c_buildId = b.c_buildId_  and ");
+		sb.append("cr.r_buildToCaseResult_c_buildId = b.c_buildId_ and ");
 		sb.append("c.c_caseId_ = cr.r_caseToCaseResult_c_caseId and ");
-		sb.append("ct.c_caseTypeId_ = c.r_caseTypeToCases_c_caseTypeId and  ");
-		sb.append("co.c_componentId_ = ");
+		sb.append("c.c_caseId_ = cx.c_caseId_ and ct.c_caseTypeId_ = ");
+		sb.append("c.r_caseTypeToCases_c_caseTypeId and co.c_componentId_ = ");
 		sb.append("cr.r_componentToCaseResult_c_componentId and r.c_runId_ = ");
 		sb.append("cr.r_runToCaseResult_c_runId and t.c_teamId_ = ");
 		sb.append("co.r_teamToComponents_c_teamId ");
@@ -247,17 +248,14 @@ public class TestrayCaseResultResourceImpl
 			params.add("%" + comment + "%");
 		}
 
-		if (Validator.isBoolean(String.valueOf(noComment))) {
-			sb.append("and (cr.comment_ is null or cr.comment_ = '') ");
-		}
-
 		if (Validator.isNotNull(error)) {
 			sb.append("and cr.errors_ like ? ");
 			params.add("%" + error + "%");
 		}
 
-		if (Validator.isBoolean(String.valueOf(noError))) {
-			sb.append("and (cr.errors_ is null or cr.errors_ = '') ");
+		if (flaky != null) {
+			sb.append("and cx.flaky_ = ? ");
+			params.add(flaky);
 		}
 
 		if (Validator.isNotNull(issues)) {
@@ -265,7 +263,15 @@ public class TestrayCaseResultResourceImpl
 			params.add("%" + issues + "%");
 		}
 
-		if (Validator.isBoolean(String.valueOf(noIssues))) {
+		if (noComment != null) {
+			sb.append("and (cr.comment_ is null or cr.comment_ = '') ");
+		}
+
+		if (noError != null) {
+			sb.append("and (cr.errors_ is null or cr.errors_ = '') ");
+		}
+
+		if (noIssues != null) {
 			sb.append("and (cr.issues_ is null or cr.issues_ = '') ");
 		}
 
@@ -348,6 +354,7 @@ public class TestrayCaseResultResourceImpl
 						actions = _getActions(value);
 						comment = GetterUtil.getString(value.get("comment_"));
 						error = GetterUtil.getString(value.get("errors_"));
+						flaky = GetterUtil.getBoolean(value.get("flaky_"));
 						issues = GetterUtil.getString(value.get("issues_"));
 						priority = GetterUtil.getLong(value.get("priority_"));
 						status = GetterUtil.getString(value.get("dueStatus_"));

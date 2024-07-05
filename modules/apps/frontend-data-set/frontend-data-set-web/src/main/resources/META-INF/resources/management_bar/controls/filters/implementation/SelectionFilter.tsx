@@ -172,7 +172,7 @@ function SelectionFilter({
 	);
 	const [items, setItems] = useState(apiURL ? [] : initialItems);
 	const [localItems, setLocalItems] = useState(
-		initialItems.length ? initialItems : []
+		initialItems?.length ? initialItems : []
 	);
 	const [loading, setLoading] = useState(false);
 	const [total, setTotal] = useState(apiURL ? 0 : initialItems?.length);
@@ -336,7 +336,7 @@ function SelectionFilter({
 		actionType === 'delete' ||
 		(!selectedData && selectedItems.length) ||
 		(selectedData &&
-			isValuesArrayChanged(selectedData.selectedItems, selectedItems)) ||
+			isValuesArrayChanged(selectedData?.selectedItems, selectedItems)) ||
 		(selectedData &&
 			selectedItems.length &&
 			selectedData.exclude !== exclude)

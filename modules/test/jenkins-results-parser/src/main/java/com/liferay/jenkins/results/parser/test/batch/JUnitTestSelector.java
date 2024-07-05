@@ -5,7 +5,9 @@
 
 package com.liferay.jenkins.results.parser.test.batch;
 
-import java.nio.file.PathMatcher;
+import com.liferay.jenkins.results.parser.job.property.JobProperty;
+
+import java.io.File;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,24 +27,41 @@ public class JUnitTestSelector extends BaseTestSelector {
 			"modules.includes.required.test.batch.class.names.includes";
 
 	public JUnitTestSelector(
-		Properties properties, String batchName, String relevantRuleName,
-		String testSuiteName) {
+		File propertiesFile, Properties properties, String batchName,
+		String relevantRuleName, String testSuiteName) {
 
-		super(properties, batchName, relevantRuleName, testSuiteName);
+		super(
+			propertiesFile, properties, batchName, relevantRuleName,
+			testSuiteName);
 
 		validate();
+
+		addJobProperties();
 	}
 
-	public List<PathMatcher> getExcludesPathMatchers() {
-		return _excludesPathMatchers;
+	public void addJobProperties() {
+		_excludesJobProperties.add(getExcludesJobProperty());
+		_includesJobProperties.add(getIncludesJobProperty());
 	}
 
-	public List<PathMatcher> getFilterPathMatchers() {
-		return _filterPathMatchers;
+	public List<JobProperty> getExcludesJobProperties() {
+		return _excludesJobProperties;
 	}
 
-	public List<PathMatcher> getIncludesPathMatchers() {
-		return _includesPathMatchers;
+	public JobProperty getExcludesJobProperty() {
+		return getJobProperty(
+			MODULES_INCLUDES_REQUIRED_TEST_BATCH_CLASS_NAMES_EXCLUDES,
+			JobProperty.Type.MODULE_EXCLUDE_GLOB);
+	}
+
+	public List<JobProperty> getIncludesJobProperties() {
+		return _includesJobProperties;
+	}
+
+	public JobProperty getIncludesJobProperty() {
+		return getJobProperty(
+			MODULES_INCLUDES_REQUIRED_TEST_BATCH_CLASS_NAMES_INCLUDES,
+			JobProperty.Type.MODULE_INCLUDE_GLOB);
 	}
 
 	@Override
@@ -53,11 +72,8 @@ public class JUnitTestSelector extends BaseTestSelector {
 
 		JUnitTestSelector jUnitTestSelector = (JUnitTestSelector)testSelector;
 
-		_excludesPathMatchers.addAll(
-			jUnitTestSelector.getExcludesPathMatchers());
-		_filterPathMatchers.addAll(jUnitTestSelector.getFilterPathMatchers());
-		_includesPathMatchers.addAll(
-			jUnitTestSelector.getIncludesPathMatchers());
+		_excludesJobProperties.add(jUnitTestSelector.getExcludesJobProperty());
+		_includesJobProperties.add(jUnitTestSelector.getIncludesJobProperty());
 	}
 
 	@Override
@@ -65,8 +81,7 @@ public class JUnitTestSelector extends BaseTestSelector {
 		validate(MODULES_INCLUDES_REQUIRED_TEST_BATCH_CLASS_NAMES_INCLUDES);
 	}
 
-	private final List<PathMatcher> _excludesPathMatchers = new ArrayList<>();
-	private final List<PathMatcher> _filterPathMatchers = new ArrayList<>();
-	private final List<PathMatcher> _includesPathMatchers = new ArrayList<>();
+	private final List<JobProperty> _excludesJobProperties = new ArrayList<>();
+	private final List<JobProperty> _includesJobProperties = new ArrayList<>();
 
 }

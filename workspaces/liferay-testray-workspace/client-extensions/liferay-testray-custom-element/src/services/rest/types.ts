@@ -169,6 +169,7 @@ export type TestrayCase = {
 	description: string;
 	descriptionType: string;
 	estimatedDuration: number;
+	flaky?: boolean;
 	id: number;
 	name: string;
 	number: number;
@@ -406,6 +407,7 @@ export type TestrayTask = {
 	r_buildToTasks_c_build?: TestrayBuild;
 	subtaskScore: string;
 	subtaskScoreCompleted: string;
+	subtaskScoreSelfCompleted: string;
 	subtaskScoreSelfIncomplete: string;
 	taskToTasksUsers: any;
 };

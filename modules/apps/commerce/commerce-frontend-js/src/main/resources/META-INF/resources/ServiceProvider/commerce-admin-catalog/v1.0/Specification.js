@@ -24,6 +24,8 @@ export default function Specification(basePath) {
 				`${resolvePath(basePath, specificationId)}/list-type-definitions`,
 				json
 			),
+		getSpecifications: (search = '') =>
+			AJAX.GET(`${resolvePath(basePath)}?search=${search}`),
 		updateSpecificationById: (specificationId, json) =>
 			AJAX.PATCH(`${resolvePath(basePath, specificationId)}`, json),
 	};

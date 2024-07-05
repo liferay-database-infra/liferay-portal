@@ -9,7 +9,6 @@ import ClayIcon from '@clayui/icon';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import {useModal} from '@clayui/modal';
 import {ClayPaginationBarWithBasicItems} from '@clayui/pagination-bar';
-import ClayTabs from '@clayui/tabs';
 import {useState} from 'react';
 import {CSVLink} from 'react-csv';
 
@@ -29,7 +28,6 @@ import useQueryParams from '../../common/hooks/useQueryParams';
 import {
 	Filters,
 	currentFiscalYearStart,
-	previousFiscalYearStart,
 } from '../../common/utils/constants/filters';
 import {maxPagination} from '../../common/utils/constants/maxPagination';
 import getDoubleParagraph from '../../common/utils/getDoubleParagraph';
@@ -46,14 +44,6 @@ interface IProps {
 }
 
 const PartnerOpportunitiesList = ({isRenewalListing, name}: IProps) => {
-	const [openOpportunitiesFilter, setOpenOpportunitiesFilter] = useState(
-		JSON.parse(sessionStorage.getItem('openOpportunitiesFilter')!) === null
-			? true
-			: (JSON.parse(
-					sessionStorage.getItem('openOpportunitiesFilter')!
-				) as boolean)
-	);
-
 	const [opportunitiesTableSort, setOpportunitiesTableSort] =
 		useState<string>('partnerAccountName:asc');
 
@@ -67,7 +57,6 @@ const PartnerOpportunitiesList = ({isRenewalListing, name}: IProps) => {
 	const {filters, onFilter, setFilters} = useFilters(
 		debouncedDealRegistrationTableSort,
 		urlParams,
-		openOpportunitiesFilter,
 		isRenewalListing
 	);
 
@@ -138,15 +127,10 @@ const PartnerOpportunitiesList = ({isRenewalListing, name}: IProps) => {
 		},
 	];
 
-	const rangeDataPicker = openOpportunitiesFilter
-		? {
-				end: '',
-				start: previousFiscalYearStart,
-			}
-		: {
-				end: '',
-				start: currentFiscalYearStart,
-			};
+	const rangeDataPicker = {
+		end: '',
+		start: currentFiscalYearStart,
+	};
 
 	const getFilters = () => {
 		const filterFields = [
@@ -155,9 +139,8 @@ const PartnerOpportunitiesList = ({isRenewalListing, name}: IProps) => {
 					<CheckboxFilter
 						availableItems={
 							isRenewalListing
-								? Filters.RENEWAL_LISTING.renewalsListStage
-								: Filters.OPPORTUNITY_LISTING
-										.opportunityListStage
+								? Filters.RENEWAL_LISTING.stages
+								: Filters.OPPORTUNITY_LISTING.stages
 						}
 						clearCheckboxes={!filters.stage.value?.length}
 						initialCheckedItems={filters.stage.value}
@@ -262,22 +245,6 @@ const PartnerOpportunitiesList = ({isRenewalListing, name}: IProps) => {
 		<div className="border-0 my-4">
 			<div className="align-items-center d-md-flex justify-content-between mb-3 mr-4">
 				<h1>{name}</h1>
-				<ClayTabs className="h-100 nav nav-segment nav-tabs">
-					<ClayTabs.Item
-						active={openOpportunitiesFilter}
-						className="nav-item"
-						onClick={() => setOpenOpportunitiesFilter(true)}
-					>
-						Open
-					</ClayTabs.Item>
-					<ClayTabs.Item
-						active={!openOpportunitiesFilter}
-						className="nav-item"
-						onClick={() => setOpenOpportunitiesFilter(false)}
-					>
-						Closed
-					</ClayTabs.Item>
-				</ClayTabs>
 			</div>
 
 			<TableHeader>

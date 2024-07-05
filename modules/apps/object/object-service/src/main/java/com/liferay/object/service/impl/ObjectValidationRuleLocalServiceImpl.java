@@ -11,6 +11,7 @@ import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.constants.ObjectValidationRuleConstants;
 import com.liferay.object.constants.ObjectValidationRuleSettingConstants;
 import com.liferay.object.definition.util.ObjectDefinitionUtil;
+import com.liferay.object.entry.util.ObjectEntryThreadLocal;
 import com.liferay.object.exception.DuplicateObjectValidationRuleExternalReferenceCodeException;
 import com.liferay.object.exception.ObjectValidationRuleEngineException;
 import com.liferay.object.exception.ObjectValidationRuleNameException;
@@ -40,7 +41,6 @@ import com.liferay.object.system.SystemObjectDefinitionManagerRegistry;
 import com.liferay.object.validation.rule.ObjectValidationRuleEngine;
 import com.liferay.object.validation.rule.ObjectValidationRuleEngineRegistry;
 import com.liferay.object.validation.rule.ObjectValidationRuleResult;
-import com.liferay.object.validation.rule.util.ObjectValidationRuleThreadLocal;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.sql.dsl.Column;
 import com.liferay.petra.string.StringBundler;
@@ -368,7 +368,10 @@ public class ObjectValidationRuleLocalServiceImpl
 			JSONObject payloadJSONObject, long userId)
 		throws PortalException {
 
-		if (baseModel == null) {
+		if ((baseModel == null) ||
+			ObjectEntryThreadLocal.isValidatedObjectEntry(
+				(long)baseModel.getPrimaryKeyObj())) {
+
 			return;
 		}
 
@@ -392,13 +395,6 @@ public class ObjectValidationRuleLocalServiceImpl
 
 		for (ObjectValidationRule objectValidationRule :
 				objectValidationRules) {
-
-			if (ObjectValidationRuleThreadLocal.
-					isExecutedObjectValidationRuleId(
-						objectValidationRule.getObjectValidationRuleId())) {
-
-				continue;
-			}
 
 			Map<String, Object> results = new HashMap<>();
 
@@ -448,9 +444,6 @@ public class ObjectValidationRuleLocalServiceImpl
 				results = objectValidationRuleEngine.execute(
 					(Map<String, Object>)variables.get("entryDTO"), null);
 			}
-
-			ObjectValidationRuleThreadLocal.addExecutedObjectValidationRuleId(
-				objectValidationRule.getObjectValidationRuleId());
 
 			Locale locale = LocaleUtil.getMostRelevantLocale();
 
@@ -503,6 +496,9 @@ public class ObjectValidationRuleLocalServiceImpl
 					new ObjectValidationRuleResult(errorMessage));
 			}
 		}
+
+		ObjectEntryThreadLocal.addValidatedObjectEntryId(
+			(long)baseModel.getPrimaryKeyObj());
 
 		if (ListUtil.isNotEmpty(objectValidationRuleResults)) {
 			throw new ObjectValidationRuleEngineException(

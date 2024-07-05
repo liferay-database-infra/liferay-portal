@@ -7,6 +7,7 @@ import {FrameLocator, Locator, Page, expect} from '@playwright/test';
 
 import {clickAndExpectToBeVisible} from '../../../utils/clickAndExpectToBeVisible';
 import {PORTLET_URLS} from '../../../utils/portletUrls';
+import {waitForSuccessAlert} from '../../../utils/waitForSuccessAlert';
 
 export class JournalPage {
 	readonly page: Page;
@@ -16,9 +17,8 @@ export class JournalPage {
 	readonly permissionsFrameLocator: FrameLocator;
 	readonly publishButton: Locator;
 	readonly templatesLink: Locator;
-	readonly webContentTitleBox: Locator;
-	readonly webContentBodyIFrame: FrameLocator;
-	readonly webContentBodyTextBox: Locator;
+	readonly articleTitleInput: Locator;
+	readonly articleContentTextBox: Locator;
 
 	constructor(page: Page) {
 		this.page = page;
@@ -32,16 +32,14 @@ export class JournalPage {
 		);
 		this.templatesLink = page.getByRole('link', {name: 'Templates'});
 		this.publishButton = page.getByRole('button', {name: 'Publish'});
-		this.webContentTitleBox = page
-			.locator('xpath=//input[contains(@id,"title")]')
-			.first();
-		this.webContentBodyIFrame = page
-			.getByRole('application', {
-				name: /Rich Text Editor, _com_liferay_journal_web_portlet_JournalPortlet_ddm\$\$content\$.*\$en_US/,
-			})
-			.frameLocator('iframe');
-		this.webContentBodyTextBox =
-			this.webContentBodyIFrame.getByRole('textbox');
+		this.articleTitleInput = page.locator(
+			'.article-content-title .input-group-item input'
+		);
+		this.articleContentTextBox = this.page
+			.getByLabel('Content')
+			.getByRole('textbox')
+			.frameLocator('iframe')
+			.locator('.html-editor');
 	}
 
 	async goto(siteUrl?: Site['friendlyUrlPath']) {
@@ -50,20 +48,14 @@ export class JournalPage {
 		);
 	}
 
-	async createBasicArticle(webContentName: string, text: string) {
-		await this.webContentTitleBox.fill(webContentName);
-		await this.page.waitForSelector('iframe');
-		await this.webContentBodyTextBox.fill(text);
-		await this.webContentBodyTextBox.click({button: 'left'});
-		await this.webContentBodyTextBox.press('Backspace');
-		await this.webContentTitleBox.click({button: 'left'});
-		await this.webContentTitleBox.press('Backspace');
-		await this.publishButton.click();
-		await this.page
-			.locator(
-				'[id="_com_liferay_journal_web_portlet_JournalPortlet_successMessageWithLink"]'
-			)
-			.waitFor({state: 'visible'});
+	async fillArticleData(title: string, content: string) {
+		await this.articleTitleInput.fill(title);
+
+		await this.articleContentTextBox.click();
+
+		await this.page.keyboard.press('Control+KeyA');
+		await this.page.keyboard.press('Backspace');
+		await this.page.keyboard.type(content);
 	}
 
 	async goToCreateArticle(structureName?: string) {
@@ -78,6 +70,8 @@ export class JournalPage {
 			target,
 			trigger: this.newButton,
 		});
+
+		await this.page.locator('.article-content-content').waitFor();
 	}
 
 	async goToJournalArticleAction(action: string, title: string) {
@@ -143,6 +137,12 @@ export class JournalPage {
 		await this.page.getByRole('menuitem', {name: viewName}).click();
 	}
 
+	async publishArticle() {
+		await this.publishButton.click();
+
+		await waitForSuccessAlert(this.page, `was created successfully.`);
+	}
+
 	async setJournalArticlePermissions(
 		articles: Locator[],
 		permissionLocators: string[]
@@ -180,5 +180,25 @@ export class JournalPage {
 		await this.permissionsFrameLocator
 			.getByRole('button', {name: 'Cancel'})
 			.click();
+	}
+
+	async setArticleViewableBy(value: 'Anyone' | 'Site Members' | 'Owner') {
+		const permissionsGroup = this.page.getByRole('link', {
+			name: 'Permissions',
+		});
+
+		await permissionsGroup.waitFor();
+
+		const isOpen = await permissionsGroup.evaluate(
+			(element) => element.getAttribute('aria-expanded') === 'true'
+		);
+
+		if (!isOpen) {
+			await permissionsGroup.click();
+		}
+
+		await this.page.getByLabel('Viewable by').waitFor();
+
+		await this.page.getByLabel('Viewable by').selectOption(value);
 	}
 }

@@ -6,6 +6,12 @@
 package com.liferay.jenkins.results.parser.test.batch;
 
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
+import com.liferay.jenkins.results.parser.Job;
+import com.liferay.jenkins.results.parser.job.property.JobProperty;
+import com.liferay.jenkins.results.parser.job.property.JobPropertyFactory;
+import com.liferay.jenkins.results.parser.test.suite.RelevantRuleEngine;
+
+import java.io.File;
 
 import java.util.Properties;
 
@@ -15,13 +21,35 @@ import java.util.Properties;
 public abstract class BaseTestSelector implements TestSelector {
 
 	public BaseTestSelector(
-		Properties properties, String batchName, String relevantRuleName,
-		String testSuiteName) {
+		File propertiesFile, Properties properties, String batchName,
+		String relevantRuleName, String testSuiteName) {
 
+		_propertiesFile = propertiesFile;
 		_properties = properties;
 		_batchName = batchName;
 		_relevantRuleName = relevantRuleName;
 		_testSuiteName = testSuiteName;
+
+		RelevantRuleEngine relevantRuleEngine =
+			RelevantRuleEngine.getInstance();
+
+		_job = relevantRuleEngine.getJob();
+	}
+
+	public String getBatchName() {
+		return _batchName;
+	}
+
+	public Job getJob() {
+		return _job;
+	}
+
+	public JobProperty getJobProperty(
+		String basePropertyName, JobProperty.Type type) {
+
+		return JobPropertyFactory.newJobProperty(
+			basePropertyName, _testSuiteName, _batchName, _relevantRuleName,
+			_job, _propertiesFile.getParentFile(), type, true);
 	}
 
 	public String getProperty(String propertyName) {
@@ -32,6 +60,10 @@ public abstract class BaseTestSelector implements TestSelector {
 
 	public TestBatch getTestBatch() {
 		return _testBatch;
+	}
+
+	public String getTestSuiteName() {
+		return _testSuiteName;
 	}
 
 	public void setTestBatch(TestBatch testBatch) {
@@ -47,7 +79,9 @@ public abstract class BaseTestSelector implements TestSelector {
 	}
 
 	private final String _batchName;
+	private final Job _job;
 	private final Properties _properties;
+	private final File _propertiesFile;
 	private final String _relevantRuleName;
 	private TestBatch _testBatch;
 	private final String _testSuiteName;

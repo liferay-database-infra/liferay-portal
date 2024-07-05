@@ -31,6 +31,7 @@ import com.liferay.object.constants.ObjectFieldSettingConstants;
 import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.constants.ObjectValidationRuleConstants;
 import com.liferay.object.constants.ObjectValidationRuleSettingConstants;
+import com.liferay.object.entry.util.ObjectEntryThreadLocal;
 import com.liferay.object.exception.DuplicateObjectEntryExternalReferenceCodeException;
 import com.liferay.object.exception.NoSuchObjectEntryException;
 import com.liferay.object.exception.ObjectDefinitionScopeException;
@@ -82,7 +83,6 @@ import com.liferay.object.tree.TreeFactory;
 import com.liferay.object.validation.rule.ObjectValidationRuleEngine;
 import com.liferay.object.validation.rule.ObjectValidationRuleResult;
 import com.liferay.object.validation.rule.setting.builder.ObjectValidationRuleSettingBuilder;
-import com.liferay.object.validation.rule.util.ObjectValidationRuleThreadLocal;
 import com.liferay.petra.sql.dsl.Column;
 import com.liferay.petra.sql.dsl.expression.Predicate;
 import com.liferay.petra.string.StringBundler;
@@ -453,6 +453,54 @@ public class ObjectEntryLocalServiceTest {
 		// unreferenced
 
 		_objectDefinitionLocalService.deleteObjectDefinition(_objectDefinition);
+	}
+
+	@Test
+	public void testAddMultipleObjectEntriesWithTheSameObjectValidationRule()
+		throws Exception {
+
+		ObjectValidationRule objectValidationRule = _addObjectValidationRule(
+			ObjectValidationRuleConstants.ENGINE_TYPE_DDM,
+			LocalizedMapUtil.getLocalizedMap("Field must be an email address"),
+			"isEmailAddress(emailAddressRequired)");
+
+		_addObjectEntry(
+			HashMapBuilder.<String, Serializable>put(
+				"emailAddressRequired", "bob@liferay.com"
+			).put(
+				"listTypeEntryKeyRequired", "listTypeEntryKey1"
+			).build());
+
+		_assertCount(1);
+
+		try {
+			_addObjectEntry(
+				HashMapBuilder.<String, Serializable>put(
+					"emailAddressRequired", RandomTestUtil.randomString()
+				).put(
+					"listTypeEntryKeyRequired", "listTypeEntryKey1"
+				).build());
+
+			Assert.fail();
+		}
+		catch (ModelListenerException modelListenerException) {
+			ObjectValidationRuleEngineException
+				objectValidationRuleEngineException =
+					(ObjectValidationRuleEngineException)
+						modelListenerException.getCause();
+
+			List<ObjectValidationRuleResult> objectValidationRuleResults =
+				objectValidationRuleEngineException.
+					getObjectValidationRuleResults();
+
+			Assert.assertEquals(
+				objectValidationRuleResults.toString(), 1,
+				objectValidationRuleResults.size());
+
+			_assertObjectValidationRuleResult(
+				objectValidationRule.getErrorLabel(LocaleUtil.getDefault()),
+				null, objectValidationRuleResults.get(0));
+		}
 	}
 
 	@Test
@@ -3486,7 +3534,11 @@ public class ObjectEntryLocalServiceTest {
 		try {
 			user.setEmailAddress(RandomTestUtil.randomString());
 
-			_clearExecutedObjectValidationIds();
+			ThreadLocal<Set<Long>> threadLocal =
+				ReflectionTestUtil.getFieldValue(
+					ObjectEntryThreadLocal.class, "_validatedObjectEntryIds");
+
+			threadLocal.set(new HashSet<>());
 
 			_userLocalService.updateUser(user);
 
@@ -3632,8 +3684,6 @@ public class ObjectEntryLocalServiceTest {
 			Map<String, Serializable> values)
 		throws Exception {
 
-		_clearExecutedObjectValidationIds();
-
 		return _objectEntryLocalService.addObjectEntry(
 			TestPropsValues.getUserId(), groupId, objectDefinitionId, values,
 			ServiceContextTestUtil.getServiceContext());
@@ -3759,14 +3809,6 @@ public class ObjectEntryLocalServiceTest {
 		Assert.assertEquals(
 			expectedObjectFieldName,
 			objectValidationRuleResult.getObjectFieldName());
-	}
-
-	private void _clearExecutedObjectValidationIds() throws Exception {
-		ThreadLocal<Set<Long>> threadLocal = ReflectionTestUtil.getFieldValue(
-			ObjectValidationRuleThreadLocal.class,
-			"_executedObjectValidationRuleIds");
-
-		threadLocal.set(new HashSet<>());
 	}
 
 	private boolean _containsObjectEntryValuesSQLQuery(LogCapture logCapture) {
