@@ -22,6 +22,7 @@ import java.sql.SQLException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author Brian Wing Shun Chan
@@ -42,9 +43,37 @@ public abstract class BaseCompanyIdUpgradeProcess extends UpgradeProcess {
 			}
 		}
 		else {
+			TableUpdater[] tableUpdaters = getTableUpdaters();
+
+			CountDownLatch latch = new CountDownLatch(tableUpdaters.length);
+
 			processConcurrently(
-				getTableUpdaters(),
-				tableUpdater -> _addCompanyIdColumn(tableUpdater), null);
+				tableUpdaters,
+				tableUpdater -> {
+					try {
+						_addCompanyIdColumn(tableUpdater);
+					}
+					catch (Exception exception) {
+						throw new RuntimeException(exception);
+					}
+					finally {
+						latch.countDown();
+					}
+				},
+				null);
+
+			try {
+				latch.await();
+			}
+			catch (InterruptedException interruptedException) {
+				throw new RuntimeException(
+					"Failed to add companyId column concurrently",
+					interruptedException);
+			}
+		}
+
+		for (TableUpdater tableUpdater : getTableUpdaters()) {
+			tableUpdater.update(connection);
 		}
 	}
 
@@ -273,8 +302,6 @@ public abstract class BaseCompanyIdUpgradeProcess extends UpgradeProcess {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(tableName)) {
 			alterTableAddColumn(tableName, "companyId", "LONG");
-
-			tableUpdater.update(connection);
 		}
 	}
 
