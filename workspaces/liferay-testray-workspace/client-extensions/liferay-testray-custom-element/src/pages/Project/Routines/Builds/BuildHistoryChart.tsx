@@ -49,12 +49,10 @@ const BuildHistoryChart: React.FC<BuildHistoryChartProps> = ({builds}) => {
 					columns: [
 						[
 							Statuses.PASSED,
-							...builds
-								.map(
-									({testrayStatusMetric}) =>
-										testrayStatusMetric?.passed
-								)
-								.sort(),
+							...builds.map(
+								({testrayStatusMetric}) =>
+									testrayStatusMetric?.passed
+							),
 						],
 						[
 							Statuses.FAILED,

@@ -63,8 +63,9 @@ const Build = () => {
 									{testrayCaseName}
 								</>
 							),
-
+							size: 'md',
 							value: i18n.translate('case'),
+							width: '350',
 						},
 						{
 							clickable: true,
@@ -170,8 +171,8 @@ const Build = () => {
 									</Code>
 								),
 							size: 'xl',
-							truncate: true,
 							value: i18n.translate('errors'),
+							width: '400',
 						},
 						{
 							clickable: true,

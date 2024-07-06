@@ -5,17 +5,24 @@
 
 import {test} from '@playwright/test';
 
-import {CustomerDashboardPage} from '../pages/customerDashboardPage';
-import {PublisherAppPage} from '../pages/publisherAppPage';
-import {PublisherDashboardPage} from '../pages/publisherDashboardPage';
-import {PublisherSolutionPage} from '../pages/publisherSolutionPage';
+import {CustomerDashboardAppDetailsPage} from '../pages/customer-dashboard/customerDashboardAppDetailsPage';
+import {CustomerDashboardPage} from '../pages/customer-dashboard/customerDashboardPage';
+import {PublisherAppPage} from '../pages/publisher-dashboard/publisherAppPage';
+import {PublisherDashboardPage} from '../pages/publisher-dashboard/publisherDashboardPage';
+import {PublisherDashboardSolutionDetailsPage} from '../pages/publisher-dashboard/publisherDashboardSolutionDetailsPage';
+import {PublisherSolutionPage} from '../pages/publisher-dashboard/publisherSolutionPage';
 
 const marketplacePagesTest = test.extend<{
+	customerDashboardAppDetailsPage: CustomerDashboardAppDetailsPage;
 	customerDashboardPage: CustomerDashboardPage;
 	publisherAppPage: PublisherAppPage;
 	publisherDashboardPage: PublisherDashboardPage;
+	publisherDashboardSolutionDetailsPage: PublisherDashboardSolutionDetailsPage;
 	publisherSolutionPage: PublisherSolutionPage;
 }>({
+	customerDashboardAppDetailsPage: async ({page}, use) => {
+		await use(new CustomerDashboardAppDetailsPage(page));
+	},
 	customerDashboardPage: async ({page}, use) => {
 		await use(new CustomerDashboardPage(page));
 	},
@@ -24,6 +31,9 @@ const marketplacePagesTest = test.extend<{
 	},
 	publisherDashboardPage: async ({page}, use) => {
 		await use(new PublisherDashboardPage(page));
+	},
+	publisherDashboardSolutionDetailsPage: async ({page}, use) => {
+		await use(new PublisherDashboardSolutionDetailsPage(page));
 	},
 	publisherSolutionPage: async ({page}, use) => {
 		await use(new PublisherSolutionPage(page));

@@ -5,68 +5,40 @@
 
 import {expect, mergeTests} from '@playwright/test';
 
-import {dataApiHelpersTest} from '../../../../fixtures/dataApiHelpersTest';
 import {clickAndExpectToBeVisible} from '../../../../utils/clickAndExpectToBeVisible';
 import {getRandomInt} from '../../../../utils/getRandomInt';
+import {marketplaceHelper} from '../fixtures/marketplaceHelper';
 import {marketplacePagesTest} from '../fixtures/marketplacePages';
 import {marketplaceSiteFixture} from '../fixtures/marketplaceSite';
-import {solutions} from '../utils/constants';
+import {SOLUTION_PUBLISHER_ROLE, solutions} from '../utils/constants';
 
 export const test = mergeTests(
-	dataApiHelpersTest,
 	marketplaceSiteFixture,
+	marketplaceHelper,
 	marketplacePagesTest
 );
-
-const ACCOUNT_NAME = {
-	PERSON: `Person Account${getRandomInt()}`,
-	SUPPLIER: `Supplier Account${getRandomInt()}`,
-};
-const SOLUTION_PUBLISHER_ROLE = 'Solution Publisher';
 
 test.describe('Can Publish and Manage Solutions', () => {
 	let _account;
 	let _catalog;
 	let _productId;
+	const accountName = `Supplier Account${getRandomInt()}`;
 
 	test.beforeEach(
-		async ({apiHelpers, marketplace, publisherSolutionPage}) => {
-			const account = await apiHelpers.headlessAdminUser.postAccount({
-				name: ACCOUNT_NAME.SUPPLIER,
-				type: 'supplier',
-			});
-
-			_account = account;
-
-			const user =
-				await apiHelpers.headlessAdminUser.getUserAccountByEmailAddress(
-					'test@liferay.com'
-				);
-
-			await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
-				account.id,
-				['test@liferay.com']
-			);
-
-			const rolesResponse =
-				await apiHelpers.headlessAdminUser.getAccountRoles(account.id);
-
-			const accountSupplierRole = rolesResponse?.items?.filter((role) => {
-				return role.name === SOLUTION_PUBLISHER_ROLE;
-			});
-
-			await apiHelpers.headlessAdminUser.assignUserToAccountRole(
-				account.id,
-				accountSupplierRole[0].id,
-				user.id
-			);
-
-			const catalog =
-				await apiHelpers.headlessCommerceAdminCatalog.postCatalog({
-					accountId: account.id,
+		async ({marketplace, marketplaceHelper, publisherSolutionPage}) => {
+			const {account, catalog} =
+				await marketplaceHelper.createAccountUserCatalog({
+					accountName,
+					accountType: 'supplier',
 				});
 
+			_account = account;
 			_catalog = catalog;
+
+			await marketplaceHelper.assignUserToAccountRole({
+				accountId: account.id,
+				accountRole: SOLUTION_PUBLISHER_ROLE,
+			});
 
 			await publisherSolutionPage.goto(
 				`web${marketplace.friendlyUrlPath}/publisher-dashboard#/solutions`
@@ -87,7 +59,7 @@ test.describe('Can Publish and Manage Solutions', () => {
 	test('LPD-26707 New Solution Template button should be visible for Suppliers', async ({
 		publisherSolutionPage,
 	}) => {
-		await publisherSolutionPage.selectAccount(ACCOUNT_NAME.SUPPLIER);
+		await publisherSolutionPage.selectAccount(accountName);
 		await expect(publisherSolutionPage.newSolutionButton).toBeEnabled();
 	});
 
@@ -172,26 +144,17 @@ test.describe('Can Publish and Manage Solutions', () => {
 test.describe(`Supplier Accounts without ${SOLUTION_PUBLISHER_ROLE} role can not be a solution publisher`, () => {
 	let _account;
 	let _catalog;
+	const accountName = `Supplier Account${getRandomInt()}`;
 
 	test.beforeEach(
-		async ({apiHelpers, marketplace, publisherSolutionPage}) => {
-			const account = await apiHelpers.headlessAdminUser.postAccount({
-				name: ACCOUNT_NAME.SUPPLIER,
-				type: 'supplier',
-			});
-
-			_account = account;
-
-			await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
-				account.id,
-				['test@liferay.com']
-			);
-
-			const catalog =
-				await apiHelpers.headlessCommerceAdminCatalog.postCatalog({
-					accountId: account.id,
+		async ({marketplace, marketplaceHelper, publisherSolutionPage}) => {
+			const {account, catalog} =
+				await marketplaceHelper.createAccountUserCatalog({
+					accountName,
+					accountType: 'supplier',
 				});
 
+			_account = account;
 			_catalog = catalog;
 
 			await publisherSolutionPage.goto(
@@ -210,7 +173,7 @@ test.describe(`Supplier Accounts without ${SOLUTION_PUBLISHER_ROLE} role can not
 	test('LPD-28486 New Solution Template button should NOT be visible', async ({
 		publisherSolutionPage,
 	}) => {
-		await publisherSolutionPage.selectAccount(ACCOUNT_NAME.SUPPLIER);
+		await publisherSolutionPage.selectAccount(accountName);
 
 		await expect(publisherSolutionPage.newSolutionButton).toBeHidden();
 

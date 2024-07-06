@@ -5,159 +5,109 @@
 
 import {expect, mergeTests} from '@playwright/test';
 
-import {backendPageTest} from '../../../../fixtures/backendPageTest';
-import {dataApiHelpersTest} from '../../../../fixtures/dataApiHelpersTest';
 import {clickAndExpectToBeVisible} from '../../../../utils/clickAndExpectToBeVisible';
 import {getRandomInt} from '../../../../utils/getRandomInt';
 import {getTempDir} from '../../../../utils/temp';
+import {marketplaceHelper} from '../fixtures/marketplaceHelper';
 import {marketplacePagesTest} from '../fixtures/marketplacePages';
 import {marketplaceSiteFixture} from '../fixtures/marketplaceSite';
 import {
 	MARKETPLACE_CHANNEL,
-	ORDER_TYPES,
-	ORDER_WORKFLOW_STATUS_CODE,
-	PAYMENT_STATUS,
+	ORDER_ITEMS,
 	PRODUCT_WORKFLOW_STATUS_CODE,
 } from '../utils/constants';
 
 export const test = mergeTests(
-	backendPageTest,
-	dataApiHelpersTest,
 	marketplacePagesTest,
+	marketplaceHelper,
 	marketplaceSiteFixture
 );
 
-const ORDER_ITEM_DECIMAL_QUANTITY = 1;
-const ORDER_ITEM_QUANTITY = 1;
-const ORDER_ITEM_UNIT_PRICE = 1;
-
-const CUSTOMER_ACCOUNT_NAME = `Customer${getRandomInt()}`;
-const PRODUCT_NAME = `Product${getRandomInt()}`;
-
 test.describe('Can Purchase and Manage Apps', () => {
 	let _catalog;
-	let _customerAccount;
+	let _account;
 	let _product;
 	let _order;
+	const accountName = `Customer Account${getRandomInt()}`;
+	const productName = `Product${getRandomInt()}`;
 
-	test.beforeEach(async ({apiHelpers}) => {
-		const user =
-			await apiHelpers.headlessAdminUser.getUserAccountByEmailAddress(
-				'test@liferay.com'
-			);
-
-		const customer = await apiHelpers.headlessAdminUser.postAccount({
-			name: CUSTOMER_ACCOUNT_NAME,
-			type: 'person',
-		});
-
-		_customerAccount = customer;
-
-		const catalog =
-			await apiHelpers.headlessCommerceAdminCatalog.postCatalog();
-
-		_catalog = catalog;
-
-		const rolesResponse =
-			await apiHelpers.headlessAdminUser.getAccountRoles(customer.id);
-
-		await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
-			customer.id,
-			['test@liferay.com']
-		);
-
-		const customerAccountRole = rolesResponse?.items?.filter(
-			(role) => role.name === 'Account Buyer'
-		);
-
-		await apiHelpers.headlessAdminUser.assignUserToAccountRole(
-			customer.id,
-			customerAccountRole[0].id,
-			user.id
-		);
-
+	test.beforeEach(async ({apiHelpers, marketplaceHelper}) => {
 		const channel =
 			await apiHelpers.headlessCommerceAdminChannel.getChannelsPage(
 				`name eq ${MARKETPLACE_CHANNEL}`
 			);
 
-		const product =
-			await apiHelpers.headlessCommerceAdminCatalog.postProduct({
-				active: true,
-				catalogId: catalog.id,
-				name: {
-					en_US: PRODUCT_NAME,
-				},
-				productChannels: [
-					{
-						channelId: channel.items[0].id,
-						currencyCode: 'USD',
-						id: channel.items[0].id,
-						name: MARKETPLACE_CHANNEL,
-						type: 'site',
-					},
-				],
-				productSpecifications: [
-					{
-						specificationKey: 'type',
-						value: {
-							en_US: 'DXP',
-						},
-					},
-					{
-						specificationKey: 'price-model',
-						value: {
-							en_US: 'paid',
-						},
-					},
-					{
-						specificationKey: 'latest-version',
-						value: {
-							en_US: '1.0.1',
-						},
-					},
-				],
-				productStatus: PRODUCT_WORKFLOW_STATUS_CODE.APPROVED,
-				productType: 'virtual',
-				productVirtualSettings: {
-					productVirtualSettingsFileEntries: [
-						{
-							attachment: btoa('liferay'),
-							version: 'Liferay Portal 7.4 GA110',
-						},
-					],
-				},
+		const {account, catalog} =
+			await marketplaceHelper.createAccountUserCatalog({
+				accountName,
+				accountType: 'person',
 			});
 
-		_product = product;
+		_account = account;
+		_catalog = catalog;
 
-		const order = await apiHelpers.headlessCommerceAdminOrder.postOrder({
-			accountId: customer.id,
-			channelId: channel.items[0].id,
-			orderItems: [
+		await marketplaceHelper.assignUserToAccountRole({
+			accountId: account.id,
+			accountRole: 'Account Buyer',
+		});
+
+		const productBody = {
+			active: true,
+			catalogId: catalog.id,
+			name: {
+				en_US: productName,
+			},
+			productChannels: [
 				{
-					decimalQuantity: ORDER_ITEM_DECIMAL_QUANTITY,
-					quantity: ORDER_ITEM_QUANTITY,
-					skuId: product.skus[0].id as unknown as string,
-					unitPrice: ORDER_ITEM_UNIT_PRICE,
+					channelId: channel.items[0].id,
+					currencyCode: 'USD',
+					id: channel.items[0].id,
+					name: MARKETPLACE_CHANNEL,
+					type: 'site',
 				},
 			],
-			orderTypeExternalReferenceCode: ORDER_TYPES.DXPAPP,
-		});
+			productSpecifications: [
+				{
+					specificationKey: 'type',
+					value: {
+						en_US: 'DXP',
+					},
+				},
+				{
+					specificationKey: 'price-model',
+					value: {
+						en_US: 'paid',
+					},
+				},
+				{
+					specificationKey: 'latest-version',
+					value: {
+						en_US: '1.0.1',
+					},
+				},
+			],
+			productStatus: PRODUCT_WORKFLOW_STATUS_CODE.APPROVED,
+			productType: 'virtual',
+			productVirtualSettings: {
+				productVirtualSettingsFileEntries: [
+					{
+						attachment: btoa('liferay'),
+						version: 'Liferay Portal 7.4 GA110',
+					},
+				],
+			},
+		};
+
+		const {order, product} = await marketplaceHelper.createTestProductOrder(
+			{
+				accountId: account.id,
+				orderItems: ORDER_ITEMS,
+				productBody,
+			}
+		);
 
 		_order = order;
-
-		await apiHelpers.headlessCommerceAdminOrder.patchOrder(order.id, {
-			paymentStatus: PAYMENT_STATUS.COMPLETED,
-		});
-
-		await apiHelpers.headlessCommerceAdminOrder.patchOrder(order.id, {
-			orderStatus: ORDER_WORKFLOW_STATUS_CODE.PROCESSING,
-		});
-
-		await apiHelpers.headlessCommerceAdminOrder.patchOrder(order.id, {
-			orderStatus: ORDER_WORKFLOW_STATUS_CODE.COMPLETED,
-		});
+		_product = product;
 	});
 
 	test.afterEach(async ({apiHelpers}) => {
@@ -171,41 +121,40 @@ test.describe('Can Purchase and Manage Apps', () => {
 			_catalog.id
 		);
 
-		await apiHelpers.headlessAdminUser.deleteAccount(_customerAccount.id);
+		await apiHelpers.headlessAdminUser.deleteAccount(_account.id);
 	});
 
 	test('LPD-21740 The customer can download by using the kebab', async ({
+		customerDashboardAppDetailsPage,
 		customerDashboardPage,
 		marketplace,
 	}) => {
-		await customerDashboardPage.goto(
-			`web${marketplace.friendlyUrlPath}/customer-dashboard`
-		);
+		await customerDashboardPage.goto(marketplace.friendlyUrlPath);
 
-		await customerDashboardPage.selectAccount(CUSTOMER_ACCOUNT_NAME);
+		await customerDashboardPage.selectAccount(accountName);
 
 		await expect(
-			customerDashboardPage.purchasedApp(PRODUCT_NAME)
+			customerDashboardPage.purchasedApp(productName)
 		).toBeVisible();
 
 		await expect(
-			customerDashboardPage.tableKebabButton(PRODUCT_NAME)
+			customerDashboardPage.tableKebabButton(productName)
 		).toBeVisible();
 
 		await customerDashboardPage
-			.tableKebabButton(PRODUCT_NAME)
+			.tableKebabButton(productName)
 			.waitFor({state: 'visible'});
 
 		await clickAndExpectToBeVisible({
 			target: customerDashboardPage.page.getByText('Download App'),
-			trigger: customerDashboardPage.tableKebabButton(PRODUCT_NAME),
+			trigger: customerDashboardPage.tableKebabButton(productName),
 		});
 
 		await customerDashboardPage.dropdownDownloadButton.click();
 
-		await expect(customerDashboardPage.downloadDashboardTab).toBeVisible();
+		await expect(customerDashboardAppDetailsPage.downloadTab).toBeVisible();
 
-		await expect(customerDashboardPage.downloadDashboardTab).toHaveClass(
+		await expect(customerDashboardAppDetailsPage.downloadTab).toHaveClass(
 			'nav-link active'
 		);
 
@@ -226,30 +175,29 @@ test.describe('Can Purchase and Manage Apps', () => {
 	});
 
 	test('LPD-21740 Customer can download the app through the table', async ({
+		customerDashboardAppDetailsPage,
 		customerDashboardPage,
 		marketplace,
 	}) => {
-		await customerDashboardPage.goto(
-			`web${marketplace.friendlyUrlPath}/customer-dashboard`
-		);
+		await customerDashboardPage.goto(marketplace.friendlyUrlPath);
 
-		await customerDashboardPage.selectAccount(CUSTOMER_ACCOUNT_NAME);
+		await customerDashboardPage.selectAccount(accountName);
 
 		await expect(
-			customerDashboardPage.purchasedApp(PRODUCT_NAME)
+			customerDashboardPage.purchasedApp(productName)
 		).toBeVisible();
-		await customerDashboardPage.purchasedApp(PRODUCT_NAME).click();
+		await customerDashboardPage.purchasedApp(productName).click();
 
-		await expect(customerDashboardPage.detailDashboardTab).toBeVisible();
+		await expect(customerDashboardAppDetailsPage.detailTab).toBeVisible();
 
-		await expect(customerDashboardPage.detailDashboardTab).toHaveClass(
+		await expect(customerDashboardAppDetailsPage.detailTab).toHaveClass(
 			'nav-link active'
 		);
 
-		await expect(customerDashboardPage.downloadDashboardTab).toBeVisible();
-		await customerDashboardPage.downloadDashboardTab.click();
+		await expect(customerDashboardAppDetailsPage.downloadTab).toBeVisible();
+		await customerDashboardAppDetailsPage.downloadTab.click();
 
-		await expect(customerDashboardPage.downloadDashboardTab).toHaveClass(
+		await expect(customerDashboardAppDetailsPage.downloadTab).toHaveClass(
 			'nav-link active'
 		);
 

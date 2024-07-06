@@ -113,6 +113,7 @@ const CaseResultHistory: React.FC<CaseResultHistoryProps> = ({
 							),
 						size: 'xl',
 						value: i18n.translate('errors'),
+						width: '400',
 					},
 				],
 				highlight: ({testrayCaseResultId}) =>

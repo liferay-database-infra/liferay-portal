@@ -27,8 +27,10 @@ type THoursAvailable = {
 };
 
 type TOrganization = {
+	externalReferenceCode?: string;
 	id?: string;
-	name: string;
+	name?: string;
+	parentOrganization?: TOrganization;
 	services?: TServices[];
 };
 
@@ -94,6 +96,15 @@ export class HeadlessAdminUserApiHelper {
 	) {
 		return this.apiHelpers.post(
 			`${this.apiHelpers.baseUrl}${this.basePath}/account-groups/by-external-reference-code/${accountExternalReferenceCode}/accounts/by-external-reference-code/${accountGroupExternalReferenceCode}`
+		);
+	}
+
+	async assignAccountToOrganization(
+		accountId: number,
+		organizationId: string
+	) {
+		return this.apiHelpers.post(
+			`${this.apiHelpers.baseUrl}${this.basePath}/accounts/${accountId}/organizations/${organizationId}`
 		);
 	}
 

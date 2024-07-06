@@ -4,6 +4,7 @@
  */
 
 import {useAtomValue} from 'jotai';
+import SearchBuilder from '~/core/SearchBuilder';
 
 import {
 	APIResponse,
@@ -23,6 +24,13 @@ const useSubtaskScore = ({
 	userId: number;
 }) => {
 	const refresh = useAtomValue(taskSidebarRefresh);
+	const searchBuilder = new SearchBuilder({useURIEncode: false});
+
+	const subtaskFilter = searchBuilder
+		.eq('taskId', testrayTask?.id)
+		.and()
+		.build();
+
 	const progressScore = {
 		completed: testrayTask?.subtaskScoreCompleted,
 		incomplete: testrayTask?.subtaskScoreSelfIncomplete,
@@ -35,6 +43,7 @@ const useSubtaskScore = ({
 		{
 			params: {
 				fields: 'r_userToSubtasks_userId,dueStatus,score',
+				filter: subtaskFilter,
 				pageSize: 999,
 			},
 		}

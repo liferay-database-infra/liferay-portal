@@ -70,7 +70,6 @@ const CaseListView: React.FC<CaseListViewProps> = ({
 								{name}
 							</>
 						),
-
 						value: i18n.translate('case'),
 					},
 					{

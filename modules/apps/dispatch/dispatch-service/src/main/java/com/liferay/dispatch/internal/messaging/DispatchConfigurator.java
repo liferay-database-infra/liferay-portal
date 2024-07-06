@@ -11,7 +11,6 @@ import com.liferay.dispatch.executor.DispatchTaskClusterMode;
 import com.liferay.dispatch.internal.helper.DispatchTriggerHelper;
 import com.liferay.dispatch.model.DispatchTrigger;
 import com.liferay.dispatch.service.DispatchTriggerLocalService;
-import com.liferay.portal.kernel.cluster.ClusterMasterExecutor;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.Destination;
@@ -78,29 +77,8 @@ public class DispatchConfigurator {
 		_serviceRegistration = bundleContext.registerService(
 			Destination.class, destination, properties);
 
-		_scheduleJobs(DispatchTaskClusterMode.ALL_NODES);
-
-		if (_clusterMasterExecutor.isMaster()) {
-			_scheduleJobs(DispatchTaskClusterMode.SINGLE_NODE_MEMORY_CLUSTERED);
-			_scheduleJobs(DispatchTaskClusterMode.SINGLE_NODE_PERSISTED);
-		}
-	}
-
-	@Deactivate
-	protected void deactivate() {
-		_unscheduleJobs(DispatchTaskClusterMode.ALL_NODES);
-
-		if (_clusterMasterExecutor.isMaster()) {
-			_unscheduleJobs(
-				DispatchTaskClusterMode.SINGLE_NODE_MEMORY_CLUSTERED);
-			_unscheduleJobs(DispatchTaskClusterMode.SINGLE_NODE_PERSISTED);
-		}
-
-		_serviceRegistration.unregister();
-	}
-
-	private void _scheduleJobs(
-		DispatchTaskClusterMode dispatchTaskClusterMode) {
+		DispatchTaskClusterMode dispatchTaskClusterMode =
+			DispatchTaskClusterMode.ALL_NODES;
 
 		for (DispatchTrigger dispatchTrigger :
 				_dispatchTriggerLocalService.getDispatchTriggers(
@@ -119,8 +97,10 @@ public class DispatchConfigurator {
 		}
 	}
 
-	private void _unscheduleJobs(
-		DispatchTaskClusterMode dispatchTaskClusterMode) {
+	@Deactivate
+	protected void deactivate() {
+		DispatchTaskClusterMode dispatchTaskClusterMode =
+			DispatchTaskClusterMode.ALL_NODES;
 
 		for (DispatchTrigger dispatchTrigger :
 				_dispatchTriggerLocalService.getDispatchTriggers(
@@ -129,15 +109,14 @@ public class DispatchConfigurator {
 			_dispatchTriggerHelper.deleteSchedulerJob(
 				dispatchTrigger, dispatchTaskClusterMode.getStorageType());
 		}
+
+		_serviceRegistration.unregister();
 	}
 
 	private static final int _MAXIMUM_QUEUE_SIZE = 100;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		DispatchConfigurator.class);
-
-	@Reference
-	private ClusterMasterExecutor _clusterMasterExecutor;
 
 	@Reference
 	private DestinationFactory _destinationFactory;

@@ -5,47 +5,34 @@
 
 import {expect, mergeTests} from '@playwright/test';
 
-import {dataApiHelpersTest} from '../../../../fixtures/dataApiHelpersTest';
 import {getRandomInt} from '../../../../utils/getRandomInt';
+import {marketplaceHelper} from '../fixtures/marketplaceHelper';
 import {marketplacePagesTest} from '../fixtures/marketplacePages';
 import {marketplaceSiteFixture} from '../fixtures/marketplaceSite';
 import {PublishProductPayload} from '../types';
 import {products} from '../utils/constants';
 
 export const test = mergeTests(
-	dataApiHelpersTest,
 	marketplaceSiteFixture,
-	marketplacePagesTest
+	marketplacePagesTest,
+	marketplaceHelper
 );
-
-const ACCOUNT_NAME = {
-	PERSON: `Person Account${getRandomInt()}`,
-	SUPPLIER: `Supplier Account${getRandomInt()}`,
-};
 
 test.describe('Can Publish Marketplace Apps', () => {
 	let _account;
 	let _catalog;
 	let _productId;
+	const accountName = `Supplier Account${getRandomInt()}`;
 
 	test.beforeEach(
-		async ({apiHelpers, marketplace, publisherSolutionPage}) => {
-			const account = await apiHelpers.headlessAdminUser.postAccount({
-				name: ACCOUNT_NAME.SUPPLIER,
-				type: 'supplier',
-			});
+		async ({marketplace, marketplaceHelper, publisherSolutionPage}) => {
+			const {account, catalog} =
+				await marketplaceHelper.createAccountUserCatalog({
+					accountName,
+					accountType: 'supplier',
+				});
 
 			_account = account;
-
-			await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
-				account.id,
-				['test@liferay.com']
-			);
-
-			const catalog =
-				await apiHelpers.headlessCommerceAdminCatalog.postCatalog({
-					accountId: account.id,
-				});
 
 			_catalog = catalog;
 
@@ -70,6 +57,7 @@ test.describe('Can Publish Marketplace Apps', () => {
 
 		test(`can publish "${product.name}"`, async ({
 			apiHelpers,
+			marketplace,
 			page,
 			publisherAppPage,
 			publisherDashboardPage,
@@ -80,16 +68,16 @@ test.describe('Can Publish Marketplace Apps', () => {
 
 			// Go to Publisher Dashboard
 
-			await publisherDashboardPage.goto();
+			await publisherDashboardPage.goto(marketplace.friendlyUrlPath);
 
-			await publisherDashboardPage.selectAccount(ACCOUNT_NAME.SUPPLIER);
+			await publisherDashboardPage.selectAccount(accountName);
 
 			await publisherDashboardPage.gotoNewAppPage();
 
 			// Publish the app
 
 			await publisherAppPage.checkHeader({
-				accountName: ACCOUNT_NAME,
+				accountName,
 				appName: 'New App',
 			});
 			await publisherAppPage.continue();
