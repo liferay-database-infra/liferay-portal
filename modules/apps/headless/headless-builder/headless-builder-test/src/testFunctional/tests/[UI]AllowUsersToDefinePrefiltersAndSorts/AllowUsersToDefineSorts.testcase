@@ -81,6 +81,10 @@ definition {
 				fieldName = "sort",
 				name = "testendpoint",
 				title = "My-app");
+
+			Alert.viewSuccessMessage();
+
+			WaitForElementNotPresent(locator1 = "Message#SUCCESS");
 		}
 
 		task ("When I call endpoint with '?sort=age:desc' in API Explorer") {

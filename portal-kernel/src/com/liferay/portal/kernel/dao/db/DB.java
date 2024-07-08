@@ -78,6 +78,11 @@ public interface DB {
 
 	public List<Index> getIndexes(Connection connection) throws SQLException;
 
+	public List<IndexMetadata> getIndexes(
+			Connection connection, String tableName, String columnName,
+			boolean onlyUnique)
+		throws SQLException;
+
 	public ResultSet getIndexResultSet(
 			Connection connection, String tableName, boolean onlyUnique)
 		throws SQLException;

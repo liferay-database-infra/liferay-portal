@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-package com.liferay.portal.db.schema.definition.internal.processor;
+package com.liferay.portal.db.schema.definition.internal.sql.provider;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.DBResourceUtil;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBFactory;
@@ -23,37 +24,29 @@ import org.osgi.framework.ServiceReference;
 /**
  * @author Mariano Álvaro Sáiz
  */
-public class SQLFilesProcessor {
+public class PortalSQLProvider implements SQLProvider {
 
-	public SQLFilesProcessor(DBType dbType) throws Exception {
+	public PortalSQLProvider(DBType dbType) throws Exception {
 		_db = _getDB(dbType);
 
-		_generatePortalSQL();
+		_objectSQLProcessor = new ObjectSQLProvider(_db);
 
-		_generateModulesSQL();
+		_appendPortalSQL();
+
+		_appendModulesSQL();
 	}
 
 	public String getIndexesSQL() {
-		return _indexesSQLSB.toString();
+		return _indexesSQLSB.toString() + StringPool.NEW_LINE +
+			_objectSQLProcessor.getIndexesSQL();
 	}
 
 	public String getTablesSQL() {
-		return _tablesSQLSB.toString();
+		return _tablesSQLSB.toString() + StringPool.NEW_LINE +
+			_objectSQLProcessor.getTablesSQL();
 	}
 
-	private void _appendSQL(String indexesSQL, String tablesSQL)
-		throws Exception {
-
-		if (Validator.isNotNull(indexesSQL)) {
-			_indexesSQLSB.append(_db.buildSQL(indexesSQL));
-		}
-
-		if (Validator.isNotNull(tablesSQL)) {
-			_tablesSQLSB.append(_db.buildSQL(tablesSQL));
-		}
-	}
-
-	private void _generateModulesSQL() throws Exception {
+	private void _appendModulesSQL() throws Exception {
 		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
 
 		Collection<ServiceReference<SchemaCreator>> serviceReferences =
@@ -70,10 +63,22 @@ public class SQLFilesProcessor {
 		}
 	}
 
-	private void _generatePortalSQL() throws Exception {
+	private void _appendPortalSQL() throws Exception {
 		_appendSQL(
 			DBResourceUtil.getPortalIndexesSQL(),
 			DBResourceUtil.getPortalTablesSQL());
+	}
+
+	private void _appendSQL(String indexesSQL, String tablesSQL)
+		throws Exception {
+
+		if (Validator.isNotNull(indexesSQL)) {
+			_indexesSQLSB.append(_db.buildSQL(indexesSQL));
+		}
+
+		if (Validator.isNotNull(tablesSQL)) {
+			_tablesSQLSB.append(_db.buildSQL(tablesSQL));
+		}
 	}
 
 	private DB _getDB(DBType dbType) {
@@ -91,6 +96,7 @@ public class SQLFilesProcessor {
 
 	private final DB _db;
 	private final StringBundler _indexesSQLSB = new StringBundler();
+	private final ObjectSQLProvider _objectSQLProcessor;
 	private final StringBundler _tablesSQLSB = new StringBundler();
 
 }
