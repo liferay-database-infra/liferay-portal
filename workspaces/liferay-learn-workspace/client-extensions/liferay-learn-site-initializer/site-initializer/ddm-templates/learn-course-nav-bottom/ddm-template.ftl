@@ -1,32 +1,11 @@
 <#assign
 	navigationJSONObject = jsonFactoryUtil.createJSONObject(navigation.getData())
-	nextLesson =
-		{
-			"title": "",
-			"url": ""
-		}
 
-	childrenJSONArray = navigationJSONObject.getJSONArray("children")
-	parentJSONObject = navigationJSONObject.getJSONObject("parent")
-	siblingsJSONArray = navigationJSONObject.getJSONArray("siblings")
+	nextJSONObject = navigationJSONObject.getJSONObject("next")
+	previousJSONObject = navigationJSONObject.getJSONObject("previous")
 />
 
-<#if childrenJSONArray.length() gt 0>
-	<#assign nextLesson = childrenJSONArray.getJSONObject(0) />
-</#if>
-
-<#if siblingsJSONArray.length() gt 0>
-	<#list 0..siblingsJSONArray.length()-1 as i>
-		<#if .vars["reserved-article-title"].data == siblingsJSONArray.getJSONObject(i).title>
-			<#assign previousLesson = siblingsJSONArray.getJSONObject(i-1) />
-			<#if !nextLesson.title?has_content>
-				<#assign nextLesson = siblingsJSONArray.getJSONObject(i+1) />
-			</#if>
-		</#if>
-	</#list>
-</#if>
-
-<a href=${nextLesson.url}>
+<a href=${nextJSONObject.url}>
 	<div class="course-nav-bottom__banner d-flex">
 		<div class="banner-options d-flex">
 			<div class="banner-next-container">
@@ -34,7 +13,7 @@
 			</div>
 
 			<div class="banner-title">
-				${nextLesson.title}
+				${nextJSONObject.title}
 			</div>
 		</div>
 
@@ -43,8 +22,8 @@
 				class="lexicon-icon lexicon-icon-order-arrow-right"
 				role="presentation"
 				viewBox="0 0 512 512"
-				>
-					<use xlink:href="/o/admin-theme/images/clay/icons.svg#order-arrow-right"></use>
+			>
+				<use xlink:href="/o/admin-theme/images/clay/icons.svg#order-arrow-right"></use>
 			</svg>
 		</div>
 	</div>
@@ -52,7 +31,7 @@
 
 <div class="course-nav-bottom__menu d-flex">
 	<div class="menu-previous-lesson d-flex">
-			<a href=${previousLesson.url}>
+			<a href=${previousJSONObject.url}>
 			<div class="previous-lesson-icon">
 				<svg
 				class="lexicon-icon lexicon-icon-order-arrow-left"

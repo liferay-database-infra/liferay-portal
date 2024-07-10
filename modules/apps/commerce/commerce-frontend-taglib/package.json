@@ -15,7 +15,7 @@
 	"scripts": {
 		"build": "node-scripts build",
 		"checkFormat": "node-scripts format --check",
-		"format": "nodescripts format"
+		"format": "node-scripts format"
 	},
 	"version": "23.1.3"
 }
