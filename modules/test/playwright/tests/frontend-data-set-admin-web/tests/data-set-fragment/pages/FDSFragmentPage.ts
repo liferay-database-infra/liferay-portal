@@ -15,10 +15,15 @@ export class FDSFragmentPage {
 	readonly editPageButton: Locator;
 	readonly emptyStateTitle: Locator;
 	readonly fdsActiveViewSelector: Locator;
+	readonly fdsAddFilterButton: Locator;
 	readonly fdsCardsWrapper: Locator;
+	readonly fdsFilterButton: Locator;
+	fdsFilterItem: Locator;
+	readonly fdsFilterResumeButton: Locator;
 	readonly fdsListWrapper: Locator;
 	readonly fdsPaginationResults: Locator;
 	readonly fdsPaginationWrapper: Locator;
+	readonly fdsResetFilterButton: Locator;
 	readonly fdsTableWrapper: Locator;
 	readonly fragmentWidgetSearchInput: Locator;
 	readonly loadingIndicator: Locator;
@@ -30,12 +35,25 @@ export class FDSFragmentPage {
 		this.creationMenuButton = page.getByRole('button', {name: 'New'});
 		this.emptyStateTitle = page.getByText('No Results Found');
 		this.fdsActiveViewSelector = page.getByLabel('Show View Options');
+		this.fdsAddFilterButton = page.getByRole('button', {
+			exact: true,
+			name: 'Add Filter',
+		});
 		this.fdsCardsWrapper = page.locator('.cards-container');
+		this.fdsFilterButton = page.getByRole('button', {
+			exact: true,
+			name: 'Filter',
+		});
+		this.fdsFilterResumeButton = page.locator('.filter-resume');
 		this.fdsListWrapper = page.locator('.list-sheet');
 		this.fdsPaginationWrapper = page.locator(
 			'.data-set-pagination-wrapper'
 		);
 		this.fdsPaginationResults = page.locator('.pagination-results');
+		this.fdsResetFilterButton = page.getByRole('button', {
+			exact: true,
+			name: 'Reset Filters',
+		});
 		this.fdsTableWrapper = page.locator('.dnd-table');
 		this.fragmentWidgetSearchInput = page.getByLabel(
 			'Search Fragments and Widgets'
@@ -49,6 +67,23 @@ export class FDSFragmentPage {
 
 	async goto() {
 		await this.page.goto('/');
+	}
+
+	async selectFilter(filterLabel) {
+		await this.fdsFilterButton.waitFor({state: 'visible'});
+		const filterDropdownId = await this.fdsFilterButton.evaluate((node) =>
+			node.getAttribute('aria-controls')
+		);
+		await this.fdsFilterButton.click();
+		await this.page
+			.locator(`#${filterDropdownId}`)
+			.waitFor({state: 'visible'});
+		this.fdsFilterItem = this.page.locator(`#${filterDropdownId}`);
+		this.fdsFilterItem
+			.getByRole('menuitem', {
+				name: filterLabel,
+			})
+			.click();
 	}
 
 	async changeVisualizationMode(visualizationMode: VisualizationMode) {
@@ -70,6 +105,62 @@ export class FDSFragmentPage {
 		dataSetLabel?: string;
 		layout: Layout;
 	}) {
+		await this.setupPageAndFragment(layout);
+
+		await this.page
+			.frameLocator('iframe[title="Select"]')
+			.locator('.fds-admin-item-selector')
+			.waitFor({state: 'visible'});
+
+		await this.page
+			.frameLocator('iframe[title="Select"]')
+			.locator('li')
+			.filter({hasText: dataSetLabel})
+			.first()
+			.click();
+
+		await this.page
+			.frameLocator('iframe[title="Select"]')
+			.getByRole('button', {name: 'Save'})
+			.click();
+
+		await this.publishPage();
+
+		await this.goToPage({layout});
+
+		await this.page
+			.locator('.data-set-content-wrapper')
+			.waitFor({state: 'visible'});
+	}
+
+	async configureEmptyDataSetFragment({layout}: {layout: Layout}) {
+		await this.setupPageAndFragment(layout);
+
+		await this.page
+			.frameLocator('iframe[title="Select"]')
+			.locator('.c-empty-state-title')
+			.waitFor({state: 'visible'});
+	}
+
+	async editPage({layout}: {layout: Layout}) {
+		await this.page.goto(`/web/guest${layout.friendlyURL}?p_l_mode=edit`);
+	}
+
+	async goToPage({layout}: {layout: Layout}) {
+		await this.page.goto(`/web/guest${layout.friendlyURL}`);
+	}
+
+	async publishPage() {
+		await this.publishPageButton.click();
+
+		await this.publishPageButton.isEnabled();
+	}
+
+	async searchFragmentOrWidget(itemName: string) {
+		await this.fragmentWidgetSearchInput.fill(itemName);
+	}
+
+	async setupPageAndFragment(layout: Layout) {
 		await this.editPage({layout});
 
 		await this.searchFragmentOrWidget('Data Set');
@@ -98,48 +189,5 @@ export class FDSFragmentPage {
 		await this.page.getByRole('dialog').isVisible();
 
 		await this.page.getByRole('heading', {name: 'Select'}).isVisible();
-
-		await this.page
-			.frameLocator('iframe[title="Select"]')
-			.locator('.fds-admin-item-selector')
-			.waitFor({state: 'visible'});
-
-		await this.page
-			.frameLocator('iframe[title="Select"]')
-			.locator('li')
-			.filter({hasText: dataSetLabel})
-			.first()
-			.click();
-
-		await this.page
-			.frameLocator('iframe[title="Select"]')
-			.getByRole('button', {name: 'Save'})
-			.click();
-
-		await this.publishPage();
-
-		await this.goToPage({layout});
-
-		await this.page
-			.locator('.data-set-content-wrapper')
-			.waitFor({state: 'visible'});
-	}
-
-	async editPage({layout}: {layout: Layout}) {
-		await this.page.goto(`/web/guest${layout.friendlyURL}?p_l_mode=edit`);
-	}
-
-	async goToPage({layout}: {layout: Layout}) {
-		await this.page.goto(`/web/guest${layout.friendlyURL}`);
-	}
-
-	async publishPage() {
-		await this.publishPageButton.click();
-
-		await this.publishPageButton.isEnabled();
-	}
-
-	async searchFragmentOrWidget(itemName: string) {
-		await this.fragmentWidgetSearchInput.fill(itemName);
 	}
 }

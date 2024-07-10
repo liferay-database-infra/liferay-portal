@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 
 import {getRootDir} from '../util/constants.mjs';
+import getGitModifiedFiles from '../util/getGitModifiedFiles.mjs';
 import projectScopeRequire from '../util/projectScopeRequire.mjs';
 
 /**
@@ -18,29 +19,43 @@ import projectScopeRequire from '../util/projectScopeRequire.mjs';
  *
  * Returns a (possibly empty) array of error messages.
  */
-export async function checkPackageJSONFiles() {
-	let packages = await fg('**/package.json', {
-		ignore: [
-			'_node-scripts',
-			'**/build',
-			'**/classes',
-			'**/frontend-js-jquery-web',
-			'**/node_modules',
-			'**/osb-faro-theme',
-			'**/osb-faro-web',
-			'**/sdk',
-			'test',
-		],
-	});
+export async function checkPackageJSONFiles(all) {
+	let packages = [];
+
+	if (all) {
+		packages = await fg('**/package.json', {
+			ignore: [
+				'_node-scripts',
+				'**/build',
+				'**/classes',
+				'**/frontend-js-jquery-web',
+				'**/node_modules',
+				'**/osb-faro-theme',
+				'**/osb-faro-web',
+				'**/sdk',
+				'test',
+			],
+		});
+	}
+	else {
+		const rootDir = await getRootDir();
+
+		packages = (await getGitModifiedFiles())
+			.filter((file) => file.endsWith('package.json'))
+			.map((file) => path.join(rootDir, '..', file));
+	}
 
 	// Filters out packages that have their own yarn.lock
 
 	packages = packages.filter((packagePath) => {
 
-		// Ignore root level package.json
+		// Ignore root level package.json and _node-scripts/package.json
 
-		if (packagePath === 'package.json') {
-			return true;
+		if (
+			packagePath.endsWith('modules/package.json') ||
+			packagePath.endsWith('modules/_node-scripts/package.json')
+		) {
+			return false;
 		}
 
 		return !fs.existsSync(

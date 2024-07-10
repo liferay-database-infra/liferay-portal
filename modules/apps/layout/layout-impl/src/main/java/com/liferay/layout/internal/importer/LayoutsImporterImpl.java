@@ -199,7 +199,8 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				preserveItemIds, userId, zipFile);
 
 			_processDisplayPageTemplatePageTemplateEntries(
-				groupId, layoutsImporterResultEntries, layoutsImportStrategy,
+				groupId, layoutPageTemplateCollectionId,
+				layoutsImporterResultEntries, layoutsImportStrategy,
 				preserveItemIds, userId, zipFile);
 
 			_processBasicLayoutPageTemplateEntries(
@@ -592,7 +593,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						zipEntry.getName(),
-						LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -632,7 +632,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						displayPageTemplate.getName(),
-						LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -839,7 +838,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						zipEntry.getName(),
-						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -878,7 +876,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						masterPage.getName(),
-						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -990,7 +987,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						zipEntry.getName(),
-						LayoutPageTemplateEntryTypeConstants.BASIC,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -1035,7 +1031,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						pageTemplate.getName(),
-						LayoutPageTemplateEntryTypeConstants.BASIC,
+						LayoutsImporterResultEntry.TYPE_COLLECTION,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -1272,7 +1268,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	}
 
 	private void _processDisplayPageTemplatePageTemplateEntries(
-			long groupId,
+			long groupId, long layoutPageTemplateCollectionId,
 			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
 			LayoutsImportStrategy layoutsImportStrategy,
 			boolean preserveItemIds, long userId, ZipFile zipFile)
@@ -1286,7 +1282,8 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				displayPageTemplateEntries) {
 
 			Callable<Void> callable = new DisplayPagesImporterCallable(
-				groupId, displayPageTemplateEntry, layoutsImporterResultEntries,
+				groupId, displayPageTemplateEntry,
+				layoutPageTemplateCollectionId, layoutsImporterResultEntries,
 				layoutsImportStrategy, preserveItemIds, userId, zipFile);
 
 			try {
@@ -1303,7 +1300,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						displayPageTemplate.getName(),
-						LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -1400,15 +1396,13 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
-						name, layoutPageTemplateEntryType,
-						LayoutsImporterResultEntry.Status.IMPORTED,
+						name, LayoutsImporterResultEntry.Status.IMPORTED,
 						warningMessages.toArray(new String[0])));
 			}
 			else {
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
-						name, layoutPageTemplateEntryType,
-						LayoutsImporterResultEntry.Status.IGNORED,
+						name, LayoutsImporterResultEntry.Status.IGNORED,
 						_getErrorMessage(
 							groupId, _MESSAGE_KEY_IGNORED,
 							new String[] {
@@ -1433,8 +1427,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 			layoutsImporterResultEntries.add(
 				new LayoutsImporterResultEntry(
-					name, layoutPageTemplateEntryType,
-					LayoutsImporterResultEntry.Status.INVALID,
+					name, LayoutsImporterResultEntry.Status.INVALID,
 					_getErrorMessage(
 						groupId, _MESSAGE_KEY_TYPE_INVALID,
 						new String[] {zipPath})));
@@ -1448,8 +1441,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 			layoutsImporterResultEntries.add(
 				new LayoutsImporterResultEntry(
-					name, layoutPageTemplateEntryType,
-					LayoutsImporterResultEntry.Status.INVALID,
+					name, LayoutsImporterResultEntry.Status.INVALID,
 					_getErrorMessage(
 						groupId, _MESSAGE_KEY_NAME_INVALID,
 						new String[] {
@@ -1623,7 +1615,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						masterPage.getName(),
-						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -1797,7 +1788,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						pageTemplate.getName(),
-						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -2487,9 +2477,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 					_portal.getClassNameId(contentType.getClassName()),
 					_getClassTypeId(
 						contentType.getClassName(), displayPageTemplate),
-					_groupId,
-					LayoutPageTemplateConstants.
-						PARENT_LAYOUT_PAGE_TEMPLATE_COLLECTION_ID_DEFAULT,
+					_groupId, _layoutPageTemplateCollectionId,
 					_layoutsImporterResultEntries, _layoutsImportStrategy,
 					displayPageTemplate.getName(),
 					_displayPageTemplateEntry.getPageDefinition(),
@@ -2513,12 +2501,14 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 		private DisplayPagesImporterCallable(
 			long groupId, DisplayPageTemplateEntry displayPageTemplateEntry,
+			long layoutPageTemplateCollectionId,
 			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
 			LayoutsImportStrategy layoutsImportStrategy,
 			boolean preserveItemIds, long userId, ZipFile zipFile) {
 
 			_groupId = groupId;
 			_displayPageTemplateEntry = displayPageTemplateEntry;
+			_layoutPageTemplateCollectionId = layoutPageTemplateCollectionId;
 			_layoutsImporterResultEntries = layoutsImporterResultEntries;
 			_layoutsImportStrategy = layoutsImportStrategy;
 			_preserveItemIds = preserveItemIds;
@@ -2570,6 +2560,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 		private final DisplayPageTemplateEntry _displayPageTemplateEntry;
 		private final long _groupId;
+		private final long _layoutPageTemplateCollectionId;
 		private final List<LayoutsImporterResultEntry>
 			_layoutsImporterResultEntries;
 		private final LayoutsImportStrategy _layoutsImportStrategy;

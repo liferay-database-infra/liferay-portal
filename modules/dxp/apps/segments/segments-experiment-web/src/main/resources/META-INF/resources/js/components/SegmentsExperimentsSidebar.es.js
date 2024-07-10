@@ -37,7 +37,7 @@ import {
 	SegmentsVariantType,
 } from '../types.es';
 import {
-	getSegmentsExperimentAction,
+	getSegmentsExperimentParameter,
 	navigateToExperience,
 } from '../util/navigation.es';
 import {
@@ -105,7 +105,27 @@ function SegmentsExperimentsSidebar({
 		});
 
 	useEffect(() => {
-		const segmentsExperimentAction = getSegmentsExperimentAction();
+		if (!getSegmentsExperimentParameter) {
+			return;
+		}
+
+		const segmentsExperimentState = getSegmentsExperimentParameter(
+			'segmentsExperimentState'
+		);
+
+		if (segmentsExperimentState === 'variantPublished') {
+			const experienceName =
+				getSegmentsExperimentParameter('experienceName');
+
+			openSuccessToast(
+				sub(
+					Liferay.Language.get('x-was-published-successfully'),
+					decodeURIComponent(experienceName)
+				)
+			);
+		}
+
+		const segmentsExperimentAction = getSegmentsExperimentParameter();
 
 		if (!segmentsExperimentAction || !experiment) {
 			return;
@@ -285,7 +305,9 @@ function SegmentsExperimentsSidebar({
 					experiment &&
 					experiment.segmentsExperimentId === experimentId
 				) {
-					navigateToExperience(experiment.segmentsExperienceId);
+					navigateToExperience({
+						experienceId: experiment.segmentsExperienceId,
+					});
 				}
 			})
 			.catch((_error) => {
@@ -310,7 +332,7 @@ function SegmentsExperimentsSidebar({
 			.then(function _successCallback({
 				segmentsExperiment: {segmentsExperienceId},
 			}) {
-				navigateToExperience(segmentsExperienceId);
+				navigateToExperience({experienceId: segmentsExperienceId});
 
 				openSuccessToast();
 			})
@@ -424,14 +446,19 @@ function SegmentsExperimentsSidebar({
 			winnerSegmentsExperienceId: experienceId,
 		})
 			.then(() => {
-				openSuccessToast(
-					sub(
-						Liferay.Language.get('x-was-published-successfully'),
-						experienceName
-					)
-				);
-
-				navigateToExperience(experienceId);
+				navigateToExperience({
+					experienceId,
+					params: [
+						{
+							key: 'segmentsExperimentState',
+							value: 'variantPublished',
+						},
+						{
+							key: 'experienceName',
+							value: encodeURIComponent(experienceName),
+						},
+					],
+				});
 			})
 			.catch((_error) => {
 				openErrorToast();

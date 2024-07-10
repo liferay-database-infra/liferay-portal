@@ -351,18 +351,18 @@ public class SalesforceObjectEntryManagerImplTest
 		// And/or with equals/not equals expression
 
 		String filterString = StringBundler.concat(
-			"(title eq ", getValue(title1), " or title eq ", getValue(title2),
-			" or title eq ", getValue(title3), " or title eq ",
-			getValue(title4), ") and ");
+			"(objectDefinitionId eq ",
+			_objectDefinition.getObjectDefinitionId(), ") and ");
 
 		testGetObjectEntries(
 			HashMapBuilder.put(
 				"filter",
 				StringBundler.concat(
-					filterString,
+					filterString, "(",
 					buildEqualsExpressionFilterString("customStatus", "queued"),
 					" and ", buildEqualsExpressionFilterString("dueDate", date),
-					" and ", buildEqualsExpressionFilterString("title", title1))
+					" and ", buildEqualsExpressionFilterString("title", title1),
+					")")
 			).build(),
 			objectEntry1);
 
@@ -370,13 +370,13 @@ public class SalesforceObjectEntryManagerImplTest
 			HashMapBuilder.put(
 				"filter",
 				StringBundler.concat(
-					filterString,
+					filterString, "(",
 					_buildNotEqualsExpressionFilterString(
 						"customStatus", "queued"),
 					" and ",
 					_buildNotEqualsExpressionFilterString("dueDate", date),
 					" and ",
-					_buildNotEqualsExpressionFilterString("title", title1))
+					_buildNotEqualsExpressionFilterString("title", title1), ")")
 			).build(),
 			objectEntry2, objectEntry3);
 
@@ -384,10 +384,11 @@ public class SalesforceObjectEntryManagerImplTest
 			HashMapBuilder.put(
 				"filter",
 				StringBundler.concat(
-					filterString,
+					filterString, "(",
 					buildEqualsExpressionFilterString("customStatus", "queued"),
 					" or ", buildEqualsExpressionFilterString("dueDate", date),
-					" or ", buildEqualsExpressionFilterString("title", title1))
+					" or ", buildEqualsExpressionFilterString("title", title1),
+					")")
 			).build(),
 			objectEntry1, objectEntry4, objectEntry5);
 
@@ -395,13 +396,13 @@ public class SalesforceObjectEntryManagerImplTest
 			HashMapBuilder.put(
 				"filter",
 				StringBundler.concat(
-					filterString,
+					filterString, "(",
 					_buildNotEqualsExpressionFilterString(
 						"customStatus", "queued"),
 					" or ",
 					_buildNotEqualsExpressionFilterString("dueDate", date),
 					" or ",
-					_buildNotEqualsExpressionFilterString("title", title1))
+					_buildNotEqualsExpressionFilterString("title", title1), ")")
 			).build(),
 			objectEntry2, objectEntry3, objectEntry4);
 
@@ -431,7 +432,7 @@ public class SalesforceObjectEntryManagerImplTest
 				filterString.concat(
 					buildEqualsExpressionFilterString("customStatus", "queued"))
 			).build(),
-			objectEntry1, objectEntry4);
+			objectEntry1, objectEntry4, objectEntry5);
 
 		testGetObjectEntries(
 			HashMapBuilder.put(
@@ -448,7 +449,7 @@ public class SalesforceObjectEntryManagerImplTest
 				filterString.concat(
 					buildEqualsExpressionFilterString("dueDate", date))
 			).build(),
-			objectEntry1, objectEntry4);
+			objectEntry1, objectEntry4, objectEntry5);
 
 		testGetObjectEntries(
 			HashMapBuilder.put(

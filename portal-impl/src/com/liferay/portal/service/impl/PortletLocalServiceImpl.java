@@ -2671,26 +2671,26 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 	private void _deployRemotePortlet(long companyId, Portlet portlet)
 		throws PortalException {
 
-		Portlet companyPortletModel = (Portlet)portlet.clone();
+		Portlet companyPortlet = (Portlet)portlet.clone();
 
-		companyPortletModel.setCompanyId(companyId);
+		companyPortlet.setCompanyId(companyId);
 
 		PortletCategory portletCategory = (PortletCategory)WebAppPool.get(
-			companyPortletModel.getCompanyId(), WebKeys.PORTLET_CATEGORY);
+			companyPortlet.getCompanyId(), WebKeys.PORTLET_CATEGORY);
 
 		if (portletCategory == null) {
 			_log.error(
 				"Unable to register remote portlet for company " +
-					companyPortletModel.getCompanyId() +
+					companyPortlet.getCompanyId() +
 						" because it does not exist");
 
 			return;
 		}
 
-		_updatePortletCategory(portletCategory, companyPortletModel);
+		_updatePortletCategory(portletCategory, companyPortlet);
 
 		if (StartupHelperUtil.isDBWarmed()) {
-			checkPortlet(companyPortletModel);
+			checkPortlet(companyPortlet);
 		}
 		else {
 			DependencyManagerSyncUtil.registerSyncCallable(
@@ -2699,7 +2699,7 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 							CompanyThreadLocal.setWithSafeCloseable(
 								companyId)) {
 
-						portletLocalService.checkPortlet(companyPortletModel);
+						portletLocalService.checkPortlet(companyPortlet);
 					}
 
 					return null;

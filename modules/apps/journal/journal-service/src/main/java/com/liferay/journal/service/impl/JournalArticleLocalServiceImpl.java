@@ -222,6 +222,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
@@ -7599,6 +7600,23 @@ public class JournalArticleLocalServiceImpl
 		}
 	}
 
+	private boolean _equals(
+		LocalizedValue localizedValue1, LocalizedValue localizedValue2,
+		String fieldType) {
+
+		Predicate<String> emptyValuePredicate = _getEmptyValuePredicate(
+			fieldType);
+
+		if ((_isEmpty(localizedValue1, emptyValuePredicate) &&
+			 _isEmpty(localizedValue2, emptyValuePredicate)) ||
+			Objects.equals(localizedValue1, localizedValue2)) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	private DDMFormValues _formatContent(
 			JournalArticle article, String content, long groupId, User user)
 		throws PortalException {
@@ -7651,6 +7669,34 @@ public class JournalArticleLocalServiceImpl
 		}
 
 		return StringPool.BLANK;
+	}
+
+	private Predicate<String> _getEmptyValuePredicate(String fieldType) {
+		if (fieldType.equals("checkbox_multiple")) {
+			return string -> string.equals("[]") || string.isEmpty();
+		}
+
+		if (fieldType.equals("document_library") ||
+			fieldType.equals("journal_article") ||
+			fieldType.equals("link_to_layout")) {
+
+			return string -> string.equals("{}") || string.isEmpty();
+		}
+
+		if (fieldType.equals("image")) {
+			return string ->
+				string.equals("{}") || string.equals("{\"alt\":\"\"}");
+		}
+
+		if (fieldType.equals("radio")) {
+			return string -> string.equals("[]");
+		}
+
+		if (fieldType.equals("select")) {
+			return string -> string.equals("[]") || string.equals("[\"\"]");
+		}
+
+		return String::isEmpty;
 	}
 
 	private FileEntry _getFileEntry(JSONObject valueJSONObject) {
@@ -7983,6 +8029,24 @@ public class JournalArticleLocalServiceImpl
 		return urlTitleMap;
 	}
 
+	private boolean _isEmpty(
+		LocalizedValue localizedValue, Predicate<String> emptyValuePredicate) {
+
+		if (localizedValue == null) {
+			return true;
+		}
+
+		Map<Locale, String> values = localizedValue.getValues();
+
+		for (String string : values.values()) {
+			if ((string != null) && !emptyValuePredicate.test(string)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	private void _populateSubscriptionSender(
 		JournalArticle article, String articleURL, String emailType,
 		String fromAddress, String fromName,
@@ -8173,17 +8237,30 @@ public class JournalArticleLocalServiceImpl
 		Map<String, DDMFormField> ddmFormFieldsMap =
 			ddmForm.getDDMFormFieldsMap(true);
 
-		for (DDMFormFieldValue ddmFormFieldValue :
-				ddmFormValues.getDDMFormFieldValues()) {
+		Map<String, List<DDMFormFieldValue>> ddmFormFieldValuesMap =
+			ddmFormValues.getDDMFormFieldValuesMap(true);
 
-			DDMFormField ddmFormField = ddmFormFieldsMap.get(
-				ddmFormFieldValue.getName());
+		for (Map.Entry<String, List<DDMFormFieldValue>> entry :
+				ddmFormFieldValuesMap.entrySet()) {
+
+			DDMFormField ddmFormField = ddmFormFieldsMap.get(entry.getKey());
 
 			if (ddmFormField != null) {
-				ddmFormField.setPredefinedValue(
-					(LocalizedValue)ddmFormFieldValue.getValue());
+				List<DDMFormFieldValue> ddmFormFieldValues = entry.getValue();
 
-				update = true;
+				DDMFormFieldValue ddmFormFieldValue = ddmFormFieldValues.get(0);
+
+				LocalizedValue localizedValue =
+					(LocalizedValue)ddmFormFieldValue.getValue();
+
+				if (!_equals(
+						ddmFormField.getPredefinedValue(), localizedValue,
+						ddmFormField.getType())) {
+
+					ddmFormField.setPredefinedValue(localizedValue);
+
+					update = true;
+				}
 			}
 		}
 

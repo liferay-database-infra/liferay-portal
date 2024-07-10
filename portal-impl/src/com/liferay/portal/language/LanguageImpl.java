@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.cookies.CookiesManagerUtil;
 import com.liferay.portal.kernel.cookies.constants.CookiesConstants;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageWrapper;
 import com.liferay.portal.kernel.log.Log;
@@ -1632,6 +1633,19 @@ public class LanguageImpl implements Language, Serializable {
 		Supplier<ResourceBundle> resourceBundleSupplier, Locale locale,
 		String content) {
 
+		if (FeatureFlagManagerUtil.isEnabled("LPD-11848")) {
+			Matcher matcher = _liferayLanguageImportPattern.matcher(content);
+
+			if (matcher.find()) {
+				return content;
+			}
+		}
+		else {
+			content = content.replaceAll(
+				_LIFERAY_LANGUAGE_IMPORT_REGEXP,
+				"{/*removed: await import('@liferay/language...')*/}");
+		}
+
 		StringBundler sb = null;
 
 		ResourceBundle resourceBundle = null;
@@ -2002,6 +2016,9 @@ public class LanguageImpl implements Language, Serializable {
 	private static final String _GROUP_LOCALES_PORTAL_CACHE_NAME =
 		LanguageImpl.class.getName() + "._groupLocalesPortalCache";
 
+	private static final String _LIFERAY_LANGUAGE_IMPORT_REGEXP =
+		"await import\\(.@liferay/language/.+/all\\.js.\\)";
+
 	private static final double _STORAGE_SIZE_DENOMINATOR = 1024.0;
 
 	private static final Log _log = LogFactoryUtil.getLog(LanguageImpl.class);
@@ -2011,6 +2028,8 @@ public class LanguageImpl implements Language, Serializable {
 	private static PortalCache<Long, Serializable> _companyLocalesPortalCache;
 	private static PortalCache<Long, Serializable> _groupLocalesPortalCache;
 	private static volatile long _lastModified = System.currentTimeMillis();
+	private static final Pattern _liferayLanguageImportPattern =
+		Pattern.compile(_LIFERAY_LANGUAGE_IMPORT_REGEXP, Pattern.MULTILINE);
 	private static final Pattern _pattern = Pattern.compile(
 		"Liferay\\s*\\.\\s*Language\\s*\\.\\s*get\\s*" +
 			"\\(\\s*[\"']([^)]+)[\"']\\s*\\)",

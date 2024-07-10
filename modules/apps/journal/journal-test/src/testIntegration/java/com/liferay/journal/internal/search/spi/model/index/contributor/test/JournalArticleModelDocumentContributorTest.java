@@ -16,13 +16,14 @@ import com.liferay.journal.constants.JournalFolderConstants;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.test.util.JournalTestUtil;
 import com.liferay.journal.util.JournalConverter;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.DocumentImpl;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
-import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
@@ -51,8 +52,10 @@ public class JournalArticleModelDocumentContributorTest {
 
 	@Before
 	public void setUp() throws Exception {
+		_group = GroupTestUtil.addGroup();
+
 		_journalArticle = JournalTestUtil.addArticle(
-			TestPropsValues.getGroupId(),
+			_group.getGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			JournalArticleConstants.CLASS_NAME_ID_DEFAULT,
 			HashMapBuilder.put(
@@ -113,17 +116,20 @@ public class JournalArticleModelDocumentContributorTest {
 		com.liferay.portal.kernel.xml.Document document =
 			_journalArticle.getDocument();
 
+		DDMStructure ddmStructure = _journalArticle.getDDMStructure();
+
 		return _ddmIndexer.extractIndexableAttributes(
-			_journalArticle.getDDMStructure(),
+			ddmStructure,
 			_fieldsToDDMFormValuesConverter.convert(
-				_journalArticle.getDDMStructure(),
-				_journalConverter.getDDMFields(
-					_journalArticle.getDDMStructure(), document.asXML())),
+				ddmStructure,
+				_journalConverter.getDDMFields(ddmStructure, document.asXML())),
 			LocaleUtil.fromLanguageId(languageId));
 	}
 
 	private Document _getDocument() {
 		DocumentImpl documentImpl = new DocumentImpl();
+
+		Assert.assertNotNull(_journalArticle.getDDMFormValues());
 
 		_modelDocumentContributor.contribute(documentImpl, _journalArticle);
 
@@ -138,6 +144,9 @@ public class JournalArticleModelDocumentContributorTest {
 
 	@Inject
 	private FieldsToDDMFormValuesConverter _fieldsToDDMFormValuesConverter;
+
+	@DeleteAfterTestRun
+	private Group _group;
 
 	@DeleteAfterTestRun
 	private JournalArticle _journalArticle;

@@ -54,19 +54,19 @@ public class FragmentEntryLinkLocalServiceUtil {
 	}
 
 	public static FragmentEntryLink addFragmentEntryLink(
-			long userId, long groupId, long originalFragmentEntryLinkId,
-			long fragmentEntryId, long segmentsExperienceId, long plid,
-			String css, String html, String js, String configuration,
-			String editableValues, String namespace, int position,
-			String rendererKey, int type,
+			String externalReferenceCode, long userId, long groupId,
+			long originalFragmentEntryLinkId, long fragmentEntryId,
+			long segmentsExperienceId, long plid, String css, String html,
+			String js, String configuration, String editableValues,
+			String namespace, int position, String rendererKey, int type,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws PortalException {
 
 		return getService().addFragmentEntryLink(
-			userId, groupId, originalFragmentEntryLinkId, fragmentEntryId,
-			segmentsExperienceId, plid, css, html, js, configuration,
-			editableValues, namespace, position, rendererKey, type,
-			serviceContext);
+			externalReferenceCode, userId, groupId, originalFragmentEntryLinkId,
+			fragmentEntryId, segmentsExperienceId, plid, css, html, js,
+			configuration, editableValues, namespace, position, rendererKey,
+			type, serviceContext);
 	}
 
 	/**
@@ -123,6 +123,14 @@ public class FragmentEntryLinkLocalServiceUtil {
 		throws PortalException {
 
 		return getService().deleteFragmentEntryLink(fragmentEntryLinkId);
+	}
+
+	public static FragmentEntryLink deleteFragmentEntryLink(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		return getService().deleteFragmentEntryLink(
+			externalReferenceCode, groupId);
 	}
 
 	public static void deleteFragmentEntryLinks(long groupId) {
@@ -284,6 +292,14 @@ public class FragmentEntryLinkLocalServiceUtil {
 		return getService().fetchFragmentEntryLink(fragmentEntryLinkId);
 	}
 
+	public static FragmentEntryLink
+		fetchFragmentEntryLinkByExternalReferenceCode(
+			String externalReferenceCode, long groupId) {
+
+		return getService().fetchFragmentEntryLinkByExternalReferenceCode(
+			externalReferenceCode, groupId);
+	}
+
 	/**
 	 * Returns the fragment entry link matching the UUID and group.
 	 *
@@ -359,6 +375,14 @@ public class FragmentEntryLinkLocalServiceUtil {
 
 		return getService().getFragmentEntryLink(
 			groupId, originalFragmentEntryLinkId, plid);
+	}
+
+	public static FragmentEntryLink getFragmentEntryLinkByExternalReferenceCode(
+			String externalReferenceCode, long groupId)
+		throws PortalException {
+
+		return getService().getFragmentEntryLinkByExternalReferenceCode(
+			externalReferenceCode, groupId);
 	}
 
 	/**

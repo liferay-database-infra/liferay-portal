@@ -151,7 +151,7 @@ public class LayoutsImporterTest {
 				LayoutsImporterResultEntry.Status.IMPORTED,
 				layoutsImporterResultEntry.getStatus());
 			Assert.assertEquals(
-				LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE,
+				LayoutsImporterResultEntry.TYPE_ENTRY,
 				layoutsImporterResultEntry.getType());
 
 			_assertLayoutPageTemplateEntry(
@@ -336,7 +336,7 @@ public class LayoutsImporterTest {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
-				TestPropsValues.getUserId(), _group1.getGroupId(), 0,
+				null, TestPropsValues.getUserId(), _group1.getGroupId(), 0,
 				fragmentEntry.getFragmentEntryId(), defaultSegmentsExperienceId,
 				layoutPageTemplateEntry.getPlid(), StringPool.BLANK, html,
 				StringPool.BLANK,

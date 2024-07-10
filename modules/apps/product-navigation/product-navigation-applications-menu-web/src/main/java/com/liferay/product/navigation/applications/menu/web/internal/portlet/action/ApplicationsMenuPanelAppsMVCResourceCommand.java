@@ -10,7 +10,6 @@ import com.liferay.application.list.PanelAppRegistry;
 import com.liferay.application.list.PanelCategory;
 import com.liferay.application.list.constants.PanelCategoryKeys;
 import com.liferay.application.list.display.context.logic.PanelCategoryHelper;
-import com.liferay.application.list.util.PanelCategoryRegistryUtil;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.criteria.URLItemSelectorReturnType;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
@@ -47,6 +46,7 @@ import javax.portlet.ResourceResponse;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -62,6 +62,11 @@ import org.osgi.service.component.annotations.Reference;
 )
 public class ApplicationsMenuPanelAppsMVCResourceCommand
 	extends BaseMVCResourceCommand {
+
+	@Activate
+	protected void activate() {
+		_panelCategoryHelper = new PanelCategoryHelper(_panelAppRegistry);
+	}
 
 	@Override
 	protected void doServeResource(
@@ -105,9 +110,7 @@ public class ApplicationsMenuPanelAppsMVCResourceCommand
 			_jsonFactory.createJSONArray();
 
 		List<PanelCategory> childPanelCategories =
-			PanelCategoryRegistryUtil.getChildPanelCategories(
-				key, themeDisplay.getPermissionChecker(),
-				themeDisplay.getScopeGroup());
+			_panelCategoryHelper.getChildPanelCategories(key, themeDisplay);
 
 		for (PanelCategory childPanelCategory : childPanelCategories) {
 			JSONArray panelAppsJSONArray = _getPanelAppsJSONArray(
@@ -192,10 +195,8 @@ public class ApplicationsMenuPanelAppsMVCResourceCommand
 		JSONArray panelCategoriesJSONArray = _jsonFactory.createJSONArray();
 
 		List<PanelCategory> applicationsMenuPanelCategories =
-			PanelCategoryRegistryUtil.getChildPanelCategories(
-				PanelCategoryKeys.APPLICATIONS_MENU,
-				themeDisplay.getPermissionChecker(),
-				themeDisplay.getScopeGroup());
+			_panelCategoryHelper.getChildPanelCategories(
+				PanelCategoryKeys.APPLICATIONS_MENU, themeDisplay);
 
 		for (PanelCategory panelCategory : applicationsMenuPanelCategories) {
 			JSONArray childCategoriesJSONArray =
@@ -370,6 +371,8 @@ public class ApplicationsMenuPanelAppsMVCResourceCommand
 
 	@Reference
 	private PanelAppRegistry _panelAppRegistry;
+
+	private PanelCategoryHelper _panelCategoryHelper;
 
 	@Reference
 	private Portal _portal;

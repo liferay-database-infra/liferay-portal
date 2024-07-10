@@ -16,6 +16,8 @@ import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeCon
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
 import com.liferay.layout.test.util.LayoutTestUtil;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.Group;
@@ -37,6 +39,7 @@ import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -52,7 +55,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockMultipartHttpServletRequest;
 
 /**
  * @author Jonathan McCann
@@ -130,12 +135,28 @@ public class SaveAsDraftArticleMVCActionCommandTest {
 			previewURL.contains(String.valueOf(journalArticle.getVersion())));
 	}
 
+	private MockMultipartHttpServletRequest
+		_createMockMultipartHttpServletRequest() {
+
+		MockMultipartHttpServletRequest mockMultipartHttpServletRequest =
+			new MockMultipartHttpServletRequest();
+
+		mockMultipartHttpServletRequest.setCharacterEncoding(StringPool.UTF8);
+		mockMultipartHttpServletRequest.setContentType(
+			StringBundler.concat(
+				MediaType.MULTIPART_FORM_DATA_VALUE,
+				"; boundary=WebKitFormBoundary", StringUtil.randomString()));
+
+		return mockMultipartHttpServletRequest;
+	}
+
 	private MockLiferayPortletActionRequest _getMockLiferayPortletActionRequest(
 			JournalArticle journalArticle)
 		throws Exception {
 
 		MockLiferayPortletActionRequest mockLiferayPortletActionRequest =
-			new MockLiferayPortletActionRequest();
+			new MockLiferayPortletActionRequest(
+				_createMockMultipartHttpServletRequest());
 
 		mockLiferayPortletActionRequest.addParameter(
 			"articleId", journalArticle.getArticleId());

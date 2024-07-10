@@ -155,6 +155,15 @@ export class HeadlessAdminUserApiHelper {
 		);
 	}
 
+	async deleteOrganizationUserAccountAssociation(
+		organizationId: string,
+		emailAddress: string
+	) {
+		return this.apiHelpers.delete(
+			`${this.apiHelpers.baseUrl}${this.basePath}/organizations/${organizationId}/user-accounts/by-email-address/${emailAddress}`
+		);
+	}
+
 	async deleteUserAccount(userAccountId: number) {
 		return this.apiHelpers.delete(
 			`${this.apiHelpers.baseUrl}${this.basePath}/user-accounts/${userAccountId}`
@@ -174,6 +183,14 @@ export class HeadlessAdminUserApiHelper {
 		return this.apiHelpers.delete(
 			`${this.apiHelpers.baseUrl}${this.basePath}/roles/${roleId}/association/user-account/${userAccountId}`
 		);
+	}
+
+	async getAccountByName(accountName: string): Promise<TAccount> {
+		const accountResponse = await this.apiHelpers.get(
+			`${this.apiHelpers.baseUrl}${this.basePath}/accounts?filter=name eq '${accountName}'`
+		);
+
+		return accountResponse?.items?.at(0);
 	}
 
 	async getSiteByFriendlyUrlPath(friendlyUrlPath: string) {

@@ -7,6 +7,7 @@ import {ApiHelpers} from '../../../helpers/ApiHelpers';
 import {liferayConfig} from '../../../liferay.config';
 import {
 	CARDS_SECTION_DATA_SET_RELATIONSHIP,
+	CLIENT_EXTENSION_FILTER_DATA_SET_RELATIONSHIP,
 	CREATION_ACTION_DATA_SET_RELATIONSHIP,
 	DATE_FILTER_DATA_SET_RELATIONSHIP,
 	DEFAULT_LABEL,
@@ -78,6 +79,29 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 			[CARDS_SECTION_DATA_SET_RELATIONSHIP]: dataSetERC,
 			fieldName,
 			name,
+		};
+
+		return this.post(url, {data});
+	}
+
+	async createDataSetClientExtensionFilter({
+		dataSetId,
+		fdsFilterClientExtensionERC,
+		fieldName,
+		label_i18n = {en_US: 'Title'},
+	}: {
+		dataSetId: string;
+		fdsFilterClientExtensionERC: string;
+		fieldName: string;
+		label_i18n?: {[key: string]: string};
+	}) {
+		const url = `${this.baseUrl}data-set-manager/client-extension-filters`;
+
+		const data = {
+			[CLIENT_EXTENSION_FILTER_DATA_SET_RELATIONSHIP]: dataSetId,
+			fdsFilterClientExtensionERC,
+			fieldName,
+			label_i18n,
 		};
 
 		return this.post(url, {data});
@@ -347,6 +371,40 @@ export class DataSetManagerApiHelpers extends ApiHelpers {
 			defaultVisualizationMode,
 			label,
 			listOfItemsPerPage,
+		};
+
+		return this.patch(url, data);
+	}
+
+	async updateDataSetSelectionFilter({
+		erc,
+		fieldName,
+		include,
+		itemKey,
+		itemLabel,
+		label_i18n,
+		multiple,
+		preselectedValues,
+	}: {
+		erc: string;
+		fieldName?: string;
+		include?: boolean;
+		itemKey?: string;
+		itemLabel?: string;
+		label_i18n?: {[key: string]: string};
+		multiple?: boolean;
+		preselectedValues?: string;
+	}) {
+		const url = `${this.baseUrl}data-set-manager/selection-filters/by-external-reference-code/${erc}`;
+
+		const data = {
+			fieldName,
+			include,
+			itemKey,
+			itemLabel,
+			label_i18n,
+			multiple,
+			preselectedValues,
 		};
 
 		return this.patch(url, data);

@@ -479,11 +479,13 @@ definition {
 
 			ProxyUtil.stopHarRecording();
 
+			FormPortlet.waitFormRenderer(text = "Submit");
+
 			FormFields.editText(
 				fieldName = "Text",
 				fieldValue = "First Record");
 
-			FormPortlet.submitSuccessfully();
+			FormPortlet.submitLocalizedSuccessfully(buttonName = "Submit");
 
 			ProxyUtil.startHarRecording("formSubmitted");
 

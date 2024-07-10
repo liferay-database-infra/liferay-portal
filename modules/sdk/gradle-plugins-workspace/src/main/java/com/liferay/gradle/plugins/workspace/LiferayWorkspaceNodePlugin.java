@@ -13,9 +13,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.liferay.gradle.plugins.node.NodeExtension;
 import com.liferay.gradle.plugins.node.NodePlugin;
 import com.liferay.gradle.plugins.workspace.internal.util.GradleUtil;
-import com.liferay.gradle.plugins.workspace.internal.util.ResourceUtil;
 import com.liferay.gradle.plugins.workspace.internal.util.StringUtil;
 import com.liferay.gradle.util.Validator;
+import com.liferay.release.util.ResourceUtil;
 
 import java.io.File;
 
@@ -65,7 +65,7 @@ public class LiferayWorkspaceNodePlugin implements Plugin<Project> {
 
 		File indexJsonFile = new File(nodeCacheDir, "index.json");
 
-		_nodeInfos = ResourceUtil.readJson(
+		_nodeInfos = ResourceUtil.readJSON(
 			NodeInfos.class,
 			ResourceUtil.getLocalFileResolver(
 				indexJsonFile, maxAge, ChronoUnit.DAYS),

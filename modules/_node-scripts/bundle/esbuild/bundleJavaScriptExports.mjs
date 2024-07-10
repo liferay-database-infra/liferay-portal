@@ -48,7 +48,7 @@ async function bundle(
 	const esbuildConfig = {
 		bundle: true,
 		entryPoints: [getEntryPoint(moduleName)],
-		external: getExternals(globalImports, 'exports'),
+		external: getExternals(globalImports, projectWebContextPath, 'exports'),
 		format: 'esm',
 		outdir: BUILD_MAIN_EXPORTS_PATH,
 		plugins: [
@@ -56,7 +56,7 @@ async function bundle(
 			getImportBridgesPlugin(globalImports, overridenPackageSymbols),
 		],
 		sourcemap: true,
-		target: ['es2020'],
+		target: ['es2022'],
 	};
 
 	await writeExportBridge(overridenPackageSymbols, moduleName);

@@ -80,11 +80,12 @@ public interface FragmentEntryLinkLocalService
 		FragmentEntryLink fragmentEntryLink);
 
 	public FragmentEntryLink addFragmentEntryLink(
-			long userId, long groupId, long originalFragmentEntryLinkId,
-			long fragmentEntryId, long segmentsExperienceId, long plid,
-			String css, String html, String js, String configuration,
-			String editableValues, String namespace, int position,
-			String rendererKey, int type, ServiceContext serviceContext)
+			String externalReferenceCode, long userId, long groupId,
+			long originalFragmentEntryLinkId, long fragmentEntryId,
+			long segmentsExperienceId, long plid, String css, String html,
+			String js, String configuration, String editableValues,
+			String namespace, int position, String rendererKey, int type,
+			ServiceContext serviceContext)
 		throws PortalException;
 
 	/**
@@ -130,6 +131,10 @@ public interface FragmentEntryLinkLocalService
 	 */
 	@Indexable(type = IndexableType.DELETE)
 	public FragmentEntryLink deleteFragmentEntryLink(long fragmentEntryLinkId)
+		throws PortalException;
+
+	public FragmentEntryLink deleteFragmentEntryLink(
+			String externalReferenceCode, long groupId)
 		throws PortalException;
 
 	public void deleteFragmentEntryLinks(long groupId);
@@ -244,6 +249,10 @@ public interface FragmentEntryLinkLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public FragmentEntryLink fetchFragmentEntryLink(long fragmentEntryLinkId);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public FragmentEntryLink fetchFragmentEntryLinkByExternalReferenceCode(
+		String externalReferenceCode, long groupId);
+
 	/**
 	 * Returns the fragment entry link matching the UUID and group.
 	 *
@@ -294,6 +303,11 @@ public interface FragmentEntryLinkLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public FragmentEntryLink getFragmentEntryLink(
 		long groupId, long originalFragmentEntryLinkId, long plid);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public FragmentEntryLink getFragmentEntryLinkByExternalReferenceCode(
+			String externalReferenceCode, long groupId)
+		throws PortalException;
 
 	/**
 	 * Returns the fragment entry link matching the UUID and group.

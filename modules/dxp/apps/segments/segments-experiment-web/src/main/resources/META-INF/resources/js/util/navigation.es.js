@@ -19,10 +19,11 @@ const EXPERIMENT_ACTION_URL_KEY = 'segmentsExperimentAction';
  * @param {string} experienceId
  * @param {string} [baseUrl=window.location.href]
  */
-export function navigateToExperience(
+export function navigateToExperience({
 	experienceId,
-	baseUrl = window.location.href
-) {
+	baseUrl = window.location.href,
+	params = [],
+}) {
 	const currentUrl = new URL(baseUrl);
 	const urlQueryString = currentUrl.search;
 	const urlSearchParams = new URLSearchParams(urlQueryString);
@@ -32,6 +33,12 @@ export function navigateToExperience(
 
 	urlSearchParams.set(EXPERIENCE_ID_URL_KEY, experienceId);
 
+	if (params.length) {
+		params.forEach((param) => {
+			urlSearchParams.set(param.key, param.value);
+		});
+	}
+
 	currentUrl.search = urlSearchParams.toString();
 
 	const newUrl = currentUrl.toString();
@@ -39,15 +46,17 @@ export function navigateToExperience(
 	navigate(newUrl);
 }
 
-export function getSegmentsExperimentAction() {
+export function getSegmentsExperimentParameter(
+	paramName = EXPERIMENT_ACTION_URL_KEY
+) {
 	const url = new URL(window.location.href);
-	const action = url.searchParams.get(EXPERIMENT_ACTION_URL_KEY);
+	const action = url.searchParams.get(paramName);
 
 	if (!action) {
 		return null;
 	}
 
-	url.searchParams.delete(EXPERIMENT_ACTION_URL_KEY);
+	url.searchParams.delete(paramName);
 	window.history.replaceState(null, null, decodeURIComponent(url.href));
 
 	return action;

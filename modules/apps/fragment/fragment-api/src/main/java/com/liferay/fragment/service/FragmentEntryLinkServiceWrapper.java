@@ -31,19 +31,19 @@ public class FragmentEntryLinkServiceWrapper
 
 	@Override
 	public FragmentEntryLink addFragmentEntryLink(
-			long groupId, long originalFragmentEntryLinkId,
-			long fragmentEntryId, long segmentsExperienceId, long plid,
-			String css, String html, String js, String configuration,
-			String editableValues, String namespace, int position,
-			String rendererKey, int type,
+			String externalReferenceCode, long groupId,
+			long originalFragmentEntryLinkId, long fragmentEntryId,
+			long segmentsExperienceId, long plid, String css, String html,
+			String js, String configuration, String editableValues,
+			String namespace, int position, String rendererKey, int type,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _fragmentEntryLinkService.addFragmentEntryLink(
-			groupId, originalFragmentEntryLinkId, fragmentEntryId,
-			segmentsExperienceId, plid, css, html, js, configuration,
-			editableValues, namespace, position, rendererKey, type,
-			serviceContext);
+			externalReferenceCode, groupId, originalFragmentEntryLinkId,
+			fragmentEntryId, segmentsExperienceId, plid, css, html, js,
+			configuration, editableValues, namespace, position, rendererKey,
+			type, serviceContext);
 	}
 
 	@Override
@@ -52,6 +52,25 @@ public class FragmentEntryLinkServiceWrapper
 
 		return _fragmentEntryLinkService.deleteFragmentEntryLink(
 			fragmentEntryLinkId);
+	}
+
+	@Override
+	public FragmentEntryLink deleteFragmentEntryLink(
+			String externalReferenceCode, long groupId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _fragmentEntryLinkService.deleteFragmentEntryLink(
+			externalReferenceCode, groupId);
+	}
+
+	@Override
+	public FragmentEntryLink getFragmentEntryLinkByExternalReferenceCode(
+			String externalReferenceCode, long groupId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _fragmentEntryLinkService.
+			getFragmentEntryLinkByExternalReferenceCode(
+				externalReferenceCode, groupId);
 	}
 
 	/**

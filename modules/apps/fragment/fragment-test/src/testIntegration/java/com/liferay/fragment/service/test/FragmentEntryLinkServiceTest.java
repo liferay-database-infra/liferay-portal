@@ -9,9 +9,8 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.model.FragmentEntryLink;
+import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.service.FragmentEntryLinkService;
-import com.liferay.fragment.service.persistence.FragmentEntryLinkPersistence;
-import com.liferay.fragment.service.persistence.impl.constants.FragmentPersistenceConstants;
 import com.liferay.fragment.test.util.FragmentEntryTestUtil;
 import com.liferay.fragment.test.util.FragmentTestUtil;
 import com.liferay.layout.test.util.LayoutTestUtil;
@@ -20,18 +19,22 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.RoleTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
-import com.liferay.portal.kernel.transaction.Propagation;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
-import com.liferay.portal.test.rule.TransactionalTestRule;
 import com.liferay.segments.service.SegmentsExperienceLocalService;
 
 import org.junit.Assert;
@@ -52,10 +55,7 @@ public class FragmentEntryLinkServiceTest {
 	public static final AggregateTestRule aggregateTestRule =
 		new AggregateTestRule(
 			new LiferayIntegrationTestRule(),
-			PermissionCheckerMethodTestRule.INSTANCE,
-			new TransactionalTestRule(
-				Propagation.REQUIRED,
-				FragmentPersistenceConstants.BUNDLE_SYMBOLIC_NAME));
+			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
@@ -83,23 +83,45 @@ public class FragmentEntryLinkServiceTest {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkService.addFragmentEntryLink(
-				_group.getGroupId(), 0, _fragmentEntry.getFragmentEntryId(),
+				null, _group.getGroupId(), 0,
+				_fragmentEntry.getFragmentEntryId(),
 				_segmentsExperienceLocalService.
 					fetchDefaultSegmentsExperienceId(_layout.getPlid()),
 				_layout.getPlid(), css, html, js, configuration,
 				StringPool.BLANK, StringPool.BLANK, 0, null,
 				_fragmentEntry.getType(), serviceContext);
 
-		FragmentEntryLink persistedFragmentEntryLink =
-			_fragmentEntryLinkPersistence.findByPrimaryKey(
-				fragmentEntryLink.getFragmentEntryLinkId());
-
-		Assert.assertEquals(fragmentEntryLink, persistedFragmentEntryLink);
-		Assert.assertEquals(css, persistedFragmentEntryLink.getCss());
-		Assert.assertEquals(html, persistedFragmentEntryLink.getHtml());
-		Assert.assertEquals(js, persistedFragmentEntryLink.getJs());
+		Assert.assertEquals(css, fragmentEntryLink.getCss());
+		Assert.assertEquals(html, fragmentEntryLink.getHtml());
+		Assert.assertEquals(js, fragmentEntryLink.getJs());
 		Assert.assertEquals(
-			configuration, persistedFragmentEntryLink.getConfiguration());
+			configuration, fragmentEntryLink.getConfiguration());
+	}
+
+	@Test
+	public void testAddTemplateWithoutAddPermission() throws Exception {
+		try {
+			UserTestUtil.setUser(
+				UserTestUtil.addGroupUser(_group, RoleConstants.SITE_MEMBER));
+
+			_fragmentEntryLinkService.addFragmentEntryLink(
+				null, _group.getGroupId(), 0,
+				_fragmentEntry.getFragmentEntryId(),
+				_segmentsExperienceLocalService.
+					fetchDefaultSegmentsExperienceId(_layout.getPlid()),
+				_layout.getPlid(), null, "<div>test</div>", null, null,
+				StringPool.BLANK, StringPool.BLANK, 0, null,
+				_fragmentEntry.getType(),
+				ServiceContextTestUtil.getServiceContext(
+					_group, TestPropsValues.getUserId()));
+
+			Assert.fail();
+		}
+		catch (PrincipalException principalException) {
+		}
+		finally {
+			UserTestUtil.setUser(TestPropsValues.getUser());
+		}
 	}
 
 	@Test
@@ -112,8 +134,137 @@ public class FragmentEntryLinkServiceTest {
 			fragmentEntryLink.getFragmentEntryLinkId());
 
 		Assert.assertNull(
-			_fragmentEntryLinkPersistence.fetchByPrimaryKey(
+			_fragmentEntryLinkLocalService.fetchFragmentEntryLink(
 				fragmentEntryLink.getFragmentEntryLinkId()));
+	}
+
+	@Test
+	public void testDeleteFragmentEntryLinkByExternalReferenceCode()
+		throws Exception {
+
+		FragmentEntryLink fragmentEntryLink =
+			_fragmentEntryLinkService.addFragmentEntryLink(
+				null, _group.getGroupId(), 0,
+				_fragmentEntry.getFragmentEntryId(),
+				_segmentsExperienceLocalService.
+					fetchDefaultSegmentsExperienceId(_layout.getPlid()),
+				_layout.getPlid(), null, "<div>test</div>", null, null,
+				StringPool.BLANK, StringPool.BLANK, 0, null,
+				_fragmentEntry.getType(),
+				ServiceContextTestUtil.getServiceContext(
+					_group, TestPropsValues.getUserId()));
+
+		_fragmentEntryLinkService.deleteFragmentEntryLink(
+			fragmentEntryLink.getExternalReferenceCode(),
+			fragmentEntryLink.getGroupId());
+
+		Assert.assertNull(
+			_fragmentEntryLinkLocalService.fetchFragmentEntryLink(
+				fragmentEntryLink.getFragmentEntryLinkId()));
+	}
+
+	@Test
+	public void testDeleteFragmentEntryLinkByExternalReferenceCodeWithoutDeletePermission()
+		throws Exception {
+
+		FragmentEntryLink fragmentEntryLink =
+			_fragmentEntryLinkService.addFragmentEntryLink(
+				null, _group.getGroupId(), 0,
+				_fragmentEntry.getFragmentEntryId(),
+				_segmentsExperienceLocalService.
+					fetchDefaultSegmentsExperienceId(_layout.getPlid()),
+				_layout.getPlid(), null, "<div>test</div>", null, null,
+				StringPool.BLANK, StringPool.BLANK, 0, null,
+				_fragmentEntry.getType(),
+				ServiceContextTestUtil.getServiceContext(
+					_group, TestPropsValues.getUserId()));
+
+		try {
+			UserTestUtil.setUser(
+				UserTestUtil.addGroupUser(_group, RoleConstants.SITE_MEMBER));
+
+			_fragmentEntryLinkService.deleteFragmentEntryLink(
+				fragmentEntryLink.getExternalReferenceCode(),
+				fragmentEntryLink.getGroupId());
+
+			Assert.fail();
+		}
+		catch (PrincipalException principalException) {
+		}
+		finally {
+			UserTestUtil.setUser(TestPropsValues.getUser());
+		}
+	}
+
+	@Test
+	public void testGetFragmentEntryLinkByExternalReferenceCode()
+		throws Exception {
+
+		FragmentEntryLink fragmentEntryLink =
+			_fragmentEntryLinkService.addFragmentEntryLink(
+				null, _group.getGroupId(), 0,
+				_fragmentEntry.getFragmentEntryId(),
+				_segmentsExperienceLocalService.
+					fetchDefaultSegmentsExperienceId(_layout.getPlid()),
+				_layout.getPlid(), null, "<div>test</div>", null, null,
+				StringPool.BLANK, StringPool.BLANK, 0, null,
+				_fragmentEntry.getType(),
+				ServiceContextTestUtil.getServiceContext(
+					_group, TestPropsValues.getUserId()));
+
+		FragmentEntryLink curFragmentEntryLink =
+			_fragmentEntryLinkService.
+				getFragmentEntryLinkByExternalReferenceCode(
+					fragmentEntryLink.getExternalReferenceCode(),
+					fragmentEntryLink.getGroupId());
+
+		Assert.assertEquals(
+			fragmentEntryLink.getFragmentEntryLinkId(),
+			curFragmentEntryLink.getFragmentEntryLinkId());
+	}
+
+	@Test
+	public void testGetFragmentEntryLinkByExternalReferenceCodeWithoutViewPermission()
+		throws Exception {
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(
+				_group, TestPropsValues.getUserId());
+
+		FragmentEntryLink fragmentEntryLink =
+			_fragmentEntryLinkService.addFragmentEntryLink(
+				null, _group.getGroupId(), 0,
+				_fragmentEntry.getFragmentEntryId(),
+				_segmentsExperienceLocalService.
+					fetchDefaultSegmentsExperienceId(_layout.getPlid()),
+				_layout.getPlid(), null, "<div>test</div>", null, null,
+				StringPool.BLANK, StringPool.BLANK, 0, null,
+				_fragmentEntry.getType(), serviceContext);
+
+		RoleTestUtil.removeResourcePermission(
+			RoleConstants.GUEST, FragmentEntryLink.class.getName(),
+			ResourceConstants.SCOPE_INDIVIDUAL,
+			String.valueOf(fragmentEntryLink.getFragmentEntryLinkId()),
+			ActionKeys.VIEW);
+		RoleTestUtil.removeResourcePermission(
+			RoleConstants.SITE_MEMBER, FragmentEntryLink.class.getName(),
+			ResourceConstants.SCOPE_INDIVIDUAL,
+			String.valueOf(fragmentEntryLink.getFragmentEntryLinkId()),
+			ActionKeys.VIEW);
+
+		try {
+			UserTestUtil.setUser(
+				UserTestUtil.addGroupUser(_group, RoleConstants.SITE_MEMBER));
+
+			Assert.assertNotNull(
+				_fragmentEntryLinkService.
+					getFragmentEntryLinkByExternalReferenceCode(
+						fragmentEntryLink.getExternalReferenceCode(),
+						fragmentEntryLink.getGroupId()));
+		}
+		finally {
+			UserTestUtil.setUser(TestPropsValues.getUser());
+		}
 	}
 
 	@Test
@@ -124,16 +275,12 @@ public class FragmentEntryLinkServiceTest {
 			FragmentTestUtil.addFragmentEntryLink(
 				_fragmentEntry, _layout.getPlid());
 
-		_fragmentEntryLinkService.updateFragmentEntryLink(
-			fragmentEntryLink.getFragmentEntryLinkId(), editableValues);
+		FragmentEntryLink updatedFragmentEntryLink =
+			_fragmentEntryLinkService.updateFragmentEntryLink(
+				fragmentEntryLink.getFragmentEntryLinkId(), editableValues);
 
-		FragmentEntryLink persistedFragmentEntryLink =
-			_fragmentEntryLinkPersistence.findByPrimaryKey(
-				fragmentEntryLink.getFragmentEntryLinkId());
-
-		Assert.assertEquals(fragmentEntryLink, persistedFragmentEntryLink);
 		Assert.assertEquals(
-			editableValues, persistedFragmentEntryLink.getEditableValues());
+			editableValues, updatedFragmentEntryLink.getEditableValues());
 	}
 
 	private String _createEditableValues() {
@@ -146,7 +293,7 @@ public class FragmentEntryLinkServiceTest {
 	private FragmentEntry _fragmentEntry;
 
 	@Inject
-	private FragmentEntryLinkPersistence _fragmentEntryLinkPersistence;
+	private FragmentEntryLinkLocalService _fragmentEntryLinkLocalService;
 
 	@Inject
 	private FragmentEntryLinkService _fragmentEntryLinkService;

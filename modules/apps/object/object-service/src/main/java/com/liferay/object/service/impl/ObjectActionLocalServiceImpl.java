@@ -798,6 +798,23 @@ public class ObjectActionLocalServiceImpl
 			}
 		}
 
+		if ((parametersUnicodeProperties.get("usePreferredLanguageForGuests") !=
+				null) &&
+			!(Objects.equals(
+				objectActionExecutorKey,
+				ObjectActionExecutorConstants.KEY_NOTIFICATION) &&
+			  (Objects.equals(
+				  objectActionTriggerKey,
+				  ObjectActionTriggerConstants.KEY_ON_AFTER_ADD) ||
+			   Objects.equals(
+				   objectActionTriggerKey,
+				   ObjectActionTriggerConstants.KEY_ON_AFTER_UPDATE)))) {
+
+			throw new ObjectActionParametersException(
+				"The parameter \"usePreferredLanguageForGuests\" is invalid " +
+					"for this object action");
+		}
+
 		if (MapUtil.isNotEmpty(errorMessageKeys)) {
 			throw new ObjectActionParametersException(errorMessageKeys);
 		}

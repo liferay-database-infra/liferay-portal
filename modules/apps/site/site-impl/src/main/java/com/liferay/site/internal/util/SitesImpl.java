@@ -1140,6 +1140,9 @@ public class SitesImpl implements Sites {
 			importData);
 
 		parameterMap.put(
+			PortletDataHandlerKeys.LAYOUT_SET_PRIVATE_LAYOUT,
+			new String[] {String.valueOf(layoutSet.isPrivateLayout())});
+		parameterMap.put(
 			"anyFailedLayoutModifiedSinceLastMerge",
 			new String[] {
 				String.valueOf(
