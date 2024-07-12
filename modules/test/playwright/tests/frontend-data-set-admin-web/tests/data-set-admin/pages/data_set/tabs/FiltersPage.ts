@@ -6,6 +6,7 @@
 import {Locator, Page, expect} from '@playwright/test';
 
 import {
+	IClientExtensionFilter,
 	IDateRangeFilter,
 	ISelectionFilterApiHeadless,
 	ISelectionFilterPicklist,
@@ -21,6 +22,11 @@ interface NewFilterModal {
 	modalBody: Locator;
 	nameInput: Locator;
 	saveButton: Locator;
+}
+
+interface NewClientExtensionFilterModal extends NewFilterModal {
+	clientExtensionDropdown: Locator;
+	noClientExtensionsAvailableAlert: Locator;
 }
 
 interface NewSelectionFilterModal extends NewFilterModal {
@@ -52,8 +58,9 @@ export class FiltersPage {
 
 	private readonly filterTable: Locator;
 
+	readonly newClientExtensionFilterModal: NewClientExtensionFilterModal;
 	readonly newDateRangeFilterModal: NewDateRangeFilterModal;
-	private readonly newFilterButton: Locator;
+	readonly newFilterButton: Locator;
 	private readonly newFilterModal: NewFilterModal;
 	private readonly newSelectionFilterModal: NewSelectionFilterModal;
 	readonly page: Page;
@@ -68,7 +75,7 @@ export class FiltersPage {
 			cancelButton: page.getByRole('button', {name: 'Cancel'}),
 			closeButton: page.getByRole('button', {
 				exact: true,
-				name: 'Close',
+				name: 'close',
 			}),
 			filterByDropdown: page.locator('.fds-field-name-dropdown-menu'),
 			filterBySelect: page.getByLabel('Filter By'),
@@ -76,6 +83,20 @@ export class FiltersPage {
 			modalBody: page.locator('.modal-body'),
 			nameInput: page.getByPlaceholder('Add a name'),
 			saveButton: page.getByRole('button', {name: 'Save'}),
+		};
+		this.newClientExtensionFilterModal = {
+			...this.newFilterModal,
+			clientExtensionDropdown: page
+				.locator('label')
+				.filter({hasText: 'Client ExtensionRequired'}),
+			noClientExtensionsAvailableAlert: page
+				.getByLabel('New Client Extension Filter')
+				.locator('div')
+				.filter({
+					hasText:
+						'InfoNo frontend data set filter client extensions are available. Add a client ex',
+				})
+				.first(),
 		};
 		this.newDateRangeFilterModal = {
 			...this.newFilterModal,
@@ -102,7 +123,9 @@ export class FiltersPage {
 			filterModeRadioButtons: page.getByText('Filter ModeIncludeExclude'),
 			itemKey: page.locator('.fds-filter-item-key'),
 			itemLabel: page.locator('.fds-filter-item-label'),
-			picklistDropdown: page.getByLabel('Picklist'),
+			picklistDropdown: page
+				.locator('label')
+				.filter({hasText: 'PicklistRequired'}),
 			preselectedValuesMultiSelect: page.getByPlaceholder(
 				'Select a default value for your filter.'
 			),
@@ -115,7 +138,9 @@ export class FiltersPage {
 			restSchemaField: page.getByLabel('REST SchemaRequired'),
 			restSchemaOptions: page.locator('.fds-filter-rest-schema-menu'),
 			selectionRadioButtons: page.getByText('SelectionMultipleSingle'),
-			sourceTypeDropdown: page.getByLabel('Choose an Option'),
+			sourceTypeDropdown: page
+				.locator('label')
+				.filter({hasText: 'SourceRequired'}),
 		};
 		this.page = page;
 	}
@@ -148,6 +173,27 @@ export class FiltersPage {
 		await this.newFilterModal.cancelButton.click();
 	}
 
+	async closeAddFilterModal() {
+		await this.newFilterModal.closeButton.click();
+	}
+
+	async createClientExtensionFilter({
+		clientExtension,
+		filterBy,
+		name,
+	}: IClientExtensionFilter) {
+		await this.openNewFilterModal({
+			dropdownItemLabel: 'Client Extension',
+		});
+
+		await this.newClientExtensionFilterModal.nameInput.click();
+		await this.newClientExtensionFilterModal.nameInput.fill(name);
+		await this.newClientExtensionFilterModal.filterBySelect.click();
+		await this.page.getByRole('option', {name: filterBy}).click();
+		await this.newClientExtensionFilterModal.clientExtensionDropdown.click();
+		await this.page.getByRole('option', {name: clientExtension}).click();
+	}
+
 	async createDateRangeFilter({filterBy, from, name, to}: IDateRangeFilter) {
 		await this.openNewFilterModal({
 			dropdownItemLabel: 'Date Range',
@@ -171,8 +217,6 @@ export class FiltersPage {
 		if (to) {
 			await this.newDateRangeFilterModal.toInput.fill(to);
 		}
-
-		await this.saveAddFilterModal();
 	}
 
 	async createSelectionFilterApiHeadless({
@@ -243,7 +287,6 @@ export class FiltersPage {
 
 		await this.page.getByText(selectionType).click();
 		await this.page.locator('label').filter({hasText: filterMode}).click();
-		await this.saveAddFilterModal();
 	}
 
 	async createSelectionFilterPicklist({
@@ -263,19 +306,26 @@ export class FiltersPage {
 		await this.newSelectionFilterModal.nameInput.fill(name);
 		await this.newSelectionFilterModal.filterBySelect.click();
 		await this.page.getByRole('option', {name: filterBy}).click();
+		await this.newSelectionFilterModal.sourceTypeDropdown.click();
 		await this.newSelectionFilterModal.sourceTypeDropdown.selectOption(
 			sourceType
 		);
+		await this.newSelectionFilterModal.picklistDropdown.click();
 		await this.newSelectionFilterModal.picklistDropdown.selectOption(
 			source
 		);
 		await this.newSelectionFilterModal.preselectedValuesMultiSelect.click();
-		await this.page
-			.getByRole('option', {name: preselectedValues[0]})
-			.click();
+
+		if (preselectedValues.length) {
+			await this.page
+				.getByRole('option', {name: preselectedValues[0]})
+				.click();
+			await this.page
+				.locator('label')
+				.filter({hasText: filterMode})
+				.click();
+		}
 		await this.page.getByText(selectionType).click();
-		await this.page.locator('label').filter({hasText: filterMode}).click();
-		await this.saveAddFilterModal();
 	}
 
 	getRowByText(text: string) {

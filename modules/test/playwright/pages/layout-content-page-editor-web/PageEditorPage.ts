@@ -5,14 +5,11 @@
 
 import {Locator, Page, expect} from '@playwright/test';
 
-import {liferayConfig} from '../../liferay.config';
-import getPageDefinition from '../../tests/layout-content-page-editor-web/utils/getPageDefinition';
 import {clickAndExpectToBeHidden} from '../../utils/clickAndExpectToBeHidden';
 import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
 import {collapseSection} from '../../utils/collapseSection';
 import {expandSection} from '../../utils/expandSection';
 import fillAndClickOutside from '../../utils/fillAndClickOutside';
-import getRandomString from '../../utils/getRandomString';
 import {selectElement} from '../../utils/selectElement';
 import {waitForSuccessAlert} from '../../utils/waitForSuccessAlert';
 import {SegmentEditorPage} from '../segments-web/SegmentEditorPage';
@@ -20,6 +17,7 @@ import {SegmentEditorPage} from '../segments-web/SegmentEditorPage';
 export class PageEditorPage {
 	readonly page: Page;
 
+	readonly editModeButton: Locator;
 	readonly experienceSelector: Locator;
 	readonly languageSelector: Locator;
 	readonly publishButton: Locator;
@@ -34,6 +32,7 @@ export class PageEditorPage {
 	constructor(page: Page) {
 		this.page = page;
 
+		this.editModeButton = page.getByLabel('Select edit mode').first();
 		this.experienceSelector = page.locator(
 			'.page-editor__experience-selector'
 		);
@@ -51,6 +50,8 @@ export class PageEditorPage {
 	}
 
 	async goto(layout: Layout, siteUrl?: Site['friendlyUrlPath']) {
+		await this.page.goto('/');
+
 		await this.page.goto(
 			`/web${siteUrl || '/guest'}${layout.friendlyUrlPath}?p_l_mode=edit`
 		);
@@ -80,6 +81,26 @@ export class PageEditorPage {
 		}
 
 		await this.waitForChangesSaved();
+	}
+
+	async addFragmentComment(fragmentId: string, comment: string) {
+		await this.selectFragment(fragmentId);
+
+		await this.goToSidebarTab('Comments');
+
+		const commentButton = this.page.getByRole('button', {
+			exact: true,
+			name: 'Comment',
+		});
+
+		await this.page.getByLabel('Add Comment').click();
+
+		await this.page.keyboard.type(comment);
+
+		await expect(commentButton).toBeEnabled();
+
+		await commentButton.click();
+		await commentButton.waitFor({state: 'hidden'});
 	}
 
 	async addRuleAction() {
@@ -136,6 +157,20 @@ export class PageEditorPage {
 		}
 
 		await this.waitForChangesSaved();
+	}
+
+	async changeEditMode(mode: 'Page Design' | 'Content Editing') {
+		const currentMode = await this.editModeButton.evaluate(
+			(element) => element.textContent
+		);
+
+		if (currentMode === mode) {
+			return;
+		}
+
+		await this.editModeButton.click();
+
+		await this.page.getByRole('option', {name: mode}).click();
 	}
 
 	async changeFragmentConfiguration({
@@ -305,22 +340,6 @@ export class PageEditorPage {
 		);
 	}
 
-	async createPageWithFragmentAndGoToEditMode({apiHelpers, fragment, site}) {
-		await this.page.goto(liferayConfig.environment.baseUrl);
-
-		// Create a page with a fragment
-
-		const layout = await apiHelpers.headlessDelivery.createSitePage({
-			pageDefinition: getPageDefinition([fragment]),
-			siteId: site.id,
-			title: getRandomString(),
-		});
-
-		// Go to edit mode of page
-
-		await this.goto(layout, site.friendlyUrlPath);
-	}
-
 	async deleteExperience(name: string) {
 		await this.openExperienceSelector();
 
@@ -364,7 +383,7 @@ export class PageEditorPage {
 		);
 	}
 
-	async dragAndDropElement(dragTarget, dropTarget) {
+	async dragAndDropElement(dragTarget: Locator, dropTarget: Locator) {
 		await dragTarget.hover();
 
 		await this.page.mouse.down();
@@ -594,11 +613,17 @@ export class PageEditorPage {
 		const tabElement = this.page.getByRole('tab', {exact: true, name: tab});
 
 		await selectElement(tabElement);
-
-		await this.page.locator('header', {hasText: tab}).waitFor();
 	}
 
 	async isActive(fragmentId: string, isDesktop = true) {
+		const editMode = await this.editModeButton.evaluate(
+			(element) => element.textContent
+		);
+
+		if (editMode === 'Content Editing') {
+			return false;
+		}
+
 		const topper = this.getTopper(fragmentId, isDesktop);
 
 		return await topper.evaluate((element) =>
@@ -717,16 +742,22 @@ export class PageEditorPage {
 
 		await fragment.click();
 
-		const treeNode = this.page.locator(
-			`.treeview-link[data-id*="${fragmentId}"]`
+		// Click the tree node again to make sure we activate it
+		// if it's a collection
+
+		const isCollection = await fragment.evaluate((element) =>
+			element.classList.contains('page-editor__collection')
 		);
 
-		// Click the tree node again to make sure we activate it
-		// This is specific for Collection Display fragment
+		if (isCollection) {
+			const treeNode = this.page.locator(
+				`.treeview-link[data-id*="${fragmentId}"]`
+			);
 
-		await treeNode.click();
+			await treeNode.click();
 
-		await expect(treeNode).toHaveClass(/focus/);
+			await expect(treeNode).toHaveClass(/focus/);
+		}
 	}
 
 	async selectEditable(
@@ -740,10 +771,18 @@ export class PageEditorPage {
 
 		await editable.click();
 
-		await expect(editable).toBeFocused();
+		await expect(editable).toHaveClass(/page-editor__editable--active/);
 	}
 
-	async setMappedItem(entity: string, entry: string) {
+	async setMappedItem({
+		entity,
+		entry,
+		folder,
+	}: {
+		entity: string;
+		entry: string;
+		folder?: string;
+	}) {
 		await this.selectItemMappingButton.click();
 
 		const recentItem = this.page.getByRole('menuitem', {name: entry});
@@ -771,6 +810,15 @@ export class PageEditorPage {
 				trigger: iframe.getByRole('menuitem', {name: entity}),
 			});
 
+			if (folder) {
+				await clickAndExpectToBeVisible({
+					target: iframe
+						.getByRole('paragraph')
+						.filter({hasText: entry}),
+					trigger: iframe.getByRole('link').filter({hasText: folder}),
+				});
+			}
+
 			await clickAndExpectToBeHidden({
 				target: iframe.locator('.sheet-title').getByText(entity),
 				trigger: iframe.getByRole('paragraph').filter({hasText: entry}),
@@ -783,18 +831,20 @@ export class PageEditorPage {
 	}
 
 	async setMappingConfiguration({
-		entity,
-		entry,
-		field,
+		mapping,
 		relationship,
 		source,
 	}: {
-		entity?: string;
-		entry?: string;
-		field: string;
+		mapping: {
+			entity?: string;
+			entry?: string;
+			field: string;
+			folder?: string;
+		};
 		relationship?: string;
 		source?: 'content' | 'relationship' | 'structure';
 	}) {
+		const {entity, entry, field, folder} = mapping;
 
 		// Select source and relationship if needed
 
@@ -810,7 +860,7 @@ export class PageEditorPage {
 
 		// If source is not content, just select the field
 
-		if (source !== 'content') {
+		if (source && source !== 'content') {
 			await this.page.getByLabel('Field').selectOption(field);
 
 			return;
@@ -818,7 +868,7 @@ export class PageEditorPage {
 
 		// If source is content, select the item and the field
 
-		await this.setMappedItem(entity, entry);
+		await this.setMappedItem({entity, entry, folder});
 
 		await this.page.getByLabel('Field').selectOption(field);
 	}

@@ -5,10 +5,11 @@
 
 import {expect, mergeTests} from '@playwright/test';
 
+import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {wikiPagesTest} from '../../fixtures/wikiPagesTest';
 
-export const test = mergeTests(loginTest(), wikiPagesTest);
+export const test = mergeTests(isolatedSiteTest, loginTest(), wikiPagesTest);
 
 test('LPD-26435 Icon menu should close when another icon menu is open', async ({
 	page,
@@ -17,6 +18,8 @@ test('LPD-26435 Icon menu should close when another icon menu is open', async ({
 	await wikiPage.goto();
 
 	await wikiPage.createNewWikiNode('Wiki Node Title');
+
+	await page.getByLabel('Order').waitFor();
 
 	const wikiNodeMenu = await page.locator(
 		'[id="_com_liferay_wiki_web_portlet_WikiAdminPortlet_wikiNodes_1_menu"]'
@@ -76,6 +79,8 @@ test('LPD-28898 Image added via rich text editor on Wiki tool losing reference',
 		ckeditorIframeLocator.getByAltText('alternate text'),
 		image
 	);
+
+	await wikiPage.publishPage();
 
 	await wikiPage.goto();
 

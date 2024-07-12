@@ -5,27 +5,19 @@
 
 import {Page, expect} from '@playwright/test';
 
-export async function searchByTerm({
-	page,
-	searchTerm,
-}: {
-	page: Page;
-	searchTerm: string;
-}) {
-	await page.getByPlaceholder('Search').first().click();
-	await page.getByPlaceholder('Search').first().fill(searchTerm);
-	await page.getByPlaceholder('Search').first().press('Enter');
-}
+import {waitForLoading} from './loading';
 
 export async function expectNotToBeVisible({
 	itemNames,
 	page,
 }: {
-	itemNames: string[];
+	itemNames: string[] | string;
 	page: Page;
 }) {
-	for (const itemName of itemNames) {
-		await expect(page.getByRole('cell', {name: itemName})).toBeHidden({
+	const itemNamesArray = Array.isArray(itemNames) ? itemNames : [itemNames];
+
+	for (const itemName of itemNamesArray) {
+		await expect(page.getByText(itemName)).toBeHidden({
 			timeout: 100 * 1000,
 		});
 	}
@@ -35,12 +27,30 @@ export async function expectToBeVisible({
 	itemNames,
 	page,
 }: {
-	itemNames: string[];
+	itemNames: string[] | string;
 	page: Page;
 }) {
-	for (const itemName of itemNames) {
-		await expect(page.getByRole('cell', {name: itemName})).toBeVisible({
+	const itemNamesArray = Array.isArray(itemNames) ? itemNames : [itemNames];
+
+	for (const itemName of itemNamesArray) {
+		await expect(page.getByText(itemName)).toBeVisible({
 			timeout: 100 * 1000,
 		});
 	}
+}
+
+export async function searchByTerm({
+	page,
+	searchTerm,
+}: {
+	page: Page;
+	searchTerm: string;
+}) {
+	await waitForLoading(page);
+
+	await page.getByPlaceholder('Search').first().click();
+	await page.getByPlaceholder('Search').first().fill(searchTerm);
+	await page.getByPlaceholder('Search').first().press('Enter');
+
+	await waitForLoading(page);
 }

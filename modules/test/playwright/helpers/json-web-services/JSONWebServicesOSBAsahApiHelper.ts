@@ -4,6 +4,7 @@
  */
 
 import {asahConfig} from '../../tests/osb-faro-web/asah.config';
+import {Nanites} from '../../tests/osb-faro-web/utils/nanites';
 import {ApiHelpers} from '../ApiHelpers';
 
 type Event = {
@@ -69,9 +70,20 @@ export class JSONWebServicesOSBAsahApiHelper {
 		};
 	}
 
+	async runNanites(nanites: Nanites[]): Promise<any> {
+		return this.apiHelpers.post(
+			`${asahConfig.environment.batchCuratordUrl}/nanites/run`,
+			{
+				data: nanites,
+				failOnStatusCode: true,
+				headers: this.getHeaders(),
+			}
+		);
+	}
+
 	async createEvents(events: Event[]): Promise<any> {
 		return this.apiHelpers.post(
-			`${asahConfig.environment.baseUrl}${this.basePath}/events`,
+			`${asahConfig.environment.backendUrl}${this.basePath}/events`,
 			{
 				data: events,
 				failOnStatusCode: true,
@@ -82,7 +94,7 @@ export class JSONWebServicesOSBAsahApiHelper {
 
 	async createIdentities(identities: Identity[]): Promise<any> {
 		return this.apiHelpers.post(
-			`${asahConfig.environment.baseUrl}${this.basePath}/identities`,
+			`${asahConfig.environment.backendUrl}${this.basePath}/identities`,
 			{
 				data: identities,
 				failOnStatusCode: true,
@@ -93,7 +105,7 @@ export class JSONWebServicesOSBAsahApiHelper {
 
 	async createIndividuals(individuals: Individual[]): Promise<any> {
 		return this.apiHelpers.post(
-			`${asahConfig.environment.baseUrl}${this.basePath}/individuals`,
+			`${asahConfig.environment.backendUrl}${this.basePath}/individuals`,
 			{
 				data: individuals,
 				failOnStatusCode: true,
@@ -104,7 +116,7 @@ export class JSONWebServicesOSBAsahApiHelper {
 
 	async createPagesDaily(pagesDaily: PageDaily[]): Promise<any> {
 		return this.apiHelpers.post(
-			`${asahConfig.environment.baseUrl}${this.basePath}/pagesdaily`,
+			`${asahConfig.environment.backendUrl}${this.basePath}/pagesdaily`,
 			{
 				data: pagesDaily,
 				failOnStatusCode: true,
@@ -115,7 +127,7 @@ export class JSONWebServicesOSBAsahApiHelper {
 
 	async createSessions(session: Session[]): Promise<any> {
 		return this.apiHelpers.post(
-			`${asahConfig.environment.baseUrl}${this.basePath}/sessions`,
+			`${asahConfig.environment.backendUrl}${this.basePath}/sessions`,
 			{
 				data: session,
 				failOnStatusCode: true,
@@ -126,7 +138,7 @@ export class JSONWebServicesOSBAsahApiHelper {
 
 	async closeSessions(): Promise<any> {
 		return this.apiHelpers.delete(
-			`${asahConfig.environment.baseUrl}${this.basePath}/sessions/close`,
+			`${asahConfig.environment.backendUrl}${this.basePath}/sessions/close`,
 			this.getHeaders()
 		);
 	}

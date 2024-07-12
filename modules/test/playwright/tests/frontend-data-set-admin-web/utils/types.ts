@@ -42,7 +42,7 @@ export interface IDateRangeFilter extends IBaseFilter {
 }
 
 export interface ISelectionFilter extends IBaseFilter {
-	filterMode: 'Include' | 'Exclude';
+	filterMode?: 'Include' | 'Exclude';
 	preselectedValues: string[];
 	selectionType: 'Multiple' | 'Single';
 }
@@ -59,6 +59,10 @@ export interface ISelectionFilterApiHeadless extends ISelectionFilter {
 	restEndpoint: string;
 	restSchema: string;
 	sourceType: 'API REST Application';
+}
+
+export interface IClientExtensionFilter extends IBaseFilter {
+	clientExtension: string;
 }
 
 export interface IDateRangeFilter extends IBaseFilter {

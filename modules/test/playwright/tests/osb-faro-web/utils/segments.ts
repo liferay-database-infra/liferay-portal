@@ -5,6 +5,9 @@
 
 import {Page} from '@playwright/test';
 
+import {SegmentConditions} from './selectors';
+import {searchByTerm} from './utils';
+
 export async function addSegmentField({
 	criterionName,
 	criterionType,
@@ -23,14 +26,54 @@ export async function addSegmentField({
 	});
 }
 
+export async function addStaticMember({
+	memberNames,
+	page,
+}: {
+	memberNames: string[] | string;
+	page: Page;
+}) {
+	await page.getByRole('button', {name: 'Add Members'}).click();
+
+	const memberNamesArray = Array.isArray(memberNames) ? memberNames : [memberNames];
+
+	for (const memberName of memberNamesArray) {
+		await searchByTerm({
+			page,
+			searchTerm: memberName,
+		});
+
+		await page.locator('.clickable').getByText(memberName).first().click();
+	}
+
+	await page.getByRole('button', {exact: true, name: 'Add'}).click();
+}
+
 export async function createDynamicSegment(page: Page) {
-	await page.getByLabel('Menu').click();
+	await page.getByRole('banner').getByLabel('Menu').click();
 	await page.getByRole('menuitem', {name: 'Dynamic Segment'}).click();
 }
 
 export async function createStaticSegment(page: Page) {
-	await page.getByLabel('Menu').click();
+	await page.getByRole('banner').getByLabel('Menu').click();
 	await page.getByRole('menuitem', {name: 'Static Segment'}).click();
+}
+
+export async function deleteSegment({
+	page,
+	segmentName,
+}: {
+	page: Page;
+	segmentName: string;
+}) {
+	await searchByTerm({
+		page,
+		searchTerm: segmentName,
+	});
+
+	await page.locator('.dropdown-action').click();
+	await page.locator('button.dropdown-item:has-text("Delete")').click();
+	await page.getByRole('button', {name: 'Delete'}).click();
 }
 
 export async function dragAndDropCriteriaItem({
@@ -67,8 +110,23 @@ export async function editSegment(page: Page) {
 }
 
 export async function saveSegment(page: Page) {
-	await page.getByRole('button', {name: 'Save Segment'}).click();
+	await page.locator('button[type="submit"]').click();
 	await page.waitForSelector('div.alert-success', {state: 'visible'});
+}
+
+export async function selectOperator({
+	index = 0,
+	operator,
+	operatorField,
+	page,
+}: {
+	index?: number;
+	operator: string;
+	operatorField: SegmentConditions;
+	page: Page;
+}) {
+	await page.locator(operatorField).nth(index).click();
+	await page.getByRole('option', {name: operator}).click();
 }
 
 export async function setSegmentName({
@@ -78,6 +136,11 @@ export async function setSegmentName({
 	page: Page;
 	segmentName: string;
 }) {
-	await page.getByRole('button', {name: 'Unnamed Segment'}).click();
-	await page.getByPlaceholder('Unnamed Segment').fill(segmentName);
+	const editDynamicSegmentName = page.getByText('Unnamed Segment');
+
+	if (await editDynamicSegmentName.isVisible()) {
+		await editDynamicSegmentName.click();
+	}
+
+	await page.getByPlaceholder('Segment').fill(segmentName);
 }
