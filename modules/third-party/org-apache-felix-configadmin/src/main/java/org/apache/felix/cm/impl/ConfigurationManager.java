@@ -20,6 +20,7 @@ package org.apache.felix.cm.impl;
 
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.SecureRandom;
@@ -29,6 +30,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -95,6 +97,9 @@ public class ConfigurationManager implements BundleListener
 
     // the service registration of the configuration admin
     private volatile ServiceRegistration<ConfigurationAdmin> configurationAdminRegistration;
+
+    // the service registration properties
+    private volatile Dictionary<String, Object> serviceProperties;
 
     // the ConfigurationEvent listeners
     private ServiceTracker<ConfigurationListener, ConfigurationListener> configurationListenerTracker;
@@ -180,11 +185,20 @@ public class ConfigurationManager implements BundleListener
 
         // create and register configuration admin - start after PM tracker ...
         ConfigurationAdminFactory caf = new ConfigurationAdminFactory( this );
-        Dictionary<String, Object> props = new Hashtable<>();
-        props.put( Constants.SERVICE_PID, "org.apache.felix.cm.ConfigurationAdmin" );
-        props.put( Constants.SERVICE_DESCRIPTION, "Configuration Admin Service Specification 1.6 Implementation" );
-        props.put( Constants.SERVICE_VENDOR, "The Apache Software Foundation" );
-        configurationAdminRegistration = bundleContext.registerService( ConfigurationAdmin.class, caf, props );
+        serviceProperties = new Hashtable<>();
+        serviceProperties.put(Constants.SERVICE_PID, "org.apache.felix.cm.ConfigurationAdmin");
+        serviceProperties.put(Constants.SERVICE_DESCRIPTION,
+                "Configuration Admin Service Specification 1.6 Implementation");
+        serviceProperties.put(Constants.SERVICE_VENDOR, "The Apache Software Foundation");
+        serviceProperties.put("osgi.command.scope", "cm");
+        Set<String> functions = new HashSet<>();
+        for ( Method method : ConfigurationAdmin.class.getMethods() )
+        {
+            functions.add(method.getName());
+        }
+        serviceProperties.put("osgi.command.function", functions.toArray(new String[0]));
+        configurationAdminRegistration = bundleContext.registerService(ConfigurationAdmin.class, caf,
+                serviceProperties);
 
         // start handling ManagedService[Factory] services
         managedServiceTracker = new ManagedServiceTracker(this);
@@ -206,8 +220,12 @@ public class ConfigurationManager implements BundleListener
         handleBundleEvents = false;
 
         // stop handling ManagedService[Factory] services
-        managedServiceFactoryTracker.close();
-        managedServiceTracker.close();
+        if (managedServiceFactoryTracker != null) {
+            managedServiceFactoryTracker.close();
+        }
+        if (managedServiceTracker != null) {
+            managedServiceTracker.close();
+        }
 
         // stop queue processing before unregistering the service
         // see FELIX-2813 for details
@@ -236,7 +254,14 @@ public class ConfigurationManager implements BundleListener
         isActive = false;
 
         // stop listening for events
-        bundleContext.removeBundleListener( this );
+        try 
+        {
+            bundleContext.removeBundleListener( this );
+        }
+        catch ( final IllegalStateException ise ) 
+        {
+            // might happen on shutdown - we can ignore this
+        }
 
         if ( configurationListenerTracker != null )
         {
@@ -1033,9 +1058,9 @@ public class ConfigurationManager implements BundleListener
      * ManagedService is registered with multiple PIDs an instance of this
      * class is used for each registered PID.
      */
-    private class ManagedServiceUpdate implements Runnable
+    public class ManagedServiceUpdate implements Runnable
     {
-        private final String[] pids;
+        public final List<String> pids = new ArrayList<>();
 
         private final ServiceReference<ManagedService> sr;
 
@@ -1044,7 +1069,9 @@ public class ConfigurationManager implements BundleListener
 
         ManagedServiceUpdate( String[] pids, ServiceReference<ManagedService> sr, ConfigurationMap<?> configs )
         {
-            this.pids = pids;
+            for(final String pid : pids) {
+                this.pids.add(pid);
+            }
             this.sr = sr;
             this.configs = configs;
         }
@@ -1100,7 +1127,7 @@ public class ConfigurationManager implements BundleListener
             }
 
             Log.logger.log( LogService.LOG_DEBUG, "Updating service {0} with configuration {1}@{2}", new Object[]
-                    { servicePid, configPid, new Long( revision ) } );
+                    { servicePid, configPid, revision } );
 
             managedServiceTracker.provideConfiguration( sr, configPid, null, properties, revision, this.configs );
         }
@@ -1108,7 +1135,7 @@ public class ConfigurationManager implements BundleListener
         @Override
         public String toString()
         {
-            return "ManagedService Update: pid=" + Arrays.asList( pids );
+            return "ManagedService Update: pid=" + pids;
         }
     }
 
@@ -1119,7 +1146,7 @@ public class ConfigurationManager implements BundleListener
      * multiple PIDs an instance of this class is used for each registered
      * PID.
      */
-    private class ManagedServiceFactoryUpdate implements Runnable
+    public class ManagedServiceFactoryUpdate implements Runnable
     {
         private final String[] factoryPids;
 
@@ -1250,7 +1277,7 @@ public class ConfigurationManager implements BundleListener
         }
     }
 
-    private abstract class ConfigurationProvider<T> implements Runnable
+    public abstract class ConfigurationProvider<T> implements Runnable
     {
 
         protected final ConfigurationImpl config;
@@ -1344,7 +1371,7 @@ public class ConfigurationManager implements BundleListener
      * they are subscribed to. This may cause the configuration to be
      * supplied to multiple services.
      */
-    private class UpdateConfiguration extends ConfigurationProvider
+    public class UpdateConfiguration extends ConfigurationProvider
     {
 
         UpdateConfiguration( final ConfigurationImpl config )
@@ -1357,7 +1384,7 @@ public class ConfigurationManager implements BundleListener
         public void run()
         {
             Log.logger.log( LogService.LOG_DEBUG, "Updating configuration {0} to revision #{1}", new Object[]
-                    { config.getPid(), new Long( revision ) } );
+                    { config.getPid(), revision } );
 
             final List<ServiceReference<?>> srList = this.getHelper().getServices( getTargetedServicePid() );
             if ( !srList.isEmpty() )
@@ -1425,7 +1452,7 @@ public class ConfigurationManager implements BundleListener
      * <code>ManagedService[Factory]</code> services of a configuration
      * being deleted.
      */
-    private class DeleteConfiguration extends ConfigurationProvider
+    public class DeleteConfiguration extends ConfigurationProvider
     {
 
         private final String configLocation;
@@ -1487,7 +1514,7 @@ public class ConfigurationManager implements BundleListener
         }
     }
 
-    private class LocationChanged extends ConfigurationProvider
+    public class LocationChanged extends ConfigurationProvider
     {
         private final String oldLocation;
 
@@ -1649,11 +1676,11 @@ public class ConfigurationManager implements BundleListener
         }
 
 
-        private ConfigurationEvent getConfigurationEvent()
+        private ConfigurationEvent getConfigurationEvent(ServiceReference<ConfigurationAdmin> serviceReference)
         {
             if ( event == null )
             {
-                this.event = new ConfigurationEvent( getServiceReference(), type, factoryPid, pid );
+                this.event = new ConfigurationEvent( serviceReference, type, factoryPid, pid );
             }
             return event;
         }
@@ -1668,6 +1695,16 @@ public class ConfigurationManager implements BundleListener
                 Log.logger.log( LogService.LOG_DEBUG, "Sending {0} event for {1} to {2}", new Object[]
                         { getTypeName(), pid, listenerReferences[serviceIndex]} );
 
+                final ServiceReference<ConfigurationAdmin> serviceReference = getServiceReference();
+
+                if (serviceReference == null)
+                {
+                    Log.logger.log( LogService.LOG_WARNING, "No ConfigurationAdmin for delivering configuration event to {0}", new Object[]
+                            { listenerReferences[serviceIndex] } );
+
+                    return;
+                }
+
                 try
                 {
                     if ( System.getSecurityManager() != null )
@@ -1678,7 +1715,7 @@ public class ConfigurationManager implements BundleListener
                                 @Override
                                 public Void run()
                                 {
-                                    listeners[serviceIndex].configurationEvent(getConfigurationEvent());
+                                    listeners[serviceIndex].configurationEvent(getConfigurationEvent(serviceReference));
                                     return null;
                                 }
                             }, BaseTracker.getAccessControlContext(listenerProvider[serviceIndex])
@@ -1686,7 +1723,7 @@ public class ConfigurationManager implements BundleListener
                     }
                     else
                     {
-                        listeners[serviceIndex].configurationEvent(getConfigurationEvent());
+                        listeners[serviceIndex].configurationEvent(getConfigurationEvent(serviceReference));
                     }
                 }
                 catch ( Throwable t )
@@ -1705,6 +1742,14 @@ public class ConfigurationManager implements BundleListener
     public void setCoordinator(final Object service)
     {
         this.coordinator = service;
+    }
+
+    public void updateRegisteredConfigurationPlugins(final String propValue) {
+        final ServiceRegistration<ConfigurationAdmin> localReg = this.configurationAdminRegistration;
+        if (localReg != null) {
+            serviceProperties.put("config.plugins", propValue);
+            localReg.setProperties(serviceProperties);
+        }
     }
 }
 /* @generated */

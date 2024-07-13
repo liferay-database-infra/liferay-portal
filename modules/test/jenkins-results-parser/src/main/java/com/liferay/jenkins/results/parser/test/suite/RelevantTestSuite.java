@@ -12,18 +12,13 @@ import com.liferay.jenkins.results.parser.test.batch.TestBatch;
 import java.io.File;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * @author Kenji Heigel
  */
 public class RelevantTestSuite {
-
-	public RelevantTestSuite(File baseDir, List<File> modifiedFiles) {
-		_modifiedFiles = modifiedFiles;
-
-		_relevantRuleEngine = RelevantRuleEngine.getInstance(baseDir);
-	}
 
 	public RelevantTestSuite(
 		PortalAcceptancePullRequestJob portalAcceptancePullRequestJob) {
@@ -43,6 +38,8 @@ public class RelevantTestSuite {
 		List<RelevantRule> relevantRules =
 			_relevantRuleEngine.getMatchingRelevantRules(_modifiedFiles);
 
+		Collections.sort(relevantRules);
+
 		for (RelevantRule relevantRule : relevantRules) {
 			for (TestBatch testBatch : relevantRule.getTestBatches()) {
 				if (testBatches.contains(testBatch)) {
@@ -57,6 +54,8 @@ public class RelevantTestSuite {
 				testBatches.add(testBatch);
 			}
 		}
+
+		Collections.sort(testBatches);
 
 		return testBatches;
 	}

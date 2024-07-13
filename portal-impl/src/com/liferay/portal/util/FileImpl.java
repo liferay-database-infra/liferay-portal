@@ -120,7 +120,13 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 		File directory;
 
 		while ((directory = queue.poll()) != null) {
-			for (File file : directory.listFiles()) {
+			File[] files = directory.listFiles();
+
+			if (files == null) {
+				continue;
+			}
+
+			for (File file : files) {
 				String path = file.getPath();
 
 				File targetFile = new File(
@@ -272,7 +278,13 @@ public class FileImpl implements com.liferay.portal.kernel.util.File {
 			File curDirectory;
 
 			while ((curDirectory = visitQueue.poll()) != null) {
-				for (File file : curDirectory.listFiles()) {
+				File[] files = curDirectory.listFiles();
+
+				if (files == null) {
+					continue;
+				}
+
+				for (File file : files) {
 					if (file.isFile()) {
 						file.delete();
 					}

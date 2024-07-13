@@ -7,6 +7,7 @@ import {Locator, Page} from '@playwright/test';
 
 import {PagesAdminPage} from '../../../pages/layout-admin-web/PagesAdminPage';
 import {clickAndExpectToBeVisible} from '../../../utils/clickAndExpectToBeVisible';
+import fillAndClickOutside from '../../../utils/fillAndClickOutside';
 import {waitForSuccessAlert} from '../../../utils/waitForSuccessAlert';
 
 export class PageConfigurationPage {
@@ -15,19 +16,23 @@ export class PageConfigurationPage {
 	readonly canonicalURLCheckbox: Locator;
 	readonly customCanonicalURLSettings: Locator;
 	readonly friendlyURL: Locator;
+	readonly name: Locator;
 	readonly pagesAdminPage: PagesAdminPage;
 	readonly saveButton: Locator;
+	readonly url: Locator;
 
 	constructor(page: Page) {
 		this.page = page;
 
 		this.canonicalURLCheckbox = page.getByLabel('Use Custom Canonical URL');
 		this.friendlyURL = page.getByLabel('Friendly URL');
-		this.saveButton = page.getByRole('button', {exact: true, name: 'Save'});
 		this.customCanonicalURLSettings = page.getByLabel('Canonical URL', {
 			exact: true,
 		});
+		this.name = page.getByLabel('Name');
 		this.pagesAdminPage = new PagesAdminPage(page);
+		this.saveButton = page.getByRole('button', {exact: true, name: 'Save'});
+		this.url = page.getByLabel('URL').first();
 	}
 
 	async goToSection(pageTitle: string, section: string) {
@@ -44,12 +49,24 @@ export class PageConfigurationPage {
 		await this.canonicalURLCheckbox.check();
 		await this.customCanonicalURLSettings.fill(canonicalURL);
 
+		await this.save();
+	}
+
+	async save() {
 		await this.saveButton.click();
 
 		await waitForSuccessAlert(
 			this.page,
-			'The page was updated successfully.'
+			'Success:The page was updated successfully.'
 		);
+	}
+
+	async fillName(name: string) {
+		await fillAndClickOutside(this.page, this.name, name);
+	}
+
+	async fillURL(url: string) {
+		await fillAndClickOutside(this.page, this.url, url);
 	}
 
 	async setFriendlyURL(friendlyURL: string, language: 'spanish' | 'english') {
@@ -75,22 +92,12 @@ export class PageConfigurationPage {
 				.locator('..'),
 		});
 
-		await this.saveButton.click();
-
-		await waitForSuccessAlert(
-			this.page,
-			'The page was updated successfully.'
-		);
+		await this.save();
 	}
 
 	async setHTMLTitle(title: string) {
 		await this.page.getByLabel('HTML Title').fill(title);
 
-		await this.saveButton.click();
-
-		await waitForSuccessAlert(
-			this.page,
-			'The page was updated successfully.'
-		);
+		await this.save();
 	}
 }

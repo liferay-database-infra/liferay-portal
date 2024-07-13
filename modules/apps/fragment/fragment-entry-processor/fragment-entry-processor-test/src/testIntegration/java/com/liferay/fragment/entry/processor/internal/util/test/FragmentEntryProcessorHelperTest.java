@@ -98,6 +98,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 /**
  * @author Rubén Pulido
@@ -115,6 +116,12 @@ public class FragmentEntryProcessorHelperTest {
 	@Before
 	public void setUp() throws Exception {
 		_group = GroupTestUtil.addGroup();
+
+		_layout = LayoutTestUtil.addTypePortletLayout(_group.getGroupId());
+
+		_themeDisplay = ContentLayoutTestUtil.getThemeDisplay(
+			_companyLocalService.getCompany(_group.getCompanyId()), _group,
+			_layout);
 	}
 
 	@Test
@@ -277,40 +284,33 @@ public class FragmentEntryProcessorHelperTest {
 		DDMFormField ddmFormField = _createDDMFormField(
 			DDMFormFieldTypeConstants.LINK_TO_LAYOUT);
 
-		Layout layout = LayoutTestUtil.addTypePortletLayout(
-			_group.getGroupId());
-
 		JournalArticle journalArticle = JournalTestUtil.addJournalArticle(
 			_dataDefinitionResourceFactory, ddmFormField,
 			_ddmFormValuesToFieldsConverter,
 			JSONUtil.put(
-				"groupId", layout.getGroupId()
+				"groupId", _layout.getGroupId()
 			).put(
-				"id", layout.getUuid()
+				"id", _layout.getUuid()
 			).put(
-				"layoutId", layout.getLayoutId()
+				"layoutId", _layout.getLayoutId()
 			).put(
-				"name", layout.getName()
+				"name", _layout.getName()
 			).put(
-				"privateLayout", layout.isPrivateLayout()
+				"privateLayout", _layout.isPrivateLayout()
 			).put(
 				"returnType",
 				"com.liferay.item.selector.criteria.UUIDItemSelectorReturnType"
 			).put(
-				"title", layout.getTitle()
+				"title", _layout.getTitle()
 			).toString(),
 			_group.getGroupId(), _journalConverter);
 
-		ThemeDisplay themeDisplay = ContentLayoutTestUtil.getThemeDisplay(
-			_companyLocalService.getCompany(_group.getCompanyId()), _group,
-			layout);
-
 		try {
-			_pushServiceContext(layout, themeDisplay);
+			_pushServiceContext(_layout, _themeDisplay);
 
 			Assert.assertEquals(
 				_portal.getLayoutFriendlyURL(
-					layout, themeDisplay, LocaleUtil.SPAIN),
+					_layout, _themeDisplay, LocaleUtil.SPAIN),
 				_getFieldValue(
 					JSONUtil.put(
 						"className", JournalArticle.class.getName()
@@ -407,6 +407,23 @@ public class FragmentEntryProcessorHelperTest {
 			LocaleUtil.SPAIN);
 
 		Assert.assertTrue(actual instanceof JSONObject);
+	}
+
+	@Test
+	public void testGetFieldValueWithNonexistingInfoItem() throws Exception {
+		Assert.assertNull(
+			_getFieldValue(
+				JSONUtil.put(
+					"className", JournalArticle.class.getName()
+				).put(
+					"classNameId",
+					_portal.getClassNameId(JournalArticle.class.getName())
+				).put(
+					"classPK", RandomTestUtil.randomLong()
+				).put(
+					"fieldId", "AssetTag_tagNames"
+				),
+				LocaleUtil.SPAIN));
 	}
 
 	@Test
@@ -795,9 +812,17 @@ public class FragmentEntryProcessorHelperTest {
 			JSONObject editableValuesJSONObject, Locale locale)
 		throws Exception {
 
+		MockHttpServletRequest mockHttpServletRequest =
+			new MockHttpServletRequest();
+
+		mockHttpServletRequest.setAttribute(WebKeys.LAYOUT, _layout);
+		mockHttpServletRequest.setAttribute(
+			WebKeys.THEME_DISPLAY, _themeDisplay);
+
 		FragmentEntryProcessorContext fragmentEntryProcessorContext =
 			new DefaultFragmentEntryProcessorContext(
-				null, null, FragmentEntryLinkConstants.EDIT, locale);
+				mockHttpServletRequest, new MockHttpServletResponse(),
+				FragmentEntryLinkConstants.EDIT, locale);
 
 		return _fragmentEntryProcessorHelper.getFieldValue(
 			editableValuesJSONObject, new HashMap<>(),
@@ -894,7 +919,11 @@ public class FragmentEntryProcessorHelperTest {
 	@Inject
 	private JournalConverter _journalConverter;
 
+	private Layout _layout;
+
 	@Inject
 	private Portal _portal;
+
+	private ThemeDisplay _themeDisplay;
 
 }

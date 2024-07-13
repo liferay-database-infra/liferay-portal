@@ -578,8 +578,8 @@ definition {
 		Click(locator1 = "Button#CONTINUE");
 
 		AssertTextEquals(
-			key_paymentMethod = "Delivery Term 1",
-			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_PAYMENT_METHOD",
+			key_deliveryTerm = "Delivery Term 1",
+			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_DELIVERY_TERM",
 			value1 = "Delivery Term 1");
 
 		Click(locator1 = "//span[contains(.,'Previous')]");
@@ -591,8 +591,8 @@ definition {
 		Click(locator1 = "Button#CONTINUE");
 
 		AssertTextEquals(
-			key_paymentMethod = "Delivery Term 2",
-			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_PAYMENT_METHOD",
+			key_deliveryTerm = "Delivery Term 2",
+			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_DELIVERY_TERM",
 			value1 = "Delivery Term 2");
 	}
 
@@ -692,8 +692,8 @@ definition {
 		Click(locator1 = "Button#CONTINUE");
 
 		AssertTextEquals(
-			key_paymentMethod = "Payment Term 1",
-			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_PAYMENT_METHOD",
+			key_paymentTerm = "Payment Term 1",
+			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_PAYMENT_TERM",
 			value1 = "Payment Term 1");
 
 		Click(locator1 = "//span[contains(.,'Previous')]");
@@ -705,8 +705,8 @@ definition {
 		Click(locator1 = "Button#CONTINUE");
 
 		AssertTextEquals(
-			key_paymentMethod = "Payment Term 2",
-			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_PAYMENT_METHOD",
+			key_paymentTerm = "Payment Term 2",
+			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_PAYMENT_TERM",
 			value1 = "Payment Term 2");
 	}
 
@@ -935,8 +935,8 @@ definition {
 		Click(locator1 = "Button#CONTINUE");
 
 		AssertTextEquals(
-			key_paymentMethod = "Delivery Term 1",
-			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_PAYMENT_METHOD",
+			key_deliveryTerm = "Delivery Term 1",
+			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_DELIVERY_TERM",
 			value1 = "Delivery Term 1");
 	}
 
@@ -1036,8 +1036,8 @@ definition {
 		Click(locator1 = "Button#CONTINUE");
 
 		AssertTextEquals(
-			key_paymentMethod = "Payment Term 1",
-			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_PAYMENT_METHOD",
+			key_paymentTerm = "Payment Term 1",
+			locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_PAYMENT_TERM",
 			value1 = "Payment Term 1");
 	}
 

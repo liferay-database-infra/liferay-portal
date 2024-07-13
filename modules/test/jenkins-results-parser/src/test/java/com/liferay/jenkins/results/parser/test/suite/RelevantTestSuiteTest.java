@@ -5,20 +5,22 @@
 
 package com.liferay.jenkins.results.parser.test.suite;
 
-import com.liferay.jenkins.results.parser.GitWorkingDirectoryFactory;
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
-import com.liferay.jenkins.results.parser.Job;
-import com.liferay.jenkins.results.parser.JobFactory;
-import com.liferay.jenkins.results.parser.PortalAcceptancePullRequestJob;
-import com.liferay.jenkins.results.parser.PortalGitWorkingDirectory;
+import com.liferay.jenkins.results.parser.job.property.JobProperty;
+import com.liferay.jenkins.results.parser.test.batch.JUnitTestBatch;
+import com.liferay.jenkins.results.parser.test.batch.JUnitTestSelector;
 import com.liferay.jenkins.results.parser.test.batch.PlaywrightTestBatch;
 import com.liferay.jenkins.results.parser.test.batch.PlaywrightTestSelector;
+import com.liferay.jenkins.results.parser.test.batch.PoshiTestBatch;
+import com.liferay.jenkins.results.parser.test.batch.PoshiTestSelector;
 import com.liferay.jenkins.results.parser.test.batch.TestBatch;
 
 import java.io.File;
+import java.io.IOException;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.Assert;
@@ -27,93 +29,136 @@ import org.junit.Test;
 /**
  * @author Kenji Heigel
  */
-public class RelevantTestSuiteTest {
+public class RelevantTestSuiteTest extends BaseRelevantRuleTestCase {
 
 	@Test
-	public void testPlaywrightTestSelectorMerge() {
+	public void testJUnitTestSelectorMerge() throws IOException {
 		RelevantTestSuite relevantTestSuite = new RelevantTestSuite(
-			_portalAcceptancePullRequestJob);
+			getPortalAcceptancePullRequestJob());
 
 		relevantTestSuite.setModifiedFiles(
 			Arrays.asList(
-				new File(_baseDir, "modules/module-1/text_file_1.txt"),
-				new File(_baseDir, "modules/module-2/text_file_2.txt")));
+				new File(getBaseDir(), "text_file_0.txt"),
+				new File(getBaseDir(), "modules/module-1/text_file_1.txt")));
 
 		RelevantRuleEngine relevantRuleEngine =
 			RelevantRuleEngine.getInstance();
 
-		relevantRuleEngine.setBaseDir(_baseDir);
+		relevantRuleEngine.setBaseDir(getBaseDir());
+
+		JUnitTestBatch jUnitTestBatch = null;
+
+		for (TestBatch testBatch : relevantTestSuite.getTestBatches()) {
+			if (testBatch instanceof JUnitTestBatch) {
+				jUnitTestBatch = (JUnitTestBatch)testBatch;
+
+				break;
+			}
+		}
+
+		JUnitTestSelector jUnitTestSelector = jUnitTestBatch.getTestSelector();
+
+		List<JobProperty> includesJobProperties =
+			jUnitTestSelector.getIncludesJobProperties();
+
+		String globs = JenkinsResultsParserUtil.read(
+			new File(getBaseDir(), "modules/module-1/text_file_1.txt"));
+
+		int globCount = 0;
+
+		for (JobProperty jobProperty : includesJobProperties) {
+			String jobPropertyValue = jobProperty.getValue();
+
+			for (String glob : jobPropertyValue.split(",")) {
+				Assert.assertTrue(globs.contains(glob));
+
+				globCount++;
+			}
+		}
+
+		Assert.assertEquals(5, globCount);
+	}
+
+	@Test
+	public void testPlaywrightTestSelectorMerge() {
+		RelevantTestSuite relevantTestSuite = new RelevantTestSuite(
+			getPortalAcceptancePullRequestJob());
+
+		relevantTestSuite.setModifiedFiles(
+			Arrays.asList(
+				new File(getBaseDir(), "modules/module-1/text_file_1.txt"),
+				new File(getBaseDir(), "modules/module-2/text_file_2.txt")));
+
+		RelevantRuleEngine relevantRuleEngine =
+			RelevantRuleEngine.getInstance();
+
+		relevantRuleEngine.setBaseDir(getBaseDir());
 
 		PlaywrightTestBatch playwrightTestBatch = null;
 
 		for (TestBatch testBatch : relevantTestSuite.getTestBatches()) {
 			if (testBatch instanceof PlaywrightTestBatch) {
 				playwrightTestBatch = (PlaywrightTestBatch)testBatch;
-			}
 
-			break;
+				break;
+			}
 		}
+
+		Set<String> actualPlaywrightProjectNames = new HashSet<>();
 
 		PlaywrightTestSelector playwrightTestSelector =
 			playwrightTestBatch.getTestSelector();
+
+		for (JobProperty jobProperty :
+				playwrightTestSelector.getPlaywrightJobProperties()) {
+
+			actualPlaywrightProjectNames.add(jobProperty.getValue());
+		}
 
 		Set<String> expectedPlaywrightProjectNames = new HashSet<>(
 			Arrays.asList(
 				"module-1-playwright-project", "module-2-playwright-project"));
 
 		Assert.assertEquals(
-			expectedPlaywrightProjectNames,
-			playwrightTestSelector.getPlaywrightProjectNames());
+			expectedPlaywrightProjectNames, actualPlaywrightProjectNames);
 	}
 
-	private static File _getPortalDir(File file) {
-		if (file == null) {
-			file = new File(".");
+	@Test
+	public void testPoshiTestSelectorMerge() throws IOException {
+		RelevantTestSuite relevantTestSuite = new RelevantTestSuite(
+			getPortalAcceptancePullRequestJob());
 
-			file = JenkinsResultsParserUtil.getCanonicalFile(file);
+		relevantTestSuite.setModifiedFiles(
+			Arrays.asList(
+				new File(getBaseDir(), "test.properties"),
+				new File(getBaseDir(), "modules/module-2/text_file_2.txt")));
+
+		RelevantRuleEngine relevantRuleEngine =
+			RelevantRuleEngine.getInstance();
+
+		relevantRuleEngine.setBaseDir(getBaseDir());
+
+		PoshiTestBatch poshiTestBatch = null;
+
+		for (TestBatch testBatch : relevantTestSuite.getTestBatches()) {
+			if (testBatch instanceof PoshiTestBatch) {
+				poshiTestBatch = (PoshiTestBatch)testBatch;
+
+				PoshiTestSelector poshiTestSelector =
+					poshiTestBatch.getTestSelector();
+
+				String pql = JenkinsResultsParserUtil.read(
+					new File(getBaseDir(), "modules/module-2/text_file_2.txt"));
+
+				Assert.assertEquals(
+					pql, poshiTestSelector.getPoshiQuery(false));
+
+				pql = JenkinsResultsParserUtil.combine(
+					"((portal.acceptance != quarantine)) AND (", pql, ")");
+
+				Assert.assertEquals(pql, poshiTestSelector.getPoshiQuery());
+			}
 		}
-
-		String fileName = file.getName();
-
-		if (fileName.equals("liferay-portal")) {
-			return file;
-		}
-
-		file = file.getParentFile();
-
-		if (file == null) {
-			throw new RuntimeException(
-				"Unable to find portal directory from: " + file);
-		}
-
-		return _getPortalDir(file);
-	}
-
-	private static final File _baseDir;
-	private static final PortalAcceptancePullRequestJob
-		_portalAcceptancePullRequestJob;
-
-	static {
-		File baseDir = new File(
-			"src/test/resources/dependencies/test/suite" +
-				"/RelevantRuleEngineTest");
-
-		_baseDir = JenkinsResultsParserUtil.getCanonicalFile(baseDir);
-
-		String upstreamBranchName = "master";
-		String repositoryName = "liferay-portal";
-
-		PortalGitWorkingDirectory portalGitWorkingDirectory =
-			(PortalGitWorkingDirectory)
-				GitWorkingDirectoryFactory.newGitWorkingDirectory(
-					upstreamBranchName, _getPortalDir(null), repositoryName);
-
-		_portalAcceptancePullRequestJob =
-			(PortalAcceptancePullRequestJob)JobFactory.newJob(
-				Job.BuildProfile.DXP,
-				"test-portal-acceptance-pullrequest(master)", null,
-				portalGitWorkingDirectory, upstreamBranchName, null,
-				repositoryName, "relevant", upstreamBranchName);
 	}
 
 }

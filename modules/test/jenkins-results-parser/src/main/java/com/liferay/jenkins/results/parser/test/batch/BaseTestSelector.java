@@ -33,11 +33,23 @@ public abstract class BaseTestSelector implements TestSelector {
 		RelevantRuleEngine relevantRuleEngine =
 			RelevantRuleEngine.getInstance();
 
+		_baseDir = relevantRuleEngine.getBaseDir();
+
 		_job = relevantRuleEngine.getJob();
+
+		if (_job == null) {
+			throw new RuntimeException("Job is not set for test selector");
+		}
 	}
 
 	public String getBatchName() {
 		return _batchName;
+	}
+
+	public JobProperty getGlobalJobProperty(String basePropertyName) {
+		return JobPropertyFactory.newJobProperty(
+			basePropertyName, _testSuiteName, _batchName, _job, _baseDir, null,
+			true);
 	}
 
 	public Job getJob() {
@@ -52,10 +64,18 @@ public abstract class BaseTestSelector implements TestSelector {
 			_job, _propertiesFile.getParentFile(), type, true);
 	}
 
+	public File getPropertiesFile() {
+		return _propertiesFile;
+	}
+
 	public String getProperty(String propertyName) {
 		return JenkinsResultsParserUtil.getProperty(
 			_properties, propertyName, _batchName, _relevantRuleName,
 			_testSuiteName);
+	}
+
+	public String getRelevantRuleName() {
+		return _relevantRuleName;
 	}
 
 	public TestBatch getTestBatch() {
@@ -78,6 +98,7 @@ public abstract class BaseTestSelector implements TestSelector {
 		}
 	}
 
+	private final File _baseDir;
 	private final String _batchName;
 	private final Job _job;
 	private final Properties _properties;

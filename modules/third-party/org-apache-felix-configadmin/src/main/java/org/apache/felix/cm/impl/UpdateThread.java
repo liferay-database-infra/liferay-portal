@@ -22,7 +22,8 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.LinkedList;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import org.osgi.service.log.LogService;
 
@@ -41,10 +42,10 @@ public class UpdateThread implements Runnable
     private final String workerBaseName;
 
     // the queue of Runnable instances  to be run
-    private final LinkedList updateTasks;
+    private final BlockingDeque<Runnable> updateTasks = new LinkedBlockingDeque<>();
 
     // the actual thread
-    private Thread worker;
+    private volatile Thread worker;
 
     // the access control context
     private final AccessControlContext acc;
@@ -54,8 +55,6 @@ public class UpdateThread implements Runnable
         this.workerThreadGroup = tg;
         this.workerBaseName = name;
         this.acc = AccessController.getContext();
-
-        this.updateTasks = new LinkedList();
     }
 
 
@@ -67,52 +66,37 @@ public class UpdateThread implements Runnable
     @Override
     public void run()
     {
-        for ( ;; )
+        try
         {
             Runnable task;
-            synchronized ( updateTasks )
-            {
-                while ( updateTasks.isEmpty() )
-                {
-                    try
-                    {
-                        updateTasks.wait();
-                    }
-                    catch ( InterruptedException ie )
-                    {
-                        // don't care
-                    }
-                }
-
-                task = ( Runnable ) updateTasks.removeFirst();
-            }
-
             // return if the task is this thread itself
-            if ( task == this )
+            while ((task = updateTasks.take()) != this)
             {
-                return;
-            }
+                // otherwise execute the task, log any issues
+                try
+                {
+                    // set the thread name indicating the current task
+                    Thread.currentThread().setName( workerBaseName + " (" + task + ")" );
 
-            // otherwise execute the task, log any issues
-            try
-            {
-                // set the thread name indicating the current task
-                Thread.currentThread().setName( workerBaseName + " (" + task + ")" );
+                    Log.logger.log( LogService.LOG_DEBUG, "Running task {0}", new Object[]
+                        { task } );
 
-                Log.logger.log( LogService.LOG_DEBUG, "Running task {0}", new Object[]
-                    { task } );
-
-                run0(task);
+                    run0(task);
+                }
+                catch ( Throwable t )
+                {
+                    Log.logger.log( LogService.LOG_ERROR, "Unexpected problem executing task", t );
+                }
+                finally
+                {
+                    // reset the thread name to "idle"
+                    Thread.currentThread().setName( workerBaseName );
+                }
             }
-            catch ( Throwable t )
-            {
-                Log.logger.log( LogService.LOG_ERROR, "Unexpected problem executing task", t );
-            }
-            finally
-            {
-                // reset the thread name to "idle"
-                Thread.currentThread().setName( workerBaseName );
-            }
+        }
+        catch (InterruptedException e)
+        {
+            // don't care
         }
     }
 
@@ -172,23 +156,23 @@ public class UpdateThread implements Runnable
             Thread workerThread = this.worker;
             this.worker = null;
 
-            schedule( this );
+            updateTasks.offerFirst( this );
 
             // wait for all updates to terminate (<= 10 seconds !)
             try
             {
                 workerThread.join( 5000 );
+
+                if ( workerThread.isAlive() )
+                {
+                    Log.logger.log( LogService.LOG_ERROR,
+                        "Worker thread {0} did not terminate within 5 seconds; trying to kill", new Object[]
+                            { workerBaseName } );
+                    workerThread.interrupt();
+                }
             }
             catch ( InterruptedException ie )
             {
-                // don't really care
-            }
-
-            if ( workerThread.isAlive() )
-            {
-                Log.logger.log( LogService.LOG_ERROR,
-                    "Worker thread {0} did not terminate within 5 seconds; trying to kill", new Object[]
-                        { workerBaseName } );
                 workerThread.interrupt();
             }
         }
@@ -198,17 +182,11 @@ public class UpdateThread implements Runnable
     // queue the given runnable to be run as soon as possible
     void schedule( Runnable update )
     {
-        synchronized ( updateTasks )
-        {
-            Log.logger.log( LogService.LOG_DEBUG, "Scheduling task {0}", new Object[]
-                { update } );
+        Log.logger.log( LogService.LOG_DEBUG, "Scheduling task {0}", new Object[]
+            { update } );
 
-            // append to the task queue
-            updateTasks.add( update );
-
-            // notify the waiting thread
-            updateTasks.notifyAll();
-        }
+        // append to the task queue
+        updateTasks.offer( update );
     }
 }
 /* @generated */

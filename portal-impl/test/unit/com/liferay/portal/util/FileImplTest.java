@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -101,6 +102,66 @@ public class FileImplTest {
 		Assert.assertEquals(
 			"/folder/test_rtl.css",
 			_fileImpl.appendSuffix("/folder/test.css", "_rtl"));
+	}
+
+	@Test
+	public void testCopyAndDeltreeConcurrently() throws Exception {
+		File directory = new File(
+			System.getProperty("java.io.tmpdir"), "tempDir");
+
+		directory.mkdir();
+
+		File file = new File(directory, "testFile");
+
+		file.createNewFile();
+
+		CountDownLatch countDownLatch1 = new CountDownLatch(1);
+		CountDownLatch countDownLatch2 = new CountDownLatch(1);
+
+		Thread thread = new Thread(
+			() -> {
+				try {
+					countDownLatch2.await();
+				}
+				catch (InterruptedException interruptedException) {
+					throw new RuntimeException(interruptedException);
+				}
+
+				_fileImpl.deltree(directory);
+
+				countDownLatch1.countDown();
+			});
+
+		thread.start();
+
+		File newDirectory = new File(
+			System.getProperty("java.io.tmpdir"), "newTempDir");
+
+		_fileImpl.copyDirectory(
+			new File(directory.getPath()) {
+
+				@Override
+				public File[] listFiles() {
+					countDownLatch2.countDown();
+
+					try {
+						countDownLatch1.await();
+
+						return super.listFiles();
+					}
+					catch (InterruptedException interruptedException) {
+						throw new RuntimeException(interruptedException);
+					}
+				}
+
+			},
+			newDirectory);
+
+		thread.join();
+
+		File newFile = new File(newDirectory, "testFile");
+
+		Assert.assertFalse(newFile.exists());
 	}
 
 	@Test
@@ -197,6 +258,56 @@ public class FileImplTest {
 		_fileImpl.deltree(directory1);
 
 		Assert.assertFalse(directory1.exists());
+	}
+
+	@Test
+	public void testDeltreeConcurrently() throws Exception {
+		File directory = new File(
+			System.getProperty("java.io.tmpdir"), "tempDir");
+
+		directory.mkdir();
+
+		CountDownLatch countDownLatch1 = new CountDownLatch(1);
+		CountDownLatch countDownLatch2 = new CountDownLatch(1);
+
+		Thread thread = new Thread(
+			() -> {
+				try {
+					countDownLatch2.await();
+				}
+				catch (InterruptedException interruptedException) {
+					throw new RuntimeException(interruptedException);
+				}
+
+				directory.delete();
+
+				countDownLatch1.countDown();
+			});
+
+		thread.start();
+
+		_fileImpl.deltree(
+			new File(directory.getPath()) {
+
+				@Override
+				public File[] listFiles() {
+					countDownLatch2.countDown();
+
+					try {
+						countDownLatch1.await();
+
+						return super.listFiles();
+					}
+					catch (InterruptedException interruptedException) {
+						throw new RuntimeException(interruptedException);
+					}
+				}
+
+			});
+
+		thread.join();
+
+		Assert.assertFalse(directory.exists());
 	}
 
 	@Test

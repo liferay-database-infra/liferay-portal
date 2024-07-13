@@ -3051,7 +3051,7 @@ definition {
 				siteTemplateName = "Minium");
 		}
 
-		task ("and four delivery term entries with different priorities and eligibility scopes") {
+		task ("and four payment term entries with different priorities and eligibility scopes") {
 			CommerceJSONTermsAndConditionsAPI._addCommerceTermsAndConditions(
 				termsCount = 4,
 				termsType = "Payment");
@@ -3129,15 +3129,15 @@ definition {
 			CommerceCheckout.gotoCheckoutViaMiniCart();
 		}
 
-		task ("Then the default Delivery Term should be displayed at Checkout.") {
+		task ("Then the default Payment Term should be displayed at Checkout.") {
 			CommerceCheckout.initializersCheckout(
-				deliveryTerm = "Payment Term 2",
 				managePaymentTerms = "false",
 				newAddressAddress = "Test Address",
 				newAddressCity = "Test City",
 				newAddressCountry = "United States",
 				newAddressName = "Address Name",
 				newAddressZipCode = "Test Zip Code",
+				paymentTerm = "Payment Term 2",
 				productName = "U-Joint",
 				productQuantity = 1,
 				productUnitPrice = 24,
@@ -3146,7 +3146,7 @@ definition {
 			Button.click(button = "Go to Order Details");
 
 			CommerceOrders.viewOrdersEntry(
-				deliveryTerm = "Payment Term 2",
+				paymentTerm = "Payment Term 2",
 				productListPrice = "24.00",
 				productName = "U-Joint",
 				productQuantity = 1,

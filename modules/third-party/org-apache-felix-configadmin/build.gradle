@@ -5,7 +5,7 @@ apply plugin: "com.liferay.patcher"
 task patch(type: PatchTask)
 
 dependencies {
-	compileOnly group: "org.apache.felix", name: "org.apache.felix.configadmin", transitive: false, version: "1.9.8"
+	compileOnly group: "org.apache.felix", name: "org.apache.felix.configadmin", transitive: false, version: "1.9.26"
 	compileOnly group: "org.osgi", name: "org.osgi.service.log", transitive: false, version: "1.4.0"
 	compileOnly group: "org.osgi", name: "osgi.core", transitive: false, version: "6.0.0"
 }
@@ -23,7 +23,6 @@ patch {
 	fileNames "org/apache/felix/cm/impl/ConfigurationImpl.java"
 	fileNames "org/apache/felix/cm/impl/ConfigurationManager.java"
 	fileNames "org/apache/felix/cm/impl/UpdateThread.java"
-	fileNames "org/apache/felix/cm/impl/persistence/PersistenceManagerTracker.java"
 
 	originalLibModuleName = "org.apache.felix.configadmin"
 }
