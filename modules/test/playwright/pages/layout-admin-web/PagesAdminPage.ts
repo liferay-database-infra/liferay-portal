@@ -149,17 +149,46 @@ export class PagesAdminPage {
 		);
 	}
 
-	async createNewPage(name: string, template?: string) {
-		await this.newButton.click();
+	async createNewPage({
+		draft = false,
+		name,
+		parent,
+		template,
+	}: {
+		draft?: boolean;
+		name: string;
+		parent?: string;
+		template?: string;
+	}) {
 
-		await this.page
-			.getByRole('menuitem')
-			.getByText('Page', {exact: true})
-			.click();
+		// If no parent specified, just create from toolbar
+
+		if (!parent) {
+			await this.newButton.click();
+
+			await this.page
+				.getByRole('menuitem')
+				.getByText('Page', {exact: true})
+				.click();
+		}
+
+		// If parent is specified, create child page
+
+		else {
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: this.page.getByRole('menuitem', {name: 'Add Page'}),
+				trigger: this.page
+					.locator('li', {has: this.page.getByText(parent)})
+					.getByTitle('Add Child Page'),
+			});
+		}
+
+		// Select template and fill name
 
 		await this.page
 			.locator('.card-page-item')
-			.filter({hasText: template})
+			.filter({hasText: template || 'Blank'})
 			.click();
 
 		const loadingAnimation = this.page.locator(
@@ -168,15 +197,39 @@ export class PagesAdminPage {
 		await loadingAnimation.waitFor();
 		await loadingAnimation.waitFor({state: 'hidden'});
 
-		const modalFrame = await this.page.frameLocator(
-			'iframe[title="Add Page"]'
-		);
-		const inputName = await modalFrame.getByPlaceholder('Add Page Name');
+		const modalFrame = this.page.frameLocator('iframe[title="Add Page"]');
+		const inputName = modalFrame.getByPlaceholder('Add Page Name');
+
 		await inputName.fill(name);
 
 		await modalFrame.getByRole('button', {name: 'Add'}).click();
 
-		await this.pageEditorPage.publishPage();
+		await waitForSuccessAlert(
+			this.page,
+			'Success:The page was created successfully.'
+		);
+
+		// Publish is draft param is false
+
+		if (!draft) {
+			await this.pageEditorPage.publishPage();
+		}
+	}
+
+	async deletePage(name: string) {
+		await this.clickOnAction('Delete', name);
+
+		await this.page
+			.locator('.modal-title')
+			.getByText('Delete Page')
+			.waitFor();
+
+		await this.page.getByRole('button', {name: 'Delete'}).click();
+
+		await waitForSuccessAlert(
+			this.page,
+			'Success:Your request completed successfully.'
+		);
 	}
 
 	async editPage(name: string) {

@@ -45,4 +45,14 @@ export class SortingPage {
 	async openAddSortingModal() {
 		await this.addSortingButton.click();
 	}
+
+	async selectTab(tabLabel: string) {
+		await this.dataSetPage.selectTab(tabLabel);
+	}
+
+	async getTableColumnInnerTexts(index: number): Promise<string[]> {
+		return await this.sortingTable
+			.locator(`tbody > tr > td:nth-child(${index})`)
+			.allInnerTexts();
+	}
 }

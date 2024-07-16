@@ -10,6 +10,7 @@ import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {pagesAdminPagesTest} from '../../fixtures/pagesAdminPagesTest';
+import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
 import getRandomString from '../../utils/getRandomString';
 
 const test = mergeTests(
@@ -127,6 +128,66 @@ test('checks the correct label for restricted pages in Miller Columns', async ({
 			.locator('.miller-columns-item')
 			.getByLabel(`${pageName}. Restricted Page`)
 	).toBeVisible();
+});
+
+test('Can add and delete a child page.', async ({
+	apiHelpers,
+	page,
+	pagesAdminPage,
+	site,
+}) => {
+
+	// Create parent page
+
+	const parentPageName = getRandomString();
+
+	await apiHelpers.jsonWebServicesLayout.addLayout({
+		groupId: site.id,
+		title: parentPageName,
+	});
+
+	// Create child page and check it actually appears as child
+
+	const childPageName = getRandomString();
+
+	await pagesAdminPage.goto(site.friendlyUrlPath);
+
+	await pagesAdminPage.createNewPage({
+		draft: true,
+		name: childPageName,
+		parent: parentPageName,
+	});
+
+	await pagesAdminPage.goto(site.friendlyUrlPath);
+
+	await page.getByRole('button', {name: parentPageName}).click();
+
+	await expect(page.getByRole('link', {name: childPageName})).toBeVisible();
+
+	// Check Draft label is shown and we can preview the draft
+
+	await expect(
+		page
+			.locator('li', {has: page.getByText(childPageName)})
+			.getByText('Draft')
+	).toBeVisible();
+
+	await clickAndExpectToBeVisible({
+		target: page.getByRole('menuitem', {
+			name: 'Preview Draft',
+		}),
+		trigger: page
+			.locator('li', {has: page.getByText(childPageName)})
+			.getByRole('button', {name: 'Open Page Options Menu'}),
+	});
+
+	// Delete child page
+
+	await pagesAdminPage.deletePage(childPageName);
+
+	await expect(
+		page.getByRole('link', {name: childPageName})
+	).not.toBeVisible();
 });
 
 test('LPS-178476 View the XSS is escaped when store it in widget page name.', async ({

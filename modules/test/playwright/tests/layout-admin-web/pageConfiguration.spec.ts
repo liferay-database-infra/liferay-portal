@@ -8,8 +8,10 @@ import {expect, mergeTests} from '@playwright/test';
 import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
 import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
+import {pageSelectorPagesTest} from '../../fixtures/pageSelectorPagesTest';
 import {pagesAdminPagesTest} from '../../fixtures/pagesAdminPagesTest';
 import {checkAccessibility} from '../../utils/checkAccessibility';
+import getRandomString from '../../utils/getRandomString';
 import {selectAndExpectToHaveValue} from '../../utils/selectAndExpectToHaveValue';
 import {pagesPagesTest} from './fixtures/pagesPagesTest';
 
@@ -17,6 +19,7 @@ const test = mergeTests(
 	apiHelpersTest,
 	isolatedSiteTest,
 	loginTest(),
+	pageSelectorPagesTest,
 	pagesAdminPagesTest,
 	pagesPagesTest
 );
@@ -105,6 +108,51 @@ test('Can configure a full page application.', async ({
 	await expect(page.getByRole('heading', {name: 'Wiki'})).toBeVisible();
 });
 
+test('Can not select pages from other sites for Link to a Page of This Site.', async ({
+	apiHelpers,
+	page,
+	pageConfigurationPage,
+	pageSelectorPage,
+	pagesAdminPage,
+	site,
+}) => {
+
+	// Create a widget page and a link to layout page
+
+	const name = getRandomString();
+
+	await apiHelpers.jsonWebServicesLayout.addLayout({
+		groupId: site.id,
+		title: getRandomString(),
+	});
+
+	await apiHelpers.jsonWebServicesLayout.addLayout({
+		groupId: site.id,
+		options: {
+			type: 'link_to_layout',
+		},
+		title: name,
+	});
+
+	// Try to select linked page and check Sites and Libraries
+	// section is not shown
+
+	await pagesAdminPage.goto(site.friendlyUrlPath);
+
+	await pageConfigurationPage.goToSection(name, 'General');
+
+	await page
+		.locator('.layout-type')
+		.getByRole('button', {name: 'Select'})
+		.click();
+
+	const modal = await pageSelectorPage.getModal();
+
+	await modal.locator('.treeview').waitFor();
+
+	await expect(modal.getByText('Sites and Libraries')).not.toBeVisible();
+});
+
 test('Can configure a panel page.', async ({
 	apiHelpers,
 	page,
@@ -147,6 +195,9 @@ test('Can edit the page name and layout template via pages administration.', asy
 	pagesAdminPage,
 	site,
 }) => {
+
+	// Create page and go to page configuration
+
 	const layout = await apiHelpers.jsonWebServicesLayout.addLayout({
 		groupId: site.id,
 		title: 'Test Page Title',
@@ -156,13 +207,21 @@ test('Can edit the page name and layout template via pages administration.', asy
 
 	await pageConfigurationPage.goToSection('Test Page Title', 'General');
 
+	// Fill name and change layout to 1 column
+
 	await pageConfigurationPage.fillName('Test Page Title Edit');
 
 	await page.getByTitle('1 Column', {exact: true}).click();
 
+	// Check card is selected and save
+
+	const card = page.locator('.card.card-interactive').first();
+
+	await expect(card).toHaveClass(/active/);
+
 	await pageConfigurationPage.save();
 
-	// Go to view mode of page
+	// Go to view mode of page and check layout
 
 	await page.goto(`/web${site.friendlyUrlPath}${layout.friendlyURL}`);
 
