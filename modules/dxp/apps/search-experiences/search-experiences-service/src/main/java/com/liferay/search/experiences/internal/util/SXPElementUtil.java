@@ -67,7 +67,7 @@ public class SXPElementUtil {
 			sxpElementLocalService.addSXPElement(
 				sxpElement.getExternalReferenceCode(), user.getUserId(),
 				LocalizedMapUtil.getLocalizedMap(
-					sxpElement.getDescription_i18n()),
+					sxpElement.getDescription_i18n(), true),
 				String.valueOf(sxpElement.getElementDefinition()),
 				sxpElement.getDescription_i18n(
 				).get(
@@ -78,7 +78,9 @@ public class SXPElementUtil {
 					LocaleUtil.US.toString()
 				),
 				true, _SCHEMA_VERSION,
-				LocalizedMapUtil.getLocalizedMap(sxpElement.getTitle_i18n()), 0,
+				LocalizedMapUtil.getLocalizedMap(
+					sxpElement.getTitle_i18n(), true),
+				0,
 				new ServiceContext() {
 					{
 						setAddGuestPermissions(true);

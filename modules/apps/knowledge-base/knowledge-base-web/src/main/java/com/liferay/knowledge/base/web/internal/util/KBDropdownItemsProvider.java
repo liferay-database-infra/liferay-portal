@@ -535,9 +535,32 @@ public class KBDropdownItemsProvider {
 
 				if (!Objects.equals(
 						portletDisplay.getRootPortletId(),
-						KBPortletKeys.KNOWLEDGE_BASE_ADMIN)) {
+						KBPortletKeys.KNOWLEDGE_BASE_ADMIN) &&
+					!Objects.equals(
+						portletDisplay.getRootPortletId(),
+						KBPortletKeys.KNOWLEDGE_BASE_DISPLAY)) {
 
 					return _createKbHomeRenderURL();
+				}
+
+				if (Objects.equals(
+						portletDisplay.getRootPortletId(),
+						KBPortletKeys.KNOWLEDGE_BASE_DISPLAY)) {
+
+					return PortletURLBuilder.createActionURL(
+						_liferayPortletResponse
+					).setParameter(
+						"resourcePrimKey",
+						() -> {
+							if (kbArticle.getParentResourcePrimKey() ==
+									kbArticle.getKbFolderId()) {
+
+								return null;
+							}
+
+							return kbArticle.getParentResourcePrimKey();
+						}
+					).buildString();
 				}
 
 				if (((selectedItemAncestorIds == null) &&
