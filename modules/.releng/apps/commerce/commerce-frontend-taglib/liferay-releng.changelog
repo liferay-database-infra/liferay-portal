@@ -457,3 +457,8 @@ bd1fa33db5a8b8b1fc43efdbaadd33b5e1d58ed7^..76a93eae0538501669323ad793a2a773d6107
 # Bundle Version 23.1.2
 #
 fc5fd49dee09a90e1ce6e9dc0ede849da25f2a53^..9f794ef4a7966ce5de283b64cdadd9e786ddd4f6=LPD-4681
+
+#
+# Bundle Version 23.1.3
+#
+9f794ef4a7966ce5de283b64cdadd9e786ddd4f6^..f26baa557ae3cb672c41b2b3db47b65274ad8c15=LPD-3185 LPD-5443 LPD-27195 LPD-29583

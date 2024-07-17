@@ -1,6 +1,6 @@
 Bundle-Name: Liferay Portal Search Web
 Bundle-SymbolicName: com.liferay.portal.search.web
-Bundle-Version: 6.0.137
+Bundle-Version: 6.0.138
 Import-Package:\
 	!com.liferay.util.xml,\
 	\
