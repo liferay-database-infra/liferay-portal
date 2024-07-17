@@ -9,6 +9,8 @@ import aQute.bnd.annotation.metatype.Meta;
 
 import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Mika Koivisto
  */
@@ -17,6 +19,7 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
 	id = "com.liferay.portal.security.service.access.policy.configuration.SAPConfiguration",
 	localization = "content/Language", name = "sap-configuration-name"
 )
+@ProviderType
 public interface SAPConfiguration {
 
 	@Meta.AD(deflt = "true", name = "use-system-sap-entries", required = false)
@@ -39,6 +42,27 @@ public interface SAPConfiguration {
 		name = "system-default-sap-entry-service-signatures", required = false
 	)
 	public String systemDefaultSAPEntryServiceSignatures();
+
+	@Meta.AD(
+		deflt = "SYSTEM_REST_CLIENT_TEMPLATE_OBJECT",
+		name = "system-rest-client-template-object-sap-entry-name",
+		required = false
+	)
+	public String systemRESTClientTemplateObjectSAPEntryName();
+
+	@Meta.AD(
+		deflt = "System Service Access Policy for REST Client Template Requests",
+		name = "system-rest-client-template-object-sap-entry-description",
+		required = false
+	)
+	public String systemRESTClientTemplateObjectSAPEntryDescription();
+
+	@Meta.AD(
+		deflt = "*",
+		name = "system-rest-client-template-object-sap-entry-service-signatures",
+		required = false
+	)
+	public String systemRESTClientTemplateObjectSAPEntryServiceSignatures();
 
 	@Meta.AD(
 		deflt = "SYSTEM_USER_PASSWORD",

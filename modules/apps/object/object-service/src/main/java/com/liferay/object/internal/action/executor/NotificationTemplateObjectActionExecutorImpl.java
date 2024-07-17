@@ -82,6 +82,12 @@ public class NotificationTemplateObjectActionExecutorImpl
 			).portletId(
 				objectDefinition.isUnmodifiableSystemObject() ?
 					StringPool.BLANK : objectDefinition.getPortletId()
+			).preferredLanguageId(
+				payloadJSONObject.getString("preferredLanguageId")
+			).usePreferredLanguageForGuests(
+				GetterUtil.getBoolean(
+					parametersUnicodeProperties.get(
+						"usePreferredLanguageForGuests"))
 			).build());
 	}
 

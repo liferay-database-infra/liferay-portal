@@ -86,6 +86,27 @@ public class SearcherImplTest {
 	}
 
 	@Test
+	public void testSearchExcludeContributrosAndIncludeContributors()
+		throws Exception {
+
+		SearchContext searchContext = new SearchContext();
+
+		searchContext.setKeywords("keyword");
+
+		SearchRequestImpl searchRequestImpl = _createSearchRequestImpl(
+			searchContext);
+
+		searchRequestImpl.addExcludeContributors(
+			"com.liferay.search.experiences.blueprint");
+		searchRequestImpl.addIncludeContributors(
+			"com.liferay.search.experiences.blueprint");
+
+		SearchResponse searchResponse = _searcherImpl.search(searchRequestImpl);
+
+		_assertDocumentReturned(searchResponse, 1);
+	}
+
+	@Test
 	public void testSearchWithoutAttribute() throws Exception {
 		SearchContext searchContext = new SearchContext();
 

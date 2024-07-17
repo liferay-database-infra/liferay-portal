@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierResult;
 import com.liferay.portal.kernel.security.service.access.policy.ServiceAccessPolicy;
 import com.liferay.portal.kernel.security.service.access.policy.ServiceAccessPolicyThreadLocal;
 import com.liferay.portal.kernel.settings.CompanyServiceSettingsLocator;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.service.access.policy.configuration.SAPConfiguration;
 import com.liferay.portal.security.service.access.policy.constants.SAPConstants;
@@ -35,6 +36,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -282,6 +285,19 @@ public class SAPAccessControlPolicy extends BaseAccessControlPolicy {
 			if (authVerifierResult != null) {
 				passwordBasedAuthentication =
 					authVerifierResult.isPasswordBasedAuthentication();
+			}
+
+			HttpServletRequest httpServletRequest =
+				accessControlContext.getRequest();
+
+			if (GetterUtil.getBoolean(
+					httpServletRequest.getAttribute(
+						"com.liferay.portal.vulcan.internal.template.servlet." +
+							"RESTClientHttpRequest"))) {
+
+				systemServiceAccessPolicyNames.add(
+					sapConfiguration.
+						systemRESTClientTemplateObjectSAPEntryName());
 			}
 		}
 

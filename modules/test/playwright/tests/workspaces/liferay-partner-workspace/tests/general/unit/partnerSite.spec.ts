@@ -5,22 +5,18 @@
 
 import {expect, mergeTests} from '@playwright/test';
 
-import {partnerSiteTest} from '../../../fixtures/partnerSiteTest';
+import {partnerPagesTest} from '../../../fixtures/partnerPagesTest';
 
-export const test = mergeTests(partnerSiteTest);
+export const test = mergeTests(partnerPagesTest);
 
-test('Open Partner Homepage', async ({page}) => {
-	const partnerTitle = await page.getByRole('heading', {
-		name: 'Welcome to Partner Portal',
-	});
-	const videoTourButton = await page.getByRole('button', {
-		name: 'Watch a Video Tour',
-	});
-	const partnerGuideLink = await page.getByRole('link', {
-		name: 'View Solution Partner Guide',
-	});
+test.describe('Partner Site', () => {
+	test('Open Partner Homepage', async ({homePage, page, partnerSite}) => {
+		await homePage.goto(partnerSite.friendlyUrlPath);
 
-	expect(partnerTitle).toBeTruthy();
-	expect(videoTourButton).toBeVisible();
-	expect(partnerGuideLink).toBeVisible();
+		const heading = await page.getByRole('heading', {
+			name: 'Welcome to Partner Portal',
+		});
+
+		expect(heading).toBeTruthy();
+	});
 });

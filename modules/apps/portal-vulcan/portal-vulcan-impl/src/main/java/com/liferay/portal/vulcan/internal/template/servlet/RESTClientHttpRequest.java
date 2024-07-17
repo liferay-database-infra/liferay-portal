@@ -51,6 +51,8 @@ public class RESTClientHttpRequest implements HttpServletRequest {
 		HttpServletRequest httpServletRequest) {
 
 		_attributes = HashMapBuilder.<String, Object>put(
+			RESTClientHttpRequest.class.getName(), true
+		).put(
 			WebKeys.USER,
 			() -> {
 				if (contextObjects.containsKey("user")) {

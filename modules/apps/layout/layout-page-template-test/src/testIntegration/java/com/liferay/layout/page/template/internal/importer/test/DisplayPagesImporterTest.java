@@ -83,7 +83,7 @@ public class DisplayPagesImporterTest {
 	@Test
 	public void testImportDisplayPage() throws Exception {
 		LayoutPageTemplateEntry layoutPageTemplateEntry =
-			_importLayoutPageTemplateEntry("display-page-template-one");
+			_importLayoutPageTemplateEntry(1, 0, "display-page-template-one");
 
 		String className =
 			"com.liferay.portal.kernel.repository.model.FileEntry";
@@ -105,7 +105,7 @@ public class DisplayPagesImporterTest {
 	public void testImportDisplayPageExistingNameNoOvewrite() throws Exception {
 		String testCaseName = "display-page-template-one";
 
-		_importLayoutPageTemplateEntry(testCaseName);
+		_importLayoutPageTemplateEntry(1, 0, testCaseName);
 
 		List<LayoutsImporterResultEntry> layoutsImporterResultEntries =
 			_getLayoutsImporterResultEntries(testCaseName);
@@ -155,9 +155,10 @@ public class DisplayPagesImporterTest {
 	}
 
 	@Test
-	public void testImportDisplayPageTemplateCollection() throws Exception {
+	public void testImportDisplayPageWithCollectionDisplay() throws Exception {
 		LayoutPageTemplateEntry layoutPageTemplateEntry =
-			_importLayoutPageTemplateEntry("display-page-template-collection");
+			_importLayoutPageTemplateEntry(
+				1, 0, "display-page-template-with-collection-display");
 
 		Assert.assertEquals(
 			"com.liferay.portal.kernel.repository.model.FileEntry",
@@ -306,6 +307,7 @@ public class DisplayPagesImporterTest {
 	}
 
 	private LayoutPageTemplateEntry _importLayoutPageTemplateEntry(
+			long expectedImporterResultEntries, int indexImporterResultEntry,
 			String testCaseName)
 		throws Exception {
 
@@ -313,10 +315,11 @@ public class DisplayPagesImporterTest {
 			_getLayoutsImporterResultEntries(testCaseName);
 
 		Assert.assertEquals(
-			layoutsImporterResultEntries.toString(), 1,
-			layoutsImporterResultEntries.size());
+			layoutsImporterResultEntries.toString(),
+			expectedImporterResultEntries, layoutsImporterResultEntries.size());
 
-		return _getLayoutPageTemplateEntry(layoutsImporterResultEntries, 0);
+		return _getLayoutPageTemplateEntry(
+			layoutsImporterResultEntries, indexImporterResultEntry);
 	}
 
 	private void _populateZipWriter(ZipWriter zipWriter, URL url)

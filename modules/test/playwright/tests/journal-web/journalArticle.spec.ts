@@ -149,11 +149,7 @@ autoSaveAsDraftTest(
 			structureName,
 		});
 
-		await fillAndClickOutside(
-			page,
-			page.getByPlaceholder('Untitled ' + structureName),
-			title
-		);
+		await journalEditArticlePage.fillTitle(title);
 
 		const localizableField = page.getByRole('textbox', {
 			name: localizableFieldName,
@@ -161,11 +157,9 @@ autoSaveAsDraftTest(
 
 		await fillAndClickOutside(page, localizableField, content);
 
-		const changesSavedIndicator = await page.locator(
-			'#_com_liferay_journal_web_portlet_JournalPortlet_changesSavedIndicator'
-		);
-
-		await expect(changesSavedIndicator).toBeVisible();
+		await expect(
+			journalEditArticlePage.changesSavedIndicator
+		).toBeVisible();
 
 		await page.getByTitle('Go to Web Content').click();
 
@@ -192,35 +186,30 @@ autoSaveAsDraftTest(
 
 autoSaveAsDraftTest(
 	'LPD-26863: Undo/Redo buttons work with metadata fields',
-	async ({journalEditArticlePage, page, site}) => {
-		const changesSavedIndicator = await page.locator(
-			'#_com_liferay_journal_web_portlet_JournalPortlet_changesSavedIndicator'
-		);
-		const redoButton = page.getByTitle('Redo', {exact: true});
+	async ({journalEditArticlePage, site}) => {
 		const title = getRandomString();
-		const undobutton = page.getByTitle('Undo', {exact: true});
 
 		await journalEditArticlePage.goto({siteUrl: site.friendlyUrlPath});
 
-		await journalEditArticlePage.titleInput.click();
+		await expect(async () => {
+			await journalEditArticlePage.fillTitle(title);
 
-		await page.waitForTimeout(200);
+			await expect(journalEditArticlePage.undoButton).toBeEnabled();
+		}).toPass();
 
-		await journalEditArticlePage.titleInput.fill(title);
+		await expect(
+			journalEditArticlePage.changesSavedIndicator
+		).toBeVisible();
 
-		await expect(changesSavedIndicator).toBeVisible();
+		await journalEditArticlePage.undoButton.click();
 
-		await page.locator('body').click();
-
-		await undobutton.click();
-
-		await expect(undobutton).toBeDisabled();
+		await expect(journalEditArticlePage.undoButton).toBeDisabled();
 
 		await expect(journalEditArticlePage.titleInput).toHaveValue('');
 
-		await redoButton.click();
+		await journalEditArticlePage.redoButton.click();
 
-		await expect(redoButton).toBeDisabled();
+		await expect(journalEditArticlePage.redoButton).toBeDisabled();
 
 		await expect(journalEditArticlePage.titleInput).toHaveValue(title);
 	}
@@ -245,35 +234,35 @@ autoSaveAsDraftTest(
 			structureName,
 		});
 
-		const changesSavedIndicator = await page.locator(
-			'#_com_liferay_journal_web_portlet_JournalPortlet_changesSavedIndicator'
-		);
-		const redoButton = await page.getByTitle('Redo', {exact: true});
 		const title = getRandomString();
-		const undoButton = await page.getByTitle('Undo', {exact: true});
 
 		const localizableField = await page.getByRole('textbox', {
 			name: localizableFieldName,
 		});
-		const titlePlaceholder = await page.getByPlaceholder(
-			'Untitled ' + structureName
-		);
 
-		await fillAndClickOutside(page, titlePlaceholder, title);
+		await expect(async () => {
+			await journalEditArticlePage.fillTitle(title);
 
-		await expect(changesSavedIndicator).toBeVisible();
+			await expect(journalEditArticlePage.undoButton).toBeEnabled();
+		}).toPass();
+
+		await expect(
+			journalEditArticlePage.changesSavedIndicator
+		).toBeVisible();
 
 		await fillAndClickOutside(page, localizableField, title);
 
-		await expect(changesSavedIndicator).toBeVisible();
+		await expect(
+			journalEditArticlePage.changesSavedIndicator
+		).toBeVisible();
 
-		await undoButton.click();
+		await journalEditArticlePage.undoButton.click();
 
 		await expect(localizableField).toHaveValue('');
 
-		await redoButton.click();
+		await journalEditArticlePage.redoButton.click();
 
-		await expect(redoButton).toBeDisabled();
+		await expect(journalEditArticlePage.redoButton).toBeDisabled();
 
 		await expect(localizableField).toHaveValue(title);
 	}
@@ -545,6 +534,87 @@ prefixUrlTest(
 				'/group' + site.friendlyUrlPath + '/w/' + articleTitle
 			)
 		).toBeSuccessful();
+	}
+);
+
+baseTest(
+	'LPD-30412: This is a test for deleting multiple translations from a web content',
+	async ({journalEditArticlePage, journalPage, page, site}) => {
+		await journalPage.goto(site.friendlyUrlPath);
+
+		const title = getRandomString();
+
+		await journalEditArticlePage.goto({siteUrl: site.friendlyUrlPath});
+
+		await journalEditArticlePage.fillTitle(title);
+
+		const translationButton = page.locator(
+			'[id="_com_liferay_journal_web_portlet_JournalPortlet__com_liferay_journal_web_portlet_JournalPortlet_titleMapAsXMLMenu"]'
+		);
+
+		for (const language of ['Finnish', 'French', 'German']) {
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: page.getByRole('menuitem', {
+					name:
+						'Not translated into ' +
+						language +
+						'. Press enter to edit ' +
+						language +
+						' translation.',
+				}),
+				trigger: translationButton,
+			});
+
+			await expect(async () => {
+				await fillAndClickOutside(
+					page,
+					journalEditArticlePage.titleInput
+				);
+
+				await translationButton.click();
+
+				await expect(
+					page.getByRole('menuitem', {
+						exact: true,
+						name:
+							'Translated into ' +
+							language +
+							'. Press enter to edit ' +
+							language +
+							' translation.',
+					})
+				).toBeVisible();
+			}).toPass();
+		}
+
+		await journalEditArticlePage.publishButton.click();
+
+		await waitForSuccessAlert(
+			page,
+			`Success:${title} was created successfully.`
+		);
+
+		await journalPage.goToJournalArticleAction(
+			'Delete Translations',
+			title
+		);
+
+		await page
+			.frameLocator('iframe[title="Delete Translations"]')
+			.getByLabel('français')
+			.check();
+
+		await page
+			.frameLocator('iframe[title="Delete Translations"]')
+			.getByLabel('Deutsch')
+			.check();
+
+		page.on('dialog', (dialog) => dialog.accept());
+
+		await page.getByRole('button', {name: 'Delete'}).click();
+
+		await waitForSuccessAlert(page);
 	}
 );
 
@@ -1032,11 +1102,7 @@ baseTest(
 			structureName,
 		});
 
-		await fillAndClickOutside(
-			page,
-			journalEditArticlePage.titleInput,
-			title
-		);
+		await journalEditArticlePage.fillTitle(title);
 
 		await fillAndClickOutside(
 			page,
@@ -1063,7 +1129,7 @@ baseTest(
 		});
 
 		await expect(async () => {
-			await fillAndClickOutside(page, journalEditArticlePage.titleInput);
+			await journalEditArticlePage.fillTitle(title);
 
 			await translationButton.click();
 
@@ -1133,7 +1199,7 @@ scheduleTest(
 
 		const title = getRandomString();
 
-		await journalEditArticlePage.titleInput.fill(title);
+		await journalEditArticlePage.fillTitle(title);
 
 		await clickAndExpectToBeVisible({
 			autoClick: true,

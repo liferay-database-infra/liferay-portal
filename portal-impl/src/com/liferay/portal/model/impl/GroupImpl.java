@@ -39,6 +39,7 @@ import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.LayoutPrototypeLocalServiceUtil;
+import com.liferay.portal.kernel.service.LayoutServiceUtil;
 import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.kernel.service.LayoutSetPrototypeLocalServiceUtil;
 import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
@@ -288,16 +289,15 @@ public class GroupImpl extends GroupBaseImpl {
 		boolean controlPanel) {
 
 		try {
-			LayoutSet layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
-				getGroupId(), privateLayout);
-
-			if ((layoutSet.getPageCount() > 0) ||
-				(isUser() &&
+			if ((isUser() &&
 				 (LayoutLocalServiceUtil.getLayoutsCount(this, privateLayout) >
-					 0))) {
+					 0)) ||
+				_hasPublishedLayout(privateLayout)) {
 
 				String groupFriendlyURL = PortalUtil.getGroupFriendlyURL(
-					layoutSet, themeDisplay, false, controlPanel);
+					LayoutSetLocalServiceUtil.getLayoutSet(
+						getGroupId(), privateLayout),
+					themeDisplay, false, controlPanel);
 
 				if (isUser()) {
 					return PortalUtil.addPreservedParameters(
@@ -1284,6 +1284,17 @@ public class GroupImpl extends GroupBaseImpl {
 		}
 
 		return LayoutConstants.DEFAULT_PLID;
+	}
+
+	private boolean _hasPublishedLayout(boolean privateLayout) {
+		Layout layout = LayoutServiceUtil.fetchFirstLayout(
+			getGroupId(), privateLayout, true);
+
+		if (layout != null) {
+			return true;
+		}
+
+		return false;
 	}
 
 	private static final Group _NULL_STAGING_GROUP = new GroupImpl();

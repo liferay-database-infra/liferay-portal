@@ -4,7 +4,6 @@
  */
 
 import {ClayButtonWithIcon, default as ClayButton} from '@clayui/button';
-import ClayIcon from '@clayui/icon';
 import {ReactPortal, useStateSafe} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
 import {useId, useSessionState} from 'frontend-js-components-web';
@@ -30,32 +29,23 @@ import isSmallResolution from '../utils/isSmallResolution';
 
 const {useEffect} = React;
 
-/**
- * Load the first available panel if the selected sidebar panel ID is not found.
- * This may happen because the list of panels is modified depending on the user permissions.
- *
- * @param {string} panelId
- * @param {Array} panels
- * @param {object} sidebarPanels
- */
-const getActivePanelData = ({panelId, panels, sidebarPanels}) => {
-	let sidebarPanelId = panelId;
+export const MAX_SIDEBAR_WIDTH = 500;
+export const MIN_SIDEBAR_WIDTH = 280;
+export const SIDEBAR_WIDTH_RESIZE_STEP = 20;
 
-	let panel = panels.some((panel) => panel.includes(sidebarPanelId))
-		? sidebarPanels[sidebarPanelId]
-		: null;
-
-	if (!panel) {
-		sidebarPanelId = panels[0][0];
-		panel = sidebarPanels[sidebarPanelId];
+function getActiveSidebarPanel({
+	sidebarPanelId,
+	sidebarPanels,
+	sidebarPanelsMap,
+}) {
+	if (sidebarPanelsMap[sidebarPanelId]) {
+		return {sidebarPanel: sidebarPanelsMap[sidebarPanelId], sidebarPanelId};
 	}
 
-	return {panel, sidebarPanelId};
-};
+	const panel = sidebarPanels[0];
 
-export const MAX_SIDEBAR_WIDTH = 500;
-export const MIN_SIZEBAR_WIDTH = 280;
-export const SIDEBAR_WIDTH_RESIZE_STEP = 20;
+	return {sidebarPanel: panel, sidebarPanelId: panel.sidebarPanelId};
+}
 
 export default function Sidebar() {
 	const dropClearRef = useDropClear();
@@ -70,7 +60,7 @@ export default function Sidebar() {
 
 	const [sidebarWidth, setSidebarWidth] = useSessionState(
 		`${config.portletNamespace}_sidebar-width`,
-		MIN_SIZEBAR_WIDTH
+		MIN_SIDEBAR_WIDTH
 	);
 
 	const sidebarWidthRef = useRef(sidebarWidth);
@@ -79,14 +69,17 @@ export default function Sidebar() {
 	const sidebarContentRef = useRef();
 	const tabListRef = useRef();
 
-	const panels = useSelector(selectAvailablePanels(config.panels));
+	const sidebarPanels = useSelector(
+		selectAvailablePanels(config.sidebarPanels)
+	);
 	const sidebarHidden = sidebar.hidden;
 	const sidebarOpen = selectSidebarIsOpened({sidebar});
 	const itemConfigurationOpen = selectItemConfigurationOpen({sidebar});
-	const {panel, sidebarPanelId} = getActivePanelData({
-		panelId: sidebar.panelId,
-		panels,
-		sidebarPanels: config.sidebarPanels,
+
+	const {sidebarPanel, sidebarPanelId} = getActiveSidebarPanel({
+		sidebarPanelId: sidebar.panelId,
+		sidebarPanels,
+		sidebarPanelsMap: config.sidebarPanelsMap,
 	});
 
 	useEffect(() => {
@@ -118,7 +111,7 @@ export default function Sidebar() {
 			wrapper.classList.remove('page-editor__wrapper--padded-start');
 			wrapper.classList.remove('page-editor__wrapper--padded-end');
 		};
-	}, [sidebarOpen, itemConfigurationOpen]);
+	}, [sidebarHidden, sidebarOpen, itemConfigurationOpen]);
 
 	useEffect(() => {
 		const separatorElement = separatorRef.current;
@@ -141,7 +134,7 @@ export default function Sidebar() {
 					Math.min(
 						MAX_SIDEBAR_WIDTH,
 						Math.max(
-							MIN_SIZEBAR_WIDTH,
+							MIN_SIDEBAR_WIDTH,
 							initialSidebarWidth - cursorDelta
 						)
 					)
@@ -152,7 +145,7 @@ export default function Sidebar() {
 					Math.min(
 						MAX_SIDEBAR_WIDTH,
 						Math.max(
-							MIN_SIZEBAR_WIDTH,
+							MIN_SIDEBAR_WIDTH,
 							initialSidebarWidth + cursorDelta
 						)
 					)
@@ -253,13 +246,13 @@ export default function Sidebar() {
 			else if (event.key === 'ArrowRight') {
 				setSidebarWidth(
 					Math.max(
-						MIN_SIZEBAR_WIDTH,
+						MIN_SIDEBAR_WIDTH,
 						sidebarWidth - SIDEBAR_WIDTH_RESIZE_STEP
 					)
 				);
 			}
 			else if (event.key === 'Home') {
-				setSidebarWidth(MIN_SIZEBAR_WIDTH);
+				setSidebarWidth(MIN_SIDEBAR_WIDTH);
 			}
 			else if (event.key === 'End') {
 				setSidebarWidth(MAX_SIDEBAR_WIDTH);
@@ -269,7 +262,7 @@ export default function Sidebar() {
 			if (event.key === 'ArrowLeft') {
 				setSidebarWidth(
 					Math.max(
-						MIN_SIZEBAR_WIDTH,
+						MIN_SIDEBAR_WIDTH,
 						sidebarWidth - SIDEBAR_WIDTH_RESIZE_STEP
 					)
 				);
@@ -283,7 +276,7 @@ export default function Sidebar() {
 				);
 			}
 			else if (event.key === 'Home') {
-				setSidebarWidth(MIN_SIZEBAR_WIDTH);
+				setSidebarWidth(MIN_SIDEBAR_WIDTH);
 			}
 			else if (event.key === 'End') {
 				setSidebarWidth(MAX_SIDEBAR_WIDTH);
@@ -309,71 +302,42 @@ export default function Sidebar() {
 					ref={tabListRef}
 					role="tablist"
 				>
-					{panels.reduce((elements, group, groupIndex) => {
-						const buttons = group.map((panelId) => {
-							const panel = config.sidebarPanels[panelId];
+					{sidebarPanels.map((panel) => {
+						const active =
+							sidebarOpen &&
+							panel.sidebarPanelId === sidebarPanelId;
+						const {icon, label} = panel;
 
-							const active =
-								sidebarOpen && sidebarPanelId === panelId;
-							const {icon, isLink, label, url} = panel;
-
-							if (isLink) {
-								return (
-									<a
-										className={classNames({active})}
-										data-tooltip-align="left"
-										href={url}
-										key={panel.sidebarPanelId}
-										title={label}
-									>
-										<ClayIcon symbol={icon} />
-									</a>
-								);
-							}
-
-							return (
-								<ClayButtonWithIcon
-									aria-controls={sidebarContentId}
-									aria-label={Liferay.Language.get(
-										panel.label
-									)}
-									aria-selected={active}
-									className={classNames({active})}
-									data-panel-id={panel.sidebarPanelId}
-									data-tooltip-align="left"
-									displayType="unstyled"
-									id={`${sidebarId}${panel.sidebarPanelId}`}
-									key={panel.sidebarPanelId}
-									onClick={() => handleClick(panel)}
-									role="tab"
-									size="sm"
-									symbol={icon}
-									tabIndex={
-										sidebarPanelId !== panelId ? '-1' : null
-									}
-									title={label}
-								/>
-							);
-						});
-
-						// Add separator between groups.
-
-						if (groupIndex === panels.length - 1) {
-							return elements.concat(buttons);
-						}
-						else {
-							return elements.concat([
-								...buttons,
-								<hr key={`separator-${groupIndex}`} />,
-							]);
-						}
-					}, [])}
+						return (
+							<ClayButtonWithIcon
+								aria-controls={sidebarContentId}
+								aria-label={Liferay.Language.get(panel.label)}
+								aria-selected={active}
+								className={classNames({active})}
+								data-panel-id={panel.sidebarPanelId}
+								data-tooltip-align="left"
+								displayType="unstyled"
+								id={`${sidebarId}${panel.sidebarPanelId}`}
+								key={panel.sidebarPanelId}
+								onClick={() => handleClick(panel)}
+								role="tab"
+								size="sm"
+								symbol={icon}
+								tabIndex={
+									panel.sidebarPanelId !== sidebarPanelId
+										? '-1'
+										: null
+								}
+								title={label}
+							/>
+						);
+					})}
 				</div>
 
 				<div
 					aria-label={sub(
 						Liferay.Language.get('x-panel'),
-						panel.label
+						sidebarPanel.label
 					)}
 					className={classNames({
 						'page-editor__sidebar__content': true,
@@ -399,7 +363,7 @@ export default function Sidebar() {
 										switchSidebarPanel({
 											sidebarOpen: false,
 											sidebarPanelId:
-												panels[0] && panels[0][0],
+												config.sidebarPanels[0],
 										})
 									);
 									setHasError(false);
@@ -415,7 +379,9 @@ export default function Sidebar() {
 								setHasError(true);
 							}}
 						>
-							<SidebarPanel sidebarPanelId={sidebarPanelId} />
+							<SidebarPanel
+								sidebarPanelId={sidebarPanel.sidebarPanelId}
+							/>
 						</ErrorBoundary>
 					)}
 
@@ -424,7 +390,7 @@ export default function Sidebar() {
 						aria-label={Liferay.Language.get('resize-sidebar')}
 						aria-orientation="vertical"
 						aria-valuemax={MAX_SIDEBAR_WIDTH}
-						aria-valuemin={MIN_SIZEBAR_WIDTH}
+						aria-valuemin={MIN_SIDEBAR_WIDTH}
 						aria-valuenow={sidebarWidth}
 						className={classNames('page-editor__sidebar__resizer', {
 							'page-editor__sidebar__resizer--resizing': resizing,

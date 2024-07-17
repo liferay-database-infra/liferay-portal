@@ -107,6 +107,10 @@ public class HeadlessDiscoveryAPIApplication extends Application {
 					AuthTokenUtil.getToken(httpServletRequest));
 
 				html = StringUtil.replace(
+					html, "href=\"headless-discovery-web-min.css\"",
+					"href=\"" + _portal.getPathContext() +
+						"/o/api/headless-discovery-web-min.css\"");
+				html = StringUtil.replace(
 					html, "href=\"main.css\"",
 					"href=\"" + _portal.getPathContext() + "/o/api/main.css\"");
 				html = StringUtil.replace(
@@ -185,7 +189,7 @@ public class HeadlessDiscoveryAPIApplication extends Application {
 				}
 			});
 
-		if (parameter.contains("main.css")) {
+		if (parameter.endsWith(".css")) {
 			responseBuilder.type("text/css");
 		}
 		else {

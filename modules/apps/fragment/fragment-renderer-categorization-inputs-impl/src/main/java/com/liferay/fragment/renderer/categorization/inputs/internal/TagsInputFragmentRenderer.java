@@ -6,27 +6,14 @@
 package com.liferay.fragment.renderer.categorization.inputs.internal;
 
 import com.liferay.asset.taglib.servlet.taglib.AssetTagsSelectorTag;
-import com.liferay.fragment.constants.FragmentConstants;
-import com.liferay.fragment.model.FragmentEntryLink;
 import com.liferay.fragment.renderer.FragmentRenderer;
 import com.liferay.fragment.renderer.FragmentRendererContext;
-import com.liferay.frontend.taglib.clay.servlet.taglib.AlertTag;
 import com.liferay.info.constants.InfoItemScopeConstants;
 import com.liferay.info.item.InfoItemServiceRegistry;
 import com.liferay.info.item.provider.InfoItemCategorizationProvider;
 import com.liferay.info.item.provider.InfoItemScopeProvider;
-import com.liferay.layout.constants.LayoutWebKeys;
-import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
-import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
-import com.liferay.layout.util.constants.LayoutDataItemTypeConstants;
 import com.liferay.layout.util.structure.FormStyledLayoutStructureItem;
-import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
-import com.liferay.layout.util.structure.LayoutStructure;
-import com.liferay.layout.util.structure.LayoutStructureItem;
-import com.liferay.layout.util.structure.LayoutStructureItemUtil;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -51,12 +38,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author Jorge Ferrer
  */
 @Component(service = FragmentRenderer.class)
-public class TagsInputFragmentRenderer implements FragmentRenderer {
-
-	@Override
-	public String getCollectionKey() {
-		return "INPUTS";
-	}
+public class TagsInputFragmentRenderer extends BaseInputFragmentRenderer {
 
 	@Override
 	public String getIcon() {
@@ -72,18 +54,6 @@ public class TagsInputFragmentRenderer implements FragmentRenderer {
 	}
 
 	@Override
-	public int getType() {
-		return FragmentConstants.TYPE_INPUT;
-	}
-
-	@Override
-	public String getTypeOptions() {
-		return JSONUtil.put(
-			"fieldTypes", JSONUtil.putAll("categorization")
-		).toString();
-	}
-
-	@Override
 	public void render(
 		FragmentRendererContext fragmentRendererContext,
 		HttpServletRequest httpServletRequest,
@@ -91,7 +61,7 @@ public class TagsInputFragmentRenderer implements FragmentRenderer {
 
 		try {
 			FormStyledLayoutStructureItem formStyledLayoutStructureItem =
-				_getFormStyledLayoutStructureItem(
+				getFormStyledLayoutStructureItem(
 					fragmentRendererContext.getFragmentEntryLink(),
 					httpServletRequest);
 
@@ -117,7 +87,7 @@ public class TagsInputFragmentRenderer implements FragmentRenderer {
 			PrintWriter printWriter = httpServletResponse.getWriter();
 
 			if (!infoItemCategorizationProvider.supportsCategorization()) {
-				_writeDisabledCategorizationAlert(
+				writeDisabledCategorizationAlert(
 					fragmentRendererContext, httpServletRequest,
 					httpServletResponse, printWriter);
 
@@ -136,6 +106,8 @@ public class TagsInputFragmentRenderer implements FragmentRenderer {
 				new AssetTagsSelectorTag();
 
 			assetTagsSelectorTag.setClassName(className);
+			assetTagsSelectorTag.setClassPK(
+				getClassPK(className, httpServletRequest));
 
 			InfoItemScopeProvider<Object> infoItemScopeProvider =
 				_infoItemServiceRegistry.getFirstInfoItemService(
@@ -163,85 +135,6 @@ public class TagsInputFragmentRenderer implements FragmentRenderer {
 		}
 	}
 
-	private FormStyledLayoutStructureItem _getFormStyledLayoutStructureItem(
-			FragmentEntryLink fragmentEntryLink,
-			HttpServletRequest httpServletRequest)
-		throws PortalException {
-
-		LayoutStructure layoutStructure = _getLayoutStructure(
-			fragmentEntryLink, httpServletRequest);
-
-		FragmentStyledLayoutStructureItem fragmentStyledLayoutStructureItem =
-			(FragmentStyledLayoutStructureItem)
-				layoutStructure.getLayoutStructureItemByFragmentEntryLinkId(
-					fragmentEntryLink.getFragmentEntryLinkId());
-
-		if (fragmentStyledLayoutStructureItem == null) {
-			return null;
-		}
-
-		LayoutStructureItem layoutStructureItem =
-			LayoutStructureItemUtil.getAncestor(
-				fragmentStyledLayoutStructureItem.getItemId(),
-				LayoutDataItemTypeConstants.TYPE_FORM, layoutStructure);
-
-		if (!(layoutStructureItem instanceof FormStyledLayoutStructureItem)) {
-			return null;
-		}
-
-		return (FormStyledLayoutStructureItem)layoutStructureItem;
-	}
-
-	private LayoutStructure _getLayoutStructure(
-			FragmentEntryLink fragmentEntryLink,
-			HttpServletRequest httpServletRequest)
-		throws PortalException {
-
-		LayoutStructure layoutStructure = null;
-
-		if (httpServletRequest != null) {
-			layoutStructure = (LayoutStructure)httpServletRequest.getAttribute(
-				LayoutWebKeys.LAYOUT_STRUCTURE);
-		}
-
-		if (layoutStructure == null) {
-			LayoutPageTemplateStructure layoutPageTemplateStructure =
-				_layoutPageTemplateStructureLocalService.
-					fetchLayoutPageTemplateStructure(
-						fragmentEntryLink.getGroupId(),
-						fragmentEntryLink.getPlid());
-
-			layoutStructure = LayoutStructure.of(
-				layoutPageTemplateStructure.getData(
-					fragmentEntryLink.getSegmentsExperienceId()));
-		}
-
-		return layoutStructure;
-	}
-
-	private void _writeDisabledCategorizationAlert(
-			FragmentRendererContext fragmentRendererContext,
-			HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse, PrintWriter printWriter)
-		throws Exception {
-
-		if (!fragmentRendererContext.isEditMode()) {
-			return;
-		}
-
-		AlertTag alertTag = new AlertTag();
-
-		alertTag.setMessage(
-			_language.get(
-				fragmentRendererContext.getLocale(),
-				"categorization-is-disabled-for-the-selected-content"));
-		alertTag.setTitle(
-			_language.get(fragmentRendererContext.getLocale(), "info"));
-
-		printWriter.write(
-			alertTag.doTagAsString(httpServletRequest, httpServletResponse));
-	}
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		TagsInputFragmentRenderer.class);
 
@@ -250,9 +143,5 @@ public class TagsInputFragmentRenderer implements FragmentRenderer {
 
 	@Reference
 	private Language _language;
-
-	@Reference
-	private LayoutPageTemplateStructureLocalService
-		_layoutPageTemplateStructureLocalService;
 
 }

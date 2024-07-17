@@ -331,7 +331,7 @@ public class JournalTransformer {
 		_addReservedEl(
 			JournalStructureConstants.RESERVED_ARTICLE_SMALL_IMAGE_URL,
 			templateNodes, themeDisplay, tokens,
-			article.getArticleImageURL(themeDisplay));
+			GetterUtil.getString(article.getArticleImageURL(themeDisplay)));
 
 		_addReservedEl(
 			JournalStructureConstants.RESERVED_ARTICLE_TITLE, templateNodes,
