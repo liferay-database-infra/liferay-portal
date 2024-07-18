@@ -1021,6 +1021,12 @@ public class ObjectRelationshipLocalServiceImpl
 		_bundleContext = bundleContext;
 	}
 
+	@Override
+	protected void runSQL(String sql) {
+		ObjectDBManagerUtil.runSQL(
+			objectRelationshipPersistence.getDataSource(), _log, sql);
+	}
+
 	private ObjectField _addObjectField(
 			String externalReferenceCode, User user,
 			ObjectDefinition objectDefinition1,

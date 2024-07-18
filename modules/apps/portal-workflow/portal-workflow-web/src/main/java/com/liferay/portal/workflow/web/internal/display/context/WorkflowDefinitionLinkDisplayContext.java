@@ -106,7 +106,7 @@ public class WorkflowDefinitionLinkDisplayContext {
 			return null;
 		}
 
-		return WorkflowDefinitionManagerUtil.getLatestWorkflowDefinition(
+		return WorkflowDefinitionManagerUtil.liberalGetLatestWorkflowDefinition(
 			_workflowDefinitionLinkRequestHelper.getCompanyId(),
 			defaultWorkflowDefinitionLink.getWorkflowDefinitionName());
 	}
@@ -315,7 +315,7 @@ public class WorkflowDefinitionLinkDisplayContext {
 		}
 
 		_workflowDefinitions = ListUtil.filter(
-			WorkflowDefinitionManagerUtil.getActiveWorkflowDefinitions(
+			WorkflowDefinitionManagerUtil.liberalGetActiveWorkflowDefinitions(
 				_workflowDefinitionLinkRequestHelper.getCompanyId(),
 				QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 				_workflowComparatorFactory.getDefinitionNameComparator(true)),

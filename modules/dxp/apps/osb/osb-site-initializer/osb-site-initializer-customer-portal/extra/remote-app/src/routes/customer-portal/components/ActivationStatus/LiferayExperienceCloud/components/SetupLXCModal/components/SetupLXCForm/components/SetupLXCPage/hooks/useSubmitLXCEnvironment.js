@@ -6,12 +6,12 @@
 import {useMutation} from '@apollo/client';
 import SearchBuilder from '~/common/core/SearchBuilder';
 import {
-	actLiferayContact,
-	actRaysourceContact,
-	associateContactRoleLiferay,
-	associateContactRoleRaysource,
+	addContactRoleLiferay,
+	addContactRoleRaysource,
 	removeContactRoleLiferay,
 	removeContactRoleRaysource,
+	updateLiferayContact,
+	updateRaysourceContact,
 } from '~/routes/customer-portal/utils/getHighPriorityContacts';
 import {useOnboarding} from '~/routes/onboarding/context';
 import NotificationQueueService from '../../../../../../../../../../../../../src/common/services/actions/notificationAction';
@@ -25,7 +25,10 @@ import {
 	updateAccountSubscriptionGroups,
 } from '../../../../../../../../../../../../common/services/liferay/graphql/queries';
 import {useCustomerPortal} from '../../../../../../../../../../../../routes/customer-portal/context';
-import {STATUS_TAG_TYPE_NAMES} from '../../../../../../../../../../utils/constants';
+import {
+	STATUS_CODE,
+	STATUS_TAG_TYPE_NAMES,
+} from '../../../../../../../../../../utils/constants';
 
 export default function useSubmitLXCEnvironment(
 	handleChangeForm,
@@ -86,37 +89,7 @@ export default function useSubmitLXCEnvironment(
 		}
 
 		if (!alreadySubmitted) {
-			try {
-				handleLoadingSubmitButton(true);
-
-				if (featureFlags.includes('LPS-159127')) {
-					await actRaysourceContact(
-						removeContactRoleRaysource,
-						removeHighPriorityContactList,
-						project,
-						sessionId,
-						provisioningServerAPI
-					);
-					await actRaysourceContact(
-						associateContactRoleRaysource,
-						addHighPriorityContactList,
-						project,
-						sessionId,
-						provisioningServerAPI
-					);
-					await actLiferayContact(
-						addHighPriorityContactList,
-						associateContactRoleLiferay,
-						project,
-						client
-					);
-					await actLiferayContact(
-						removeHighPriorityContactList,
-						removeContactRoleLiferay,
-						project,
-						client
-					);
-				}
+			const handleDataSubmit = async () => {
 				const {data} = await createLiferayExperienceCloudEnvironment({
 					variables: {
 						LiferayExperienceCloudEnvironment: {
@@ -201,10 +174,63 @@ export default function useSubmitLXCEnvironment(
 						);
 					}
 				}
+			};
+
+			try {
+				handleLoadingSubmitButton(true);
+
+				if (featureFlags.includes('LPS-159127')) {
+					try {
+						await updateRaysourceContact(
+							addContactRoleRaysource,
+							addHighPriorityContactList,
+							project,
+							sessionId,
+							provisioningServerAPI
+						);
+
+						await updateLiferayContact(
+							addHighPriorityContactList,
+							addContactRoleLiferay,
+							project,
+							client
+						);
+					}
+					catch (error) {
+						if (error.cause === STATUS_CODE.conflict) {
+							await updateLiferayContact(
+								addHighPriorityContactList,
+								addContactRoleLiferay,
+								project,
+								client
+							);
+						}
+						else {
+							throw new Error('Error', {cause: error.cause});
+						}
+					}
+
+					await updateRaysourceContact(
+						removeContactRoleRaysource,
+						removeHighPriorityContactList,
+						project,
+						sessionId,
+						provisioningServerAPI
+					);
+
+					await updateLiferayContact(
+						removeHighPriorityContactList,
+						removeContactRoleLiferay,
+						project,
+						client
+					);
+				}
+
+				handleDataSubmit();
 				handleLoadingSubmitButton(false);
 				handleChangeForm(true);
 			}
-			catch {
+			catch (error) {
 				handleLoadingSubmitButton(false);
 			}
 		}

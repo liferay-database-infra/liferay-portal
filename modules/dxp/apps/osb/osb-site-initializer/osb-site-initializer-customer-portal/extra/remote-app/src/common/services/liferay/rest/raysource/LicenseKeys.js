@@ -149,7 +149,7 @@ export async function getExportedSelectedLicenseKeys(
 	return response;
 }
 
-export async function associateContactRoleNameByEmailByProject({
+export async function addContactRoleNameByEmailByProject({
 	accountKey,
 	emailURI,
 	firstName,
@@ -171,7 +171,7 @@ export async function associateContactRoleNameByEmailByProject({
 	);
 
 	if (!response.ok) {
-		throw new Error();
+		throw new Error('Error', {cause: response.status});
 	}
 
 	return response;
@@ -195,10 +195,6 @@ export async function deleteContactRoleNameByEmailByProject({
 			method: 'DELETE',
 		}
 	);
-
-	if (!response.ok) {
-		throw new Error();
-	}
 
 	return response;
 }

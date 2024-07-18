@@ -35,7 +35,9 @@ export async function addStaticMember({
 }) {
 	await page.getByRole('button', {name: 'Add Members'}).click();
 
-	const memberNamesArray = Array.isArray(memberNames) ? memberNames : [memberNames];
+	const memberNamesArray = Array.isArray(memberNames)
+		? memberNames
+		: [memberNames];
 
 	for (const memberName of memberNamesArray) {
 		await searchByTerm({
@@ -83,7 +85,9 @@ export async function dragAndDropCriteriaItem({
 	page: Page;
 	segmentField: string;
 }) {
-	const source = page.getByText(segmentField);
+	const source = page.locator(`[data-testid*="criteria-item-"]`, {
+		hasText: segmentField,
+	});
 	const target = page.locator('div.drop-zone-target').last();
 
 	return await source.dragTo(target);
@@ -104,9 +108,36 @@ export async function editCriteriaAttributeValue({
 		.fill(attributeValue);
 }
 
+export async function editCriteriaConjunction({
+	index = 0,
+	page,
+}: {
+	index?: number;
+	page: Page;
+}) {
+	await page.locator('.conjunction-button').nth(index).click();
+}
+
 export async function editSegment(page: Page) {
 	await page.getByRole('link', {name: 'Edit Segment'}).click();
 	await page.waitForSelector('text=Edit Individuals Segment');
+}
+
+export async function includeAnonymousToggle({
+	enable,
+	page,
+}: {
+	enable: boolean;
+	page: Page;
+}) {
+	const toggle = page.getByTestId('toggle-switch-input');
+
+	if (enable) {
+		await toggle.check();
+	}
+	else {
+		await toggle.uncheck();
+	}
 }
 
 export async function saveSegment(page: Page) {

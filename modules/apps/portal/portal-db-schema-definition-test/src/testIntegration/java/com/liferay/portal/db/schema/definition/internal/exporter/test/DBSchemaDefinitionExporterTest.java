@@ -6,6 +6,12 @@
 package com.liferay.portal.db.schema.definition.internal.exporter.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.model.ObjectRelationship;
+import com.liferay.object.service.ObjectDefinitionLocalServiceUtil;
+import com.liferay.object.service.ObjectRelationshipLocalServiceUtil;
+import com.liferay.object.test.util.ObjectDefinitionTestUtil;
+import com.liferay.object.test.util.ObjectRelationshipTestUtil;
 import com.liferay.portal.db.schema.definition.internal.test.util.ConfigurationTestUtil;
 import com.liferay.portal.db.schema.definition.internal.test.util.DatabaseTestUtil;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -34,10 +40,10 @@ import javax.sql.DataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.cm.PersistenceManager;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,17 +70,43 @@ public class DBSchemaDefinitionExporterTest {
 			(dbType == DBType.MYSQL) || (dbType == DBType.POSTGRESQL));
 	}
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeClass
+	public static void setUpClass() throws Exception {
 		_databaseType = String.valueOf(DBManagerUtil.getDBType());
 		_folder = FileUtil.createTempFolder();
+
+		_objectDefinition1 = ObjectDefinitionTestUtil.addCustomObjectDefinition(
+			ObjectDefinitionTestUtil.getRandomName(),
+			ObjectDefinitionLocalServiceUtil.getService());
+		_objectDefinition2 = ObjectDefinitionTestUtil.addCustomObjectDefinition(
+			ObjectDefinitionTestUtil.getRandomName(),
+			ObjectDefinitionLocalServiceUtil.getService());
+
+		_objectRelationship = ObjectRelationshipTestUtil.addObjectRelationship(
+			ObjectRelationshipLocalServiceUtil.getService(), _objectDefinition1,
+			_objectDefinition2);
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterClass
+	public static void tearDownClass() throws Exception {
 		Files.deleteIfExists(ConfigurationTestUtil.getConfigurationPath(_PID));
 
 		FileUtil.deltree(_folder);
+
+		if (_objectRelationship != null) {
+			ObjectRelationshipLocalServiceUtil.deleteObjectRelationship(
+				_objectRelationship.getObjectRelationshipId());
+		}
+
+		if (_objectDefinition1 != null) {
+			ObjectDefinitionLocalServiceUtil.deleteObjectDefinition(
+				_objectDefinition1.getObjectDefinitionId());
+		}
+
+		if (_objectDefinition2 != null) {
+			ObjectDefinitionLocalServiceUtil.deleteObjectDefinition(
+				_objectDefinition2.getObjectDefinitionId());
+		}
 	}
 
 	@Test
@@ -191,11 +223,14 @@ public class DBSchemaDefinitionExporterTest {
 		"com.liferay.portal.db.schema.definition.internal.configuration." +
 			"DBSchemaDefinitionExporterConfiguration";
 
+	private static String _databaseType;
+	private static File _folder;
+	private static ObjectDefinition _objectDefinition1;
+	private static ObjectDefinition _objectDefinition2;
+	private static ObjectRelationship _objectRelationship;
+
 	@Inject
 	private ConfigurationAdmin _configurationAdmin;
-
-	private String _databaseType;
-	private File _folder;
 
 	@Inject
 	private PersistenceManager _persistenceManager;

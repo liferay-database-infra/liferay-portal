@@ -5,7 +5,7 @@
 
 package com.liferay.jenkins.results.parser.test.batch;
 
-import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
+import com.liferay.jenkins.results.parser.test.suite.RelevantRuleConfigurationException;
 
 import java.io.File;
 
@@ -38,10 +38,8 @@ public class TestBatchFactory {
 				return poshiTestBatch;
 			}
 
-			if (batchName.startsWith("integration") ||
-				batchName.startsWith("modules-integration") ||
-				batchName.startsWith("modules-unit") ||
-				batchName.startsWith("unit")) {
+			if (batchName.startsWith("modules-integration") ||
+				batchName.startsWith("modules-unit")) {
 
 				JUnitTestSelector jUnitTestSelector = new JUnitTestSelector(
 					propertiesFile, properties, batchName, relevantRuleName,
@@ -69,16 +67,11 @@ public class TestBatchFactory {
 				return playwrightTestBatch;
 			}
 		}
-		catch (IllegalStateException illegalStateException) {
-			String message = illegalStateException.getMessage();
+		catch (RelevantRuleConfigurationException
+					relevantRuleConfigurationException) {
 
-			if (message.startsWith("Unable to create batch")) {
-				message = JenkinsResultsParserUtil.combine(
-					message, " in ",
-					JenkinsResultsParserUtil.getCanonicalPath(propertiesFile));
-			}
-
-			throw new RuntimeException(message, illegalStateException);
+			RelevantRuleConfigurationException.addException(
+				relevantRuleConfigurationException);
 		}
 
 		return new DefaultTestBatch(batchName);

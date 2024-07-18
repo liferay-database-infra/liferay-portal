@@ -273,7 +273,7 @@ public class WorkflowDefinitionDisplayContext {
 			"no-workflow-definitions-are-defined");
 
 		List<WorkflowDefinition> workflowDefinitions =
-			WorkflowDefinitionManagerUtil.getLatestWorkflowDefinitions(
+			WorkflowDefinitionManagerUtil.liberalGetLatestWorkflowDefinitions(
 				_workflowDefinitionRequestHelper.getCompanyId(),
 				QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 				_getWorkflowDefinitionOrderByComparator());
@@ -288,10 +288,11 @@ public class WorkflowDefinitionDisplayContext {
 						setProductionModeWithSafeCloseable()) {
 
 				workflowDefinitions.addAll(
-					WorkflowDefinitionManagerUtil.getLatestWorkflowDefinitions(
-						_workflowDefinitionRequestHelper.getCompanyId(),
-						QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-						_getWorkflowDefinitionOrderByComparator()));
+					WorkflowDefinitionManagerUtil.
+						liberalGetLatestWorkflowDefinitions(
+							_workflowDefinitionRequestHelper.getCompanyId(),
+							QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+							_getWorkflowDefinitionOrderByComparator()));
 			}
 		}
 
@@ -372,7 +373,7 @@ public class WorkflowDefinitionDisplayContext {
 	public List<WorkflowDefinition> getWorkflowDefinitions(String name)
 		throws PortalException {
 
-		return WorkflowDefinitionManagerUtil.getWorkflowDefinitions(
+		return WorkflowDefinitionManagerUtil.liberalGetWorkflowDefinitions(
 			_workflowDefinitionRequestHelper.getCompanyId(), name,
 			QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
 	}

@@ -10,17 +10,18 @@ import SetupHighPriorityContactForm from '~/common/components/HighPriorityContac
 import Layout from '~/common/containers/setup-forms/Layout';
 import {useAppPropertiesContext} from '~/common/contexts/AppPropertiesContext';
 import openToast from '~/common/utils/getToast';
+import {STATUS_CODE} from '~/routes/customer-portal/utils/constants';
 import {Button} from '../../../../../../common/components';
 import getKebabCase from '../../../../../../common/utils/getKebabCase';
 import {useCustomerPortal} from '../../../../../../routes/customer-portal/context';
 import {
+	addContactRoleLiferay,
+	addContactRoleRaysource,
 	HIGH_PRIORITY_CONTACT_CATEGORIES,
-	actLiferayContact,
-	actRaysourceContact,
-	associateContactRoleLiferay,
-	associateContactRoleRaysource,
 	removeContactRoleLiferay,
 	removeContactRoleRaysource,
+	updateLiferayContact,
+	updateRaysourceContact
 } from '../../../../utils/getHighPriorityContacts';
 
 const IncidentContactEditModal = ({
@@ -50,57 +51,81 @@ const IncidentContactEditModal = ({
 	};
 
 	const handleSubmit = async () => {
+		const handleToastOpening = (contacts, actionType) => {
+			contacts?.map((item) => {
+				openToast(
+					`${item.label}`,
+					`${i18n.translate(`high-priority-contact-${actionType}`)} 
+					<b>${i18n.translate(
+						`${getKebabCase(
+							actionType === 'added'
+								? item.category.name
+								: item.labelRole
+						)}-contact`
+					)}</b>`
+				);
+			});
+		};
+
 		try {
 			setIsLoadingSaveButton(true);
-			await actRaysourceContact(
+
+			try {
+				await updateRaysourceContact(
+					addContactRoleRaysource,
+					addHighPriorityContact,
+					project,
+					sessionId,
+					provisioningServerAPI
+				);
+
+				await updateLiferayContact(
+					addHighPriorityContact,
+					addContactRoleLiferay,
+					project,
+					client
+				);
+			}
+			catch (error) {
+				if (error.cause === STATUS_CODE.conflict) {
+					await updateLiferayContact(
+						addHighPriorityContact,
+						addContactRoleLiferay,
+						project,
+						client
+					);
+				}
+				else {
+					throw new Error('Error', {cause: error.cause});
+				}
+			}
+
+			await updateRaysourceContact(
 				removeContactRoleRaysource,
 				removeHighPriorityContacts,
 				project,
 				sessionId,
 				provisioningServerAPI
 			);
-			await actRaysourceContact(
-				associateContactRoleRaysource,
-				addHighPriorityContact,
-				project,
-				sessionId,
-				provisioningServerAPI
-			);
-			await actLiferayContact(
-				addHighPriorityContact,
-				associateContactRoleLiferay,
-				project,
-				client
-			);
-			await actLiferayContact(
+
+			await updateLiferayContact(
 				removeHighPriorityContacts,
 				removeContactRoleLiferay,
 				project,
 				client
 			);
 
-			removeHighPriorityContacts?.map((item) => {
-				openToast(
-					`${item.label}`,
-					`${i18n.translate('high-priority-contact-removed')} 
-					<b>${i18n.translate(`${getKebabCase(item.labelRole)}-contact`)}</b>`
-				);
-			});
-
-			addHighPriorityContact?.map((item) => {
-				openToast(
-					`${item.label}`,
-					`${i18n.translate('high-priority-contact-added')} 
-					<b>${i18n.translate(`${getKebabCase(item.category.name)}-contact`)}</b>`
-				);
-			});
+			handleToastOpening(addHighPriorityContact, 'added');
+			handleToastOpening(removeHighPriorityContacts, 'removed');
 
 			setIsLoadingSaveButton(false);
 			close();
-		} catch (error) {
+		}
+		catch (error) {
 			setIsLoadingSaveButton(false);
+
 			openToast('error', 'an-unexpected-error-occurred', {
-				type: 'danger',
+				type: 'danger'
 			});
 		}
 	};

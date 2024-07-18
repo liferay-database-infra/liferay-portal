@@ -4,11 +4,6 @@
  */
 
 import {Option, Text} from '@clayui/core';
-import DropDown from '@clayui/drop-down';
-import {ClayCheckbox} from '@clayui/form';
-import ClayIcon from '@clayui/icon';
-import ClayLabel from '@clayui/label';
-import {ClayTooltipProvider} from '@clayui/tooltip';
 import {API, Card, SingleSelect} from '@liferay/object-js-components-web';
 import React, {useEffect, useState} from 'react';
 
@@ -19,6 +14,10 @@ import {
 	fetchObjectDefinitionFields,
 	fetchObjectDefinitions,
 } from '../../fetchUtil';
+import {CheckboxParameter} from './CheckboxParameter';
+import {SingleSelectAddObjectEntry} from './SingleSelectAddObjectEntry';
+import {SingleSelectNotification} from './SingleSelectNotification';
+import {updateUsePreferredLanguageForGuestsParameter} from './updateUsePreferredLanguageForGuestsParameter';
 
 import './ThenContainer.scss';
 
@@ -38,11 +37,13 @@ interface ThenContainerProps {
 	setCurrentObjectDefinitionFields: (values: ObjectField[]) => void;
 	setValues: (values: Partial<ObjectAction>) => void;
 	systemObject: boolean;
-	updateParameters: (value: ObjectOptionsListItem) => Promise<void>;
+	updateObjectDefinitionParameters: (
+		value: ObjectOptionsListItem
+	) => Promise<void>;
 	values: Partial<ObjectAction>;
 }
 
-type NotificationTemplateAction = {
+export type NotificationTemplateAction = {
 	label: string;
 	type: string;
 	value: string;
@@ -61,14 +62,32 @@ export function ThenContainer({
 	setCurrentObjectDefinitionFields,
 	setValues,
 	systemObject,
-	updateParameters,
+	updateObjectDefinitionParameters,
 	values,
 }: ThenContainerProps) {
 	const [notificationTemplates, setNotificationTemplates] = useState<
 		NotificationTemplateAction[]
 	>([]);
 
+	const [selectedNotificationTemplate, setSelectedNotificationTemplate] =
+		useState<Partial<NotificationTemplateAction>>();
+
 	const [objectsOptions, setObjectOptions] = useState<ObjectsOptionsList>([]);
+
+	useEffect(() => {
+		if (selectedNotificationTemplate) {
+			const parameters = updateUsePreferredLanguageForGuestsParameter(
+				values,
+				selectedNotificationTemplate.type
+			);
+
+			setValues({
+				parameters,
+			});
+		}
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [values.objectActionTriggerKey]);
 
 	useEffect(() => {
 		if (values.objectActionExecutorKey === 'notification') {
@@ -127,183 +146,112 @@ export function ThenContainer({
 		values.objectActionExecutorKey,
 	]);
 
+	const parameterDetails =
+		values.parameters?.usePreferredLanguageForGuests !== undefined
+			? {
+					checked: values.parameters?.usePreferredLanguageForGuests,
+					disabled: false,
+					key: 'usePreferredLanguageForGuests',
+					label: Liferay.Language.get(
+						'send-email-notifications-in-the-guest-users-preferred-language'
+					),
+					title: Liferay.Language.get(
+						'send-email-notifications-to-guest-users-in-the-form\'s-submission-language'
+					),
+				}
+			: values.parameters?.relatedObjectEntries !== undefined
+				? {
+						checked: values.parameters?.relatedObjectEntries,
+						disabled: values.system ?? false,
+						key: 'relatedObjectEntries',
+						label: Liferay.Language.get('also-relate-entries'),
+						title: Liferay.Language.get(
+							'automatically-relate-object-entries-involved-in-the-action'
+						),
+					}
+				: undefined;
+
 	return (
 		<Card title={Liferay.Language.get('then[object]')} viewMode="inline">
-			<div className="lfr-object__action-builder-then">
-				<SingleSelect
-					disabled={values.system || disabled}
-					error={errors.objectActionExecutorKey}
-					items={
-						Liferay.FeatureFlags['LPS-153714']
-							? newObjectActionExecutors
-							: objectActionExecutors
-					}
-					onSelectionChange={(value) => {
-						if (values.objectActionExecutorKey !== value) {
-							return setValues({
-								objectActionExecutorKey: value as string,
-								parameters: {},
-							});
-						}
-					}}
-					placeholder={Liferay.Language.get('choose-an-action')}
-					selectedKey={values.objectActionExecutorKey}
-				>
-					{(item) => (
-						<Option key={item.value} textValue={item.label}>
-							<div className="lfr-objects__object-action-builder-when-option">
-								<Text size={3} weight="semi-bold">
-									{item.label}
-								</Text>
-
-								<Text aria-hidden color="secondary" size={2}>
-									{item.description}
-								</Text>
-							</div>
-						</Option>
-					)}
-				</SingleSelect>
-
-				{values.objectActionExecutorKey === 'add-object-entry' && (
-					<>
-						on
-						<SingleSelect
-							aria-label={Liferay.Language.get(
-								'choose-an-object'
-							)}
-							disabled={values.system}
-							error={errors.objectDefinitionExternalReferenceCode}
-							items={objectsOptions}
-							onSelectionChange={(value) => {
-								let selectedObjectDefinition:
-									| ObjectOptionsListItem
-									| undefined = undefined;
-
-								objectsOptions.forEach((objectOption) =>
-									objectOption.items.forEach((item) => {
-										if (
-											item.objectDefinitionExternalReferenceCode ===
-											value
-										) {
-											selectedObjectDefinition = item;
-										}
-									})
-								);
-
-								if (selectedObjectDefinition) {
-									updateParameters(selectedObjectDefinition);
-								}
-							}}
-							placeholder={Liferay.Language.get(
-								'choose-an-object'
-							)}
-							selectedKey={
-								values.parameters
-									?.objectDefinitionExternalReferenceCode
-							}
-						>
-							{(group) => (
-								<DropDown.Group
-									header={group.label}
-									items={group.items}
-								>
-									{(item) => (
-										<Option
-											key={
-												item.objectDefinitionExternalReferenceCode
-											}
-										>
-											{item.label}
-										</Option>
-									)}
-								</DropDown.Group>
-							)}
-						</SingleSelect>
-						{values.parameters?.relatedObjectEntries !==
-							undefined && (
-							<>
-								<ClayCheckbox
-									checked={
-										values.parameters
-											.relatedObjectEntries === true
-									}
-									disabled={values.system}
-									label={Liferay.Language.get(
-										'also-relate-entries'
-									)}
-									onChange={({target: {checked}}) => {
-										setValues({
-											parameters: {
-												...values.parameters,
-												relatedObjectEntries: checked,
-											},
-										});
-									}}
-								/>
-								<ClayTooltipProvider>
-									<div
-										data-tooltip-align="top"
-										title={Liferay.Language.get(
-											'automatically-relate-object-entries-involved-in-the-action'
-										)}
-									>
-										<ClayIcon
-											className=".lfr-object__action-builder-tooltip-icon"
-											symbol="question-circle-full"
-										/>
-									</div>
-								</ClayTooltipProvider>
-							</>
-						)}
-					</>
-				)}
-
-				{values.objectActionExecutorKey === 'notification' && (
-					<SingleSelect<NotificationTemplateAction>
-						className="lfr-object__action-builder-notification-then"
-						disabled={values.system}
+			<div className="lfr-object__action-builder-then-container">
+				<div className="lfr-object__action-builder-then">
+					<SingleSelect
+						disabled={values.system || disabled}
 						error={errors.objectActionExecutorKey}
-						items={notificationTemplates}
-						onSelectionChange={(value) => {
-							setValues({
-								parameters: {
-									...values.parameters,
-									notificationTemplateExternalReferenceCode:
-										value as string,
-								},
-							});
-						}}
-						required
-						selectedKey={
-							values.parameters
-								?.notificationTemplateExternalReferenceCode
+						items={
+							Liferay.FeatureFlags['LPS-153714']
+								? newObjectActionExecutors
+								: objectActionExecutors
 						}
+						onSelectionChange={(value) => {
+							if (values.objectActionExecutorKey !== value) {
+								return setValues({
+									objectActionExecutorKey: value as string,
+									parameters: {},
+								});
+							}
+						}}
+						placeholder={Liferay.Language.get('choose-an-action')}
+						selectedKey={values.objectActionExecutorKey}
 					>
 						{(item) => (
 							<Option key={item.value} textValue={item.label}>
-								<div className="lfr-object__action-builder-notification-option">
+								<div className="lfr-objects__object-action-builder-when-option">
 									<Text size={3} weight="semi-bold">
 										{item.label}
 									</Text>
 
-									<ClayLabel
-										className="lfr-object__action-builder-notification-option-label"
-										displayType={
-											item.type === 'email'
-												? 'success'
-												: 'info'
-										}
+									<Text
+										aria-hidden
+										color="secondary"
+										size={2}
 									>
-										{item.type === 'email'
-											? Liferay.Language.get('email')
-											: Liferay.Language.get(
-													'user-notification'
-												)}
-									</ClayLabel>
+										{item.description}
+									</Text>
 								</div>
 							</Option>
 						)}
 					</SingleSelect>
+
+					{values.objectActionExecutorKey === 'add-object-entry' && (
+						<SingleSelectAddObjectEntry
+							errors={errors}
+							objectsOptions={objectsOptions}
+							updateObjectDefinitionParameters={
+								updateObjectDefinitionParameters
+							}
+							values={values}
+						/>
+					)}
+
+					{values.objectActionExecutorKey === 'notification' && (
+						<SingleSelectNotification
+							errors={errors}
+							notificationTemplates={notificationTemplates}
+							setSelectedNotificationTemplate={
+								setSelectedNotificationTemplate
+							}
+							setValues={setValues}
+							values={values}
+						/>
+					)}
+				</div>
+
+				{parameterDetails && (
+					<CheckboxParameter
+						checked={parameterDetails.checked}
+						disabled={parameterDetails.disabled}
+						label={parameterDetails.label}
+						onChange={(checked) => {
+							setValues({
+								parameters: {
+									...values.parameters,
+									[parameterDetails.key]: checked,
+								},
+							});
+						}}
+						title={parameterDetails.title}
+					/>
 				)}
 			</div>
 		</Card>

@@ -10,13 +10,13 @@ import {useAppPropertiesContext} from '~/common/contexts/AppPropertiesContext';
 import SearchBuilder from '~/common/core/SearchBuilder';
 
 import {
+	addContactRoleLiferay,
+	addContactRoleRaysource,
 	HIGH_PRIORITY_CONTACT_CATEGORIES,
-	actLiferayContact,
-	actRaysourceContact,
-	associateContactRoleLiferay,
-	associateContactRoleRaysource,
 	removeContactRoleLiferay,
 	removeContactRoleRaysource,
+	updateLiferayContact,
+	updateRaysourceContact
 } from '~/routes/customer-portal/utils/getHighPriorityContacts';
 import {useOnboarding} from '~/routes/onboarding/context';
 import {
@@ -34,7 +34,10 @@ import {
 	maxLength,
 } from '../../../../common/utils/validations.form';
 import {useCustomerPortal} from '../../../../routes/customer-portal/context';
-import {STATUS_TAG_TYPE_NAMES} from '../../../../routes/customer-portal/utils/constants';
+import {
+	STATUS_CODE,
+	STATUS_TAG_TYPE_NAMES,
+} from '../../../../routes/customer-portal/utils/constants';
 import i18n from '../../../I18n';
 import {Button, Input, Select} from '../../../components';
 import SetupHighPriorityContactForm from '../../../components/HighPriorityContacts/SetupHighPriorityContact';
@@ -181,38 +184,7 @@ const SetupAnalyticsCloudPage = ({
 			return setFormAlreadySubmitted(true);
 		}
 
-		try {
-			setIsLoadingSubmitButton(true);
-
-			if (featureFlags.includes('LPS-159127')) {
-				await actRaysourceContact(
-					removeContactRoleRaysource,
-					removeHighPriorityContact,
-					project,
-					sessionId,
-					provisioningServerAPI
-				);
-				await actRaysourceContact(
-					associateContactRoleRaysource,
-					addHighPriorityContact,
-					project,
-					sessionId,
-					provisioningServerAPI
-				);
-				await actLiferayContact(
-					addHighPriorityContact,
-					associateContactRoleLiferay,
-					project,
-					client
-				);
-				await actLiferayContact(
-					removeHighPriorityContact,
-					removeContactRoleLiferay,
-					project,
-					client
-				);
-			}
-
+		const handleDataSubmit = async () => {
 			const {data} = await client.mutate({
 				context: {
 					displaySuccess: false,
@@ -310,10 +282,64 @@ const SetupAnalyticsCloudPage = ({
 					);
 				}
 			}
+		};
+
+		try {
+			setIsLoadingSubmitButton(true);
+
+			if (featureFlags.includes('LPS-159127')) {
+				try {
+					await updateRaysourceContact(
+						addContactRoleRaysource,
+						addHighPriorityContact,
+						project,
+						sessionId,
+						provisioningServerAPI
+					);
+
+					await updateLiferayContact(
+						addHighPriorityContact,
+						addContactRoleLiferay,
+						project,
+						client
+					);
+				}
+				catch (error) {
+					if (error.cause === STATUS_CODE.conflict) {
+						await updateLiferayContact(
+							addHighPriorityContact,
+							addContactRoleLiferay,
+							project,
+							client
+						);
+					}
+					else {
+						throw new Error('Error', {cause: error.cause});
+					}
+				}
+
+				await updateRaysourceContact(
+					removeContactRoleRaysource,
+					removeHighPriorityContact,
+					project,
+					sessionId,
+					provisioningServerAPI
+				);
+
+				await updateLiferayContact(
+					removeHighPriorityContact,
+					removeContactRoleLiferay,
+					project,
+					client
+				);
+			}
+
+			handleDataSubmit();
 			setIsLoadingSubmitButton(false);
 
 			handlePage(true);
-		} catch {
+		}
+		catch (error) {
 			setIsLoadingSubmitButton(false);
 		}
 	};

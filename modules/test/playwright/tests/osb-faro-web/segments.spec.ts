@@ -16,6 +16,8 @@ import {createChannel, switchChannel} from './utils/channel';
 import {goToDistributionTabAndSelectAttribute} from './utils/distribution';
 import {changeEventDisplayName} from './utils/event-definitions';
 import {createIndividuals} from './utils/individuals';
+import {waitForLoading} from './utils/loading';
+import {Nanites, runNanites} from './utils/nanites';
 import {
 	navigateTo,
 	navigateToACSitesPageViaURL,
@@ -27,10 +29,14 @@ import {
 	createDynamicSegment,
 	createStaticSegment,
 	editCriteriaAttributeValue,
+	editCriteriaConjunction,
 	editSegment,
+	includeAnonymousToggle,
 	saveSegment,
+	selectOperator,
 	setSegmentName,
 } from './utils/segments';
+import {SegmentConditions} from './utils/selectors';
 import {
 	searchByTerm,
 	viewNameNotPresentOnTableList,
@@ -210,7 +216,7 @@ test('Search the Segment Profile Distribution', async ({apiHelpers, page}) => {
 		channelName,
 	});
 
-	const date1 = new Date();
+	const date = new Date();
 
 	const generateIndividual = (name) => {
 		const id = getRandomString();
@@ -242,7 +248,7 @@ test('Search the Segment Profile Distribution', async ({apiHelpers, page}) => {
 			applicationId: 'Page',
 			canonicalUrl: 'https://www.liferay.com',
 			channelId: channel.id,
-			eventDate: date1.toISOString(),
+			eventDate: date.toISOString(),
 			eventId: 'pageViewed',
 			title: 'Liferay',
 			userId: individual.id,
@@ -256,7 +262,7 @@ test('Search the Segment Profile Distribution', async ({apiHelpers, page}) => {
 			applicationId: 'Page',
 			canonicalUrl: 'https://www.liferay.com',
 			channelId: channel.id,
-			eventDate: date1.toISOString(),
+			eventDate: date.toISOString(),
 			eventId: 'pageViewed',
 			title: 'Liferay',
 			userId: individual.id,
@@ -269,8 +275,8 @@ test('Search the Segment Profile Distribution', async ({apiHelpers, page}) => {
 		const firstSessions = firstIndividuals.map((individual) => ({
 			channelId: channel.id,
 			id: individual.id,
-			sessionEnd: date1.toISOString(),
-			sessionStart: date1.toISOString(),
+			sessionEnd: date.toISOString(),
+			sessionStart: date.toISOString(),
 			userId: individual.id,
 		}));
 
@@ -279,8 +285,8 @@ test('Search the Segment Profile Distribution', async ({apiHelpers, page}) => {
 		const secondSessions = secondIndividuals.map((individual) => ({
 			channelId: channel.id,
 			id: individual.id,
-			sessionEnd: date1.toISOString(),
-			sessionStart: date1.toISOString(),
+			sessionEnd: date.toISOString(),
+			sessionStart: date.toISOString(),
 			userId: individual.id,
 		}));
 
@@ -353,6 +359,260 @@ test('Search the Segment Profile Distribution', async ({apiHelpers, page}) => {
 				'There are no results found.Please try a different search term.'
 			)
 		).toBeVisible();
+	});
+
+	await test.step('delete channel', async () => {
+		await apiHelpers.jsonWebServicesOSBFaro.deleteChannel(
+			`[${channel.id}]`,
+			project.groupId
+		);
+	});
+});
+
+test('Segment Composition shows Active and Known individuals', async ({
+	apiHelpers,
+	page,
+}) => {
+	const channelName = 'My Property - ' + getRandomString();
+	const {channel, project} = await createChannel({
+		apiHelpers,
+		channelName,
+	});
+
+	const generateIndividual = (name) => {
+		const id = getRandomString();
+
+		return {
+			id,
+			name,
+		};
+	};
+
+	const knownIndividualName = 'ac';
+	const knownIndividual = [generateIndividual(knownIndividualName)];
+
+	await test.step('Create the known individuals directly in the AC database', async () => {
+		await createIndividuals({
+			apiHelpers,
+			individuals: knownIndividual,
+		});
+	});
+
+	const anonymousIdentityID = '87';
+	const date = new Date();
+
+	await test.step('Create an identity for an anonymous directly in the AC database', async () => {
+		await apiHelpers.jsonWebServicesOSBAsah.createIdentities([
+			{
+				createDate: date.toISOString(),
+				id: anonymousIdentityID,
+			},
+		]);
+	});
+
+	const pageName = 'Liferay - AC Page';
+
+	await test.step('Create events for the anonymous and known individual to appear in AC', async () => {
+		await apiHelpers.jsonWebServicesOSBAsah.createEvents(
+			knownIndividual.map((individual) => ({
+				applicationId: 'Page',
+				canonicalUrl: 'https://www.liferay.com',
+				channelId: channel.id,
+				eventDate: date.toISOString(),
+				eventId: 'pageViewed',
+				title: pageName,
+				userId: individual.id,
+			}))
+		);
+
+		await apiHelpers.jsonWebServicesOSBAsah.createEvents([
+			{
+				applicationId: 'Page',
+				canonicalUrl: 'https://www.liferay.com',
+				channelId: channel.id,
+				eventDate: date.toISOString(),
+				eventId: 'pageViewed',
+				title: pageName,
+				userId: anonymousIdentityID,
+			},
+		]);
+	});
+
+	await test.step('Create a session for the known individual', async () => {
+		await apiHelpers.jsonWebServicesOSBAsah.createSessions(
+			knownIndividual.map((individual) => ({
+				channelId: channel.id,
+				id: individual.id,
+				sessionEnd: date.toISOString(),
+				sessionStart: date.toISOString(),
+				userId: individual.id,
+			}))
+		);
+	});
+
+	await test.step('Go to Analytics Cloud and Switch the property', async () => {
+		await navigateToACSitesPageViaURL({
+			channelID: channel.id,
+			page,
+			projectID: project.groupId,
+		});
+	});
+
+	const dynamicSegmentName = 'Test Dynamic Segment';
+
+	await test.step('Create dynamic segment', async () => {
+		await navigateTo({
+			page,
+			pageName: 'Segments',
+		});
+
+		await createDynamicSegment(page);
+
+		await addSegmentField({
+			criterionName: 'email',
+			criterionType: 'Individual Attributes',
+			page,
+		});
+
+		await selectOperator({
+			operator: 'is known',
+			operatorField: SegmentConditions.criteriaCondition,
+			page,
+		});
+
+		await addSegmentField({
+			criterionName: 'email',
+			criterionType: 'Individual Attributes',
+			page,
+		});
+
+		await selectOperator({
+			index: 1,
+			operator: 'is unknown',
+			operatorField: SegmentConditions.criteriaCondition,
+			page,
+		});
+
+		await editCriteriaConjunction({page});
+
+		await includeAnonymousToggle({
+			enable: true,
+			page,
+		});
+
+		await setSegmentName({
+			page,
+			segmentName: dynamicSegmentName,
+		});
+
+		await saveSegment(page);
+	});
+
+	await test.step('Create static segment', async () => {
+		await navigateTo({
+			page,
+			pageName: 'Segments',
+		});
+
+		await createStaticSegment(page);
+
+		await setSegmentName({
+			page,
+			segmentName: 'Test Static Segment',
+		});
+
+		await addStaticMember({
+			memberNames: knownIndividualName,
+			page,
+		});
+
+		await saveSegment(page);
+	});
+
+	await test.step('Run the Segment Nanite', async () => {
+		await runNanites({
+			apiHelpers,
+			naniteNames: [Nanites.UpdateMembershipsNanite],
+			page,
+		});
+	});
+
+	await test.step('Check the Segment Composition card data for the Static Segment', async () => {
+		let activeCount = page
+			.locator('li')
+			.filter({hasText: 'Active Last 30 Days'})
+			.getByTestId('active-count');
+
+		await expect(activeCount).toHaveText('1');
+
+		let activePorcentage = page
+			.locator('li')
+			.filter({hasText: 'Active Last 30 Days'})
+			.getByTestId('active-porcentage');
+
+		await expect(activePorcentage).toHaveText('100%');
+
+		activeCount = page
+			.locator('li')
+			.filter({hasText: 'Known Members'})
+			.getByTestId('active-count');
+
+		await expect(activeCount).toHaveText('1');
+
+		activePorcentage = page
+			.locator('li')
+			.filter({hasText: 'Known Members'})
+			.getByTestId('active-porcentage');
+
+		await expect(activePorcentage).toHaveText('100%');
+	});
+
+	await test.step('Go to Segments > Access the Dynamic Segment', async () => {
+		await navigateTo({
+			page,
+			pageName: 'Segments',
+		});
+
+		await navigateTo({
+			page,
+			pageName: dynamicSegmentName,
+		});
+	});
+
+	await test.step('Reload the segment page to clear the cache', async () => {
+		await page.reload();
+
+		await waitForLoading(page);
+	});
+
+	await test.step('Check the Segment Composition card data for the Dynamic Segment', async () => {
+		let activeCount = page
+			.locator('li')
+			.filter({hasText: 'Active Last 30 Days'})
+			.getByTestId('active-count');
+
+		await expect(activeCount).toHaveText('2');
+
+		let activePorcentage = page
+			.locator('li')
+			.filter({hasText: 'Active Last 30 Days'})
+			.getByTestId('active-porcentage');
+
+		await expect(activePorcentage).toHaveText('100%');
+
+		activeCount = page
+			.locator('li')
+			.filter({hasText: 'Known Members'})
+			.getByTestId('active-count');
+
+		await expect(activeCount).toHaveText('1');
+
+		activePorcentage = page
+			.locator('li')
+			.filter({hasText: 'Known Members'})
+			.getByTestId('active-porcentage');
+
+		await expect(activePorcentage).toHaveText('50%');
 	});
 
 	await test.step('delete channel', async () => {

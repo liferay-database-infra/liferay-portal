@@ -9,17 +9,18 @@ import classNames from 'classnames';
 import {FieldArray, Formik} from 'formik';
 import {useEffect, useState} from 'react';
 import SearchBuilder from '~/common/core/SearchBuilder';
+import {STATUS_CODE} from '../../../../routes/customer-portal/utils/constants';
 import i18n from '../../../I18n';
 import {Badge, Button} from '../../../components';
 import {useAppPropertiesContext} from '../../../contexts/AppPropertiesContext';
 import {
 	addTeamMembersInvitation,
-	associateUserAccountWithAccount,
-	associateUserAccountWithAccountAndAccountRole,
+	assignUserAccountWithAccount,
+	assignUserAccountWithAccountAndAccountRole,
 	getUserAccountByEmail,
 	patchUserAccount,
 } from '../../../services/liferay/graphql/queries';
-import {associateContactRoleNameByEmailByProject} from '../../../services/liferay/rest/raysource/LicenseKeys';
+import {addContactRoleNameByEmailByProject} from '../../../services/liferay/rest/raysource/LicenseKeys';
 import {ROLE_TYPES, SLA_TYPES} from '../../../utils/constants';
 import getInitialInvite from '../../../utils/getInitialInvite';
 import getProjectRoles from '../../../utils/getProjectRoles';
@@ -58,11 +59,11 @@ const InviteTeamMembersPage = ({
 
 	const [addTeamMemberInvitation] = useMutation(addTeamMembersInvitation);
 	const [updateUserAccount] = useMutation(patchUserAccount);
-	const [associateUserWithAccount] = useMutation(
-		associateUserAccountWithAccount
+	const [assignUserWithAccount] = useMutation(
+		assignUserAccountWithAccount
 	);
-	const [associateUserAccountWithAccountRole] = useMutation(
-		associateUserAccountWithAccountAndAccountRole,
+	const [assignUserAccountWithAccountRole] = useMutation(
+		assignUserAccountWithAccountAndAccountRole,
 		{
 			awaitRefetchQueries: true,
 			refetchQueries: ['getUserAccountsByAccountExternalReferenceCode'],
@@ -234,7 +235,7 @@ const InviteTeamMembersPage = ({
 
 		for (const inviteMember of inviteMembers) {
 			try {
-				await associateUserWithAccount({
+				await assignUserWithAccount({
 					context,
 					variables: {
 						accountKey: project.accountKey,
@@ -281,30 +282,50 @@ const InviteTeamMembersPage = ({
 				});
 
 				for (const inviteRole of inviteMemberRolesSelected) {
-					await associateUserAccountWithAccountRole({
-						context,
-						variables: {
+					try {
+						await addContactRoleNameByEmailByProject({
 							accountKey: project.accountKey,
-							accountRoleId: inviteRole.id,
-							emailAddress: inviteMember.email,
-						},
-					});
+							emailURI: encodeURI(inviteMember.email),
+							firstName: inviteMember.givenName,
+							lastName: inviteMember.familyName,
+							provisioningServerAPI,
+							roleName: inviteRole.raysourceName,
+							sessionId
+						});
 
-					await associateContactRoleNameByEmailByProject({
-						accountKey: project.accountKey,
-						emailURI: encodeURI(inviteMember.email),
-						firstName: inviteMember.givenName,
-						lastName: inviteMember.familyName,
-						provisioningServerAPI,
-						roleName: inviteRole.raysourceName,
-						sessionId,
-					});
+						await assignUserAccountWithAccountRole({
+							context,
+							variables: {
+								accountKey: project.accountKey,
+								accountRoleId: inviteRole.id,
+								emailAddress: inviteMember.email,
+							},
+						});
+					}
+					catch (error) {
+						if (error.cause === STATUS_CODE.conflict) {
+							await assignUserAccountWithAccountRole({
+								context,
+								variables: {
+									accountKey: project.accountKey,
+									accountRoleId: inviteRole.id,
+									emailAddress: inviteMember.email,
+								},
+							});
+						}
+						else {
+							throw new Error('Error', {cause: error.cause});
+						}
+					}
 				}
 
 				invitedAccounts.push(inviteMember);
-			} catch (error) {
+			}
+			catch (error) {
 				console.error(error);
+
 				displaySuccess = false;
+
 				Liferay.Util.openToast({
 					...DEFAULT_WARNING,
 					message: `Unable to invite ${inviteMember.givenName}`,
