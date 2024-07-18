@@ -17,10 +17,14 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import com.liferay.portal.kernel.cache.PortalCache;
 import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
+import com.liferay.portal.kernel.cache.PortalCacheMapSynchronizeUtil;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Disjunction;
+import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
@@ -65,6 +69,7 @@ import com.liferay.portal.kernel.model.UserConstants;
 import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.model.VirtualHost;
 import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.module.util.ServiceLatch;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.SearchContext;
@@ -83,7 +88,6 @@ import com.liferay.portal.kernel.service.OrganizationLocalService;
 import com.liferay.portal.kernel.service.PasswordPolicyLocalService;
 import com.liferay.portal.kernel.service.PortalPreferencesLocalService;
 import com.liferay.portal.kernel.service.PortletLocalService;
-import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.SystemEventLocalService;
 import com.liferay.portal.kernel.service.UserGroupLocalService;
@@ -118,6 +122,8 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.liveusers.LiveUsers;
+import com.liferay.portal.model.impl.CompanyCacheModel;
+import com.liferay.portal.model.impl.CompanyImpl;
 import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
 import com.liferay.portal.service.base.CompanyLocalServiceBaseImpl;
 import com.liferay.portal.util.PortalInstances;
@@ -127,6 +133,7 @@ import com.liferay.portal.util.PropsValues;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 
 import java.net.IDN;
 import java.net.Inet6Address;
@@ -136,6 +143,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -439,6 +447,31 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 					return null;
 				});
 		}
+	}
+
+	@Override
+	public void afterPropertiesSet() {
+		super.afterPropertiesSet();
+
+		ServiceLatch serviceLatch = SystemBundleUtil.newServiceLatch();
+
+		serviceLatch.waitFor(
+			EntityCache.class,
+			entityCache -> {
+				PortalCache<?, ?> portalCache = entityCache.getPortalCache(
+					CompanyImpl.class);
+
+				PortalCacheMapSynchronizeUtil.synchronize(
+					PortalCacheHelperUtil.getPortalCache(
+						PortalCacheManagerNames.MULTI_VM,
+						portalCache.getPortalCacheName(), portalCache.isMVCC(),
+						portalCache.isSharded()),
+					new HashMap<>(), _synchronizer);
+			});
+
+		serviceLatch.openOn(
+			() -> {
+			});
 	}
 
 	/**
@@ -2597,15 +2630,33 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 	private final Set<Company> _preregisterPendingCompanies = new HashSet<>();
 
-	@BeanReference(type = ResourceActionLocalService.class)
-	private ResourceActionLocalService _resourceActionLocalService;
-
 	@BeanReference(type = RoleLocalService.class)
 	private RoleLocalService _roleLocalService;
 
 	private final ServiceTracker
 		<PortalInstanceLifecycleManager, PortalInstanceLifecycleManager>
 			_serviceTracker;
+
+	private final PortalCacheMapSynchronizeUtil.Synchronizer<Long, Serializable>
+		_synchronizer =
+			new PortalCacheMapSynchronizeUtil.Synchronizer
+				<Long, Serializable>() {
+
+				@Override
+				public void onSynchronize(
+					Map<? extends Long, ? extends Serializable> map, Long key,
+					Serializable value, int timeToLive) {
+
+					if (!DBPartition.isPartitionEnabled() ||
+						!(value instanceof CompanyCacheModel)) {
+
+						return;
+					}
+
+					CacheRegistryUtil.clear(key);
+				}
+
+			};
 
 	@BeanReference(type = SystemEventLocalService.class)
 	private SystemEventLocalService _systemEventLocalService;
