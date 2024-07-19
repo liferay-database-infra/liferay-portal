@@ -487,7 +487,7 @@ test.describe('Visualization Modes in Data Set Manager', () => {
 		});
 	});
 
-	test('Configure table visualization mode with array fields @LPD-11769', async ({
+	test('Configure table visualization mode using search with array fields @LPD-11769, @LPS-185231, LPS-185227', async ({
 		page,
 		visualizationModesPage,
 	}) => {
@@ -698,6 +698,265 @@ test.describe('Visualization Modes in Data Set Manager', () => {
 			).toHaveText(SAMPLE_SCALAR_FIELD);
 
 			await visualizationModesPage.assertTableFieldRowCount(1);
+		});
+	});
+
+	test('Check field edition in table visualization mode @LPS-176051, @LPS-178736', async ({
+		page,
+		visualizationModesPage,
+	}) => {
+		const SAMPLE_SCALAR_FIELD = 'id';
+		const SAMPLE_FIELD = 'name';
+		const LABEL_COLUMN_INDEX = 2;
+		const RENDERER_COLUMN_INDEX = 4;
+
+		await test.step('Navigate to table visualization mode page', async () => {
+			await visualizationModesPage.goto({
+				dataSetLabel,
+			});
+
+			await visualizationModesPage.selectTab('Table');
+
+			await expect(
+				visualizationModesPage.page.getByPlaceholder('Search')
+			).toBeVisible();
+		});
+
+		await test.step('Add one field, save', async () => {
+			await visualizationModesPage.openAddFieldsModal();
+
+			await visualizationModesPage.selectField({
+				fieldName: SAMPLE_SCALAR_FIELD,
+			});
+
+			await saveFromModal({
+				page,
+			});
+		});
+
+		await test.step('Check there is one field and is the one just added', async () => {
+			await expect(
+				visualizationModesPage
+					.getRowByText(SAMPLE_SCALAR_FIELD)
+					.locator('td')
+					.nth(LABEL_COLUMN_INDEX)
+			).toHaveText(SAMPLE_SCALAR_FIELD);
+
+			await visualizationModesPage.assertTableFieldRowCount(1);
+		});
+
+		await test.step('Add another field, save', async () => {
+			await visualizationModesPage.openAddFieldsModal();
+
+			await visualizationModesPage.selectField({
+				fieldName: SAMPLE_FIELD,
+			});
+
+			await saveFromModal({
+				page,
+			});
+		});
+
+		await test.step('Check there are two fields', async () => {
+			await expect(
+				visualizationModesPage
+					.getRowByText(SAMPLE_SCALAR_FIELD)
+					.locator('td')
+					.nth(LABEL_COLUMN_INDEX)
+			).toHaveText(SAMPLE_SCALAR_FIELD);
+
+			await expect(
+				visualizationModesPage
+					.getRowByText(SAMPLE_FIELD)
+					.locator('td')
+					.nth(LABEL_COLUMN_INDEX)
+			).toHaveText(SAMPLE_FIELD);
+
+			await visualizationModesPage.assertTableFieldRowCount(2);
+		});
+
+		await test.step('Delete field', async () => {
+			await clickActionInRow({
+				actionName: 'Delete',
+				rowName: SAMPLE_FIELD,
+				visualizationModesPage,
+			});
+
+			const deleteModal =
+				await visualizationModesPage.page.getByRole('dialog');
+
+			await expect(deleteModal).toContainText(
+				'Are you sure you want to delete this field? It will be removed immediately. Fragments using it will be affected. This action cannot be undone.'
+			);
+
+			await deleteModal.getByRole('button', {name: 'Delete'}).click();
+
+			const toastContainer = page.locator('.alert-container');
+
+			await expect(toastContainer.getByText('Success')).toBeInViewport();
+
+			await toastContainer
+				.getByRole('button', {
+					name: 'Close',
+				})
+				.click();
+		});
+
+		await test.step('Check that there is only one field', async () => {
+			await expect(
+				visualizationModesPage
+					.getRowByText(SAMPLE_SCALAR_FIELD)
+					.locator('td')
+					.nth(LABEL_COLUMN_INDEX)
+			).toHaveText(SAMPLE_SCALAR_FIELD);
+
+			await visualizationModesPage.assertTableFieldRowCount(1);
+		});
+
+		await test.step('Open field edition modal, check that name field is not editable', async () => {
+			await clickActionInRow({
+				actionName: 'Edit',
+				rowName: SAMPLE_SCALAR_FIELD,
+				visualizationModesPage,
+			});
+
+			const editModal =
+				await visualizationModesPage.page.getByRole('dialog');
+
+			await expect(editModal.getByRole('heading')).toContainText(
+				`Edit ${SAMPLE_SCALAR_FIELD}`
+			);
+
+			const nameInput = visualizationModesPage.page.getByLabel('Name');
+
+			await expect(nameInput).toBeInViewport();
+
+			await expect(nameInput).toBeDisabled();
+
+			await visualizationModesPage.cancelAddFieldsModal();
+		});
+
+		await test.step('Open field edition modal, check that the user can change the renderer', async () => {
+			await expect(
+				visualizationModesPage
+					.getRowByText(SAMPLE_SCALAR_FIELD)
+					.locator('td')
+					.nth(RENDERER_COLUMN_INDEX)
+			).toHaveText('Default');
+
+			await clickActionInRow({
+				actionName: 'Edit',
+				rowName: SAMPLE_SCALAR_FIELD,
+				visualizationModesPage,
+			});
+
+			const rendererButton = page.getByRole('button', {name: 'Default'});
+			await expect(rendererButton).toBeInViewport();
+
+			const rendererDropdownId = await rendererButton.evaluate((node) => {
+				return node.getAttribute('aria-controls');
+			});
+			await rendererButton.click();
+
+			await page.locator(`#${rendererDropdownId}`).waitFor();
+
+			const availbleRenderersCount = await page
+				.locator(`#${rendererDropdownId}`)
+				.getByRole('option')
+				.count();
+			await expect(availbleRenderersCount).toBeGreaterThanOrEqual(10);
+
+			await page
+				.locator(`#${rendererDropdownId}`)
+				.getByRole('option', {name: 'Boolean'})
+				.click();
+
+			await saveFromModal({
+				page,
+			});
+
+			await expect(
+				visualizationModesPage
+					.getRowByText(SAMPLE_SCALAR_FIELD)
+					.locator('td')
+					.nth(RENDERER_COLUMN_INDEX)
+			).toHaveText('Boolean');
+		});
+	});
+
+	test('Check modal field selection allows check and uncheck fields @LPS-174141, @LPS-185228, @LPS-179282', async ({
+		page,
+		visualizationModesPage,
+	}) => {
+		const SAMPLE_SCALAR_FIELD = 'externalReferenceCode';
+		const SAMPLE_FIELD = 'name';
+
+		await test.step('Navigate to table visualization mode page', async () => {
+			await visualizationModesPage.goto({
+				dataSetLabel,
+			});
+
+			await visualizationModesPage.selectTab('Table');
+
+			await expect(
+				visualizationModesPage.page.getByPlaceholder('Search')
+			).toBeVisible();
+		});
+
+		await test.step('Can check and uncheck fields in the field selection modal', async () => {
+			await visualizationModesPage.openAddFieldsModal();
+
+			await visualizationModesPage.selectField({fieldName: SAMPLE_FIELD});
+
+			const checkbox =
+				visualizationModesPage.getFieldCheckboxByLabel(SAMPLE_FIELD);
+
+			await expect(checkbox).toBeChecked();
+
+			await visualizationModesPage.unSelectField({
+				fieldName: SAMPLE_FIELD,
+			});
+
+			await expect(checkbox).not.toBeChecked();
+
+			await saveFromModal({
+				page,
+			});
+		});
+
+		await test.step('Can check some fields and uncheck all selected fields using Deselect All button', async () => {
+			await visualizationModesPage.openAddFieldsModal();
+
+			await visualizationModesPage.selectField({fieldName: SAMPLE_FIELD});
+
+			const sampleFieldCheckbox =
+				visualizationModesPage.getFieldCheckboxByLabel(SAMPLE_FIELD);
+
+			await expect(sampleFieldCheckbox).toBeChecked();
+
+			await visualizationModesPage.selectField({
+				fieldName: SAMPLE_SCALAR_FIELD,
+			});
+
+			const sampleScalarFieldCheckbox =
+				visualizationModesPage.getFieldCheckboxByLabel(
+					SAMPLE_SCALAR_FIELD
+				);
+
+			await expect(sampleScalarFieldCheckbox).toBeChecked();
+
+			await visualizationModesPage.unSelectSelectedFields();
+
+			await expect(sampleFieldCheckbox).not.toBeChecked();
+			await expect(sampleScalarFieldCheckbox).not.toBeChecked();
+
+			await saveFromModal({
+				page,
+			});
+		});
+
+		await test.step('Check there is no field added', async () => {
+			await visualizationModesPage.assertTableFieldRowCount(0);
 		});
 	});
 });

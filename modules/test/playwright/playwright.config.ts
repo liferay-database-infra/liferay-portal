@@ -15,6 +15,7 @@ import {config as blogsWebConfig} from './tests/blogs-web/config';
 import {config as changeTrackingWebConfig} from './tests/change-tracking-web/config';
 import {config as clientExtensionWebConfig} from './tests/client-extension-web/config';
 import {config as commerceConfig} from './tests/commerce/config';
+import {config as configurationAdminWebConfig} from './tests/configuration-admin-web/config';
 import {config as contentDashboardWebConfig} from './tests/content-dashboard-web/config';
 import {config as cookiesBannerWebConfig} from './tests/cookies-banner-web/config';
 import {config as dispatchWebConfig} from './tests/dispatch-web/config';
@@ -47,6 +48,7 @@ import {config as portalSearchWebConfig} from './tests/portal-search-web/config'
 import {config as portalSecurityScriptManagementWebConfig} from './tests/portal-security-script-management-web/config';
 import {config as portalSecurityServiceAccessPolicyService} from './tests/portal-security-service-access-policy-service/config';
 import {config as portalWorkflowKaleoDesignerWebConfig} from './tests/portal-workflow-kaleo-designer-web/config';
+import {config as portalWorkflowTaskWebConfig} from './tests/portal-workflow-task-web/config';
 import {config as portletConfigurationWebConfig} from './tests/portlet-configuration-web/config';
 import {config as productNavigationProductMenuWeb} from './tests/product-navigation-product-menu-web/config';
 import {config as productNavigationUserPersonalBarWebConfig} from './tests/product-navigation-user-personal-bar-web/config';
@@ -62,7 +64,6 @@ import {config as wikiWebConfig} from './tests/wiki-web/config';
 import {config as commerceWorkspaceConfig} from './tests/workspaces/liferay-workspace-commerce/config';
 import {config as jethr0Config} from './tests/workspaces/liferay-workspace-jethr0/config';
 import {config as marketplaceConfig} from './tests/workspaces/liferay-workspace-marketplace/config';
-
 const setupProjects = [wemSiteSetup, wemSiteTeardown];
 
 export default defineConfig({
@@ -82,6 +83,7 @@ export default defineConfig({
 		clientExtensionWebConfig,
 		commerceConfig,
 		commerceWorkspaceConfig,
+		configurationAdminWebConfig,
 		contentDashboardWebConfig,
 		dispatchWebConfig,
 		documentLibraryWebConfig,
@@ -115,6 +117,7 @@ export default defineConfig({
 		portalSecurityScriptManagementWebConfig,
 		portalSecurityServiceAccessPolicyService,
 		portalWorkflowKaleoDesignerWebConfig,
+		portalWorkflowTaskWebConfig,
 		portletConfigurationWebConfig,
 		productNavigationProductMenuWeb,
 		productNavigationUserPersonalBarWebConfig,

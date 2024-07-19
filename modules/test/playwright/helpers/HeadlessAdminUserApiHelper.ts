@@ -9,7 +9,7 @@ import {ApiHelpers, DataApiHelpers} from './ApiHelpers';
 type TAccount = {
 	externalReferenceCode?: string;
 	id?: number;
-	name: string;
+	name?: string;
 	type?: string;
 };
 
@@ -440,6 +440,17 @@ export class HeadlessAdminUserApiHelper {
 	) {
 		return this.apiHelpers.post(
 			`${this.apiHelpers.baseUrl}${this.basePath}/accounts/by-external-reference-code/${accountERC}/account-roles/${roleId}/user-accounts/by-email-address/${userEmail}`,
+			{data: {}, failOnStatusCode: true}
+		);
+	}
+
+	async assignUserToSite(
+		roleId: number | string,
+		siteId: number | string,
+		userId: number | string
+	) {
+		return this.apiHelpers.post(
+			`${this.apiHelpers.baseUrl}${this.basePath}roles/${roleId}/association/user-account/${userId}/site/${siteId}`,
 			{data: {}, failOnStatusCode: true}
 		);
 	}

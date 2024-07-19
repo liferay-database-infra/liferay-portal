@@ -10,8 +10,9 @@
 <%
 String redirect = ParamUtil.getString(request, "redirect");
 
+String backURL = ParamUtil.getString(request, "backURL", redirect);
+
 long assigneeUserId = ParamUtil.getLong(renderRequest, "assigneeUserId");
-String workflowTaskURL = ParamUtil.getString(request, "workflowTaskURL");
 
 WorkflowTask workflowTask = workflowTaskDisplayContext.getWorkflowTask();
 
@@ -91,7 +92,7 @@ boolean hasAssignableUsers = workflowTaskDisplayContext.hasAssignableUsers(workf
 					else {
 						Liferay.Util.getOpener().<portlet:namespace />refreshPortlet(
 							json.hasPermission
-								? '<%= PortalUtil.escapeRedirect(workflowTaskURL) %>'
+								? '<%= PortalUtil.escapeRedirect(backURL) %>'
 								: '<%= PortalUtil.escapeRedirect(redirect) %>'
 						);
 					}

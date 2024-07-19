@@ -51,8 +51,9 @@ public class ObjectDBManagerUtil {
 
 	public static void runSQL(DataSource dataSource, Log log, String sql) {
 
-		// The implementation in *ServiceBaseImpl#runSQL strips line delimeters
-		// like ";". See LPD-25786.
+		// DB#runSQL can handle SQL made up of multiple statements delimited by
+		// semicolons, whereas the default implementation in
+		// *ServiceBaseImpl#runSQL cannot. See LPD-25786.
 
 		if (log.isDebugEnabled()) {
 			log.debug("SQL: " + sql);
