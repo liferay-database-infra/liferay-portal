@@ -9,7 +9,6 @@ import com.liferay.ai.creator.openai.configuration.manager.AICreatorOpenAIConfig
 import com.liferay.commerce.product.constants.CPPortletKeys;
 import com.liferay.portal.kernel.editor.configuration.BaseEditorConfigContributor;
 import com.liferay.portal.kernel.editor.configuration.EditorConfigContributor;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -120,8 +119,7 @@ public class CommerceCKEditorConfigContributor
 
 		try {
 			if (_aiCreatorOpenAIConfigurationManager.
-					isAICreatorChatGPTGroupEnabled(companyId, groupId) &&
-				FeatureFlagManagerUtil.isEnabled("LPD-10862")) {
+					isAICreatorChatGPTGroupEnabled(companyId, groupId)) {
 
 				return true;
 			}
