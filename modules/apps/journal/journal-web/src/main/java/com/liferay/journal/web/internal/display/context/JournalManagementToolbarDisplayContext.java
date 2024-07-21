@@ -36,7 +36,6 @@ import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -125,117 +124,103 @@ public class JournalManagementToolbarDisplayContext
 
 	@Override
 	public List<DropdownItem> getActionDropdownItems() {
-		List<DropdownItem> actionDropdownItems =
-			DropdownItemListBuilder.addGroup(
-				dropdownGroupItem -> {
-					dropdownGroupItem.setDropdownItems(
-						DropdownItemListBuilder.add(
-							dropdownItem -> {
-								dropdownItem.putData("action", "expireEntries");
-								dropdownItem.setIcon("time");
-								dropdownItem.setLabel(
-									LanguageUtil.get(
-										httpServletRequest, "expire"));
-								dropdownItem.setQuickAction(true);
-							}
-						).build());
-					dropdownGroupItem.setSeparator(true);
-				}
-			).addGroup(
-				dropdownGroupItem -> {
-					dropdownGroupItem.setDropdownItems(
-						DropdownItemListBuilder.add(
-							dropdownItem -> {
-								dropdownItem.putData("action", "moveEntries");
-								dropdownItem.setIcon("move-folder");
-								dropdownItem.setLabel(
-									LanguageUtil.get(
-										httpServletRequest, "move"));
-								dropdownItem.setQuickAction(true);
-							}
-						).add(
-							dropdownItem -> {
-								dropdownItem.putData(
-									"action", "exportTranslation");
-								dropdownItem.setIcon("upload");
-								dropdownItem.setLabel(
-									LanguageUtil.get(
-										httpServletRequest,
-										"export-for-translations"));
-								dropdownItem.setQuickAction(true);
-							}
-						).build());
-					dropdownGroupItem.setSeparator(true);
-				}
-			).addGroup(
-				dropdownGroupItem -> {
-					dropdownGroupItem.setDropdownItems(
-						DropdownItemListBuilder.add(
-							dropdownItem -> {
-								dropdownItem.putData(
-									"action", "changePermissions");
-								dropdownItem.putData(
-									"maxItemsToShowInfoMessage",
-									String.valueOf(200));
-								dropdownItem.setIcon("password-policies");
-								dropdownItem.setLabel(
-									LanguageUtil.get(
-										httpServletRequest, "permissions"));
-								dropdownItem.setQuickAction(false);
-							}
-						).build());
-					dropdownGroupItem.setSeparator(true);
-				}
-			).addGroup(
-				dropdownGroupItem -> {
-					dropdownGroupItem.setDropdownItems(
-						DropdownItemListBuilder.add(
-							dropdownItem -> {
-								dropdownItem.putData("action", "deleteEntries");
-								dropdownItem.setIcon("trash");
-								dropdownItem.setLabel(
-									LanguageUtil.get(
-										httpServletRequest, "delete"));
-								dropdownItem.setQuickAction(true);
-							}
-						).build());
-					dropdownGroupItem.setSeparator(true);
-				}
-			).build();
+		return DropdownItemListBuilder.addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						dropdownItem -> {
+							dropdownItem.putData("action", "expireEntries");
+							dropdownItem.setIcon("time");
+							dropdownItem.setLabel(
+								LanguageUtil.get(httpServletRequest, "expire"));
+							dropdownItem.setQuickAction(true);
+						}
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						dropdownItem -> {
+							dropdownItem.putData("action", "moveEntries");
+							dropdownItem.setIcon("move-folder");
+							dropdownItem.setLabel(
+								LanguageUtil.get(httpServletRequest, "move"));
+							dropdownItem.setQuickAction(true);
+						}
+					).add(
+						dropdownItem -> {
+							dropdownItem.putData("action", "exportTranslation");
+							dropdownItem.setIcon("upload");
+							dropdownItem.setLabel(
+								LanguageUtil.get(
+									httpServletRequest,
+									"export-for-translations"));
+							dropdownItem.setQuickAction(true);
+						}
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						dropdownItem -> {
+							dropdownItem.putData("action", "changePermissions");
+							dropdownItem.putData(
+								"maxItemsToShowInfoMessage",
+								String.valueOf(200));
+							dropdownItem.setIcon("password-policies");
+							dropdownItem.setLabel(
+								LanguageUtil.get(
+									httpServletRequest, "permissions"));
+							dropdownItem.setQuickAction(false);
+						}
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						dropdownItem -> {
+							dropdownItem.putData("action", "deleteEntries");
+							dropdownItem.setIcon("trash");
+							dropdownItem.setLabel(
+								LanguageUtil.get(httpServletRequest, "delete"));
+							dropdownItem.setQuickAction(true);
+						}
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).addGroup(
+			() -> {
+				Group group = _themeDisplay.getScopeGroup();
 
-		if (FeatureFlagManagerUtil.isEnabled("LPS-165481")) {
-			actionDropdownItems = DropdownItemListBuilder.addAll(
-				actionDropdownItems
-			).addGroup(
-				() -> {
-					Group group = _themeDisplay.getScopeGroup();
-
-					if (_isShowPublishArticlesAction() && !group.isLayout()) {
-						return true;
-					}
-
-					return false;
-				},
-				dropdownGroupItem -> {
-					dropdownGroupItem.setDropdownItems(
-						DropdownItemListBuilder.add(
-							dropdownItem -> {
-								dropdownItem.putData(
-									"action", "publishEntriesToLive");
-								dropdownItem.setIcon("live");
-								dropdownItem.setLabel(
-									LanguageUtil.get(
-										httpServletRequest,
-										"publish-selected-elements"));
-								dropdownItem.setQuickAction(false);
-							}
-						).build());
-					dropdownGroupItem.setSeparator(true);
+				if (_isShowPublishArticlesAction() && !group.isLayout()) {
+					return true;
 				}
-			).build();
-		}
 
-		return actionDropdownItems;
+				return false;
+			},
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						dropdownItem -> {
+							dropdownItem.putData(
+								"action", "publishEntriesToLive");
+							dropdownItem.setIcon("live");
+							dropdownItem.setLabel(
+								LanguageUtil.get(
+									httpServletRequest,
+									"publish-selected-elements"));
+							dropdownItem.setQuickAction(false);
+						}
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).build();
 	}
 
 	@Override

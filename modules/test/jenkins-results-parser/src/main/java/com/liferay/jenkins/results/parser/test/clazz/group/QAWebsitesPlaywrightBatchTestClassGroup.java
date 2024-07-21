@@ -5,7 +5,11 @@
 
 package com.liferay.jenkins.results.parser.test.clazz.group;
 
+import com.liferay.jenkins.results.parser.GitRepositoryJob;
+import com.liferay.jenkins.results.parser.GitWorkingDirectory;
 import com.liferay.jenkins.results.parser.PortalTestClassJob;
+
+import java.io.File;
 
 import org.json.JSONObject;
 
@@ -18,13 +22,24 @@ public class QAWebsitesPlaywrightBatchTestClassGroup
 	public QAWebsitesPlaywrightBatchTestClassGroup(
 		JSONObject jsonObject, PortalTestClassJob portalTestClassJob) {
 
-		super(jsonObject, "playwright", portalTestClassJob);
+		super(jsonObject, portalTestClassJob);
 	}
 
 	public QAWebsitesPlaywrightBatchTestClassGroup(
 		String batchName, PortalTestClassJob portalTestClassJob) {
 
-		super(batchName, "playwright", portalTestClassJob);
+		super(batchName, portalTestClassJob);
+	}
+
+	@Override
+	protected File getPlaywrightBaseDir() {
+		GitRepositoryJob gitRepositoryJob = (GitRepositoryJob)getJob();
+
+		GitWorkingDirectory gitWorkingDirectory =
+			gitRepositoryJob.getGitWorkingDirectory();
+
+		return new File(
+			gitWorkingDirectory.getWorkingDirectory(), "playwright");
 	}
 
 }
