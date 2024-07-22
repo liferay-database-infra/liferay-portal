@@ -5,6 +5,8 @@
 
 import {Locator, Page} from '@playwright/test';
 
+import {clickAndExpectToBeHidden} from '../../../utils/clickAndExpectToBeHidden';
+import {expandSection} from '../../../utils/expandSection';
 import {waitForSuccessAlert} from '../../../utils/waitForSuccessAlert';
 import {BlogsPage} from './BlogsPage';
 
@@ -109,6 +111,37 @@ export class BlogsEditBlogEntryPage {
 	async publishBlogEntry() {
 		await this.publishButton.click();
 		await waitForSuccessAlert(this.page);
+	}
+
+	async selectSpecificDisplayPage(displayPageName: string) {
+		const displayPageFieldSet = this.page.locator('fieldset', {
+			hasText: 'Display Page',
+		});
+
+		await expandSection(displayPageFieldSet);
+		await displayPageFieldSet
+			.getByLabel('Display Page Template')
+			.selectOption('Specific');
+		await displayPageFieldSet.getByRole('button', {name: 'Select'}).click();
+		const selectDisplayPageModal = await this.page.frameLocator(
+			'iframe[title*="Select Page"]'
+		);
+		await this.page
+			.locator('.modal-title', {
+				hasText: 'Select Page',
+			})
+			.waitFor({
+				state: 'visible',
+			});
+
+		await clickAndExpectToBeHidden({
+			target: this.page.locator('.modal-title', {
+				hasText: 'Select Page',
+			}),
+			trigger: selectDisplayPageModal.getByLabel(
+				'Select ' + displayPageName
+			),
+		});
 	}
 
 	async submitBlogEntryToWorkflow() {

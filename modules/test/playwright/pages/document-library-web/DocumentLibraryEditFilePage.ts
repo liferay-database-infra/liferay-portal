@@ -5,40 +5,44 @@
 
 import {Locator, Page} from '@playwright/test';
 
+import {clickAndExpectToBeHidden} from '../../utils/clickAndExpectToBeHidden';
 import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
+import {expandSection} from '../../utils/expandSection';
+import {waitForSuccessAlert} from '../../utils/waitForSuccessAlert';
 import {DocumentLibraryPage} from './DocumentLibraryPage';
 
 export class DocumentLibraryEditFilePage {
-	readonly documentLibraryPage: DocumentLibraryPage;
 	readonly page: Page;
+
 	readonly backButton: Locator;
+	readonly documentLibraryPage: DocumentLibraryPage;
+	readonly permissionViewSelector: Locator;
+	readonly publishButton: Locator;
 	readonly publishDateSelector: Locator;
 	readonly saveButton: Locator;
-	readonly selectForUpdateButton: Locator;
-	readonly publishButton: Locator;
 	readonly scheduleButton: Locator;
+	readonly selectForUpdateButton: Locator;
 	readonly titleSelector: Locator;
-	readonly permissionViewSelector: Locator;
 
 	constructor(page: Page) {
-		this.documentLibraryPage = new DocumentLibraryPage(page);
 		this.page = page;
+
 		this.backButton = page.getByRole('link', {name: 'Back'});
+		this.documentLibraryPage = new DocumentLibraryPage(page);
+		this.permissionViewSelector = page.getByLabel('Viewable by');
 		this.publishButton = page.getByRole('button', {
 			exact: true,
 			name: 'Publish',
 		});
 		this.publishDateSelector = page.getByLabel('Publish Date');
 		this.saveButton = page.getByRole('button', {exact: true, name: 'Save'});
-		this.selectForUpdateButton = page.getByLabel('Upload', {exact: true});
 		this.scheduleButton = page.getByRole('button', {name: 'Schedule'});
+		this.selectForUpdateButton = page.getByLabel('Upload', {exact: true});
 		this.titleSelector = page.getByLabel('Title');
-		this.permissionViewSelector = page.getByLabel('Viewable by');
 	}
 
-	async goto() {
-		await this.documentLibraryPage.goto();
-
+	async goto(siteUrl?: Site['friendlyUrlPath']) {
+		await this.documentLibraryPage.goto(siteUrl);
 		await this.documentLibraryPage.goToCreateNewFile();
 	}
 
@@ -48,12 +52,12 @@ export class DocumentLibraryEditFilePage {
 		);
 	}
 
-	async changeViewInItemSelctor(assetType: string, viewType: string) {
-		const modalIframe = await this.page.frameLocator(
+	async changeViewInItemSelector(assetType: string, viewType: string) {
+		const modalIframe = this.page.frameLocator(
 			`iframe[title="Select ${assetType}"]`
 		);
 
-		clickAndExpectToBeVisible({
+		await clickAndExpectToBeVisible({
 			autoClick: true,
 			target: modalIframe.getByRole('menuitem', {name: viewType}),
 			trigger: modalIframe.getByLabel(
@@ -61,6 +65,7 @@ export class DocumentLibraryEditFilePage {
 			),
 		});
 	}
+
 	async goBack() {
 		await this.backButton.click();
 	}
@@ -69,6 +74,17 @@ export class DocumentLibraryEditFilePage {
 		await this.documentLibraryPage.goto();
 
 		await this.documentLibraryPage.goToCreateNewFileWithDifferentType(type);
+	}
+
+	async publishFileEntry() {
+		if (await this.saveButton.isVisible()) {
+			await this.saveButton.click();
+		}
+		else {
+			await this.publishButton.click();
+		}
+
+		await waitForSuccessAlert(this.page);
 	}
 
 	async publishNewBasicFileEntry(title: string) {
@@ -82,6 +98,30 @@ export class DocumentLibraryEditFilePage {
 		else {
 			await this.publishButton.click();
 		}
+	}
+
+	async publishMultipleFiles(dTypeTitle: string, filePaths: string[]) {
+		await this.page.getByRole('button', {name: 'Select Files'}).waitFor();
+		await this.page.locator('input[type="file"]').setInputFiles(filePaths);
+		await this.page.getByRole('button', {name: 'Document Type'}).click();
+		await this.page.getByRole('button', {name: 'Basic Document'}).click();
+		await this.page.getByRole('menuitem', {name: dTypeTitle}).click();
+		await this.page.getByRole('button', {name: 'Publish'}).click();
+	}
+
+	async publishNewFileWithoutGuestViewPermission(title: string) {
+		await this.goto();
+
+		await this.titleSelector.fill(title);
+		if (await this.permissionViewSelector.isVisible()) {
+			await this.permissionViewSelector.selectOption('Site Member');
+		}
+		else {
+			await this.page.getByRole('button', {name: 'Permissions'}).click();
+			await this.permissionViewSelector.selectOption('Site Member');
+		}
+
+		await this.publishButton.click();
 	}
 
 	async publishNewFileWithScheduleDate(scheduleDate: string, title: string) {
@@ -116,27 +156,35 @@ export class DocumentLibraryEditFilePage {
 		}
 	}
 
-	async publishNewFileWithoutGuestViewPermission(title: string) {
-		await this.goto();
+	async selectSpecificDisplayPage(displayPageName: string) {
+		const displayPageFieldSet = this.page.locator('fieldset', {
+			hasText: 'Display Page',
+		});
 
-		await this.titleSelector.fill(title);
-		if (await this.permissionViewSelector.isVisible()) {
-			await this.permissionViewSelector.selectOption('Site Member');
-		}
-		else {
-			await this.page.getByRole('button', {name: 'Permissions'}).click();
-			await this.permissionViewSelector.selectOption('Site Member');
-		}
+		await expandSection(displayPageFieldSet);
+		await displayPageFieldSet
+			.getByTitle('Display Page Template Type')
+			.selectOption('Specific');
+		displayPageFieldSet.getByRole('button', {name: 'Select'}).click();
+		const selectDisplayPageModal = await this.page.frameLocator(
+			'iframe[title*="Select Page"]'
+		);
 
-		await this.publishButton.click();
-	}
+		await this.page
+			.locator('.modal-title', {
+				hasText: 'Select Page',
+			})
+			.waitFor({
+				state: 'visible',
+			});
 
-	async publishMultipleFiles(dTypeTitle: string, filePaths: string[]) {
-		await this.page.getByRole('button', {name: 'Select Files'}).waitFor();
-		await this.page.locator('input[type="file"]').setInputFiles(filePaths);
-		await this.page.getByRole('button', {name: 'Document Type'}).click();
-		await this.page.getByRole('button', {name: 'Basic Document'}).click();
-		await this.page.getByRole('menuitem', {name: dTypeTitle}).click();
-		await this.page.getByRole('button', {name: 'Publish'}).click();
+		await clickAndExpectToBeHidden({
+			target: this.page.locator('.modal-title', {
+				hasText: 'Select Page',
+			}),
+			trigger: selectDisplayPageModal.getByLabel(
+				'Select ' + displayPageName
+			),
+		});
 	}
 }

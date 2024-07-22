@@ -804,6 +804,16 @@ public class PredicateExpressionVisitorImpl
 		LambdaFunctionExpression lambdaFunctionExpression =
 			collectionPropertyExpression.getLambdaFunctionExpression();
 
+		if (lambdaFunctionExpression.getExpression() == null) {
+			FieldPredicateProvider fieldPredicateProvider =
+				_getFieldPredicateProvider(
+					collectionPropertyExpression.getName(), objectDefinition);
+
+			return fieldPredicateProvider.getIsEmptyPredicate(
+				collectionPropertyExpression.getName(),
+				name -> _getColumn(name, objectDefinition));
+		}
+
 		return (Predicate)lambdaFunctionExpression.accept(
 			new PredicateExpressionVisitorImpl(
 				_getObjectDefinitionEntityModel(objectDefinition),

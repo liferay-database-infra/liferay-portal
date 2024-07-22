@@ -38,6 +38,15 @@ RedirectEntriesDisplayContext redirectEntriesDisplayContext = (RedirectEntriesDi
 			</div>
 		</c:if>
 
+		<c:if test="<%= redirectEntriesDisplayContext.isLiveGroup() %>">
+			<div class="lfr-search-container">
+				<clay:alert
+					displayType="warning"
+					message="redirect-functionality-may-not-work-as-expected-in-the-staging-environment"
+				/>
+			</div>
+		</c:if>
+
 		<aui:form action="<%= redirectEntriesDisplayContext.getActionURL() %>" cssClass="container-fluid container-fluid-max-xl" name="fm">
 			<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
 

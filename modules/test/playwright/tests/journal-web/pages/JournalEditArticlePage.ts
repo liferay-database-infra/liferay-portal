@@ -5,6 +5,7 @@
 
 import {Locator, Page, expect} from '@playwright/test';
 
+import {clickAndExpectToBeHidden} from '../../../utils/clickAndExpectToBeHidden';
 import {clickAndExpectToBeVisible} from '../../../utils/clickAndExpectToBeVisible';
 import fillAndClickOutside from '../../../utils/fillAndClickOutside';
 import {waitForSuccessAlert} from '../../../utils/waitForSuccessAlert';
@@ -174,6 +175,36 @@ export class JournalEditArticlePage {
 		await this.openFieldSet('Related Assets', 'relatedAssets');
 		await this.page.getByLabel('Select Items').click();
 		await this.page.getByRole('menuitem', {name: assetType}).click();
+	}
+
+	async selectSpecificDisplayPage(displayPageName: string) {
+		await this.openFieldSet('Display Page', 'displayPage');
+		await this.page
+			.getByLabel('Select Display Page Type')
+			.selectOption('Specific');
+		await this.page
+			.getByRole('button', {name: 'Select Display Page'})
+			.click();
+		const selectDisplayPageModal = await this.page.frameLocator(
+			'iframe[title*="Select Display Page"]'
+		);
+
+		await this.page
+			.locator('.modal-title', {
+				hasText: 'Select Display Page',
+			})
+			.waitFor({
+				state: 'visible',
+			});
+
+		await clickAndExpectToBeHidden({
+			target: this.page.locator('.modal-title', {
+				hasText: 'Select Display Page',
+			}),
+			trigger: selectDisplayPageModal.getByLabel(
+				'Select ' + displayPageName
+			),
+		});
 	}
 
 	async scheduleArticle(

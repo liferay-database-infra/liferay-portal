@@ -8,11 +8,16 @@ import {expect, mergeTests} from '@playwright/test';
 import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
 import {applicationsMenuPageTest} from '../../fixtures/applicationsMenuPageTest';
 import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
+import {fragmentsPagesTest} from '../../fixtures/fragmentPagesTest';
 import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {pageEditorPagesTest} from '../../fixtures/pageEditorPagesTest';
+import {wemSiteTest} from '../../fixtures/wemSiteTest';
 import {checkAccessibility} from '../../utils/checkAccessibility';
 import getRandomString from '../../utils/getRandomString';
+import {closeProductMenu, openProductMenu} from '../../utils/productMenu';
+import getFragmentDefinition from './utils/getFragmentDefinition';
+import getPageDefinition from './utils/getPageDefinition';
 
 const test = mergeTests(
 	apiHelpersTest,
@@ -21,9 +26,11 @@ const test = mergeTests(
 		'LPS-169837': true,
 		'LPS-178052': true,
 	}),
+	fragmentsPagesTest,
 	isolatedSiteTest,
 	loginTest(),
-	pageEditorPagesTest
+	pageEditorPagesTest,
+	wemSiteTest
 );
 
 const PANELS: SidebarTab[] = [
@@ -35,13 +42,15 @@ const PANELS: SidebarTab[] = [
 	'Comments',
 ];
 
-test('renders all panel buttons in the vertical bar', async ({
+test('Renders all panel buttons in the vertical bar', async ({
 	apiHelpers,
 	page,
 	pageEditorPage,
 	site,
 }) => {
 	await page.goto('/');
+
+	// Create page and go to edit mode
 
 	const layout = await apiHelpers.headlessDelivery.createSitePage({
 		siteId: site.id,
@@ -50,8 +59,10 @@ test('renders all panel buttons in the vertical bar', async ({
 
 	await pageEditorPage.goto(layout, site.friendlyUrlPath);
 
+	// Check all panel buttons are rendered
+
 	for (const panel of PANELS) {
-		const panelButton = await page.getByLabel(panel, {exact: true});
+		const panelButton = page.getByLabel(panel, {exact: true});
 
 		await expect(panelButton).toBeVisible();
 		await expect(panelButton).toHaveAttribute(
@@ -61,13 +72,15 @@ test('renders all panel buttons in the vertical bar', async ({
 	}
 });
 
-test('renders sidebars visible at desktop size and sidebars not visible at small resolutions', async ({
+test('Renders sidebars visible at desktop size and sidebars not visible at small resolutions', async ({
 	apiHelpers,
 	page,
 	pageEditorPage,
 	site,
 }) => {
 	await page.goto('/');
+
+	// Create content page and go to edit mode
 
 	const layout = await apiHelpers.headlessDelivery.createSitePage({
 		siteId: site.id,
@@ -76,8 +89,8 @@ test('renders sidebars visible at desktop size and sidebars not visible at small
 
 	await pageEditorPage.goto(layout, site.friendlyUrlPath);
 
-	const panel = await page.getByLabel('Fragments and Widgets Panel');
-	const configurationPanel = await page.getByLabel('Configuration Panel', {
+	const panel = page.getByLabel('Fragments and Widgets Panel');
+	const configurationPanel = page.getByLabel('Configuration Panel', {
 		exact: true,
 	});
 
@@ -85,7 +98,7 @@ test('renders sidebars visible at desktop size and sidebars not visible at small
 
 	await expect(configurationPanel).toBeVisible();
 
-	// Set small resolution
+	// Set small resolution and check panels are not visible
 
 	await page.setViewportSize({height: 600, width: 600});
 
@@ -96,13 +109,15 @@ test('renders sidebars visible at desktop size and sidebars not visible at small
 	await expect(configurationPanel).not.toBeVisible();
 });
 
-test('checks if sidebars are open or closed depending on Product Menu', async ({
+test('Checks if sidebars are open or closed depending on Product Menu', async ({
 	apiHelpers,
 	page,
 	pageEditorPage,
 	site,
 }) => {
 	await page.goto('/');
+
+	// Create content page and go to edit mode
 
 	const layout = await apiHelpers.headlessDelivery.createSitePage({
 		siteId: site.id,
@@ -111,18 +126,16 @@ test('checks if sidebars are open or closed depending on Product Menu', async ({
 
 	await pageEditorPage.goto(layout, site.friendlyUrlPath);
 
-	const panel = await page.getByLabel('Fragments and Widgets Panel');
-	const configurationPanel = await page.getByLabel('Configuration Panel', {
+	// Check panels are visible
+
+	const panel = page.getByLabel('Fragments and Widgets Panel');
+	const configurationPanel = page.getByLabel('Configuration Panel', {
 		exact: true,
 	});
 
-	await expect(panel).toBeVisible();
-
-	await expect(configurationPanel).toBeVisible();
-
 	// Check if sidebars are not visible when Product Menu is open
 
-	await page.getByLabel('Open Product Menu').click();
+	await openProductMenu(page);
 
 	await expect(panel).not.toBeVisible();
 
@@ -130,22 +143,22 @@ test('checks if sidebars are open or closed depending on Product Menu', async ({
 
 	// Check if sidebars are visible when Product Menu is closed
 
-	await page
-		.getByLabel('Product Menu', {exact: true})
-		.getByLabel('Close')
-		.click();
+	await closeProductMenu(page);
 
 	await expect(panel).toBeVisible();
 
 	await expect(configurationPanel).toBeVisible();
 });
 
-test('checks sidebar accessibility', async ({
+test('Checks sidebar accessibility', async ({
 	apiHelpers,
 	page,
 	pageEditorPage,
 	site,
 }) => {
+
+	// Create page and go to edit mode
+
 	const layout = await apiHelpers.headlessDelivery.createSitePage({
 		siteId: site.id,
 		title: getRandomString(),
@@ -166,5 +179,140 @@ test('checks sidebar accessibility', async ({
 	await checkAccessibility({
 		page,
 		selectors: ['.page-editor__sidebar'],
+	});
+});
+
+test.describe('Fragments Panel', () => {
+	test('Only published fragments are shown in the Fragments Sidebar', async ({
+		apiHelpers,
+		fragmentsPage,
+		page,
+		pageEditorPage,
+		wemSite,
+	}) => {
+
+		// Create unpublished fragment inside Imported fragment set
+
+		await fragmentsPage.goto(wemSite.friendlyUrlPath);
+
+		const unpublishedFragmentName = getRandomString();
+		await fragmentsPage.createFragment('Imported', unpublishedFragmentName);
+
+		// Create content page and go to edit mode
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition(),
+			siteId: wemSite.id,
+			title: getRandomString(),
+		});
+
+		await pageEditorPage.goto(layout, wemSite.friendlyUrlPath);
+
+		// Check only published fragment is displayed
+
+		await pageEditorPage.goToSidebarTab('Fragments and Widgets');
+
+		await page
+			.getByRole('menuitem', {
+				exact: true,
+				name: 'Imported',
+			})
+			.click();
+
+		await expect(page.getByText('Apple')).toBeVisible();
+
+		await expect(page.getByText(unpublishedFragmentName)).not.toBeVisible();
+	});
+});
+
+test.describe('Page Contents Panel', () => {
+	test('Allows editing inline text from Page Content Panel', async ({
+		apiHelpers,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+
+		// Create a page with a Heading fragment
+
+		const headingId = getRandomString();
+		const headingDefinition = getFragmentDefinition({
+			id: headingId,
+			key: 'BASIC_COMPONENT-heading',
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([headingDefinition]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		// Go to edit mode of page
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		// Go to Page Contents panel and edit inline text
+
+		await pageEditorPage.goToSidebarTab('Page Content');
+
+		await page.getByLabel('Edit Text Heading Example').click();
+
+		const editable = pageEditorPage.getEditable(headingId, 'element-text');
+
+		await editable.locator('.cke_editable_inline').waitFor();
+
+		// Clear current content and fill with new one
+
+		await page.keyboard.press('Control+KeyA');
+		await page.keyboard.press('Backspace');
+
+		await page.keyboard.type('New Content');
+		await page.locator('body').click();
+
+		await pageEditorPage.waitForChangesSaved();
+
+		await expect(
+			page.locator('.page-editor__page-contents__page-content')
+		).toContainText('New Content');
+	});
+});
+
+test.describe('Rules Panel', () => {
+	test('Checks the accessibility of the rule modal by filling out a condition and an action', async ({
+		apiHelpers,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+
+		// Create content page with a Heading fragment and go to edit mode
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([
+				getFragmentDefinition({
+					id: getRandomString(),
+					key: 'BASIC_COMPONENT-heading',
+				}),
+			]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		// Add rule and check accessibility of modal
+
+		await pageEditorPage.goToSidebarTab('Page Rules');
+
+		await page.getByRole('button', {name: 'New Rule'}).click();
+
+		await pageEditorPage.addRuleCondition();
+
+		await pageEditorPage.addRuleAction();
+
+		await checkAccessibility({
+			page,
+			selectors: ['.modal-body'],
+		});
 	});
 });

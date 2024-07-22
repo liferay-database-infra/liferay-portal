@@ -5,8 +5,8 @@
 
 import {expect, mergeTests} from '@playwright/test';
 
-import {collectionsPagesTest} from '../../fixtures/CollectionsPageTest';
 import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
+import {collectionsPagesTest} from '../../fixtures/collectionsPagesTest';
 import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {pageEditorPagesTest} from '../../fixtures/pageEditorPagesTest';
@@ -32,12 +32,15 @@ const test = mergeTests(
 	wemSiteTest
 );
 
-test('allows selecting specific repeatable field when mapping', async ({
+test('Allows selecting specific repeatable field when mapping', async ({
 	apiHelpers,
 	page,
 	pageEditorPage,
 	wemSite,
 }) => {
+
+	// Create page with a Heading fragment and go to edit mode
+
 	const headingId = getRandomString();
 
 	const layout = await apiHelpers.headlessDelivery.createSitePage({
@@ -120,7 +123,7 @@ test('allows selecting specific repeatable field when mapping', async ({
 
 	expect(fragment).toHaveText('Francia');
 
-	// publish and check the published page
+	// Publish and check the published page
 
 	await pageEditorPage.publishPage();
 
@@ -129,7 +132,7 @@ test('allows selecting specific repeatable field when mapping', async ({
 	expect(fragment).toHaveText('France');
 });
 
-test('allows selecting specific repeatable collection provider', async ({
+test('Allows selecting specific repeatable collection provider', async ({
 	apiHelpers,
 	collectionsPage,
 	page,

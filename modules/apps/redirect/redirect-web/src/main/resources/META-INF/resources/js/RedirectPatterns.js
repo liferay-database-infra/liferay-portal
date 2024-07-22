@@ -14,6 +14,8 @@ import {v4 as uuidv4} from 'uuid';
 
 import '../css/redirect_pattern.scss';
 
+import ClayAlert from '@clayui/alert';
+
 const REGEX_URL_ALLOW_RELATIVE =
 	/((([A-Za-z]{3,9}:(?:\/\/)?)|\/(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(https?:\/\/|www.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[\w]*))((.*):(\d*)\/?(.*))?)/;
 
@@ -175,6 +177,7 @@ const RedirectPattern = ({
 	portletNamespace,
 	strings,
 	userAgents,
+	isStagingEnvironment,
 }) => {
 	const emptyRow = () => ({
 		destinationURL: '',
@@ -227,8 +230,19 @@ const RedirectPattern = ({
 					</h2>
 				</div>
 
+				{isStagingEnvironment && (
+					<ClayAlert
+						displayType="warning"
+						title={`${Liferay.Language.get('warning')}:`}
+					>
+						{Liferay.Language.get(
+							'redirect-functionality-may-not-work-as-expected-in-the-staging-environment'
+						)}
+					</ClayAlert>
+				)}
+
 				<div className="sheet-section">
-					<p className="text-muted">{description}</p>
+					<p className="text-secondary">{description}</p>
 
 					{patterns.map((item, index) => (
 						<PatternField
@@ -263,6 +277,7 @@ const RedirectPattern = ({
 
 RedirectPattern.propTypes = {
 	description: PropTypes.string,
+	isStagingEnvironment: PropTypes.bool.isRequired,
 	patterns: PropTypes.arrayOf(
 		PropTypes.shape({
 			destinationURL: PropTypes.string,

@@ -9,7 +9,9 @@ import {apiHelpersTest} from '../../fixtures/apiHelpersTest';
 import {featureFlagsTest} from '../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../fixtures/loginTest';
+import {liferayConfig} from '../../liferay.config';
 import getRandomString from '../../utils/getRandomString';
+import {openProductMenu} from '../../utils/productMenu';
 
 const test = mergeTests(
 	apiHelpersTest,
@@ -20,7 +22,7 @@ const test = mergeTests(
 	loginTest()
 );
 
-test('checks the correct label for restricted page in the Page Tree', async ({
+test('Checks the correct label for restricted page in the Page Tree', async ({
 	apiHelpers,
 	page,
 	site,
@@ -41,19 +43,25 @@ test('checks the correct label for restricted page in the Page Tree', async ({
 		title: pageName,
 	});
 
-	await page.goto(`/web${site.friendlyUrlPath}${layout.friendlyUrlPath}`);
+	await page.goto(
+		`${liferayConfig.environment.baseUrl}/en/web${site.friendlyUrlPath}${layout.friendlyUrlPath}`
+	);
 
 	// Open the Product Menu
 
-	await page
-		.getByRole('tab', {
-			name: 'Product Menu',
-		})
-		.click({timeout: 3000});
+	await openProductMenu(page);
+
+	// Open tree if it's not already open
+
+	if (!(await page.locator('.treeview').isVisible())) {
+		await page
+			.getByRole('button', {exact: true, name: 'Page Tree'})
+			.click();
+
+		await page.locator('.treeview').waitFor();
+	}
 
 	// Check the correct label for restricted page
-
-	await page.getByRole('button', {exact: true, name: 'Page Tree'}).click();
 
 	await expect(
 		page

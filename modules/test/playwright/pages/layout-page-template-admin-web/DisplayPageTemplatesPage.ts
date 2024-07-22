@@ -5,6 +5,7 @@
 
 import {Locator, Page} from '@playwright/test';
 
+import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
 import {PORTLET_URLS} from '../../utils/portletUrls';
 import {waitForSuccessAlert} from '../../utils/waitForSuccessAlert';
 
@@ -25,6 +26,74 @@ export class DisplayPageTemplatesPage {
 		await this.page.goto(
 			`/group${siteUrl || '/guest'}${PORTLET_URLS.displayPageTemplates}`
 		);
+	}
+
+	async clickMoreActions(name: string) {
+		await this.page
+			.locator(
+				'#_com_liferay_layout_page_template_admin_web_portlet_LayoutPageTemplatesPortlet_displayPagesSearchContainer .card-page-item'
+			)
+			.filter({hasText: name})
+			.getByLabel('More actions')
+			.click();
+	}
+
+	async deleteAllDisplayPageTemplates() {
+		await this.page
+			.getByLabel('Select All Items on the Page')
+			.setChecked(true);
+
+		await this.page.getByRole('button', {name: 'Delete'}).click();
+
+		await this.page
+			.getByLabel('Delete Entries- Loading')
+			.getByRole('button', {name: 'Delete'})
+			.click();
+	}
+
+	async editTemplate(name: string) {
+		await this.clickMoreActions(name);
+
+		await this.page
+			.getByRole('menuitem', {
+				exact: true,
+				name: 'Edit',
+			})
+			.click();
+
+		await this.page
+			.getByText('Select a Page Element', {exact: true})
+			.waitFor();
+	}
+
+	async viewUsages(name: string) {
+		await this.clickMoreActions(name);
+
+		await clickAndExpectToBeVisible({
+			target: this.page.getByRole('row').getByRole('checkbox').first(),
+
+			trigger: this.page.getByRole('menuitem', {
+				exact: true,
+				name: 'View Usages',
+			}),
+		});
+	}
+
+	async markAsDefault(name: string) {
+		await this.clickMoreActions(name);
+
+		this.page.once('dialog', (dialog) => {
+			dialog.accept().catch(() => {});
+		});
+
+		await this.page
+			.getByRole('menuitem', {
+				exact: true,
+				name: 'Mark as Default',
+			})
+			.click();
+
+		await waitForSuccessAlert(this.page);
 	}
 
 	async publishNewTemplate({
@@ -63,60 +132,5 @@ export class DisplayPageTemplatesPage {
 			this.page,
 			'Success:The display page template was published successfully.'
 		);
-	}
-
-	private async clickMoreActions(name: string) {
-		await this.page
-			.locator(
-				'#_com_liferay_layout_page_template_admin_web_portlet_LayoutPageTemplatesPortlet_displayPagesSearchContainer .card-page-item'
-			)
-			.filter({hasText: name})
-			.getByLabel('More actions')
-			.click();
-	}
-
-	async deleteAllDisplayPageTemplates() {
-		await this.page
-			.getByLabel('Select All Items on the Page')
-			.setChecked(true);
-
-		await this.page.getByRole('button', {name: 'Delete'}).click();
-
-		await this.page
-			.getByLabel('Delete Entries- Loading')
-			.getByRole('button', {name: 'Delete'})
-			.click();
-	}
-
-	async editTemplate(name: string) {
-		await this.clickMoreActions(name);
-
-		await this.page
-			.getByRole('menuitem', {
-				exact: true,
-				name: 'Edit',
-			})
-			.click();
-
-		await this.page
-			.getByText('Select a Page Element', {exact: true})
-			.waitFor();
-	}
-
-	async markAsDefault(name: string) {
-		await this.clickMoreActions(name);
-
-		this.page.once('dialog', (dialog) => {
-			dialog.accept().catch(() => {});
-		});
-
-		await this.page
-			.getByRole('menuitem', {
-				exact: true,
-				name: 'Mark as Default',
-			})
-			.click();
-
-		await waitForSuccessAlert(this.page);
 	}
 }

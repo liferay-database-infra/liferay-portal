@@ -36,7 +36,7 @@ async function checkBackButtonTitle(page: Page, title: string) {
 	).toBeVisible();
 }
 
-test('back buttons have correct title in different sections', async ({
+test('Back buttons have correct title in different sections', async ({
 	fragmentsPage,
 	journalEditTemplatePage,
 	navigationMenusPage,
@@ -49,11 +49,13 @@ test('back buttons have correct title in different sections', async ({
 
 	const styleBookName = getRandomString();
 
-	await styleBooksPage.createStyleBook(styleBookName, site.friendlyUrlPath);
+	await styleBooksPage.goto(site.friendlyUrlPath);
+
+	await styleBooksPage.createStyleBook(styleBookName);
 
 	await checkBackButtonTitle(page, 'Go to Style Books');
 
-	// Check also other places
+	// Check also other places:
 	// Journal template
 
 	await journalEditTemplatePage.goto(site.friendlyUrlPath);

@@ -24,12 +24,20 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.test.util.ConfigurationTemporarySwapper;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.metadata.RawMetadataProcessor;
+import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.DocumentImpl;
 import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
@@ -37,8 +45,12 @@ import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
+import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.repository.liferayrepository.model.LiferayFileEntry;
 import com.liferay.portal.search.spi.model.index.contributor.ModelDocumentContributor;
@@ -50,7 +62,10 @@ import java.io.IOException;
 
 import java.nio.charset.StandardCharsets;
 
+import java.util.Locale;
+
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -66,6 +81,11 @@ public class DLFileEntryModelDocumentContributorTest {
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
 		new LiferayIntegrationTestRule();
+
+	@Before
+	public void setUp() throws Exception {
+		_group = GroupTestUtil.addGroup();
+	}
 
 	@Test
 	public void testCachedTextExtractionIsNotReused() throws Exception {
@@ -139,6 +159,17 @@ public class DLFileEntryModelDocumentContributorTest {
 			"tall", 275, 183, "dependencies/183x275.jpeg");
 		_testFileEntryMetadataAttributesImageFileEntry(
 			"wide", 182, 277, "dependencies/277x182.jpeg");
+	}
+
+	@Test
+	public void testIndexDefaultLanguageId() throws Exception {
+		Company company = _companyLocalService.getCompany(
+			TestPropsValues.getCompanyId());
+
+		_testIndexDefaultLanguageId(
+			company.getLocale(), "true", LocaleUtil.HUNGARY);
+		_testIndexDefaultLanguageId(
+			LocaleUtil.HUNGARY, "false", LocaleUtil.HUNGARY);
 	}
 
 	@Test
@@ -250,9 +281,8 @@ public class DLFileEntryModelDocumentContributorTest {
 		throws Exception {
 
 		return _dlFileEntryLocalService.addFileEntry(
-			null, TestPropsValues.getUserId(), TestPropsValues.getGroupId(),
-			TestPropsValues.getGroupId(),
-			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
+			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			StringUtil.randomString(), mimeType, StringUtil.randomString(),
 			null, StringPool.BLANK, StringPool.BLANK,
 			DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_BASIC_DOCUMENT, null,
@@ -335,6 +365,40 @@ public class DLFileEntryModelDocumentContributorTest {
 			expectedImageWidth, GetterUtil.getLong(document.get("imageWidth")));
 	}
 
+	private void _testIndexDefaultLanguageId(
+			Locale expectedLocale, String inheritLocales, Locale locale)
+		throws Exception {
+
+		Document document = new DocumentImpl();
+
+		UnicodeProperties typeSettingsUnicodeProperties =
+			_group.getTypeSettingsProperties();
+
+		typeSettingsUnicodeProperties.setProperty(
+			GroupConstants.TYPE_SETTINGS_KEY_INHERIT_LOCALES, inheritLocales);
+
+		String languageId = LanguageUtil.getLanguageId(locale);
+
+		typeSettingsUnicodeProperties.setProperty(
+			PropsKeys.LOCALES, languageId);
+		typeSettingsUnicodeProperties.setProperty("languageId", languageId);
+
+		_group.setTypeSettingsProperties(typeSettingsUnicodeProperties);
+
+		_group = _groupLocalService.updateGroup(_group);
+
+		DLFileEntry dlFileEntry = _addDLFileEntry();
+
+		_dlFileEntryModelDocumentContributor.contribute(document, dlFileEntry);
+
+		Assert.assertEquals(
+			LocaleUtil.toLanguageId(expectedLocale),
+			document.get(Field.DEFAULT_LANGUAGE_ID));
+	}
+
+	@Inject
+	private CompanyLocalService _companyLocalService;
+
 	@Inject
 	private CTCollectionLocalService _ctCollectionLocalService;
 
@@ -352,6 +416,15 @@ public class DLFileEntryModelDocumentContributorTest {
 
 	@Inject
 	private DLStore _dlStore;
+
+	@DeleteAfterTestRun
+	private Group _group;
+
+	@Inject
+	private GroupLocalService _groupLocalService;
+
+	@Inject
+	private Portal _portal;
 
 	@Inject
 	private RawMetadataProcessor _rawMetadataProcessor;
