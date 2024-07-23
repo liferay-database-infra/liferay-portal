@@ -21,14 +21,17 @@ import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.ModelListener;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.PortletConstants;
+import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactory;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.PortletLocalService;
+import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.transaction.TransactionCommitCallbackUtil;
@@ -157,6 +160,17 @@ public class CompanyModelListener extends BaseModelListener<Company> {
 		}
 
 		if (actionIds.contains(ActionKeys.ACCESS_IN_CONTROL_PANEL)) {
+			ResourceAction resourceAction =
+				_resourceActionLocalService.fetchResourceAction(
+					portletId, ActionKeys.ACCESS_IN_CONTROL_PANEL);
+
+			if (resourceAction == null) {
+				_log.error(
+					StringBundler.concat(
+						"The resource action ", portletId, "#",
+						ActionKeys.ACCESS_IN_CONTROL_PANEL, "does not exist."));
+			}
+
 			_resourcePermissionLocalService.addResourcePermission(
 				companyId, rootPortletId, ResourceConstants.SCOPE_COMPANY,
 				String.valueOf(companyId), userRole.getRoleId(),
@@ -193,6 +207,9 @@ public class CompanyModelListener extends BaseModelListener<Company> {
 
 	@Reference
 	private PrefsProps _prefsProps;
+
+	@Reference
+	private ResourceActionLocalService _resourceActionLocalService;
 
 	@Reference
 	private ResourcePermissionLocalService _resourcePermissionLocalService;
