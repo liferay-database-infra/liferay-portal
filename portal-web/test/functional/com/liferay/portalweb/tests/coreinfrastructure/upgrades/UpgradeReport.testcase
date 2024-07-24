@@ -13,7 +13,6 @@ definition {
 	property test.run.type = "single";
 	property testcase.url = "http://www.example.com";
 	property testray.main.component.name = "Database Upgrade Tool";
-	property upgrade.reports.enabled = "true";
 
 	@description = "LPS-158741: Upgrade Report provides the initial, final, and expected portal build number"
 	@priority = 3
@@ -498,7 +497,7 @@ definition {
 	@description = "LPS-154683: Upgrade Report is not created when property is not set to true"
 	@priority = 4
 	test ReportNotGenerated {
-		property upgrade.reports.enabled = "false";
+		property upgrade.report.enabled = "false";
 
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
