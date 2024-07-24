@@ -21,6 +21,7 @@ definition {
 	@priority = 3
 	test LogOutputReturnsKeyValueWithExpectedNames {
 		property custom.properties = "upgrade.database.auto.run=true${line.separator}upgrade.log.context.enabled=true";
+		property upgrade.report.enabled = "false";
 
 		task ("Verify that marks related to upgrades/verifiers in the scope of portal-kernel/impl are present") {
 			Log.viewLogFileContentPresent(logContent = "upgrade.component=portal");
@@ -38,7 +39,7 @@ definition {
 			Log.viewLogFileContentPresent(logContent = "{}");
 		}
 
-		task ("Verify upgrade report is not generated in console output") {
+		task ("Verify upgrade report is not generated in console output when upgrade.report.enabled=false") {
 			AssertConsoleTextNotPresent(value1 = "Upgrade report generated in");
 		}
 	}
