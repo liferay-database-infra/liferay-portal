@@ -2386,6 +2386,13 @@ public class PropsValues {
 	public static final String UPGRADE_REPORT_DIR = GetterUtil.getString(
 		PropsUtil.get(PropsKeys.UPGRADE_REPORT_DIR));
 
+	public static final boolean
+		UPGRADE_REPORT_DL_STORAGE_SIZE_CALCULATION_DISABLED =
+			GetterUtil.getBoolean(
+				PropsUtil.get(
+					PropsKeys.
+						UPGRADE_REPORT_DL_STORAGE_SIZE_CALCULATION_DISABLED));
+
 	public static final long UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT =
 		GetterUtil.getLong(
 			PropsUtil.get(PropsKeys.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT));

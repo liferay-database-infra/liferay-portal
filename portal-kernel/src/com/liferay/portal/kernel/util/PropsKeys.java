@@ -2721,6 +2721,10 @@ public interface PropsKeys {
 
 	public static final String UPGRADE_REPORT_DIR = "upgrade.report.dir";
 
+	public static final String
+		UPGRADE_REPORT_DL_STORAGE_SIZE_CALCULATION_DISABLED =
+			"upgrade.report.dl.storage.size.calculation.disabled";
+
 	public static final String UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT =
 		"upgrade.report.dl.storage.size.timeout";
 
