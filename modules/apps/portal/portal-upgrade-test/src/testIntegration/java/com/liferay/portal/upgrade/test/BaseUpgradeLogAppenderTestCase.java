@@ -253,6 +253,35 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	}
 
 	@Test
+	public void testGetDLStorageSizeCalculationDisabled() throws Exception {
+		boolean originalUpgradeDLStorageSizeCalculationDisabled =
+			ReflectionTestUtil.getAndSetFieldValue(
+				PropsValues.class,
+				"UPGRADE_REPORT_DL_STORAGE_SIZE_CALCULATION_DISABLED", true);
+
+		try {
+			_appender.start();
+
+			_appender.stop();
+
+			if (_reportContent == null) {
+				_reportContent = _getReportContent();
+			}
+
+			Assert.assertFalse(
+				StringUtil.contains(
+					_reportContent, "Document library storage size: ",
+					StringPool.BLANK));
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(
+				PropsValues.class,
+				"UPGRADE_REPORT_DL_STORAGE_SIZE_CALCULATION_DISABLED",
+				originalUpgradeDLStorageSizeCalculationDisabled);
+		}
+	}
+
+	@Test
 	public void testGetDLStorageSizeInGb() throws Exception {
 		_appender.start();
 
