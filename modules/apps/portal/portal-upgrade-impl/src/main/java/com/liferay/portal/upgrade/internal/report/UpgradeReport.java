@@ -11,6 +11,7 @@ import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.SQLStatementLoggingWrapper;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -465,6 +466,33 @@ public class UpgradeReport {
 				return longestRunningUpgradeProcesses;
 			}
 		).put(
+			"failed.sql.statements",
+			() -> {
+				Map<String, ArrayList<String>> failedSQLStatements =
+					upgradeRecorder.getFailedSQLStatements();
+
+				List<String> statements = failedSQLStatements.get(
+					SQLStatementLoggingWrapper.class.getName());
+
+				if (ListUtil.isEmpty(statements)) {
+					return new ArrayList<>();
+				}
+
+				List<FailedSQLStatementsAndCauses>
+					failedSQLStatementsAndCauses = new ArrayList<>();
+
+				String[] parts = null;
+
+				for (String statement : statements) {
+					parts = StringUtil.split(statement, StringPool.PIPE);
+
+					failedSQLStatementsAndCauses.add(
+						new FailedSQLStatementsAndCauses(parts[0], parts[1]));
+				}
+
+				return failedSQLStatementsAndCauses;
+			}
+		).put(
 			"errors", _getMessagesPrinters(upgradeRecorder.getErrorMessages())
 		).put(
 			"warnings",
@@ -764,6 +792,29 @@ public class UpgradeReport {
 		public void run() {
 			_dlSize = FileUtils.sizeOfDirectory(new File(_rootDir));
 		}
+
+	}
+
+	private class FailedSQLStatementsAndCauses {
+
+		public FailedSQLStatementsAndCauses(String statement, String cause) {
+			_statement = statement;
+			_cause = cause;
+		}
+
+		@Override
+		public String toString() {
+			if (_logContext) {
+				return StringBundler.concat(
+					_statement, StringPool.COLON, _cause);
+			}
+
+			return StringBundler.concat(
+				StringPool.TAB, _statement, StringPool.TAB, "Cause: ", _cause);
+		}
+
+		private final String _cause;
+		private final String _statement;
 
 	}
 
