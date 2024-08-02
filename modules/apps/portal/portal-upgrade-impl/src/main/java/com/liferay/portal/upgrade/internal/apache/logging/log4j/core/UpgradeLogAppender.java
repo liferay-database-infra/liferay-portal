@@ -6,6 +6,7 @@
 package com.liferay.portal.upgrade.internal.apache.logging.log4j.core;
 
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.db.SQLStatementLoggingWrapper;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.upgrade.internal.recorder.UpgradeRecorder;
 import com.liferay.portal.upgrade.internal.report.UpgradeReport;
@@ -53,8 +54,17 @@ public class UpgradeLogAppender implements Appender {
 		}
 		else if (logEvent.getLevel() == Level.INFO) {
 			if (Objects.equals(
-					logEvent.getLoggerName(), UpgradeProcess.class.getName()) &&
-				formattedMessage.startsWith("Completed upgrade process ")) {
+					logEvent.getLoggerName(),
+					SQLStatementLoggingWrapper.class.getName())) {
+
+				_upgradeRecorder.recordFailedSQLStatement(
+					logEvent.getLoggerName(), formattedMessage);
+			}
+			else if (Objects.equals(
+						logEvent.getLoggerName(),
+						UpgradeProcess.class.getName()) &&
+					 formattedMessage.startsWith(
+						 "Completed upgrade process ")) {
 
 				_upgradeRecorder.recordUpgradeProcessMessage(
 					logEvent.getLoggerName(), formattedMessage);
