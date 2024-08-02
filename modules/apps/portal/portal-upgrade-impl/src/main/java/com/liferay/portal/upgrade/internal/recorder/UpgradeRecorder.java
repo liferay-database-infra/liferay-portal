@@ -47,6 +47,10 @@ public class UpgradeRecorder {
 		return _errorMessages;
 	}
 
+	public Map<String, ArrayList<String>> getFailedSQLStatements() {
+		return _failedSQLStatements;
+	}
+
 	public String getFinalSchemaVersion(String servletContextName) {
 		SchemaVersions schemaVersions = _schemaVersionsMap.get(
 			servletContextName);
@@ -102,6 +106,13 @@ public class UpgradeRecorder {
 		}
 	}
 
+	public void recordFailedSQLStatement(String loggerName, String statement) {
+		List<String> statements = _failedSQLStatements.computeIfAbsent(
+			loggerName, key -> new ArrayList<>());
+
+		statements.add(statement);
+	}
+
 	public void recordUpgradeProcessMessage(String loggerName, String message) {
 		List<String> messages = _upgradeProcessMessages.computeIfAbsent(
 			loggerName, key -> new ArrayList<>());
@@ -122,6 +133,7 @@ public class UpgradeRecorder {
 
 	public void start() {
 		_errorMessages.clear();
+		_failedSQLStatements.clear();
 		_result = "running";
 		_schemaVersionsMap.clear();
 		_type = "pending";
@@ -309,6 +321,8 @@ public class UpgradeRecorder {
 		UpgradeRecorder.class);
 
 	private static final Map<String, Map<String, Integer>> _errorMessages =
+		new ConcurrentHashMap<>();
+	private static final Map<String, ArrayList<String>> _failedSQLStatements =
 		new ConcurrentHashMap<>();
 	private static String _result;
 	private static final Map<String, SchemaVersions> _schemaVersionsMap =
