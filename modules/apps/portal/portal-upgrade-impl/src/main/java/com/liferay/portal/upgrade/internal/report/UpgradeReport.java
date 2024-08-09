@@ -19,12 +19,12 @@ import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.kernel.upgrade.ReleaseManager;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.tools.DBUpgrader;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
 import com.liferay.portal.upgrade.internal.recorder.UpgradeRecorder;
+import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
@@ -48,7 +49,6 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -56,7 +56,9 @@ import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TimeZone;
+import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.cm.PersistenceManager;
@@ -259,6 +261,8 @@ public class UpgradeReport {
 					StringPool.PERIOD, db.getMinorVersion());
 			}
 		).put(
+			"property.sources", PropsUtil.loadedSources()
+		).put(
 			"property",
 			() -> {
 				if (StringUtil.equals(
@@ -283,18 +287,31 @@ public class UpgradeReport {
 					}
 				}
 
-				return LinkedHashMapBuilder.<String, Object>put(
-					"liferay.home", PropsValues.LIFERAY_HOME
-				).put(
-					"locales", Arrays.toString(PropsValues.LOCALES)
-				).put(
-					"locales.enabled",
-					Arrays.toString(PropsValues.LOCALES_ENABLED)
-				).put(
-					PropsKeys.DL_STORE_IMPL, PropsValues.DL_STORE_IMPL
-				).put(
-					"rootDir", (_rootDir != null) ? _rootDir : "Undefined"
-				).build();
+				Properties properties = PropsUtil.getProperties();
+
+				Map<String, Object> filteredProperties = new TreeMap<>();
+
+				for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+					String property = String.valueOf(entry.getKey());
+					Object value = null;
+
+					if (ArrayUtil.contains(
+							PropsValues.ADMIN_OBFUSCATED_PROPERTIES,
+							property)) {
+
+						value = StringPool.EIGHT_STARS;
+					}
+					else {
+						value = entry.getValue();
+					}
+
+					filteredProperties.put(property, value);
+				}
+
+				filteredProperties.put(
+					"rootDir", (_rootDir != null) ? _rootDir : "Undefined");
+
+				return filteredProperties;
 			}
 		).put(
 			"document.library.storage.size",
