@@ -37,6 +37,7 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.tools.DBUpgrader;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
+import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
@@ -44,7 +45,6 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -499,25 +499,40 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		_assertLogContextContains(
 			"upgrade.report.property." + PropsKeys.DL_STORE_IMPL,
-			PropsValues.DL_STORE_IMPL);
+			PropsUtil.get(PropsKeys.DL_STORE_IMPL));
 		_assertLogContextContains(
-			"upgrade.report.property.liferay.home", PropsValues.LIFERAY_HOME);
+			"upgrade.report.property.liferay.home",
+			PropsUtil.get(PropsKeys.LIFERAY_HOME));
 		_assertLogContextContains(
 			"upgrade.report.property.locales",
-			Arrays.toString(PropsValues.LOCALES));
+			PropsUtil.get(PropsKeys.LOCALES));
 		_assertLogContextContains(
 			"upgrade.report.property.locales.enabled",
-			Arrays.toString(PropsValues.LOCALES_ENABLED));
+			PropsUtil.get(PropsKeys.LOCALES_ENABLED));
+
 		_assertReport(
-			StringBundler.concat(
-				"Property liferay.home: ", PropsValues.LIFERAY_HOME,
-				StringPool.NEW_LINE, "Property locales: ",
-				Arrays.toString(PropsValues.LOCALES), StringPool.NEW_LINE,
-				"Property locales.enabled: ",
-				Arrays.toString(PropsValues.LOCALES_ENABLED),
-				StringPool.NEW_LINE, "Property ", PropsKeys.DL_STORE_IMPL,
-				StringPool.COLON, StringPool.SPACE, PropsValues.DL_STORE_IMPL,
-				StringPool.NEW_LINE));
+			"Property liferay.home: " + PropsUtil.get(PropsKeys.LIFERAY_HOME));
+		_assertReport("Property locales: " + PropsUtil.get(PropsKeys.LOCALES));
+		_assertReport(
+			"Property locales.enabled: " +
+				PropsUtil.get(PropsKeys.LOCALES_ENABLED));
+		_assertReport(
+			"Property dl.store.impl: " +
+				PropsUtil.get(PropsKeys.DL_STORE_IMPL));
+		_assertReport("Property default.admin.password: ********");
+	}
+
+	@Test
+	public void testPropertySources() throws Exception {
+		_appender.start();
+
+		_appender.stop();
+
+		for (String source : PropsUtil.loadedSources()) {
+			_assertReport(source);
+			_assertLogContextContains(
+				"upgrade.report.property.sources", source);
+		}
 	}
 
 	@Test
