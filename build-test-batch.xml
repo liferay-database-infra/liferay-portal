@@ -6966,6 +6966,7 @@ information. Make sure to commit in all format-javadoc results.
 			<try>
 				<run-modules-integration-test
 					aws.store.enabled="true"
+					database.partition.enabled="true"
 					database.type="mysql"
 					database.version="5.7"
 				/>
@@ -7201,6 +7202,7 @@ information. Make sure to commit in all format-javadoc results.
 		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
 
 		<run-modules-integration-test
+			database.partition.enabled="true"
 			database.type="mysql"
 			database.version="5.7"
 			test.build.fix.pack.zip.url="${test.build.fix.pack.zip.url}"
@@ -7220,6 +7222,7 @@ information. Make sure to commit in all format-javadoc results.
 		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
 
 		<run-modules-integration-test
+			database.partition.enabled="true"
 			database.type="mysql"
 			database.version="5.7"
 			test.build.fix.pack.zip.url="${test.build.fix.pack.zip.url}"
@@ -7239,6 +7242,7 @@ information. Make sure to commit in all format-javadoc results.
 		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
 
 		<run-modules-integration-test
+			database.partition.enabled="true"
 			database.type="mysql"
 			database.version="5.7"
 			test.build.fix.pack.zip.url="${test.build.fix.pack.zip.url}"
@@ -7258,6 +7262,7 @@ information. Make sure to commit in all format-javadoc results.
 		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
 
 		<run-modules-integration-test
+			database.partition.enabled="true"
 			database.type="mysql"
 			database.version="8.0"
 			test.build.fix.pack.zip.url="${test.build.fix.pack.zip.url}"
@@ -7315,6 +7320,7 @@ information. Make sure to commit in all format-javadoc results.
 		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
 
 		<run-modules-integration-test
+			database.partition.enabled="true"
 			database.type="postgresql"
 			database.version="12.1"
 			test.build.fix.pack.zip.url="${test.build.fix.pack.zip.url}"
@@ -7334,6 +7340,7 @@ information. Make sure to commit in all format-javadoc results.
 		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
 
 		<run-modules-integration-test
+			database.partition.enabled="true"
 			database.type="postgresql"
 			database.version="13.4"
 			test.build.fix.pack.zip.url="${test.build.fix.pack.zip.url}"
@@ -7353,6 +7360,7 @@ information. Make sure to commit in all format-javadoc results.
 		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
 
 		<run-modules-integration-test
+			database.partition.enabled="true"
 			database.type="postgresql"
 			database.version="14.4"
 			test.build.fix.pack.zip.url="${test.build.fix.pack.zip.url}"
@@ -7372,6 +7380,7 @@ information. Make sure to commit in all format-javadoc results.
 		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
 
 		<run-modules-integration-test
+			database.partition.enabled="true"
 			database.type="postgresql"
 			database.version="15.3"
 			test.build.fix.pack.zip.url="${test.build.fix.pack.zip.url}"
@@ -7572,35 +7581,66 @@ information. Make sure to commit in all format-javadoc results.
 	</target>
 
 	<target name="modules-integration-mysql56-jdk8">
-		<run-modules-integration-test database.type="mysql" />
+		<run-modules-integration-test
+			database.partition.enabled="true"
+			database.type="mysql"
+		/>
 	</target>
 
 	<target name="modules-integration-mysql57-jdk8">
-		<run-modules-integration-test database.type="mysql" database.version="5.7" />
+		<run-modules-integration-test
+			database.partition.enabled="true"
+			database.type="mysql"
+			database.version="5.7"
+		/>
 	</target>
 
 	<target name="modules-integration-mysql57-jdk8_stable">
-		<run-modules-integration-test database.type="mysql" database.version="5.7" />
+		<run-modules-integration-test
+			database.partition.enabled="true"
+			database.type="mysql"
+			database.version="5.7"
+		/>
 	</target>
 
 	<target name="modules-integration-mysql57-jdk11_open">
-		<run-modules-integration-test database.type="mysql" database.version="5.7" />
+		<run-modules-integration-test
+			database.partition.enabled="true"
+			database.type="mysql"
+			database.version="5.7"
+		/>
 	</target>
 
 	<target name="modules-integration-mysql57-jdk21_zulu">
-		<run-modules-integration-test database.type="mysql" database.version="5.7" />
+		<run-modules-integration-test
+			database.partition.enabled="true"
+			database.type="mysql"
+			database.version="5.7"
+		/>
 	</target>
 
 	<target name="modules-integration-mysql80-jdk8">
-		<run-modules-integration-test database.type="mysql" database.version="8.0" />
+		<run-modules-integration-test
+			database.partition.enabled="true"
+			database.type="mysql"
+			database.version="8.0"
+		/>
 	</target>
 
 	<target name="modules-integration-mysql80-jdk8_stable">
-		<run-modules-integration-test database.type="mysql" database.version="8.0" />
+		<run-modules-integration-test
+			database.partition.enabled="true"
+			database.type="mysql"
+			database.version="8.0"
+		/>
 	</target>
 
 	<target name="modules-integration-mysql80-jdk11_open">
-		<run-modules-integration-test database.type="mysql" database.version="8.0" />
+		<run-modules-integration-test
+			database.partition.enabled="true"
+			database.type="mysql"
+			database.version="8.0"
+		/>
 	</target>
 
 	<target name="modules-integration-oracle193-jdk8">
@@ -7612,35 +7652,35 @@ information. Make sure to commit in all format-javadoc results.
 	</target>
 
 	<target name="modules-integration-postgresql121-jdk8">
-		<run-modules-integration-test database.type="postgresql" database.version="12.1" />
+		<run-modules-integration-test database.partition.enabled="true" database.type="postgresql" database.version="12.1" />
 	</target>
 
 	<target name="modules-integration-postgresql121-jdk11_open">
-		<run-modules-integration-test database.type="postgresql" database.version="12.1" />
+		<run-modules-integration-test database.partition.enabled="true" database.type="postgresql" database.version="12.1" />
 	</target>
 
 	<target name="modules-integration-postgresql134-jdk8">
-		<run-modules-integration-test database.type="postgresql" database.version="13.4" />
+		<run-modules-integration-test database.partition.enabled="true" database.type="postgresql" database.version="13.4" />
 	</target>
 
 	<target name="modules-integration-postgresql134-jdk11_open">
-		<run-modules-integration-test database.type="postgresql" database.version="13.4" />
+		<run-modules-integration-test database.partition.enabled="true" database.type="postgresql" database.version="13.4" />
 	</target>
 
 	<target name="modules-integration-postgresql144-jdk8">
-		<run-modules-integration-test database.type="postgresql" database.version="14.4" />
+		<run-modules-integration-test database.partition.enabled="true" database.type="postgresql" database.version="14.4" />
 	</target>
 
 	<target name="modules-integration-postgresql144-jdk11_open">
-		<run-modules-integration-test database.type="postgresql" database.version="14.4" />
+		<run-modules-integration-test database.partition.enabled="true" database.type="postgresql" database.version="14.4" />
 	</target>
 
 	<target name="modules-integration-postgresql153-jdk8">
-		<run-modules-integration-test database.type="postgresql" database.version="15.3" />
+		<run-modules-integration-test database.partition.enabled="true" database.type="postgresql" database.version="15.3" />
 	</target>
 
 	<target name="modules-integration-postgresql153-jdk11_open">
-		<run-modules-integration-test database.type="postgresql" database.version="15.3" />
+		<run-modules-integration-test database.partition.enabled="true" database.type="postgresql" database.version="15.3" />
 	</target>
 
 	<target name="modules-integration-postgresql163-jdk8">
