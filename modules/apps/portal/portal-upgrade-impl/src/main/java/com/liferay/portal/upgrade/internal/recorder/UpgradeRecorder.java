@@ -23,6 +23,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,9 +35,12 @@ import javax.sql.DataSource;
 import org.apache.logging.log4j.ThreadContext;
 
 import org.osgi.framework.BundleContext;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.util.tracker.ServiceTracker;
 
 /**
@@ -42,6 +48,10 @@ import org.osgi.util.tracker.ServiceTracker;
  */
 @Component(service = UpgradeRecorder.class)
 public class UpgradeRecorder {
+
+	public Map<String, Map<String, Object>> getConfigurationMap() {
+		return _configurationMap;
+	}
 
 	public Map<String, Map<String, Integer>> getErrorMessages() {
 		return _errorMessages;
@@ -121,6 +131,7 @@ public class UpgradeRecorder {
 	}
 
 	public void start() {
+		_configurationMap.clear();
 		_errorMessages.clear();
 		_result = "running";
 		_schemaVersionsMap.clear();
@@ -140,6 +151,8 @@ public class UpgradeRecorder {
 		_result = _calculateResult();
 
 		_type = _calculateType(_result);
+
+		_populateConfigurationMap(_configurationMap);
 
 		if (PropsValues.UPGRADE_LOG_CONTEXT_ENABLED) {
 			ThreadContext.put("upgrade.type", _type);
@@ -259,6 +272,47 @@ public class UpgradeRecorder {
 		return messages;
 	}
 
+	private Map<String, Map<String, Object>> _populateConfigurationMap(
+		Map<String, Map<String, Object>> configurationMap) {
+
+		try {
+			Configuration[] configurations =
+				_configurationAdmin.listConfigurations("(service.pid=*)");
+
+			if (configurations != null) {
+				for (Configuration configuration : configurations) {
+					if (configuration != null) {
+						Dictionary<String, Object> properties =
+							configuration.getProperties();
+
+						if (properties != null) {
+							String pid = configuration.getPid();
+
+							Map<String, Object> propertiesMap = new HashMap<>();
+
+							Enumeration<String> enumeration = properties.keys();
+
+							while (enumeration.hasMoreElements()) {
+								String key = enumeration.nextElement();
+
+								Object value = properties.get(key);
+
+								propertiesMap.put(key, value);
+							}
+
+							configurationMap.put(pid, propertiesMap);
+						}
+					}
+				}
+			}
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		return configurationMap;
+	}
+
 	private void _processRelease(
 		UnsafeBiConsumer<SchemaVersions, String, Exception> unsafeBiConsumer) {
 
@@ -308,6 +362,8 @@ public class UpgradeRecorder {
 	private static final Log _log = LogFactoryUtil.getLog(
 		UpgradeRecorder.class);
 
+	private static final Map<String, Map<String, Object>> _configurationMap =
+		new ConcurrentHashMap<>();
 	private static final Map<String, Map<String, Integer>> _errorMessages =
 		new ConcurrentHashMap<>();
 	private static String _result;
@@ -332,6 +388,9 @@ public class UpgradeRecorder {
 			_type = "not enabled";
 		}
 	}
+
+	@Reference
+	private ConfigurationAdmin _configurationAdmin;
 
 	private ServiceTracker<ReleaseManager, ReleaseManager> _serviceTracker;
 

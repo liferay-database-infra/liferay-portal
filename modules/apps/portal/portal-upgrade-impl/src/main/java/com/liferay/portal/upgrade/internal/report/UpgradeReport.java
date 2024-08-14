@@ -259,6 +259,8 @@ public class UpgradeReport {
 					StringPool.PERIOD, db.getMinorVersion());
 			}
 		).put(
+			"configuration", upgradeRecorder.getConfigurationMap()
+		).put(
 			"property",
 			() -> {
 				if (StringUtil.equals(
