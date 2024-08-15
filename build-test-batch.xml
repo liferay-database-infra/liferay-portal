@@ -2420,6 +2420,25 @@ ${poshi.runner.testsuite.testcase.name}</echo>
 
 							<antcall target="prepare-portal-test-object-storage-sugarcrm-properties" />
 
+							<if>
+								<or>
+									<equals arg1="@{database.type}" arg2="mysql" />
+									<equals arg1="@{database.type}" arg2="postgresql" />
+								</or>
+								<then>
+									<if>
+										<and>
+											<equals arg1="@{database.partition.enabled}" arg2="true" />
+										</and>
+										<then>
+											<property name="osgi.module.configuration.file.names" value="com.liferay.portal.instances.internal.configuration.PortalInstancesConfiguration~www.able.com.config" />
+											<property name="osgi.module.configurations" value="mx=&quot;www.able.com&quot;${line.separator}virtualHostname=&quot;www.able.com&quot;" />
+											<antcall target="deploy-osgi-module-configurations" />
+										</then>
+									</if>
+								</then>
+							</if>
+
 							<ant dir="portal-test" inheritAll="false" target="deploy" />
 
 							<setup-test-batch-testable-tomcat test.portal.bundle.version="@{test.portal.bundle.version}" />
