@@ -15,6 +15,26 @@
 		result="test.class.timeout.seconds"
 	/>
 
+	<target name="deploy-osgi-portal-instance-configuration">
+		<echo file="${liferay.home}/osgi/configs/${osgi.portal.instance.configuration.file.name}">${osgi.portal.instance.configuration}</echo>
+
+		<var name="osgi.module.configuration.file.names.index" value="1" />
+
+		<pathconvert property="osgi.configs">
+			<path>
+				<fileset
+					dir="${liferay.home}/osgi/configs"
+				/>
+			</path>
+		</pathconvert>
+
+		<for delimiter=":" list="${osgi.configs}" param="osgi.config">
+			<sequential>
+				<print-file file.name="@{osgi.config}" />
+			</sequential>
+		</for>
+	</target>
+
 	<macrodef name="check-jenkins-console">
 		<sequential>
 			<if>
@@ -2431,9 +2451,10 @@ ${poshi.runner.testsuite.testcase.name}</echo>
 											<equals arg1="@{database.partition.enabled}" arg2="true" />
 										</and>
 										<then>
-											<property name="osgi.module.configuration.file.names" value="com.liferay.portal.instances.internal.configuration.PortalInstancesConfiguration~www.able.com.config" />
-											<property name="osgi.module.configurations" value="mx=&quot;www.able.com&quot;${line.separator}virtualHostname=&quot;www.able.com&quot;" />
-											<antcall target="deploy-osgi-module-configurations" />
+											<antcall target="deploy-osgi-portal-instance-configuration" >
+											<param name="osgi.module.configuration.file.names" value="com.liferay.portal.instances.internal.configuration.PortalInstancesConfiguration~www.able.com.config" />
+											<param name="osgi.module.configurations" value="mx=&quot;www.able.com&quot;${line.separator}virtualHostname=&quot;www.able.com&quot;" />
+											</antcall>
 										</then>
 									</if>
 								</then>
