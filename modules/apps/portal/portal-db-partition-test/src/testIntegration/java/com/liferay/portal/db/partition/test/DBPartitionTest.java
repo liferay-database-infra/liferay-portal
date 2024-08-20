@@ -686,8 +686,15 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 					List<LogEntry> logEntries = logCapture.getLogEntries();
 
+					long expectedLogEntriesCount = 0L;
+
+					if (companyId == PortalInstancePool.getDefaultCompanyId()) {
+						expectedLogEntriesCount = 1L;
+					}
+
 					Assert.assertEquals(
-						logEntries.toString(), 0L, logEntries.size());
+						logEntries.toString(), expectedLogEntriesCount,
+						logEntries.size());
 				}
 			});
 	}
