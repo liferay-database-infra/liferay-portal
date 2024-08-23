@@ -8,6 +8,8 @@ package com.liferay.portal.upgrade.internal.report;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.events.StartupHelperUtil;
+import com.liferay.portal.file.install.properties.ConfigurationProperties;
+import com.liferay.portal.file.install.properties.ConfigurationPropertiesFactory;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -57,6 +59,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.cm.PersistenceManager;
@@ -295,6 +298,38 @@ public class UpgradeReport {
 				).put(
 					"rootDir", (_rootDir != null) ? _rootDir : "Undefined"
 				).build();
+			}
+		).put(
+			"configuration.set.by.user",
+			() -> {
+				Map<String, Map<String, Object>> configurationMap =
+					new HashMap<>();
+
+				File dir = new File(PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR);
+
+				dir = dir.getCanonicalFile();
+
+				for (File file : _listConfigs(dir)) {
+					Map<String, Object> propertiesMap = new TreeMap<>();
+
+					ConfigurationProperties configurationProperties =
+						ConfigurationPropertiesFactory.create(
+							file, StringPool.UTF8);
+
+					for (String key : configurationProperties.keySet()) {
+						Object value = configurationProperties.get(key);
+
+						if (_isPasswordField(key)) {
+							value = StringPool.EIGHT_STARS;
+						}
+
+						propertiesMap.put(key, value);
+					}
+
+					configurationMap.put(file.getAbsolutePath(), propertiesMap);
+				}
+
+				return new ConfigurationPrinter(configurationMap);
 			}
 		).put(
 			"document.library.storage.size",
@@ -612,6 +647,42 @@ public class UpgradeReport {
 		}
 	}
 
+	private boolean _isPasswordField(String key) {
+		String[] passwordKeywords = {
+			"password", "secret", "securitycredential"
+		};
+
+		String lowerCaseKey = StringUtil.toLowerCase(key);
+
+		for (String keyword : passwordKeywords) {
+			if (lowerCaseKey.contains(keyword)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private List<File> _listConfigs(File dir) {
+		if (!dir.isDirectory()) {
+			return Collections.<File>emptyList();
+		}
+
+		return Arrays.asList(
+			dir.listFiles(
+				file -> {
+					if (file.isFile()) {
+						String name = file.getName();
+
+						if (name.endsWith(".cfg") || name.endsWith(".config")) {
+							return true;
+						}
+					}
+
+					return false;
+				}));
+	}
+
 	private void _printToLogContext(Map<String, Object> reportData) {
 		if (!PropsValues.UPGRADE_LOG_CONTEXT_ENABLED) {
 			return;
@@ -759,6 +830,90 @@ public class UpgradeReport {
 	private final int _initialBuildNumber;
 	private Map<String, Integer> _initialTableCounts;
 	private String _rootDir;
+
+	private class ConfigurationPrinter {
+
+		public ConfigurationPrinter(
+			Map<String, Map<String, Object>> configurationMap) {
+
+			_configurationMap = configurationMap;
+		}
+
+		@Override
+		public String toString() {
+			StringBundler sb = new StringBundler();
+
+			sb.append(StringPool.NEW_LINE);
+			sb.append(StringPool.NEW_LINE);
+
+			for (Map.Entry<String, Map<String, Object>> sourceEntry :
+					_configurationMap.entrySet()) {
+
+				String source = sourceEntry.getKey();
+
+				Map<String, Object> properties = sourceEntry.getValue();
+
+				sb.append(source);
+
+				sb.append(StringPool.NEW_LINE);
+
+				sb.append(
+					ListUtil.toString(
+						Collections.nCopies(source.length(), StringPool.MINUS),
+						StringPool.NULL, StringPool.BLANK));
+
+				sb.append(StringPool.NEW_LINE);
+
+				for (Map.Entry<String, Object> propertyEntry :
+						properties.entrySet()) {
+
+					sb.append(propertyEntry.getKey());
+					sb.append(StringPool.EQUAL);
+					sb.append(_formatValue(propertyEntry.getValue()));
+					sb.append(StringPool.NEW_LINE);
+				}
+
+				sb.append(StringPool.NEW_LINE);
+			}
+
+			return sb.toString();
+		}
+
+		private String _formatValue(Object value) {
+			StringBundler sb = new StringBundler();
+
+			if (value instanceof String[]) {
+				sb.append(StringPool.OPEN_BRACKET);
+				sb.append(StringPool.NEW_LINE);
+
+				String[] valueArray = (String[])value;
+
+				for (String valueElement : valueArray) {
+					sb.append(StringPool.SPACE);
+					sb.append(StringPool.SPACE);
+					sb.append(StringPool.QUOTE);
+					sb.append(valueElement);
+					sb.append(StringPool.QUOTE);
+					sb.append(StringPool.COMMA);
+					sb.append(StringPool.SPACE);
+					sb.append(StringPool.BACK_SLASH);
+					sb.append(StringPool.NEW_LINE);
+				}
+
+				sb.append(StringPool.CLOSE_BRACKET);
+			}
+			else {
+				sb.append(StringPool.QUOTE);
+				sb.append(value);
+				sb.append(StringPool.QUOTE);
+			}
+
+			return sb.toString();
+		}
+
+		private final Map<String, Map<String, Object>> _configurationMap;
+
+	}
 
 	private class DLSizeThread extends Thread {
 
