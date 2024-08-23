@@ -44,6 +44,10 @@ import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
@@ -147,6 +151,34 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		_upgradeReportLogger.removeAppender(_logContextAppender);
 
 		_logContextAppender.stop();
+	}
+
+	@Test
+	public void testConfigurationSetByUser() throws Exception {
+		Path path = Paths.get(
+			PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR, "test.config");
+
+		try {
+			String content = "testKey=\"testValue\"";
+
+			Files.write(path, content.getBytes());
+
+			_appender.start();
+
+			_appender.stop();
+
+			_assertReport(path.toString());
+			_assertReport(content);
+
+			_assertLogContextContains(
+				"upgrade.report.configuration.set.by.user", path.toString());
+
+			_assertLogContextContains(
+				"upgrade.report.configuration.set.by.user", content);
+		}
+		finally {
+			Files.deleteIfExists(path);
+		}
 	}
 
 	@Test
