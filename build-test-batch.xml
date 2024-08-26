@@ -2452,8 +2452,8 @@ ${poshi.runner.testsuite.testcase.name}</echo>
 										</and>
 										<then>
 											<antcall target="deploy-osgi-portal-instance-configuration" >
-											<param name="osgi.module.configuration.file.names" value="com.liferay.portal.instances.internal.configuration.PortalInstancesConfiguration~www.able.com.config" />
-											<param name="osgi.module.configurations" value="mx=&quot;www.able.com&quot;${line.separator}virtualHostname=&quot;www.able.com&quot;" />
+											<param name="osgi.module.configuration.file.names" value="com.liferay.portal.instances.internal.configuration.PortalInstancesConfiguration~db-partition.com.config" />
+											<param name="osgi.module.configurations" value="mx=&quot;db-partition.com&quot;${line.separator}virtualHostname=&quot;db-partition.com&quot;" />
 											</antcall>
 										</then>
 									</if>
