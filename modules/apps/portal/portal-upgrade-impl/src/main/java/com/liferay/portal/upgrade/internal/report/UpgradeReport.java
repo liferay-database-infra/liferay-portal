@@ -37,6 +37,9 @@ import com.liferay.portal.util.PropsValues;
 import java.io.File;
 import java.io.IOException;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+
 import java.nio.file.Files;
 
 import java.sql.Connection;
@@ -295,6 +298,14 @@ public class UpgradeReport {
 				).put(
 					"rootDir", (_rootDir != null) ? _rootDir : "Undefined"
 				).build();
+			}
+		).put(
+			"jvm.arguments",
+			() -> {
+				RuntimeMXBean runtimeMXBean =
+					ManagementFactory.getRuntimeMXBean();
+
+				return runtimeMXBean.getInputArguments();
 			}
 		).put(
 			"document.library.storage.size",
