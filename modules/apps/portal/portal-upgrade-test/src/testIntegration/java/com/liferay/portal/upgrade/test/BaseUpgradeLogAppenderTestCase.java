@@ -44,11 +44,15 @@ import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -402,6 +406,22 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		Assert.assertTrue(
 			longestUpgradeProcessesValue.indexOf(slowerUpgradeProcessName) <
 				longestUpgradeProcessesValue.indexOf(fasterUpgradeProcessName));
+	}
+
+	@Test
+	public void testJVMArguments() throws Exception {
+		_appender.start();
+
+		_appender.stop();
+
+		RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+
+		List<String> jvmArguments = runtimeMXBean.getInputArguments();
+
+		_assertReport(jvmArguments.get(0));
+
+		_assertLogContextContains(
+			"upgrade.report.jvm.arguments", jvmArguments.get(0));
 	}
 
 	@Test
