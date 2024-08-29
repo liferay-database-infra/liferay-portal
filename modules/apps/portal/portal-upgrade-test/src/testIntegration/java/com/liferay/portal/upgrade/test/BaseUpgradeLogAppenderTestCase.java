@@ -609,6 +609,66 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	}
 
 	@Test
+	public void testSQLStatementsWithDuration() throws Exception {
+		String statement1 = "insert into UpgradeReportTable1 (id_) values (1)";
+		String statement2 = "delete from UpgradeReportTable1 where id_ = 1";
+
+		UpgradeProcess upgradeProcess1 = UpgradeProcessFactory.runSQL(
+			statement1);
+
+		UpgradeProcess upgradeProcess2 = UpgradeProcessFactory.runSQL(
+			statement2);
+
+		_appender.start();
+
+		try {
+			upgradeProcess1.upgrade();
+			upgradeProcess2.upgrade();
+		}
+		catch (UpgradeException upgradeException) {
+		}
+
+		_appender.stop();
+
+		if (_reportContent == null) {
+			_reportContent = _getReportContent();
+		}
+
+		String regex1 = String.format(
+			"SQL: %s; Duration: \\d+ ms", Pattern.quote(statement1));
+
+		String regex2 = String.format(
+			"SQL: %s; Duration: \\d+ ms", Pattern.quote(statement2));
+
+		Pattern pattern1 = Pattern.compile(regex1);
+		Pattern pattern2 = Pattern.compile(regex2);
+
+		Matcher matcher1 = pattern1.matcher(_reportContent);
+		Matcher matcher2 = pattern2.matcher(_reportContent);
+
+		Assert.assertTrue(matcher1.find());
+
+		Assert.assertTrue(matcher2.find());
+
+		Map<String, Long> sqlExecutionTimes = ReflectionTestUtil.invoke(
+			_upgradeRecorder, "getSQLExecutionTimes", new Class<?>[0]);
+
+		for (Map.Entry<String, Long> entry : sqlExecutionTimes.entrySet()) {
+			String sql = entry.getKey();
+			Long duration = entry.getValue();
+
+			String regex = String.format(
+				"SQL: %s; Duration: %d ms", Pattern.quote(sql), duration);
+
+			Pattern pattern = Pattern.compile(regex);
+
+			Matcher matcher = pattern.matcher(_reportContent);
+
+			Assert.assertTrue(matcher.find());
+		}
+	}
+
+	@Test
 	public void testUpgradeReportDirectory() throws Exception {
 		String originalUpgradeReportDir =
 			ReflectionTestUtil.getAndSetFieldValue(
