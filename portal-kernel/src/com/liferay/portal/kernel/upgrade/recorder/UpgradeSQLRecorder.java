@@ -21,7 +21,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author István András Dézsi
@@ -153,8 +155,14 @@ public class UpgradeSQLRecorder {
 		return _failedSQLs;
 	}
 
+	public static Map<String, Long> getSQLExecutionTimes() {
+		return _sqlExecutionTimes;
+	}
+
 	public static void start() {
 		_failedSQLs.clear();
+
+		_sqlExecutionTimes.clear();
 
 		_enabled = true;
 	}
@@ -165,6 +173,8 @@ public class UpgradeSQLRecorder {
 
 	private static <T> T _execute(SQLCallable<T> sqlCallable, Object object)
 		throws SQLException {
+
+		long startTime = System.currentTimeMillis();
 
 		try {
 			return sqlCallable.call();
@@ -186,6 +196,17 @@ public class UpgradeSQLRecorder {
 			}
 
 			throw sqlException;
+		}
+		finally {
+			long endTime = System.currentTimeMillis();
+
+			String sql = _extractSQL(object);
+
+			if (sql != null) {
+				long duration = endTime - startTime;
+
+				_sqlExecutionTimes.put(sql, duration);
+			}
 		}
 	}
 
@@ -333,6 +354,7 @@ public class UpgradeSQLRecorder {
 
 	private static boolean _enabled;
 	private static final List<String> _failedSQLs = new ArrayList<>();
+	private static final Map<String, Long> _sqlExecutionTimes = new HashMap<>();
 
 	@FunctionalInterface
 	private interface SQLCallable<R> {
