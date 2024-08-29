@@ -465,6 +465,33 @@ public class UpgradeReport {
 				return longestRunningUpgradeProcesses;
 			}
 		).put(
+			"longest.running.sqls",
+			() -> {
+				Map<String, Long> sqlExecutionTimes =
+					upgradeRecorder.getSQLExecutionTimes();
+
+				List<Map.Entry<String, Long>> entries = new ArrayList<>(
+					sqlExecutionTimes.entrySet());
+
+				entries.sort(
+					(entry1, entry2) -> Long.compare(
+						entry2.getValue(), entry1.getValue()));
+
+				List<RunningSQLQuery> longestRunningSQLQueries =
+					new ArrayList<>();
+
+				int count = Math.min(_TOP_SQL_QUERIES_COUNT, entries.size());
+
+				for (int i = 0; i < count; i++) {
+					Map.Entry<String, Long> entry = entries.get(i);
+
+					longestRunningSQLQueries.add(
+						new RunningSQLQuery(entry.getKey(), entry.getValue()));
+				}
+
+				return longestRunningSQLQueries;
+			}
+		).put(
 			"failed.sqls", upgradeRecorder.getFailedSQLs()
 		).put(
 			"errors", _getMessagesPrinters(upgradeRecorder.getErrorMessages())
@@ -743,6 +770,8 @@ public class UpgradeReport {
 		"com.liferay.portal.store.file.system.configuration." +
 			"FileSystemStoreConfiguration";
 
+	private static final int _TOP_SQL_QUERIES_COUNT = 20;
+
 	private static final int _UPGRADE_PROCESSES_COUNT = 20;
 
 	private static final Log _log = LogFactoryUtil.getLog(UpgradeReport.class);
@@ -826,6 +855,37 @@ public class UpgradeReport {
 			private final int _occurrences;
 
 		}
+
+	}
+
+	private class RunningSQLQuery {
+
+		public RunningSQLQuery(String sql, long duration) {
+			_sql = sql;
+			_duration = duration;
+		}
+
+		public long getDuration() {
+			return _duration;
+		}
+
+		public String getSql() {
+			return _sql;
+		}
+
+		@Override
+		public String toString() {
+			if (_logContext) {
+				return StringBundler.concat(
+					_sql, StringPool.COLON, _duration, " ms");
+			}
+
+			return StringBundler.concat(
+				"SQL: ", _sql, "; Duration: ", _duration, " ms");
+		}
+
+		private final long _duration;
+		private final String _sql;
 
 	}
 
