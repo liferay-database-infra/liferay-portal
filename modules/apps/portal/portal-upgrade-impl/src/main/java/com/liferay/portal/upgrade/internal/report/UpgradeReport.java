@@ -1015,7 +1015,7 @@ public class UpgradeReport {
 
 					if (ArrayUtil.contains(
 							PropsValues.ADMIN_OBFUSCATED_PROPERTIES,
-							String.valueOf(propertyEntry.getValue()))) {
+							String.valueOf(propertyEntry.getKey()))) {
 
 						sb.append(StringPool.EIGHT_STARS);
 					}
