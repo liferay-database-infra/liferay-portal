@@ -42,6 +42,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.net.URI;
+
 import java.nio.file.Files;
 
 import java.sql.Connection;
@@ -114,6 +116,27 @@ public class UpgradeReport {
 		}
 
 		return 0;
+	}
+
+	private List<String> _getFilePaths(List<String> paths) {
+		List<String> filePaths = new ArrayList<>();
+
+		for (String path : paths) {
+			try {
+				URI uri = new URI(path);
+
+				if (StringUtil.equals("file", uri.getScheme())) {
+					String filePath = uri.getPath();
+
+					filePaths.add(filePath);
+				}
+			}
+			catch (Exception exception) {
+				_log.error("Unable to process file path", exception);
+			}
+		}
+
+		return filePaths;
 	}
 
 	private List<MessagesPrinter> _getMessagesPrinters(
@@ -309,7 +332,7 @@ public class UpgradeReport {
 				Map<String, Properties> propertiesMap = new LinkedHashMap<>();
 
 				for (String filePath :
-						PropsUtil.getArray("include-and-override")) {
+						_getFilePaths(PropsUtil.loadedSources())) {
 
 					if (!FileUtil.exists(filePath)) {
 						continue;
