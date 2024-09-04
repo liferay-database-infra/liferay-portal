@@ -25,7 +25,6 @@ import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.upgrade.UpgradeException;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeProcessFactory;
-import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -50,11 +49,14 @@ import java.io.Writer;
 
 import java.lang.reflect.Field;
 
+import java.net.URI;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -571,14 +573,11 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	public void testPropertiesSetByUserWithFile() throws Exception {
 		File propertiesFile = temporaryFolder.newFile("test.properties");
 
-		String[] originalIncludeAndOverride = PropsUtil.getArray(
-			"include-and-override");
+		URI propertiesFileURI = propertiesFile.toURI();
 
-		String[] includeAndOverride = ArrayUtil.append(
-			originalIncludeAndOverride, propertiesFile.getAbsolutePath());
+		String sourceEntry = propertiesFileURI.toString();
 
-		PropsUtil.set(
-			"include-and-override", StringUtil.merge(includeAndOverride));
+		_addSource(sourceEntry);
 
 		Properties properties = new Properties();
 
@@ -593,17 +592,15 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 			_assertLogContextContains(
 				"upgrade.report.properties.set.by.user",
-				propertiesFile.getAbsolutePath());
+				propertiesFileURI.getPath());
 			_assertLogContextContains(
 				"upgrade.report.properties.set.by.user",
 				"my.property: my property value");
-			_assertReport(propertiesFile.getAbsolutePath());
+			_assertReport(propertiesFileURI.getPath());
 			_assertReport("my.property: my property value");
 		}
 		finally {
-			PropsUtil.set(
-				"include-and-override",
-				StringUtil.merge(originalIncludeAndOverride));
+			_removeSource(sourceEntry);
 		}
 	}
 
@@ -764,6 +761,12 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		dclSingleton.destroy(null);
 	}
 
+	private void _addSource(String source) throws Exception {
+		List<String> loadedSources = PropsUtil.loadedSources();
+
+		loadedSources.add(source);
+	}
+
 	private void _assertLogContextContains(String key, String text) {
 		Assert.assertTrue(
 			StringUtil.containsIgnoreCase(
@@ -865,6 +868,12 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		Assert.assertTrue(reportsDir.exists());
 
 		return new File(reportsDir, fileName);
+	}
+
+	private void _removeSource(String source) throws Exception {
+		List<String> loadedSources = PropsUtil.loadedSources();
+
+		loadedSources.remove(source);
 	}
 
 	private void _setEnv(String key, String value) throws Exception {
