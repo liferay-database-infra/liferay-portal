@@ -181,8 +181,11 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		String fileName = serviceFactoryPid + ".config";
 
-		Path path = Paths.get(
-			PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR, fileName);
+		String configDirPath = new File(
+			PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR
+		).getCanonicalPath();
+
+		Path path = Paths.get(configDirPath, fileName);
 
 		Dictionary<String, Object> dictionary =
 			HashMapDictionaryBuilder.<String, Object>put(
@@ -208,7 +211,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 			_appender.stop();
 
-			_assertReport(PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR);
+			_assertReport(configDirPath);
 
 			_assertReport(fileName);
 
@@ -217,8 +220,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			_assertReport("password=\"********\"");
 
 			_assertLogContextContains(
-				"upgrade.report.configurations.set.by.user",
-				PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR);
+				"upgrade.report.configurations.set.by.user", configDirPath);
 
 			_assertLogContextContains(
 				"upgrade.report.configurations.set.by.user", fileName);
