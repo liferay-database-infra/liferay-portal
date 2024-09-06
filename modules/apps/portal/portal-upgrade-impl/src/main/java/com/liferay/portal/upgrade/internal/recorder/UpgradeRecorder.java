@@ -296,12 +296,12 @@ public class UpgradeRecorder {
 		return messages;
 	}
 
-	private boolean _isPasswordField(String key, String factoryPid) {
+	private boolean _isPasswordField(String factoryPid, String key) {
+		String lowerCaseKey = StringUtil.toLowerCase(key);
+
 		String[] passwordKeywords = {
 			"password", "secret", "securitycredential"
 		};
-
-		String lowerCaseKey = StringUtil.toLowerCase(key);
 
 		for (String keyword : passwordKeywords) {
 			if (lowerCaseKey.contains(keyword)) {
@@ -398,7 +398,7 @@ public class UpgradeRecorder {
 
 								Object value = properties.get(key);
 
-								if (_isPasswordField(key, factoryPid)) {
+								if (_isPasswordField(factoryPid, key)) {
 									value = StringPool.EIGHT_STARS;
 								}
 
