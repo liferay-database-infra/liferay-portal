@@ -171,11 +171,11 @@ public class UpgradeSQLRecorder {
 	}
 
 	public static void start() {
+		_enabled = true;
+
 		_failedSQLs.clear();
 
 		_sqlExecutionTimes.clear();
-
-		_enabled = true;
 	}
 
 	public static void stop() {
