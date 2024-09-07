@@ -532,8 +532,7 @@ public class UpgradeReport {
 		).put(
 			"longest.running.sqls",
 			() -> {
-				List<RunningSQL> longestRunningSQLs =
-					new ArrayList<>();
+				List<RunningSQL> longestRunningSQLs = new ArrayList<>();
 
 				Map<String, Long> sqlExecutionTimes =
 					upgradeRecorder.getSQLExecutionTimes();
@@ -553,20 +552,20 @@ public class UpgradeReport {
 					String key = entry.getKey();
 
 					String sql = key;
+
 					String upgradeProcessClassName = StringPool.BLANK;
 
 					if (key.contains(StringPool.PIPE)) {
-						int separatorIndex = key.indexOf(StringPool.PIPE);
+						int index = key.indexOf(StringPool.PIPE);
 
-						upgradeProcessClassName = key.substring(
-							0, separatorIndex);
+						upgradeProcessClassName = key.substring(0, index);
 
-						sql = key.substring(separatorIndex + 1);
+						sql = key.substring(index + 1);
 					}
 
 					longestRunningSQLs.add(
 						new RunningSQL(
-							upgradeProcessClassName, sql, entry.getValue()));
+							entry.getValue(), sql, upgradeProcessClassName));
 				}
 
 				return longestRunningSQLs;
@@ -1002,11 +1001,11 @@ public class UpgradeReport {
 	private class RunningSQL {
 
 		public RunningSQL(
-			String upgradeProcessClassName, String sql, long duration) {
+			long duration, String sql, String upgradeProcessClassName) {
 
-			_upgradeProcessClassName = upgradeProcessClassName;
-			_sql = sql;
 			_duration = duration;
+			_sql = sql;
+			_upgradeProcessClassName = upgradeProcessClassName;
 		}
 
 		@Override
