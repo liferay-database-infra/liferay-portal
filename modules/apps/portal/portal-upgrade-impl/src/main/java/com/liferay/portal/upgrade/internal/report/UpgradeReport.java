@@ -1010,14 +1010,6 @@ public class UpgradeReport {
 			_duration = duration;
 		}
 
-		public long getDuration() {
-			return _duration;
-		}
-
-		public String getSql() {
-			return _sql;
-		}
-
 		@Override
 		public String toString() {
 			if (_logContext) {
