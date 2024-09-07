@@ -775,8 +775,7 @@ public class UpgradeReport {
 				List<Object> objects = (List<Object>)value;
 
 				if (objects.isEmpty()) {
-					sb.append(": Nothing registered");
-					sb.append(StringPool.NEW_LINE);
+					sb.append(": Nothing registered\n");
 				}
 				else {
 					sb.append(StringPool.NEW_LINE);
@@ -1018,9 +1017,8 @@ public class UpgradeReport {
 			}
 
 			return StringBundler.concat(
-				"Upgrade Process: ", _upgradeProcessClassName,
-				StringPool.NEW_LINE, "SQL: ", _sql, StringPool.NEW_LINE,
-				"Duration: ", _duration, " ms", StringPool.NEW_LINE);
+				"Upgrade Process: ", _upgradeProcessClassName, "\nSQL: ", _sql,
+				"\nDuration: ", _duration, " ms\n");
 		}
 
 		private final long _duration;
