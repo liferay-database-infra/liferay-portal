@@ -553,13 +553,14 @@ public class UpgradeReport {
 					String key = entry.getKey();
 					Long duration = entry.getValue();
 
-					String upgradeProcessName = StringPool.BLANK;
+					String upgradeProcessClassName = StringPool.BLANK;
 					String sql;
 
 					if (key.contains(StringPool.PIPE)) {
 						int separatorIndex = key.indexOf(StringPool.PIPE);
 
-						upgradeProcessName = key.substring(0, separatorIndex);
+						upgradeProcessClassName = key.substring(
+							0, separatorIndex);
 
 						sql = key.substring(separatorIndex + 1);
 					}
@@ -568,7 +569,8 @@ public class UpgradeReport {
 					}
 
 					longestRunningSQLQueries.add(
-						new RunningSQLQuery(upgradeProcessName, sql, duration));
+						new RunningSQLQuery(
+							upgradeProcessClassName, sql, duration));
 				}
 
 				return longestRunningSQLQueries;
@@ -1004,9 +1006,9 @@ public class UpgradeReport {
 	private class RunningSQLQuery {
 
 		public RunningSQLQuery(
-			String upgradeProcessName, String sql, long duration) {
+			String upgradeProcessClassName, String sql, long duration) {
 
-			_upgradeProcessName = upgradeProcessName;
+			_upgradeProcessClassName = upgradeProcessClassName;
 			_sql = sql;
 			_duration = duration;
 		}
@@ -1023,19 +1025,19 @@ public class UpgradeReport {
 		public String toString() {
 			if (_logContext) {
 				return StringBundler.concat(
-					_upgradeProcessName, StringPool.COLON, _sql,
+					_upgradeProcessClassName, StringPool.COLON, _sql,
 					StringPool.COLON, _duration, " ms");
 			}
 
 			return StringBundler.concat(
-				"Upgrade Process: ", _upgradeProcessName, StringPool.NEW_LINE,
-				"SQL: ", _sql, StringPool.NEW_LINE, "Duration: ", _duration,
-				" ms", StringPool.NEW_LINE);
+				"Upgrade Process: ", _upgradeProcessClassName,
+				StringPool.NEW_LINE, "SQL: ", _sql, StringPool.NEW_LINE,
+				"Duration: ", _duration, " ms", StringPool.NEW_LINE);
 		}
 
 		private final long _duration;
 		private final String _sql;
-		private final String _upgradeProcessName;
+		private final String _upgradeProcessClassName;
 
 	}
 
