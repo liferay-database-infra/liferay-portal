@@ -522,7 +522,7 @@ public class UpgradeReport {
 
 					count++;
 
-					if (count >= _UPGRADE_PROCESSES_COUNT) {
+					if (count >= _LONGEST_UPGRADE_PROCESSES_COUNT) {
 						break;
 					}
 				}
@@ -544,7 +544,8 @@ public class UpgradeReport {
 					(entry1, entry2) -> Long.compare(
 						entry2.getValue(), entry1.getValue()));
 
-				int count = Math.min(_TOP_SQL_QUERIES_COUNT, entries.size());
+				int count = Math.min(
+					_LONGEST_RUNNING_SQLS_COUNT, entries.size());
 
 				for (int i = 0; i < count; i++) {
 					Map.Entry<String, Long> entry = entries.get(i);
@@ -849,9 +850,9 @@ public class UpgradeReport {
 		"com.liferay.portal.store.file.system.configuration." +
 			"FileSystemStoreConfiguration";
 
-	private static final int _TOP_SQL_QUERIES_COUNT = 20;
+	private static final int _LONGEST_RUNNING_SQLS_COUNT = 20;
 
-	private static final int _UPGRADE_PROCESSES_COUNT = 20;
+	private static final int _LONGEST_UPGRADE_PROCESSES_COUNT = 20;
 
 	private static final Log _log = LogFactoryUtil.getLog(UpgradeReport.class);
 
