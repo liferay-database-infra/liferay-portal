@@ -765,14 +765,11 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 			_assertLogContextContains(
 				"upgrade.report.longest.running.sqls",
-				String.format(
-					"%s:%s:%d ms", parts[0], parts[1],
-					duration));
-
+				String.format("%s:%s:%d ms", parts[0], parts[1], duration));
 			_assertReport(
 				String.format(
-					"Upgrade Process: %s\nSQL: %s\nDuration: %d ms",
-					parts[0], parts[1], duration));
+					"Upgrade Process: %s\nSQL: %s\nDuration: %d ms", parts[0],
+					parts[1], duration));
 		}
 	}
 
