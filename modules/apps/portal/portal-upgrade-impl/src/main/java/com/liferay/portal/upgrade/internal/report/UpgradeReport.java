@@ -551,7 +551,6 @@ public class UpgradeReport {
 					Map.Entry<String, Long> entry = entries.get(i);
 
 					String key = entry.getKey();
-					Long duration = entry.getValue();
 
 					String sql = key;
 					String upgradeProcessClassName = StringPool.BLANK;
@@ -567,7 +566,7 @@ public class UpgradeReport {
 
 					longestRunningSQLs.add(
 						new RunningSQL(
-							upgradeProcessClassName, sql, duration));
+							upgradeProcessClassName, sql, entry.getValue()));
 				}
 
 				return longestRunningSQLs;
