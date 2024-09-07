@@ -532,11 +532,11 @@ public class UpgradeReport {
 		).put(
 			"longest.running.sqls",
 			() -> {
-				Map<String, Long> sqlExecutionTimes =
-					upgradeRecorder.getSQLExecutionTimes();
-
 				List<RunningSQL> longestRunningSQLs =
 					new ArrayList<>();
+
+				Map<String, Long> sqlExecutionTimes =
+					upgradeRecorder.getSQLExecutionTimes();
 
 				List<Map.Entry<String, Long>> entries = new ArrayList<>(
 					sqlExecutionTimes.entrySet());
