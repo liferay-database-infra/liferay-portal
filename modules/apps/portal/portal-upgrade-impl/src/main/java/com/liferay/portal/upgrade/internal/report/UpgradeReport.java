@@ -553,8 +553,8 @@ public class UpgradeReport {
 					String key = entry.getKey();
 					Long duration = entry.getValue();
 
+					String sql = key;
 					String upgradeProcessClassName = StringPool.BLANK;
-					String sql;
 
 					if (key.contains(StringPool.PIPE)) {
 						int separatorIndex = key.indexOf(StringPool.PIPE);
@@ -563,9 +563,6 @@ public class UpgradeReport {
 							0, separatorIndex);
 
 						sql = key.substring(separatorIndex + 1);
-					}
-					else {
-						sql = key;
 					}
 
 					longestRunningSQLQueries.add(
