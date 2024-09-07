@@ -685,14 +685,12 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 	@Test
 	public void testSQLStatementsWithClassNameAndDuration() throws Exception {
-		String statement1 = "insert into UpgradeReportTable1 (id_) values (2)";
-		String statement2 = "delete from UpgradeReportTable1 where id_ = 2";
+		String sql1 = "insert into UpgradeReportTable1 (id_) values (2)";
+		String sql2 = "delete from UpgradeReportTable1 where id_ = 2";
 
-		UpgradeProcess upgradeProcess1 = UpgradeProcessFactory.runSQL(
-			statement1);
+		UpgradeProcess upgradeProcess1 = UpgradeProcessFactory.runSQL(sql1);
 
-		UpgradeProcess upgradeProcess2 = UpgradeProcessFactory.runSQL(
-			statement2);
+		UpgradeProcess upgradeProcess2 = UpgradeProcessFactory.runSQL(sql2);
 
 		String upgradeProcess1ClassName = upgradeProcess1.getClass(
 		).getName();
@@ -736,23 +734,23 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		for (String upgradeProcessClassName : upgradeProcess1ClassNames) {
 			_assertLogContextContains(
 				"upgrade.report.longest.running.sqls",
-				String.format("%s:%s", upgradeProcessClassName, statement1));
+				String.format("%s:%s", upgradeProcessClassName, sql1));
 
 			_assertReport(
 				String.format(
 					"Upgrade Process: %s\nSQL: %s", upgradeProcessClassName,
-					statement1));
+					sql1));
 		}
 
 		for (String upgradeProcessClassName : upgradeProcess2ClassNames) {
 			_assertLogContextContains(
 				"upgrade.report.longest.running.sqls",
-				String.format("%s:%s", upgradeProcessClassName, statement2));
+				String.format("%s:%s", upgradeProcessClassName, sql2));
 
 			_assertReport(
 				String.format(
 					"Upgrade Process: %s\nSQL: %s", upgradeProcessClassName,
-					statement2));
+					sql2));
 		}
 
 		Map<String, Long> sqlExecutionTimes = ReflectionTestUtil.invoke(
