@@ -691,13 +691,14 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		Class<?> upgradeProcess1Class = upgradeProcess1.getClass();
 
+		List<String> upgradeProcess1ClassNames = new CopyOnWriteArrayList<>();
+
 		String sql2 = "delete from UpgradeReportTable1 where id_ = 2";
 
 		UpgradeProcess upgradeProcess2 = UpgradeProcessFactory.runSQL(sql2);
 
 		Class<?> upgradeProcess2Class = upgradeProcess2.getClass();
 
-		List<String> upgradeProcess1ClassNames = new CopyOnWriteArrayList<>();
 		List<String> upgradeProcess2ClassNames = new CopyOnWriteArrayList<>();
 
 		DBPartitionUtil.forEachCompanyId(
