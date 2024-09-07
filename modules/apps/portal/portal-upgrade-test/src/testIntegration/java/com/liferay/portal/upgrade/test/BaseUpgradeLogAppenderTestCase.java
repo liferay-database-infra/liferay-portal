@@ -689,15 +689,13 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		UpgradeProcess upgradeProcess1 = UpgradeProcessFactory.runSQL(sql1);
 
-		String upgradeProcess1ClassName = upgradeProcess1.getClass(
-		).getName();
+		Class<?> upgradeProcess1Class = upgradeProcess1.getClass();
 
 		String sql2 = "delete from UpgradeReportTable1 where id_ = 2";
 
 		UpgradeProcess upgradeProcess2 = UpgradeProcessFactory.runSQL(sql2);
 
-		String upgradeProcess2ClassName = upgradeProcess2.getClass(
-		).getName();
+		Class<?> upgradeProcess2Class = upgradeProcess2.getClass();
 
 		List<String> upgradeProcess1ClassNames = new CopyOnWriteArrayList<>();
 		List<String> upgradeProcess2ClassNames = new CopyOnWriteArrayList<>();
@@ -706,17 +704,19 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			companyId -> {
 				if (DBPartition.isPartitionEnabled()) {
 					upgradeProcess1ClassNames.add(
-						upgradeProcess1ClassName + StringPool.AT +
+						upgradeProcess1Class.getName() + StringPool.AT +
 							CompanyThreadLocal.getCompanyId());
 
 					upgradeProcess2ClassNames.add(
-						upgradeProcess2ClassName + StringPool.AT +
+						upgradeProcess2Class.getName() + StringPool.AT +
 							CompanyThreadLocal.getCompanyId());
 				}
 				else {
-					upgradeProcess1ClassNames.add(upgradeProcess1ClassName);
+					upgradeProcess1ClassNames.add(
+						upgradeProcess1Class.getName());
 
-					upgradeProcess2ClassNames.add(upgradeProcess2ClassName);
+					upgradeProcess2ClassNames.add(
+						upgradeProcess2Class.getName());
 				}
 			});
 
