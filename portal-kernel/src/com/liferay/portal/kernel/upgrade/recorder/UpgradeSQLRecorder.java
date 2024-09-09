@@ -214,7 +214,7 @@ public class UpgradeSQLRecorder {
 			String sql = _extractSQL(object);
 
 			if (sql == null) {
-				return;
+				return null;
 			}
 
 			sql += StringPool.SEMICOLON;
