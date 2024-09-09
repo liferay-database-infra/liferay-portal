@@ -229,8 +229,7 @@ public class UpgradeSQLRecorder {
 					_sqlExecutionTimes.put(
 						StringBundler.concat(
 							_upgradeProcessClassName, StringPool.AT,
-							String.valueOf(
-								CompanyThreadLocal.getCompanyId()),
+							String.valueOf(CompanyThreadLocal.getCompanyId()),
 							StringPool.PIPE, sql),
 						duration);
 				}
