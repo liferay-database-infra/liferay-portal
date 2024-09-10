@@ -268,10 +268,10 @@ public class UpgradeReport {
 		).put(
 			"configurations.set.by.user",
 			() -> {
-				Map<String, Map<String, Object>> configurationMap =
-					upgradeRecorder.getConfigurationMap();
+				Map<String, Map<String, Object>> configurationsMap =
+					upgradeRecorder.getConfigurationsMap();
 
-				return new ConfigurationPrinter(configurationMap);
+				return new ConfigurationsPrinter(configurationsMap);
 			}
 		).put(
 			"property",
@@ -881,12 +881,12 @@ public class UpgradeReport {
 	private Map<String, Integer> _initialTableCounts;
 	private String _rootDir;
 
-	private class ConfigurationPrinter {
+	private class ConfigurationsPrinter {
 
-		public ConfigurationPrinter(
-			Map<String, Map<String, Object>> configurationMap) {
+		public ConfigurationsPrinter(
+			Map<String, Map<String, Object>> configurationsMap) {
 
-			_configurationMap = configurationMap;
+			_configurationsMap = configurationsMap;
 		}
 
 		@Override
@@ -913,7 +913,7 @@ public class UpgradeReport {
 			sb.append(StringPool.NEW_LINE);
 
 			for (Map.Entry<String, Map<String, Object>> configurationEntry :
-					_configurationMap.entrySet()) {
+					_configurationsMap.entrySet()) {
 
 				String sourceFileName = configurationEntry.getKey();
 
@@ -978,7 +978,7 @@ public class UpgradeReport {
 			return sb.toString();
 		}
 
-		private final Map<String, Map<String, Object>> _configurationMap;
+		private final Map<String, Map<String, Object>> _configurationsMap;
 
 	}
 

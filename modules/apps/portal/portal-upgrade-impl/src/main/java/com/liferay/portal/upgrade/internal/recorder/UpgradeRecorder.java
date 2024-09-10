@@ -59,8 +59,8 @@ import org.osgi.util.tracker.ServiceTracker;
 @Component(service = UpgradeRecorder.class)
 public class UpgradeRecorder {
 
-	public Map<String, Map<String, Object>> getConfigurationMap() {
-		return _configurationMap;
+	public Map<String, Map<String, Object>> getConfigurationsMap() {
+		return _configurationsMap;
 	}
 
 	public Map<String, Map<String, Integer>> getErrorMessages() {
@@ -149,7 +149,7 @@ public class UpgradeRecorder {
 	}
 
 	public void start() {
-		_configurationMap.clear();
+		_configurationsMap.clear();
 		_errorMessages.clear();
 		_result = "running";
 		_schemaVersionsMap.clear();
@@ -174,7 +174,7 @@ public class UpgradeRecorder {
 
 		_type = _calculateType(_result);
 
-		_populateConfigurationMap(_configurationMap);
+		_populateConfigurationsMap(_configurationsMap);
 
 		if (PropsValues.UPGRADE_LOG_CONTEXT_ENABLED) {
 			ThreadContext.put("upgrade.type", _type);
@@ -356,8 +356,8 @@ public class UpgradeRecorder {
 		return false;
 	}
 
-	private Map<String, Map<String, Object>> _populateConfigurationMap(
-		Map<String, Map<String, Object>> configurationMap) {
+	private Map<String, Map<String, Object>> _populateConfigurationsMap(
+		Map<String, Map<String, Object>> configurationsMap) {
 
 		try {
 			Configuration[] configurations =
@@ -405,7 +405,7 @@ public class UpgradeRecorder {
 								propertiesMap.put(key, value);
 							}
 
-							configurationMap.put(
+							configurationsMap.put(
 								(String)properties.get(
 									FileInstallConstants.
 										FELIX_FILE_INSTALL_FILENAME),
@@ -419,7 +419,7 @@ public class UpgradeRecorder {
 			_log.error(exception);
 		}
 
-		return configurationMap;
+		return configurationsMap;
 	}
 
 	private void _processRelease(
@@ -471,7 +471,7 @@ public class UpgradeRecorder {
 	private static final Log _log = LogFactoryUtil.getLog(
 		UpgradeRecorder.class);
 
-	private static final Map<String, Map<String, Object>> _configurationMap =
+	private static final Map<String, Map<String, Object>> _configurationsMap =
 		new ConcurrentHashMap<>();
 	private static final Map<String, Map<String, Integer>> _errorMessages =
 		new ConcurrentHashMap<>();

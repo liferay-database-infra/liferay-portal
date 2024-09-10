@@ -176,7 +176,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	}
 
 	@Test
-	public void testConfigurationSetByUser() throws Exception {
+	public void testConfigurationsSetByUser() throws Exception {
 		String serviceFactoryPid = "test.configuration";
 
 		String fileName = serviceFactoryPid + ".config";
