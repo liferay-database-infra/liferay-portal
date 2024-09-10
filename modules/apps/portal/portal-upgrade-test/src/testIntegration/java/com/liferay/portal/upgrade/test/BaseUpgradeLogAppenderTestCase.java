@@ -179,11 +179,12 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	public void testConfigurationsSetByUser() throws Exception {
 		String factoryPid = "test.configuration";
 
-		String configFileName = factoryPid + ".config";
+		String configurationFileName = factoryPid + ".config";
 
 		Dictionary<String, Object> dictionary =
 			HashMapDictionaryBuilder.<String, Object>put(
-				FileInstallConstants.FELIX_FILE_INSTALL_FILENAME, configFileName
+				FileInstallConstants.FELIX_FILE_INSTALL_FILENAME,
+				configurationFileName
 			).put(
 				"password", "superSecret"
 			).put(
@@ -195,13 +196,15 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		ConfigurationHandler.write(unsyncByteArrayOutputStream, dictionary);
 
-		String configDirPath = new File(
+		String configurationDirectoryPath = new File(
 			PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR
 		).getCanonicalPath();
 
-		Path configFilePath = Paths.get(configDirPath, configFileName);
+		Path configurationFilePath = Paths.get(
+			configurationDirectoryPath, configurationFileName);
 
-		Files.write(configFilePath, unsyncByteArrayOutputStream.toByteArray());
+		Files.write(
+			configurationFilePath, unsyncByteArrayOutputStream.toByteArray());
 
 		String pid = ConfigurationTestUtil.createFactoryConfiguration(
 			factoryPid, dictionary);
@@ -212,9 +215,11 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			_appender.stop();
 
 			_assertLogContextContains(
-				"upgrade.report.configurations.set.by.user", configDirPath);
+				"upgrade.report.configurations.set.by.user",
+				configurationDirectoryPath);
 			_assertLogContextContains(
-				"upgrade.report.configurations.set.by.user", configFileName);
+				"upgrade.report.configurations.set.by.user",
+				configurationFileName);
 			_assertLogContextContains(
 				"upgrade.report.configurations.set.by.user",
 				"password=\"********\"");
@@ -222,15 +227,15 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 				"upgrade.report.configurations.set.by.user",
 				"testKey=\"testValue\"");
 
-			_assertReport(configDirPath);
-			_assertReport(configFileName);
+			_assertReport(configurationDirectoryPath);
+			_assertReport(configurationFileName);
 			_assertReport("password=\"********\"");
 			_assertReport("testKey=\"testValue\"");
 		}
 		finally {
 			ConfigurationTestUtil.deleteFactoryConfiguration(pid, factoryPid);
 
-			Files.deleteIfExists(configFilePath);
+			Files.deleteIfExists(configurationFilePath);
 		}
 	}
 
