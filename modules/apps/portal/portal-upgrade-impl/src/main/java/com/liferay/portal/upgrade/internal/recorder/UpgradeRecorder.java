@@ -378,9 +378,9 @@ public class UpgradeRecorder {
 								factoryPid = configuration.getPid();
 							}
 
-							Map<String, Object> propertiesMap = new TreeMap<>();
-
 							Enumeration<String> enumeration = properties.keys();
+
+							Map<String, Object> propertiesMap = new TreeMap<>();
 
 							while (enumeration.hasMoreElements()) {
 								String key = enumeration.nextElement();
