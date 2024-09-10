@@ -396,13 +396,13 @@ public class UpgradeRecorder {
 									continue;
 								}
 
-								Object value = properties.get(key);
-
 								if (_isPasswordField(factoryPid, key)) {
-									value = StringPool.EIGHT_STARS;
+									propertiesMap.put(
+										key, StringPool.EIGHT_STARS);
 								}
-
-								propertiesMap.put(key, value);
+								else {
+									propertiesMap.put(key, properties.get(key));
+								}
 							}
 
 							configurationsMap.put(
