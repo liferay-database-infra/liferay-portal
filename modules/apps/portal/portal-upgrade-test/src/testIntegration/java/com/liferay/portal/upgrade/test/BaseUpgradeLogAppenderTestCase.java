@@ -177,13 +177,13 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 	@Test
 	public void testConfigurationsSetByUser() throws Exception {
-		String serviceFactoryPid = "test.configuration";
+		String factoryPid = "test.configuration";
 
-		String fileName = serviceFactoryPid + ".config";
+		String configFileName = factoryPid + ".config";
 
 		Dictionary<String, Object> dictionary =
 			HashMapDictionaryBuilder.<String, Object>put(
-				FileInstallConstants.FELIX_FILE_INSTALL_FILENAME, fileName
+				FileInstallConstants.FELIX_FILE_INSTALL_FILENAME, configFileName
 			).put(
 				"password", "superSecret"
 			).put(
@@ -199,12 +199,12 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			PropsValues.MODULE_FRAMEWORK_CONFIGS_DIR
 		).getCanonicalPath();
 
-		Path path = Paths.get(configDirPath, fileName);
+		Path configFilePath = Paths.get(configDirPath, configFileName);
 
-		Files.write(path, unsyncByteArrayOutputStream.toByteArray());
+		Files.write(configFilePath, unsyncByteArrayOutputStream.toByteArray());
 
 		String pid = ConfigurationTestUtil.createFactoryConfiguration(
-			serviceFactoryPid, dictionary);
+			factoryPid, dictionary);
 
 		try {
 			_appender.start();
@@ -214,7 +214,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			_assertLogContextContains(
 				"upgrade.report.configurations.set.by.user", configDirPath);
 			_assertLogContextContains(
-				"upgrade.report.configurations.set.by.user", fileName);
+				"upgrade.report.configurations.set.by.user", configFileName);
 			_assertLogContextContains(
 				"upgrade.report.configurations.set.by.user",
 				"password=\"********\"");
@@ -223,15 +223,14 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 				"testKey=\"testValue\"");
 
 			_assertReport(configDirPath);
-			_assertReport(fileName);
+			_assertReport(configFileName);
 			_assertReport("password=\"********\"");
 			_assertReport("testKey=\"testValue\"");
 		}
 		finally {
-			ConfigurationTestUtil.deleteFactoryConfiguration(
-				pid, serviceFactoryPid);
+			ConfigurationTestUtil.deleteFactoryConfiguration(pid, factoryPid);
 
-			Files.deleteIfExists(path);
+			Files.deleteIfExists(configFilePath);
 		}
 	}
 
