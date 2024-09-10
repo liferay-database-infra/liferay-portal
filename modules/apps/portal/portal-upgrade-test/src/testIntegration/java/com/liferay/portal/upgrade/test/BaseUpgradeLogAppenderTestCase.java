@@ -213,24 +213,18 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 			_assertLogContextContains(
 				"upgrade.report.configurations.set.by.user", configDirPath);
-
 			_assertLogContextContains(
 				"upgrade.report.configurations.set.by.user", fileName);
-
 			_assertLogContextContains(
 				"upgrade.report.configurations.set.by.user",
 				"password=\"********\"");
-
 			_assertLogContextContains(
 				"upgrade.report.configurations.set.by.user",
 				"testKey=\"testValue\"");
 
 			_assertReport(configDirPath);
-
 			_assertReport(fileName);
-
 			_assertReport("password=\"********\"");
-
 			_assertReport("testKey=\"testValue\"");
 		}
 		finally {
