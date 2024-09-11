@@ -12,11 +12,14 @@ import com.liferay.portal.kernel.transaction.TransactionAttribute;
 import com.liferay.portal.kernel.transaction.TransactionLifecycleListener;
 import com.liferay.portal.kernel.transaction.TransactionStatus;
 
+import java.sql.Connection;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
+import org.hibernate.internal.SessionImpl;
 
 /**
  * @author Shuyang Zhou
@@ -67,9 +70,15 @@ public class LastSessionRecorderUtil {
 	private static void _syncSessionState(Session session) {
 		if (session.isOpen()) {
 			try {
-				session.flush();
+				SessionImpl sessionImpl = (SessionImpl)session;
 
-				session.clear();
+				Connection connection = sessionImpl.connection();
+
+				if (!connection.isClosed()) {
+					session.flush();
+
+					session.clear();
+				}
 			}
 			catch (Exception exception) {
 				throw new SystemException(exception);
