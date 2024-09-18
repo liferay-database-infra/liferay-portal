@@ -103,10 +103,22 @@ public class UpgradeReport {
 			_log.info("Starting upgrade report generation");
 		}
 
+		_executionDate = _getExecutionDate();
+
+		_executionTime = _getExecutionTime();
+
+		_rootDir = _getRootDir();
+
 		Map<String, Object> reportData = _getReportData(upgradeRecorder);
 
+		Map<String, Object> diagnosticsReportData = _getDiagnosticsReportData(
+			upgradeRecorder);
+
 		_printToLogContext(reportData);
+		_printToLogContext(diagnosticsReportData);
+
 		_writeToFile(reportData);
+		_writeToFile(diagnosticsReportData);
 	}
 
 	private int _getBuildNumber() {
@@ -122,406 +134,19 @@ public class UpgradeReport {
 		return 0;
 	}
 
-	private List<MessagesPrinter> _getMessagesPrinters(
-		Map<String, Map<String, Integer>> map1) {
-
-		List<MessagesPrinter> messagesPrinters = new ArrayList<>();
-
-		List<Map.Entry<String, Map<String, Integer>>> list = new ArrayList<>();
-
-		list.addAll(map1.entrySet());
-
-		ListUtil.sort(
-			list,
-			Collections.reverseOrder(
-				Map.Entry.comparingByValue(
-					Comparator.comparingInt(Map::size))));
-
-		for (Map.Entry<String, Map<String, Integer>> entry1 : list) {
-			MessagesPrinter messagesPrinter = new MessagesPrinter(
-				entry1.getKey());
-
-			messagesPrinters.add(messagesPrinter);
-
-			Map<String, Integer> map2 = entry1.getValue();
-
-			for (Map.Entry<String, Integer> entry2 : map2.entrySet()) {
-				messagesPrinter.addMessagePrinter(
-					entry2.getKey(), entry2.getValue());
-			}
-		}
-
-		return messagesPrinters;
-	}
-
-	private Map<String, Object> _getReportData(
+	private Map<String, Object> _getDiagnosticsReportData(
 		UpgradeRecorder upgradeRecorder) {
 
 		return LinkedHashMapBuilder.<String, Object>put(
-			"execution.date",
-			() -> {
-				SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-					"EEE, MMM dd, yyyy hh:mm:ss z");
-
-				simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-				Calendar calendar = Calendar.getInstance();
-
-				return simpleDateFormat.format(calendar.getTime());
-			}
+			"diagnostics", true
 		).put(
-			"execution.time",
-			(DBUpgrader.getUpgradeTime() / Time.SECOND) + " seconds"
+			"execution.date", _executionDate
 		).put(
-			"portal",
-			LinkedHashMapBuilder.put(
-				"initial.build.number",
-				(_initialBuildNumber != 0) ?
-					String.valueOf(_initialBuildNumber) : "Unable to determine"
-			).put(
-				"initial.schema.version",
-				() -> {
-					String initialSchemaVersion =
-						upgradeRecorder.getInitialSchemaVersion(
-							ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
-
-					if ((initialSchemaVersion != null) &&
-						!initialSchemaVersion.equals("0.0.0")) {
-
-						return initialSchemaVersion;
-					}
-
-					return "Unable to determine";
-				}
-			).put(
-				"final.build.number",
-				() -> {
-					int buildNumber = _getBuildNumber();
-
-					if (buildNumber != 0) {
-						return String.valueOf(buildNumber);
-					}
-
-					return "Unable to determine";
-				}
-			).put(
-				"final.schema.version",
-				() -> {
-					String schemaVersion =
-						upgradeRecorder.getFinalSchemaVersion(
-							ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
-
-					if (schemaVersion != null) {
-						return schemaVersion;
-					}
-
-					return "Unable to determine";
-				}
-			).put(
-				"expected.build.number",
-				() -> {
-					int buildNumber = ReleaseInfo.getBuildNumber();
-
-					if (buildNumber != 0) {
-						return String.valueOf(buildNumber);
-					}
-
-					return "Unable to determine";
-				}
-			).put(
-				"expected.schema.version",
-				() -> {
-					String schemaVersion = String.valueOf(
-						PortalUpgradeProcess.getLatestSchemaVersion());
-
-					if (schemaVersion != null) {
-						return schemaVersion;
-					}
-
-					return "Unable to determine";
-				}
-			).build()
+			"execution.time", _executionTime
 		).put(
-			"type", upgradeRecorder.getType()
+			"errors", _getMessagesPrinters(upgradeRecorder.getErrorMessages())
 		).put(
-			"result", upgradeRecorder.getResult()
-		).put(
-			"status",
-			() -> {
-				ReleaseManager releaseManager = _releaseManagerSnapshot.get();
-
-				if (releaseManager == null) {
-					return "Upgrade failed to complete";
-				}
-
-				String statusMessage = releaseManager.getStatusMessage(false);
-
-				if (statusMessage.isEmpty()) {
-					return "There are no pending upgrades";
-				}
-
-				return statusMessage;
-			}
-		).put(
-			"database.version",
-			() -> {
-				DB db = DBManagerUtil.getDB();
-
-				return StringBundler.concat(
-					db.getDBType(), StringPool.SPACE, db.getMajorVersion(),
-					StringPool.PERIOD, db.getMinorVersion());
-			}
-		).put(
-			"jvm.arguments",
-			() -> {
-				List<String> jvmArguments = new ArrayList<>();
-
-				String[] keywords = {
-					"password", "secret", "securitycredential"
-				};
-
-				RuntimeMXBean runtimeMXBean =
-					ManagementFactory.getRuntimeMXBean();
-
-				for (String inputArgument : runtimeMXBean.getInputArguments()) {
-					if (!inputArgument.startsWith("-D") ||
-						!inputArgument.contains(StringPool.EQUAL)) {
-
-						jvmArguments.add(inputArgument);
-
-						continue;
-					}
-
-					String keyValueString = inputArgument.substring(2);
-
-					String[] keyValue = keyValueString.split(
-						StringPool.EQUAL, 2);
-
-					String key = keyValue[0];
-					String value = keyValue[1];
-
-					for (String keyword : keywords) {
-						if (StringUtil.containsIgnoreCase(
-								key, keyword, StringPool.BLANK)) {
-
-							value = StringPool.EIGHT_STARS;
-
-							break;
-						}
-					}
-
-					jvmArguments.add(
-						StringBundler.concat(
-							"-D", key, StringPool.EQUAL, value));
-				}
-
-				return ListUtil.sort(jvmArguments);
-			}
-		).put(
-			"property",
-			() -> {
-				if (StringUtil.equals(
-						PropsValues.DL_STORE_IMPL,
-						"com.liferay.portal.store.file.system." +
-							"AdvancedFileSystemStore")) {
-
-					_rootDir = _getRootDir(
-						_CONFIGURATION_PID_ADVANCED_FILE_SYSTEM_STORE);
-				}
-				else if (StringUtil.equals(
-							PropsValues.DL_STORE_IMPL,
-							"com.liferay.portal.store.file.system." +
-								"FileSystemStore")) {
-
-					_rootDir = _getRootDir(
-						_CONFIGURATION_PID_FILE_SYSTEM_STORE);
-
-					if (_rootDir == null) {
-						_rootDir =
-							PropsValues.LIFERAY_HOME + "/data/document_library";
-					}
-				}
-
-				return LinkedHashMapBuilder.<String, Object>put(
-					"liferay.home", PropsValues.LIFERAY_HOME
-				).put(
-					"locales", Arrays.toString(PropsValues.LOCALES)
-				).put(
-					"locales.enabled",
-					Arrays.toString(PropsValues.LOCALES_ENABLED)
-				).put(
-					PropsKeys.DL_STORE_IMPL, PropsValues.DL_STORE_IMPL
-				).put(
-					"rootDir", (_rootDir != null) ? _rootDir : "Undefined"
-				).build();
-			}
-		).put(
-			"properties.set.by.user",
-			() -> {
-				Map<String, Properties> propertiesMap = new LinkedHashMap<>();
-
-				for (String loadedSource : PropsUtil.getLoadedSources()) {
-					URI uri = new URI(loadedSource);
-
-					String propertiesFilePathString = StringPool.BLANK;
-
-					if (StringUtil.equals("file", uri.getScheme())) {
-						propertiesFilePathString = String.valueOf(
-							Paths.get(uri));
-					}
-
-					if (!FileUtil.exists(propertiesFilePathString)) {
-						continue;
-					}
-
-					Properties properties = new Properties();
-
-					try (InputStream inputStream = new FileInputStream(
-							propertiesFilePathString)) {
-
-						properties.load(inputStream);
-					}
-					catch (IOException ioException) {
-						if (_log.isWarnEnabled()) {
-							_log.warn(
-								"Unable to load properties file from: " +
-									propertiesFilePathString,
-								ioException);
-						}
-
-						continue;
-					}
-
-					propertiesMap.put(propertiesFilePathString, properties);
-				}
-
-				String envPrefix = "LIFERAY_";
-
-				Map<String, String> env = System.getenv();
-
-				Properties properties = new Properties();
-
-				for (Map.Entry<String, String> entry : env.entrySet()) {
-					String key = entry.getKey();
-
-					if (!key.startsWith(envPrefix)) {
-						continue;
-					}
-
-					properties.setProperty(
-						EnvPropertiesUtil.decode(
-							StringUtil.toLowerCase(
-								key.substring(envPrefix.length()))),
-						entry.getValue());
-				}
-
-				propertiesMap.put(
-					"Properties set with environment variables", properties);
-
-				return new PropertiesPrinter(propertiesMap);
-			}
-		).put(
-			"document.library.storage.size",
-			() -> {
-				if (PropsValues.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT == 0) {
-					return "Disabled";
-				}
-
-				if (!StringUtil.endsWith(
-						PropsValues.DL_STORE_IMPL, "FileSystemStore")) {
-
-					return "Check externally";
-				}
-
-				if (_rootDir == null) {
-					return "Unable to determine. Document library " +
-						"\"rootDir\" was not set";
-				}
-
-				_dlSize = 0;
-
-				try {
-					_dlSizeThread.start();
-					_dlSizeThread.join(
-						PropsValues.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT *
-							Time.SECOND);
-				}
-				catch (Exception exception) {
-					_log.error(
-						"Unable to determine the document library size",
-						exception);
-
-					return "Unable to determine";
-				}
-
-				if (_dlSizeThread.isAlive()) {
-					if (_log.isInfoEnabled()) {
-						_log.info(
-							"Unable to determine the document library size. " +
-								"Increase the timeout or check it manually.");
-					}
-
-					return "Unable to determine";
-				}
-
-				return LanguageUtil.formatStorageSize(_dlSize, LocaleUtil.US);
-			}
-		).put(
-			"tables.initial.final.rows",
-			() -> {
-				Map<String, Integer> finalTableCounts = _getTableCounts();
-
-				if ((finalTableCounts == null) ||
-					(_initialTableCounts == null)) {
-
-					return null;
-				}
-
-				List<TablePrinter> tablePrinters = new ArrayList<>();
-
-				List<String> tableNames = new ArrayList<>();
-
-				tableNames.addAll(_initialTableCounts.keySet());
-				tableNames.addAll(finalTableCounts.keySet());
-
-				ListUtil.distinct(
-					tableNames,
-					(tableName1, tableName2) -> {
-						int initialTableCount1 =
-							_initialTableCounts.getOrDefault(tableName1, 0);
-						int initialTableCount2 =
-							_initialTableCounts.getOrDefault(tableName2, 0);
-
-						if (initialTableCount1 != initialTableCount2) {
-							return initialTableCount2 - initialTableCount1;
-						}
-
-						return tableName1.compareTo(tableName2);
-					});
-
-				for (String tableName : tableNames) {
-					int finalTableCount = finalTableCounts.getOrDefault(
-						tableName, -1);
-					int initialTableCount = _initialTableCounts.getOrDefault(
-						tableName, -1);
-
-					if ((finalTableCount <= 0) && (initialTableCount <= 0)) {
-						continue;
-					}
-
-					tablePrinters.add(
-						new TablePrinter(
-							(finalTableCount >= 0) ?
-								String.valueOf(finalTableCount) :
-									StringPool.DASH,
-							(initialTableCount >= 0) ?
-								String.valueOf(initialTableCount) :
-									StringPool.DASH,
-							tableName));
-				}
-
-				return tablePrinters;
-			}
+			"failed.sqls", upgradeRecorder.getFailedSQLs()
 		).put(
 			"longest.upgrade.processes",
 			() -> {
@@ -631,16 +256,396 @@ public class UpgradeReport {
 				return longestRunningSQLs;
 			}
 		).put(
-			"failed.sqls", upgradeRecorder.getFailedSQLs()
-		).put(
-			"errors", _getMessagesPrinters(upgradeRecorder.getErrorMessages())
-		).put(
 			"warnings",
 			_getMessagesPrinters(upgradeRecorder.getWarningMessages())
 		).build();
 	}
 
-	private File _getReportFile() {
+	private String _getExecutionDate() {
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
+			"EEE, MMM dd, yyyy hh:mm:ss z");
+
+		simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+		Calendar calendar = Calendar.getInstance();
+
+		return simpleDateFormat.format(calendar.getTime());
+	}
+
+	private String _getExecutionTime() {
+		return (DBUpgrader.getUpgradeTime() / Time.SECOND) + " seconds";
+	}
+
+	private List<MessagesPrinter> _getMessagesPrinters(
+		Map<String, Map<String, Integer>> map1) {
+
+		List<MessagesPrinter> messagesPrinters = new ArrayList<>();
+
+		List<Map.Entry<String, Map<String, Integer>>> list = new ArrayList<>();
+
+		list.addAll(map1.entrySet());
+
+		ListUtil.sort(
+			list,
+			Collections.reverseOrder(
+				Map.Entry.comparingByValue(
+					Comparator.comparingInt(Map::size))));
+
+		for (Map.Entry<String, Map<String, Integer>> entry1 : list) {
+			MessagesPrinter messagesPrinter = new MessagesPrinter(
+				entry1.getKey());
+
+			messagesPrinters.add(messagesPrinter);
+
+			Map<String, Integer> map2 = entry1.getValue();
+
+			for (Map.Entry<String, Integer> entry2 : map2.entrySet()) {
+				messagesPrinter.addMessagePrinter(
+					entry2.getKey(), entry2.getValue());
+			}
+		}
+
+		return messagesPrinters;
+	}
+
+	private Map<String, Object> _getReportData(
+		UpgradeRecorder upgradeRecorder) {
+
+		return LinkedHashMapBuilder.<String, Object>put(
+			"execution.date", _executionDate
+		).put(
+			"execution.time", _executionTime
+		).put(
+			"result", upgradeRecorder.getResult()
+		).put(
+			"status",
+			() -> {
+				ReleaseManager releaseManager = _releaseManagerSnapshot.get();
+
+				if (releaseManager == null) {
+					return "Upgrade failed to complete";
+				}
+
+				String statusMessage = releaseManager.getStatusMessage(false);
+
+				if (statusMessage.isEmpty()) {
+					return "There are no pending upgrades";
+				}
+
+				return statusMessage;
+			}
+		).put(
+			"type", upgradeRecorder.getType()
+		).put(
+			"portal",
+			LinkedHashMapBuilder.put(
+				"initial.build.number",
+				(_initialBuildNumber != 0) ?
+					String.valueOf(_initialBuildNumber) : "Unable to determine"
+			).put(
+				"initial.schema.version",
+				() -> {
+					String initialSchemaVersion =
+						upgradeRecorder.getInitialSchemaVersion(
+							ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
+
+					if ((initialSchemaVersion != null) &&
+						!initialSchemaVersion.equals("0.0.0")) {
+
+						return initialSchemaVersion;
+					}
+
+					return "Unable to determine";
+				}
+			).put(
+				"final.build.number",
+				() -> {
+					int buildNumber = _getBuildNumber();
+
+					if (buildNumber != 0) {
+						return String.valueOf(buildNumber);
+					}
+
+					return "Unable to determine";
+				}
+			).put(
+				"final.schema.version",
+				() -> {
+					String schemaVersion =
+						upgradeRecorder.getFinalSchemaVersion(
+							ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
+
+					if (schemaVersion != null) {
+						return schemaVersion;
+					}
+
+					return "Unable to determine";
+				}
+			).put(
+				"expected.build.number",
+				() -> {
+					int buildNumber = ReleaseInfo.getBuildNumber();
+
+					if (buildNumber != 0) {
+						return String.valueOf(buildNumber);
+					}
+
+					return "Unable to determine";
+				}
+			).put(
+				"expected.schema.version",
+				() -> {
+					String schemaVersion = String.valueOf(
+						PortalUpgradeProcess.getLatestSchemaVersion());
+
+					if (schemaVersion != null) {
+						return schemaVersion;
+					}
+
+					return "Unable to determine";
+				}
+			).build()
+		).put(
+			"database.version",
+			() -> {
+				DB db = DBManagerUtil.getDB();
+
+				return StringBundler.concat(
+					db.getDBType(), StringPool.SPACE, db.getMajorVersion(),
+					StringPool.PERIOD, db.getMinorVersion());
+			}
+		).put(
+			"document.library.storage.type", PropsValues.DL_STORE_IMPL
+		).put(
+			"document.library.storage.size",
+			() -> {
+				if (PropsValues.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT == 0) {
+					return "Disabled";
+				}
+
+				if (!StringUtil.endsWith(
+						PropsValues.DL_STORE_IMPL, "FileSystemStore")) {
+
+					return "Check externally";
+				}
+
+				if (_rootDir == null) {
+					return "Unable to determine. Document library " +
+						"\"rootDir\" was not set";
+				}
+
+				_dlSize = 0;
+
+				try {
+					_dlSizeThread.start();
+					_dlSizeThread.join(
+						PropsValues.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT *
+							Time.SECOND);
+				}
+				catch (Exception exception) {
+					_log.error(
+						"Unable to determine the document library size",
+						exception);
+
+					return "Unable to determine";
+				}
+
+				if (_dlSizeThread.isAlive()) {
+					if (_log.isInfoEnabled()) {
+						_log.info(
+							"Unable to determine the document library size. " +
+								"Increase the timeout or check it manually.");
+					}
+
+					return "Unable to determine";
+				}
+
+				return LanguageUtil.formatStorageSize(_dlSize, LocaleUtil.US);
+			}
+		).put(
+			"jvm.arguments",
+			() -> {
+				List<String> jvmArguments = new ArrayList<>();
+
+				String[] keywords = {
+					"password", "secret", "securitycredential"
+				};
+
+				RuntimeMXBean runtimeMXBean =
+					ManagementFactory.getRuntimeMXBean();
+
+				for (String inputArgument : runtimeMXBean.getInputArguments()) {
+					if (!inputArgument.startsWith("-D") ||
+						!inputArgument.contains(StringPool.EQUAL)) {
+
+						jvmArguments.add(inputArgument);
+
+						continue;
+					}
+
+					String keyValueString = inputArgument.substring(2);
+
+					String[] keyValue = keyValueString.split(
+						StringPool.EQUAL, 2);
+
+					String key = keyValue[0];
+					String value = keyValue[1];
+
+					for (String keyword : keywords) {
+						if (StringUtil.containsIgnoreCase(
+								key, keyword, StringPool.BLANK)) {
+
+							value = StringPool.EIGHT_STARS;
+
+							break;
+						}
+					}
+
+					jvmArguments.add(
+						StringBundler.concat(
+							"-D", key, StringPool.EQUAL, value));
+				}
+
+				return ListUtil.sort(jvmArguments);
+			}
+		).put(
+			"property",
+			LinkedHashMapBuilder.<String, Object>put(
+				"liferay.home", PropsValues.LIFERAY_HOME
+			).put(
+				"locales", Arrays.toString(PropsValues.LOCALES)
+			).put(
+				"locales.enabled", Arrays.toString(PropsValues.LOCALES_ENABLED)
+			).put(
+				PropsKeys.DL_STORE_IMPL, PropsValues.DL_STORE_IMPL
+			).put(
+				"rootDir", (_rootDir != null) ? _rootDir : "Undefined"
+			).build()
+		).put(
+			"properties.set.by.user",
+			() -> {
+				Map<String, Properties> propertiesMap = new LinkedHashMap<>();
+
+				for (String loadedSource : PropsUtil.getLoadedSources()) {
+					URI uri = new URI(loadedSource);
+
+					String propertiesFilePathString = StringPool.BLANK;
+
+					if (StringUtil.equals("file", uri.getScheme())) {
+						propertiesFilePathString = String.valueOf(
+							Paths.get(uri));
+					}
+
+					if (!FileUtil.exists(propertiesFilePathString)) {
+						continue;
+					}
+
+					Properties properties = new Properties();
+
+					try (InputStream inputStream = new FileInputStream(
+							propertiesFilePathString)) {
+
+						properties.load(inputStream);
+					}
+					catch (IOException ioException) {
+						if (_log.isWarnEnabled()) {
+							_log.warn(
+								"Unable to load properties file from: " +
+									propertiesFilePathString,
+								ioException);
+						}
+
+						continue;
+					}
+
+					propertiesMap.put(propertiesFilePathString, properties);
+				}
+
+				String envPrefix = "LIFERAY_";
+
+				Map<String, String> env = System.getenv();
+
+				Properties properties = new Properties();
+
+				for (Map.Entry<String, String> entry : env.entrySet()) {
+					String key = entry.getKey();
+
+					if (!key.startsWith(envPrefix)) {
+						continue;
+					}
+
+					properties.setProperty(
+						EnvPropertiesUtil.decode(
+							StringUtil.toLowerCase(
+								key.substring(envPrefix.length()))),
+						entry.getValue());
+				}
+
+				propertiesMap.put(
+					"Properties set with environment variables", properties);
+
+				return new PropertiesPrinter(propertiesMap);
+			}
+		).put(
+			"tables.initial.final.rows",
+			() -> {
+				Map<String, Integer> finalTableCounts = _getTableCounts();
+
+				if ((finalTableCounts == null) ||
+					(_initialTableCounts == null)) {
+
+					return null;
+				}
+
+				List<TablePrinter> tablePrinters = new ArrayList<>();
+
+				List<String> tableNames = new ArrayList<>();
+
+				tableNames.addAll(_initialTableCounts.keySet());
+				tableNames.addAll(finalTableCounts.keySet());
+
+				ListUtil.distinct(
+					tableNames,
+					(tableName1, tableName2) -> {
+						int initialTableCount1 =
+							_initialTableCounts.getOrDefault(tableName1, 0);
+						int initialTableCount2 =
+							_initialTableCounts.getOrDefault(tableName2, 0);
+
+						if (initialTableCount1 != initialTableCount2) {
+							return initialTableCount2 - initialTableCount1;
+						}
+
+						return tableName1.compareTo(tableName2);
+					});
+
+				for (String tableName : tableNames) {
+					int finalTableCount = finalTableCounts.getOrDefault(
+						tableName, -1);
+					int initialTableCount = _initialTableCounts.getOrDefault(
+						tableName, -1);
+
+					if ((finalTableCount <= 0) && (initialTableCount <= 0)) {
+						continue;
+					}
+
+					tablePrinters.add(
+						new TablePrinter(
+							(finalTableCount >= 0) ?
+								String.valueOf(finalTableCount) :
+									StringPool.DASH,
+							(initialTableCount >= 0) ?
+								String.valueOf(initialTableCount) :
+									StringPool.DASH,
+							tableName));
+				}
+
+				return tablePrinters;
+			}
+		).build();
+	}
+
+	private File _getReportFile(boolean diagnostics) {
 		File reportsDir = null;
 
 		if (!Validator.isBlank(PropsValues.UPGRADE_REPORT_DIR)) {
@@ -672,7 +677,15 @@ public class UpgradeReport {
 			}
 		}
 
-		File reportFile = new File(reportsDir, "upgrade_report.info");
+		File reportFile = null;
+
+		if (diagnostics) {
+			reportFile = new File(
+				reportsDir, "upgrade_report_diagnostics.info");
+		}
+		else {
+			reportFile = new File(reportsDir, "upgrade_report.info");
+		}
 
 		if (reportFile.exists()) {
 			String reportFileName = reportFile.getName();
@@ -709,17 +722,43 @@ public class UpgradeReport {
 			_getReportHeader(key), StringPool.COLON, StringPool.SPACE, value);
 	}
 
-	private String _getRootDir(String dlStoreConfigurationPid) {
+	private String _getRootDir() {
+		String rootDir = null;
+
 		try {
 			PersistenceManager persistenceManager =
 				_persistenceManagerSnapshot.get();
+
+			String dlStoreConfigurationPid = StringPool.BLANK;
+
+			if (StringUtil.equals(
+					PropsValues.DL_STORE_IMPL,
+					"com.liferay.portal.store.file.system." +
+						"AdvancedFileSystemStore")) {
+
+				dlStoreConfigurationPid =
+					_CONFIGURATION_PID_ADVANCED_FILE_SYSTEM_STORE;
+			}
+			else if (StringUtil.equals(
+						PropsValues.DL_STORE_IMPL,
+						"com.liferay.portal.store.file.system." +
+							"FileSystemStore")) {
+
+				dlStoreConfigurationPid = _CONFIGURATION_PID_FILE_SYSTEM_STORE;
+			}
 
 			Dictionary<String, String> configurations = persistenceManager.load(
 				dlStoreConfigurationPid);
 
 			if (configurations != null) {
-				return configurations.get("rootDir");
+				rootDir = configurations.get("rootDir");
 			}
+
+			if (rootDir == null) {
+				rootDir = PropsValues.LIFERAY_HOME + "/data/document_library";
+			}
+
+			return rootDir;
 		}
 		catch (IOException ioException) {
 			if (_log.isWarnEnabled()) {
@@ -826,6 +865,10 @@ public class UpgradeReport {
 
 			String key = entry1.getKey();
 
+			if (StringUtil.equals(key, "diagnostics")) {
+				continue;
+			}
+
 			if (value instanceof List<?>) {
 				String reportHeader = _getReportHeader(key);
 
@@ -873,7 +916,10 @@ public class UpgradeReport {
 		File reportFile = null;
 
 		try {
-			reportFile = _getReportFile();
+			boolean diagnostics = GetterUtil.getBoolean(
+				reportData.get("diagnostics"));
+
+			reportFile = _getReportFile(diagnostics);
 
 			FileUtil.write(
 				reportFile,
@@ -923,6 +969,8 @@ public class UpgradeReport {
 
 	private double _dlSize;
 	private final Thread _dlSizeThread = new DLSizeThread();
+	private String _executionDate;
+	private String _executionTime;
 	private final int _initialBuildNumber;
 	private Map<String, Integer> _initialTableCounts;
 	private String _rootDir;
