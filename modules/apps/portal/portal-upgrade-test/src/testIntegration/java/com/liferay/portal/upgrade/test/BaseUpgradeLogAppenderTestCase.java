@@ -154,14 +154,13 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		}
 
 		if (reportsDir.exists()) {
-			File reportFile = new File(reportsDir, "upgrade_report.info");
+			File reportFile = new File(reportsDir, "upgrade-report.txt");
 
 			if (reportFile.exists()) {
 				reportFile.delete();
 			}
 
-			reportFile = new File(
-				reportsDir, "upgrade_report_diagnostics.info");
+			reportFile = new File(reportsDir, "upgrade-report-diagnostics.txt");
 
 			if (reportFile.exists()) {
 				reportFile.delete();
@@ -549,13 +548,13 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		}
 
 		File file = new File(
-			new File(getFilePath(), "reports"), "upgrade_report.info");
+			new File(getFilePath(), "reports"), "upgrade-report.txt");
 
 		Assert.assertTrue(!file.exists());
 
 		file = new File(
 			new File(getFilePath(), "reports"),
-			"upgrade_report_diagnostics.info");
+			"upgrade-report-diagnostics.txt");
 
 		Assert.assertTrue(!file.exists());
 	}
@@ -652,7 +651,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		_appender.stop();
 
-		File reportFile1 = _getReportFile("upgrade_report.info");
+		File reportFile1 = _getReportFile("upgrade-report.txt");
 
 		Assert.assertTrue(reportFile1.exists());
 
@@ -662,11 +661,11 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		_appender.stop();
 
-		File reportFile2 = _getReportFile("upgrade_report.info");
+		File reportFile2 = _getReportFile("upgrade-report.txt");
 
 		Assert.assertTrue(
 			_getReportFile(
-				"upgrade_report.info." + reportFile1LastModified
+				"upgrade-report.txt." + reportFile1LastModified
 			).exists());
 		Assert.assertTrue(reportFile2.exists());
 		Assert.assertTrue(
@@ -944,7 +943,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 	private String _getDiagnosticsReportContent() throws Exception {
 		File diagnosticsReportFile = _getReportFile(
-			"upgrade_report_diagnostics.info");
+			"upgrade-report-diagnostics.txt");
 
 		Assert.assertTrue(diagnosticsReportFile.exists());
 
@@ -957,7 +956,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 	private String _getLogContextValue(String key) {
 		File file = new File(
-			new File(getFilePath(), "reports"), "upgrade_report.info");
+			new File(getFilePath(), "reports"), "upgrade-report.txt");
 
 		Pattern pattern = Pattern.compile(
 			"(?s)INFO - Upgrade report generated in " +
@@ -995,7 +994,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	}
 
 	private String _getReportContent() throws Exception {
-		File reportFile = _getReportFile("upgrade_report.info");
+		File reportFile = _getReportFile("upgrade-report.txt");
 
 		Assert.assertTrue(reportFile.exists());
 
