@@ -160,6 +160,13 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 				reportFile.delete();
 			}
 
+			reportFile = new File(
+				reportsDir, "upgrade_report_diagnostics.info");
+
+			if (reportFile.exists()) {
+				reportFile.delete();
+			}
+
 			reportsDir.delete();
 		}
 
@@ -273,7 +280,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		_assertLogContextContains(
 			"upgrade.report.failed.sqls", "SQL: update NonexistingTable;");
-		_assertReport("SQL: update NonexistingTable;");
+		_assertDiagnosticsReport("SQL: update NonexistingTable;");
 	}
 
 	@Test
@@ -408,11 +415,11 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		_appender.stop();
 
-		String reportContent = _getReportContent();
+		String diagnosticsreportContent = _getDiagnosticsReportContent();
 
 		Assert.assertTrue(
-			reportContent.indexOf(slowerUpgradeProcessName) <
-				reportContent.indexOf(fasterUpgradeProcessName));
+			diagnosticsreportContent.indexOf(slowerUpgradeProcessName) <
+				diagnosticsreportContent.indexOf(fasterUpgradeProcessName));
 
 		String longestUpgradeProcessesValue = _getLogContextValue(
 			"upgrade.report.longest.upgrade.processes");
@@ -466,8 +473,9 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			"upgrade.report.longest.upgrade.processes",
 			"com.liferay.portal.UpgradeTest:20401 ms");
 		_assertLogContextContains("upgrade.report.warnings", "2:Warning");
-		_assertReport("2 occurrences of the following event: Warning");
-		_assertReport(
+		_assertDiagnosticsReport(
+			"2 occurrences of the following event: Warning");
+		_assertDiagnosticsReport(
 			"com.liferay.portal.UpgradeTest took 20401 ms to complete");
 	}
 
@@ -514,9 +522,10 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		_assertLogContextContains(
 			"upgrade.report.longest.upgrade.processes", "[]");
 		_assertLogContextContains("upgrade.report.warnings", "[]");
-		_assertReport("Errors: Nothing registered");
-		_assertReport("Longest upgrade processes: Nothing registered");
-		_assertReport("Warnings: Nothing registered");
+		_assertDiagnosticsReport("Errors: Nothing registered");
+		_assertDiagnosticsReport(
+			"Longest upgrade processes: Nothing registered");
+		_assertDiagnosticsReport("Warnings: Nothing registered");
 	}
 
 	@Test
@@ -541,6 +550,12 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		File file = new File(
 			new File(getFilePath(), "reports"), "upgrade_report.info");
+
+		Assert.assertTrue(!file.exists());
+
+		file = new File(
+			new File(getFilePath(), "reports"),
+			"upgrade_report_diagnostics.info");
 
 		Assert.assertTrue(!file.exists());
 	}
@@ -745,15 +760,11 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		_appender.stop();
 
-		if (_reportContent == null) {
-			_reportContent = _getReportContent();
-		}
-
 		for (String upgradeProcessClassName : upgradeProcess1ClassNames) {
 			_assertLogContextContains(
 				"upgrade.report.longest.running.sqls",
 				String.format("%s:%s", upgradeProcessClassName, sql1));
-			_assertReport(
+			_assertDiagnosticsReport(
 				String.format(
 					"Upgrade Process: %s\nSQL: %s", upgradeProcessClassName,
 					sql1));
@@ -763,7 +774,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			_assertLogContextContains(
 				"upgrade.report.longest.running.sqls",
 				String.format("%s:%s", upgradeProcessClassName, sql2));
-			_assertReport(
+			_assertDiagnosticsReport(
 				String.format(
 					"Upgrade Process: %s\nSQL: %s", upgradeProcessClassName,
 					sql2));
@@ -782,7 +793,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			_assertLogContextContains(
 				"upgrade.report.longest.running.sqls",
 				String.format("%s:%s:%d ms", parts[0], parts[1], duration));
-			_assertReport(
+			_assertDiagnosticsReport(
 				String.format(
 					"Upgrade Process: %s\nSQL: %s\nDuration: %d ms", parts[0],
 					parts[1], duration));
@@ -814,7 +825,8 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 			_appender.stop();
 
-			_assertReport("Upgrade report generated in " + _upgradeReportDir);
+			_assertDiagnosticsReport(
+				"Upgrade report generated in " + _upgradeReportDir);
 		}
 		finally {
 			ReflectionTestUtil.setFieldValue(
@@ -883,6 +895,16 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		dclSingleton.destroy(null);
 	}
 
+	private void _assertDiagnosticsReport(String testString) throws Exception {
+		if (_diagnosticsReportContent == null) {
+			_diagnosticsReportContent = _getDiagnosticsReportContent();
+		}
+
+		Assert.assertTrue(
+			StringUtil.contains(
+				_diagnosticsReportContent, testString, StringPool.BLANK));
+	}
+
 	private void _assertLogContextContains(String key, String text) {
 		Assert.assertTrue(
 			StringUtil.containsIgnoreCase(
@@ -918,6 +940,15 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			previousInitialTableCount = initialTableCount;
 			previousTableName = tableName;
 		}
+	}
+
+	private String _getDiagnosticsReportContent() throws Exception {
+		File diagnosticsReportFile = _getReportFile(
+			"upgrade_report_diagnostics.info");
+
+		Assert.assertTrue(diagnosticsReportFile.exists());
+
+		return FileUtil.read(diagnosticsReportFile);
 	}
 
 	private String _getLogContent() {
@@ -1032,6 +1063,8 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 	@Inject(filter = "appender.name=UpgradeLogAppender")
 	private Appender _appender;
+
+	private String _diagnosticsReportContent;
 
 	@Inject
 	private ReleaseLocalService _releaseLocalService;
