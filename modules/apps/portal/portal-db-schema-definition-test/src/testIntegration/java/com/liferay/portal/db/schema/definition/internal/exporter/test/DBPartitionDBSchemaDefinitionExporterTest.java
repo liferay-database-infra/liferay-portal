@@ -199,8 +199,13 @@ public class DBPartitionDBSchemaDefinitionExporterTest
 	public void testExportImportReportWithMissingTable() throws Exception {
 		DB db = DBManagerUtil.getDB();
 
+		String defaultPartitionName = DBPartitionUtil.getPartitionName(
+			PortalInstancePool.getDefaultCompanyId());
+
 		try {
-			db.runSQL("create table TestTable (testColumn bigint primary key)");
+			db.runSQL(
+				"create table " + defaultPartitionName +
+					".TestTable (testColumn bigint primary key)");
 			db.runSQL(
 				"create table " +
 					DBPartitionUtil.getPartitionName(_company.getCompanyId()) +
