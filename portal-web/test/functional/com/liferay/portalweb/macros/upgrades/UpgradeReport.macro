@@ -1,5 +1,19 @@
 definition {
 
+	@summary = "Retrieves and returns the content of 'upgrade_report_diagnostics.info' when using auto.upgrade"
+	macro getAutoUpgradeReportDiagnosticsFileContent(directory = null) {
+		var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+		if (isSet(directory)) {
+			var fileContentReport = FileUtil.read("${directory}/upgrade_report_diagnostics.info");
+		}
+		else {
+			var fileContentReport = FileUtil.read("${liferayHome}/reports/upgrade_report_diagnostics.info");
+		}
+
+		return ${fileContentReport};
+	}
+
 	@summary = "Retrieves and returns the content of 'upgrade_report.info' when using auto.upgrade"
 	macro getAutoUpgradeReportFileContent(directory = null) {
 		var liferayHome = PropsUtil.get("liferay.home.dir.name");
@@ -19,6 +33,20 @@ definition {
 		var upgradeRunTimeReport = RegexUtil.replace(${reportFileContent}, "Execution time: (.*[0-9])", 1);
 
 		return ${upgradeRunTimeReport};
+	}
+
+	@summary = "Retrieves and returns the content of 'upgrade_report_diagnostics.info' when using DB Upgrade Tool"
+	macro getUpgradeReportDiagnosticsFileContent(directory = null) {
+		var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+		if (isSet(directory)) {
+			var fileContentReport = FileUtil.read("${directory}/upgrade_report_diagnostics.info");
+		}
+		else {
+			var fileContentReport = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report_diagnostics.info");
+		}
+
+		return ${fileContentReport};
 	}
 
 	@summary = "Retrieves and returns the content of 'upgrade_report.info' when using DB Upgrade Tool"

@@ -43,25 +43,26 @@ definition {
 
 		task ("Given upgrade.report is enabled When the portal gets upgraded and an error was captured during the upgrade") {
 			var upgradeReportContent = UpgradeReport.getUpgradeReportFileContent();
+			var upgradeReportDiagnosticsContent = UpgradeReport.getUpgradeReportDiagnosticsFileContent();
 		}
 
 		task ("Then the user can read the class and error event message in the upgrade report") {
-			if (!(contains(${upgradeReportContent}, "Errors"))) {
-				echo(${upgradeReportContent});
+			if (!(contains(${upgradeReportDiagnosticsContent}, "Errors"))) {
+				echo(${upgradeReportDiagnosticsContent});
 
-				fail("Upgrade report does not contain expected errors.");
+				fail("Upgrade report diagnostics does not contain expected errors.");
 			}
 
-			if (!(contains(${upgradeReportContent}, "Class name: com.liferay.portal.tools.DBUpgrader"))) {
-				echo(${upgradeReportContent});
+			if (!(contains(${upgradeReportDiagnosticsContent}, "Class name: com.liferay.portal.tools.DBUpgrader"))) {
+				echo(${upgradeReportDiagnosticsContent});
 
-				fail("Upgrade report does not contain the error class name.");
+				fail("Upgrade report diagnostics does not contain the error class name.");
 			}
 
-			if (!(contains(${upgradeReportContent}, "1 occurrences of the following event: com.liferay.portal.kernel.upgrade.UpgradeException: java.sql.SQLSyntaxErrorException: Unknown column 'servletContextName' in 'where clause'"))) {
-				echo(${upgradeReportContent});
+			if (!(contains(${upgradeReportDiagnosticsContent}, "1 occurrences of the following event: com.liferay.portal.kernel.upgrade.UpgradeException: java.sql.SQLSyntaxErrorException: Unknown column 'servletContextName' in 'where clause'"))) {
+				echo(${upgradeReportDiagnosticsContent});
 
-				fail("Upgrade report does not contain the error message.");
+				fail("Upgrade report diagnostics does not contain the error message.");
 			}
 		}
 
@@ -111,6 +112,21 @@ definition {
 			}
 		}
 
+		task ("Then the upgrade report diagnostics is generated in the default directory") {
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
+			var upgradeLogContent = Log.getLogFileContent();
+
+			if (!(contains(${upgradeLogContent}, "Unable to generate the upgrade report at ${liferayHome}/tools/portal-tools-db-upgrade-client/temp"))) {
+				fail("Unable to generate upgrade report file message not present");
+			}
+
+			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/reports/upgrade_report_diagnostics.info");
+
+			if (${upgradeReportDiagnosticsExists} == "false") {
+				fail("Upgrade report diagnostics is not generated in default directory: ${liferayHome}/reports");
+			}
+		}
+
 		task ("Clean up write protected directory") {
 			AntCommands.runCommand("modules/util/portal-tools-db-upgrade-client/src/testFunctional/ant/build-test-db-upgrade-client.xml", "delete-write-protected-directory");
 		}
@@ -131,12 +147,31 @@ definition {
 			}
 		}
 
+		task ("Then the upgrade report diagnostics is generated in the specified nonexistent directory") {
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade_report_diagnostics.info");
+
+			if (${upgradeReportDiagnosticsExists} == "false") {
+				fail("Upgrade report diagnostics is not generated in specified directory: ${liferayHome}/tools/portal-tools-db-upgrade-client/temp");
+			}
+		}
+
 		task ("And the upgrade report trace line matches the specified path") {
 			var upgradeLogContent = Log.getUpgradeLogFileContent();
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
 			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade_report.info"))) {
 				fail("Upgrade report file path message not present");
+			}
+		}
+
+		task ("And the upgrade report diagnostics trace line matches the specified path") {
+			var upgradeLogContent = Log.getUpgradeLogFileContent();
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade_report_diagnostics.info"))) {
+				fail("Upgrade report diagnostics file path message not present");
 			}
 		}
 	}
@@ -153,11 +188,19 @@ definition {
 
 			var reportFileExists = FileUtil.exists("${liferayHome}/reports/upgrade_report.info");
 			var reportFileContent = UpgradeReport.getAutoUpgradeReportFileContent();
+			var reportDiagnosticsFileExists = FileUtil.exists("${liferayHome}/reports/upgrade_report_diagnostics.info");
+			var reportDiagnosticsFileContent = UpgradeReport.getAutoUpgradeReportDiagnosticsFileContent();
 		}
 
 		task ("Check if file exists") {
 			if (${reportFileExists} != "true") {
 				fail("Upgrade report not found in ${liferayHome}/reports");
+			}
+		}
+
+		task ("Check if diagnostics file exists") {
+			if (${reportDiagnosticsFileExists} != "true") {
+				fail("Upgrade report diagnostics not found in ${liferayHome}/reports");
 			}
 		}
 
@@ -246,22 +289,22 @@ definition {
 		}
 
 		task ("Check the longest processes list is present") {
-			if (!(contains(${reportFileContent}, "Longest upgrade processes"))) {
-				echo(${reportFileContent});
+			if (!(contains(${reportDiagnosticsFileContent}, "Longest upgrade processes"))) {
+				echo(${reportDiagnosticsFileContent});
 
 				fail("List with the 20 longest upgrade processes not found.");
 			}
 		}
 
 		task ("Check no errors are thrown") {
-			if (!(contains(${reportFileContent}, "Errors: Nothing registered"))) {
-				fail("Upgrade report contains unexpected errors.");
+			if (!(contains(${reportDiagnosticsFileContent}, "Errors: Nothing registered"))) {
+				fail("Upgrade report diagnostics contains unexpected errors.");
 			}
 		}
 
 		task ("Check no warnings are thrown") {
-			if (!(contains(${reportFileContent}, "Warnings: Nothing registered"))) {
-				fail("Upgrade report contains unexpected warnings.");
+			if (!(contains(${reportDiagnosticsFileContent}, "Warnings: Nothing registered"))) {
+				fail("Upgrade report diagnostics contains unexpected warnings.");
 			}
 		}
 
@@ -366,6 +409,16 @@ definition {
 				fail("Upgrade report not found in ${liferayHome}/reports");
 			}
 		}
+
+		task ("Check report diagnostics file is generated") {
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+			var reportDiagnosticsFileExists = FileUtil.exists("${liferayHome}/reports/upgrade_report_diagnostics.info");
+
+			if (${reportDiagnosticsFileExists} != "true") {
+				fail("Upgrade report diagnostics not found in ${liferayHome}/reports");
+			}
+		}
 	}
 
 	@description = "LPS-154683: Upgrade Report is not created when property is not set to true"
@@ -377,11 +430,18 @@ definition {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
 			var reportFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+			var reportDiagnosticsFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report_diagnostics.info");
 		}
 
 		task ("Check file doesn't exist") {
 			if (${reportFileExists} == "true") {
 				fail("Upgrade report found in ${liferayHome}/tools/portal-tools-db-upgrade-client/reports/");
+			}
+		}
+
+		task ("Check diagnostics file doesn't exist") {
+			if (${reportDiagnosticsFileExists} == "true") {
+				fail("Upgrade report diagnostics found in ${liferayHome}/tools/portal-tools-db-upgrade-client/reports/");
 			}
 		}
 	}
@@ -500,6 +560,16 @@ definition {
 				fail("Upgrade report is not generated in specified directory: ${liferayHome}/logs");
 			}
 		}
+
+		task ("Then the upgrade report diagnostics is generated in the specified directory") {
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/logs/upgrade_report_diagnostics.info");
+
+			if (${upgradeReportDiagnosticsExists} == "false") {
+				fail("Upgrade report diagnostics is not generated in specified directory: ${liferayHome}/logs");
+			}
+		}
 	}
 
 	@description = "LPS-193985: Upgrade report directory can be specified with upgrade tool"
@@ -514,6 +584,16 @@ definition {
 
 			if (${upgradeReportExists} == "false") {
 				fail("Upgrade report is not generated in specified directory: ${liferayHome}/tools/portal-tools-db-upgrade-client/logs");
+			}
+		}
+
+		task ("Then the upgrade report diagnostics is generated in the specified directory") {
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/logs/upgrade_report_diagnostics.info");
+
+			if (${upgradeReportDiagnosticsExists} == "false") {
+				fail("Upgrade report diagnostics is not generated in specified directory: ${liferayHome}/tools/portal-tools-db-upgrade-client/logs");
 			}
 		}
 	}
@@ -531,6 +611,12 @@ definition {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
 			AssertConsoleTextPresent(value1 = "Upgrade report generated in ${liferayHome}/reports/upgrade_report.info");
+		}
+
+		task ("When the upgrade report diagnostics is finished generating, Then the user is notified in the Portal log file where to find the upgrade report diagnostics") {
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+			AssertConsoleTextPresent(value1 = "Upgrade report generated in ${liferayHome}/reports/upgrade_report_diagnostics.info");
 		}
 	}
 
@@ -552,6 +638,14 @@ definition {
 
 			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/./reports/upgrade_report.info"))) {
 				fail("Upgrade report file path message not present");
+			}
+		}
+
+		task ("When the upgrade report diagnostics is finished generating, Then the user is notified in the upgrade log file where to find the upgrade report diagnostics") {
+			var liferayHome = PropsUtil.get("liferay.home.dir.name");
+
+			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/./reports/upgrade_report_diagnostics.info"))) {
+				fail("Upgrade report diagnostics file path message not present");
 			}
 		}
 	}
