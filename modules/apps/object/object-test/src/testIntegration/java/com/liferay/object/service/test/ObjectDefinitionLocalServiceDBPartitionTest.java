@@ -35,8 +35,6 @@ public class ObjectDefinitionLocalServiceDBPartitionTest
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
-		BaseDBPartitionTestCase.setUpClass();
-
 		BaseDBPartitionTestCase.setUpDBPartitions();
 	}
 
