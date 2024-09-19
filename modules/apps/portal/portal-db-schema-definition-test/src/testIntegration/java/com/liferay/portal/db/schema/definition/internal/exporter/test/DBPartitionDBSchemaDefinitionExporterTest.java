@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.AssumeTestRule;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
@@ -215,8 +216,15 @@ public class DBPartitionDBSchemaDefinitionExporterTest
 
 			Assert.assertTrue(
 				reportContent.contains(
-					"Default virtual instance missing tables: " +
-						StringUtil.toLowerCase("TestTable")));
+					"Default virtual instance missing tables: "));
+
+			Assert.assertTrue(
+				reportContent.contains(
+					StringBundler.concat(
+						"Virtual instance ", TestPropsValues.getCompanyId(),
+						" missing tables: ",
+						StringUtil.toLowerCase("TestTable"))));
+
 			Assert.assertTrue(
 				reportContent.contains(
 					StringBundler.concat(
