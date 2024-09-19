@@ -216,7 +216,7 @@ public class DBPartitionDBSchemaDefinitionExporterTest
 
 			Assert.assertTrue(
 				reportContent.contains(
-					"Default virtual instance missing tables: "));
+					"Default virtual instance missing tables:"));
 
 			Assert.assertTrue(
 				reportContent.contains(
