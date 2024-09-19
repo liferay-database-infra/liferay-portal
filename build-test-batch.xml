@@ -15,26 +15,6 @@
 		result="test.class.timeout.seconds"
 	/>
 
-	<target name="deploy-osgi-portal-instance-configuration">
-		<echo file="${liferay.home}/osgi/configs/${osgi.portal.instance.configuration.file.name}">${osgi.portal.instance.configuration}</echo>
-
-		<var name="osgi.module.configuration.file.names.index" value="1" />
-
-		<pathconvert property="osgi.configs">
-			<path>
-				<fileset
-					dir="${liferay.home}/osgi/configs"
-				/>
-			</path>
-		</pathconvert>
-
-		<for delimiter=":" list="${osgi.configs}" param="osgi.config">
-			<sequential>
-				<print-file file.name="@{osgi.config}" />
-			</sequential>
-		</for>
-	</target>
-
 	<macrodef name="check-jenkins-console">
 		<sequential>
 			<if>
@@ -2461,14 +2441,13 @@ ${poshi.runner.testsuite.testcase.name}</echo>
 											<equals arg1="@{database.partition.enabled}" arg2="true" />
 										</and>
 										<then>
-
 											<antcall inheritall="false" target="stop-app-server" />
 
 											<antcall inheritAll="false" target="start-app-server-preserve-liferay-home">
 												<param name="app.server.start.executable.arg.line" value="${test.batch.app.server.start.executable.arg.line}" />
 											</antcall>
 
-											<antcall target="deploy-osgi-portal-instance-configuration" >
+											<antcall target="deploy-osgi-portal-instance-configuration">
 												<param name="osgi.portal.instance.configuration.file.name" value="com.liferay.portal.instances.internal.configuration.PortalInstancesConfiguration~db-partition.com.config" />
 												<param name="osgi.portal.instance.configuration" value="mx=&quot;db-partition.com&quot;${line.separator}virtualHostname=&quot;db-partition.com&quot;" />
 											</antcall>
@@ -3767,6 +3746,26 @@ information. Make sure to commit in all build-lib-versions results.
 				<prepare-database-upgrade-properties />
 			</test-set-up>
 		</run-batch-test>
+	</target>
+
+	<target name="deploy-osgi-portal-instance-configuration">
+		<echo file="${liferay.home}/osgi/configs/${osgi.portal.instance.configuration.file.name}">${osgi.portal.instance.configuration}</echo>
+
+		<var name="osgi.module.configuration.file.names.index" value="1" />
+
+		<pathconvert property="osgi.configs">
+			<path>
+				<fileset
+					dir="${liferay.home}/osgi/configs"
+				/>
+			</path>
+		</pathconvert>
+
+		<for delimiter=":" list="${osgi.configs}" param="osgi.config">
+			<sequential>
+				<print-file file.name="@{osgi.config}" />
+			</sequential>
+		</for>
 	</target>
 
 	<target name="dist-jdk7">

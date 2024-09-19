@@ -64,7 +64,7 @@ public class TestPropsValues {
 
 					companyWebId = company.getWebId();
 				}
-				catch (Exception e) {
+				catch (Exception exception) {
 					throw new PortalException(
 						"Missing partitioned company: " +
 							PARTITION_COMPANY_WEB_ID);
