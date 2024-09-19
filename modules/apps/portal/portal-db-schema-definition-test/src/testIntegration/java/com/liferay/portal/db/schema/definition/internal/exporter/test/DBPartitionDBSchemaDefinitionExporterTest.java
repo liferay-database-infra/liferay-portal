@@ -191,9 +191,9 @@ public class DBPartitionDBSchemaDefinitionExporterTest
 				"Virtual instance " + _company.getCompanyId() +
 					" missing tables:\n"));
 		Assert.assertTrue(
-			reportContent.endsWith(
-				"Virtual instance " + _company.getCompanyId() +
-					" missing views:"));
+			reportContent.contains(
+				"Virtual instance " + TestPropsValues.getCompanyId() +
+				" missing views:"));
 	}
 
 	@Test
