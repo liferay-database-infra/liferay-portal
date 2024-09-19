@@ -1,63 +1,63 @@
 definition {
 
-	@summary = "Retrieves and returns the content of 'upgrade_report_diagnostics.info' when using auto.upgrade"
+	@summary = "Retrieves and returns the content of 'upgrade-report-diagnostics.txt' when using auto.upgrade"
 	macro getAutoUpgradeReportDiagnosticsFileContent(directory = null) {
 		var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
 		if (isSet(directory)) {
-			var fileContentReport = FileUtil.read("${directory}/upgrade_report_diagnostics.info");
+			var fileContentReport = FileUtil.read("${directory}/upgrade-report-diagnostics.txt");
 		}
 		else {
-			var fileContentReport = FileUtil.read("${liferayHome}/reports/upgrade_report_diagnostics.info");
+			var fileContentReport = FileUtil.read("${liferayHome}/reports/upgrade-report-diagnostics.txt");
 		}
 
 		return ${fileContentReport};
 	}
 
-	@summary = "Retrieves and returns the content of 'upgrade_report.info' when using auto.upgrade"
+	@summary = "Retrieves and returns the content of 'upgrade-report.txt' when using auto.upgrade"
 	macro getAutoUpgradeReportFileContent(directory = null) {
 		var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
 		if (isSet(directory)) {
-			var fileContentReport = FileUtil.read("${directory}/upgrade_report.info");
+			var fileContentReport = FileUtil.read("${directory}/upgrade-report.txt");
 		}
 		else {
-			var fileContentReport = FileUtil.read("${liferayHome}/reports/upgrade_report.info");
+			var fileContentReport = FileUtil.read("${liferayHome}/reports/upgrade-report.txt");
 		}
 
 		return ${fileContentReport};
 	}
 
-	@summary = "Retrieves and returns the total Upgrade execution time available in the 'upgrade_report.info' file"
+	@summary = "Retrieves and returns the total Upgrade execution time available in the 'upgrade-report.txt' file"
 	macro getUpgradeExecutionTime(reportFileContent = null) {
 		var upgradeRunTimeReport = RegexUtil.replace(${reportFileContent}, "Execution time: (.*[0-9])", 1);
 
 		return ${upgradeRunTimeReport};
 	}
 
-	@summary = "Retrieves and returns the content of 'upgrade_report_diagnostics.info' when using DB Upgrade Tool"
+	@summary = "Retrieves and returns the content of 'upgrade-report-diagnostics.txt' when using DB Upgrade Tool"
 	macro getUpgradeReportDiagnosticsFileContent(directory = null) {
 		var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
 		if (isSet(directory)) {
-			var fileContentReport = FileUtil.read("${directory}/upgrade_report_diagnostics.info");
+			var fileContentReport = FileUtil.read("${directory}/upgrade-report-diagnostics.txt");
 		}
 		else {
-			var fileContentReport = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report_diagnostics.info");
+			var fileContentReport = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade-report-diagnostics.txt");
 		}
 
 		return ${fileContentReport};
 	}
 
-	@summary = "Retrieves and returns the content of 'upgrade_report.info' when using DB Upgrade Tool"
+	@summary = "Retrieves and returns the content of 'upgrade-report.txt' when using DB Upgrade Tool"
 	macro getUpgradeReportFileContent(directory = null) {
 		var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
 		if (isSet(directory)) {
-			var fileContentReport = FileUtil.read("${directory}/upgrade_report.info");
+			var fileContentReport = FileUtil.read("${directory}/upgrade-report.txt");
 		}
 		else {
-			var fileContentReport = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
+			var fileContentReport = FileUtil.read("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade-report.txt");
 		}
 
 		return ${fileContentReport};

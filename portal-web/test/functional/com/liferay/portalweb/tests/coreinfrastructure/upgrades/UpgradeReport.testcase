@@ -105,7 +105,7 @@ definition {
 				fail("Unable to generate upgrade report file message not present");
 			}
 
-			var upgradeReportExists = FileUtil.exists("${liferayHome}/reports/upgrade_report.info");
+			var upgradeReportExists = FileUtil.exists("${liferayHome}/reports/upgrade-report.txt");
 
 			if (${upgradeReportExists} == "false") {
 				fail("Upgrade report is not generated in default directory: ${liferayHome}/reports");
@@ -120,7 +120,7 @@ definition {
 				fail("Unable to generate upgrade report file message not present");
 			}
 
-			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/reports/upgrade_report_diagnostics.info");
+			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/reports/upgrade-report-diagnostics.txt");
 
 			if (${upgradeReportDiagnosticsExists} == "false") {
 				fail("Upgrade report diagnostics is not generated in default directory: ${liferayHome}/reports");
@@ -140,7 +140,7 @@ definition {
 		task ("Then the upgrade report is generated in the specified nonexistent directory") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var upgradeReportExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade_report.info");
+			var upgradeReportExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade-report.txt");
 
 			if (${upgradeReportExists} == "false") {
 				fail("Upgrade report is not generated in specified directory: ${liferayHome}/tools/portal-tools-db-upgrade-client/temp");
@@ -150,7 +150,7 @@ definition {
 		task ("Then the upgrade report diagnostics is generated in the specified nonexistent directory") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade_report_diagnostics.info");
+			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade-report-diagnostics.txt");
 
 			if (${upgradeReportDiagnosticsExists} == "false") {
 				fail("Upgrade report diagnostics is not generated in specified directory: ${liferayHome}/tools/portal-tools-db-upgrade-client/temp");
@@ -161,7 +161,7 @@ definition {
 			var upgradeLogContent = Log.getUpgradeLogFileContent();
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade_report.info"))) {
+			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade-report.txt"))) {
 				fail("Upgrade report file path message not present");
 			}
 		}
@@ -170,7 +170,7 @@ definition {
 			var upgradeLogContent = Log.getUpgradeLogFileContent();
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade_report_diagnostics.info"))) {
+			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/temp/upgrade-report-diagnostics.txt"))) {
 				fail("Upgrade report diagnostics file path message not present");
 			}
 		}
@@ -186,9 +186,9 @@ definition {
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var reportFileExists = FileUtil.exists("${liferayHome}/reports/upgrade_report.info");
+			var reportFileExists = FileUtil.exists("${liferayHome}/reports/upgrade-report.txt");
 			var reportFileContent = UpgradeReport.getAutoUpgradeReportFileContent();
-			var reportDiagnosticsFileExists = FileUtil.exists("${liferayHome}/reports/upgrade_report_diagnostics.info");
+			var reportDiagnosticsFileExists = FileUtil.exists("${liferayHome}/reports/upgrade-report-diagnostics.txt");
 			var reportDiagnosticsFileContent = UpgradeReport.getAutoUpgradeReportDiagnosticsFileContent();
 		}
 
@@ -403,7 +403,7 @@ definition {
 		task ("Check report file is generated") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var reportFileExists = FileUtil.exists("${liferayHome}/reports/upgrade_report.info");
+			var reportFileExists = FileUtil.exists("${liferayHome}/reports/upgrade-report.txt");
 
 			if (${reportFileExists} != "true") {
 				fail("Upgrade report not found in ${liferayHome}/reports");
@@ -413,7 +413,7 @@ definition {
 		task ("Check report diagnostics file is generated") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var reportDiagnosticsFileExists = FileUtil.exists("${liferayHome}/reports/upgrade_report_diagnostics.info");
+			var reportDiagnosticsFileExists = FileUtil.exists("${liferayHome}/reports/upgrade-report-diagnostics.txt");
 
 			if (${reportDiagnosticsFileExists} != "true") {
 				fail("Upgrade report diagnostics not found in ${liferayHome}/reports");
@@ -429,8 +429,8 @@ definition {
 		task ("Look for the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var reportFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report.info");
-			var reportDiagnosticsFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade_report_diagnostics.info");
+			var reportFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade-report.txt");
+			var reportDiagnosticsFileExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/reports/upgrade-report-diagnostics.txt");
 		}
 
 		task ("Check file doesn't exist") {
@@ -466,7 +466,7 @@ definition {
 		task ("Capture the upgrade runtime in upgrade Report") {
 			var upgradeRunTimeReport = UpgradeReport.getUpgradeExecutionTime(reportFileContent = ${upgradeReportContent});
 
-			echo("Upgrade runtime reported by upgrade_report.info is ${upgradeRunTimeReport}");
+			echo("Upgrade runtime reported by upgrade-report.txt is ${upgradeRunTimeReport}");
 		}
 
 		task ("Read the total runtime to see if it's present") {
@@ -554,7 +554,7 @@ definition {
 		task ("Then the upgrade report is generated in the specified directory") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var upgradeReportExists = FileUtil.exists("${liferayHome}/logs/upgrade_report.info");
+			var upgradeReportExists = FileUtil.exists("${liferayHome}/logs/upgrade-report.txt");
 
 			if (${upgradeReportExists} == "false") {
 				fail("Upgrade report is not generated in specified directory: ${liferayHome}/logs");
@@ -564,7 +564,7 @@ definition {
 		task ("Then the upgrade report diagnostics is generated in the specified directory") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/logs/upgrade_report_diagnostics.info");
+			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/logs/upgrade-report-diagnostics.txt");
 
 			if (${upgradeReportDiagnosticsExists} == "false") {
 				fail("Upgrade report diagnostics is not generated in specified directory: ${liferayHome}/logs");
@@ -580,7 +580,7 @@ definition {
 		task ("Then the upgrade report is generated in the specified directory") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var upgradeReportExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/logs/upgrade_report.info");
+			var upgradeReportExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/logs/upgrade-report.txt");
 
 			if (${upgradeReportExists} == "false") {
 				fail("Upgrade report is not generated in specified directory: ${liferayHome}/tools/portal-tools-db-upgrade-client/logs");
@@ -590,7 +590,7 @@ definition {
 		task ("Then the upgrade report diagnostics is generated in the specified directory") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/logs/upgrade_report_diagnostics.info");
+			var upgradeReportDiagnosticsExists = FileUtil.exists("${liferayHome}/tools/portal-tools-db-upgrade-client/logs/upgrade-report-diagnostics.txt");
 
 			if (${upgradeReportDiagnosticsExists} == "false") {
 				fail("Upgrade report diagnostics is not generated in specified directory: ${liferayHome}/tools/portal-tools-db-upgrade-client/logs");
@@ -610,13 +610,13 @@ definition {
 		task ("When the upgrade report is finished generating, Then the user is notified in the Portal log file where to find the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			AssertConsoleTextPresent(value1 = "Upgrade report generated in ${liferayHome}/reports/upgrade_report.info");
+			AssertConsoleTextPresent(value1 = "Upgrade report generated in ${liferayHome}/reports/upgrade-report.txt");
 		}
 
 		task ("When the upgrade report diagnostics is finished generating, Then the user is notified in the Portal log file where to find the upgrade report diagnostics") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			AssertConsoleTextPresent(value1 = "Upgrade report generated in ${liferayHome}/reports/upgrade_report_diagnostics.info");
+			AssertConsoleTextPresent(value1 = "Upgrade report generated in ${liferayHome}/reports/upgrade-report-diagnostics.txt");
 		}
 	}
 
@@ -636,7 +636,7 @@ definition {
 		task ("When the upgrade report is finished generating, Then the user is notified in the upgrade log file where to find the upgrade report") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/./reports/upgrade_report.info"))) {
+			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/./reports/upgrade-report.txt"))) {
 				fail("Upgrade report file path message not present");
 			}
 		}
@@ -644,7 +644,7 @@ definition {
 		task ("When the upgrade report diagnostics is finished generating, Then the user is notified in the upgrade log file where to find the upgrade report diagnostics") {
 			var liferayHome = PropsUtil.get("liferay.home.dir.name");
 
-			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/./reports/upgrade_report_diagnostics.info"))) {
+			if (!(contains(${upgradeLogContent}, "Upgrade report generated in ${liferayHome}/tools/portal-tools-db-upgrade-client/./reports/upgrade-report-diagnostics.txt"))) {
 				fail("Upgrade report diagnostics file path message not present");
 			}
 		}
