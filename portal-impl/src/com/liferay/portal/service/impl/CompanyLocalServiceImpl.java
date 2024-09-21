@@ -1536,11 +1536,15 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
-					PortalInstances.removeCompany(company.getCompanyId());
+					try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
+							PortalUtil.getDefaultCompanyId())) {
 
-					unregisterCompany(company);
+						PortalInstances.removeCompany(company.getCompanyId());
 
-					return null;
+						unregisterCompany(company);
+
+						return null;
+					}
 				});
 
 			DBPartitionUtil.removeDBPartition(companyId);
@@ -2347,8 +2351,13 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		if (company != null) {
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
-					EntityCacheUtil.removeResult(
-						company.getClass(), company.getPrimaryKeyObj());
+					forEachCompanyId(
+						id -> {
+							EntityCacheUtil.removeResult(
+								company.getClass(), company.getPrimaryKeyObj());
+
+							companyPersistence.clearCache(company);
+						});
 
 					if (removePortalCache) {
 						PortalCacheHelperUtil.removePortalCaches(
@@ -2357,8 +2366,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 					return null;
 				});
-
-			companyPersistence.clearCache(company);
 		}
 	}
 
@@ -2371,13 +2378,17 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
-					EntityCacheUtil.removeResult(
-						virtualHost.getClass(), virtualHost.getPrimaryKeyObj());
+					forEachCompanyId(
+						id -> {
+							EntityCacheUtil.removeResult(
+								virtualHost.getClass(),
+								virtualHost.getPrimaryKeyObj());
+
+							_virtualHostPersistence.clearCache(virtualHost);
+						});
 
 					return null;
 				});
-
-			_virtualHostPersistence.clearCache(virtualHost);
 		}
 	}
 
