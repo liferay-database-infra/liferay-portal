@@ -1531,19 +1531,29 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		preunregisterCompany(company);
 
 		if (DBPartition.isPartitionEnabled()) {
-			_clearCompanyCache(companyId, true);
-			_clearVirtualHostCache(companyId);
+			try (SafeCloseable safeCloseable1 = CompanyThreadLocal.lock(
+					PortalUtil.getDefaultCompanyId())) {
 
-			TransactionCommitCallbackUtil.registerCallback(
-				() -> {
-					PortalInstances.removeCompany(company.getCompanyId());
+				_clearCompanyCache(companyId, true);
+				_clearVirtualHostCache(companyId);
 
-					unregisterCompany(company);
+				TransactionCommitCallbackUtil.registerCallback(
+					() -> {
+						try (SafeCloseable safeCloseable2 =
+								CompanyThreadLocal.lock(
+									PortalUtil.getDefaultCompanyId())) {
 
-					return null;
-				});
+							PortalInstances.removeCompany(
+								company.getCompanyId());
 
-			DBPartitionUtil.removeDBPartition(companyId);
+							unregisterCompany(company);
+
+							return null;
+						}
+					});
+
+				DBPartitionUtil.removeDBPartition(companyId);
+			}
 
 			return company;
 		}
