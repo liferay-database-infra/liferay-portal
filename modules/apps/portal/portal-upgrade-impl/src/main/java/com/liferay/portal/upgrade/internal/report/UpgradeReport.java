@@ -165,7 +165,10 @@ public class UpgradeReport {
 					String propertiesFilePathString = String.valueOf(
 						Paths.get(uri));
 
-					if (FileUtil.exists(propertiesFilePathString)) {
+					if (!propertiesFilePathStrings.contains(
+							propertiesFilePathString) &&
+						FileUtil.exists(propertiesFilePathString)) {
+
 						propertiesFilePathStrings.add(propertiesFilePathString);
 					}
 				}
