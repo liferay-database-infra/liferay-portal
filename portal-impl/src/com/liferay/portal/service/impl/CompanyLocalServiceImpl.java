@@ -21,7 +21,6 @@ import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Disjunction;
-import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
@@ -668,8 +667,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		try (SafeCloseable safeCloseable2 =
 				PortalInstances.setCompanyInDeletionProcess(companyId)) {
 
-			_clearCompanyCache(companyId, true);
 			_clearVirtualHostCache(companyId);
+			_clearCompanyCache(companyId, true);
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
@@ -1531,8 +1530,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		preunregisterCompany(company);
 
 		if (DBPartition.isPartitionEnabled()) {
-			_clearCompanyCache(companyId, true);
 			_clearVirtualHostCache(companyId);
+			_clearCompanyCache(companyId, true);
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
@@ -2352,12 +2351,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
 					forEachCompanyId(
-						id -> {
-							EntityCacheUtil.removeResult(
-								company.getClass(), company.getPrimaryKeyObj());
-
-							companyPersistence.clearCache(company);
-						});
+						id -> companyPersistence.clearCache(company));
 
 					if (removePortalCache) {
 						PortalCacheHelperUtil.removePortalCaches(
@@ -2379,13 +2373,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
 					forEachCompanyId(
-						id -> {
-							EntityCacheUtil.removeResult(
-								virtualHost.getClass(),
-								virtualHost.getPrimaryKeyObj());
-
-							_virtualHostPersistence.clearCache(virtualHost);
-						});
+						id -> _virtualHostPersistence.clearCache(virtualHost));
 
 					return null;
 				});
