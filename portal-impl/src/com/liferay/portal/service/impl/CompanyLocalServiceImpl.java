@@ -668,8 +668,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		try (SafeCloseable safeCloseable2 =
 				PortalInstances.setCompanyInDeletionProcess(companyId)) {
 
-			_clearCompanyCache(companyId, true);
 			_clearVirtualHostCache(companyId);
+			_clearCompanyCache(companyId, true);
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
@@ -1531,8 +1531,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		preunregisterCompany(company);
 
 		if (DBPartition.isPartitionEnabled()) {
-			_clearCompanyCache(companyId, true);
 			_clearVirtualHostCache(companyId);
+			_clearCompanyCache(companyId, true);
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
