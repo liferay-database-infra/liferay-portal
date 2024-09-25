@@ -14,13 +14,6 @@ definition {
 		return ${fileContentReport};
 	}
 
-	@summary = "Retrieves and returns the total Upgrade execution time available in the 'upgrade_report.info' file"
-	macro getUpgradeExecutionTime(reportFileContent = null) {
-		var upgradeRunTimeReport = RegexUtil.replace(${reportFileContent}, "Execution time: (.*[0-9])", 1);
-
-		return ${upgradeRunTimeReport};
-	}
-
 	@summary = "Retrieves and returns the content of 'upgrade_report.info' when using DB Upgrade Tool"
 	macro getUpgradeReportFileContent(directory = null) {
 		var liferayHome = PropsUtil.get("liferay.home.dir.name");
