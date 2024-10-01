@@ -12,14 +12,11 @@ import com.liferay.portal.kernel.transaction.TransactionAttribute;
 import com.liferay.portal.kernel.transaction.TransactionLifecycleListener;
 import com.liferay.portal.kernel.transaction.TransactionStatus;
 
-import java.sql.Connection;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.hibernate.internal.SessionImpl;
 
 /**
  * @author Shuyang Zhou
@@ -63,6 +60,12 @@ public class LastSessionRecorderUtil {
 		sessions.add(session);
 	}
 
+	protected static void removePortletSession(Session session) {
+		List<Session> sessions = _portletSessionsThreadLocal.get();
+
+		sessions.remove(session);
+	}
+
 	protected static void setLastSession(Session session) {
 		_lastSessionThreadLocal.set(session);
 	}
@@ -70,15 +73,9 @@ public class LastSessionRecorderUtil {
 	private static void _syncSessionState(Session session) {
 		if (session.isOpen()) {
 			try {
-				SessionImpl sessionImpl = (SessionImpl)session;
+				session.flush();
 
-				Connection connection = sessionImpl.connection();
-
-				if (!connection.isClosed()) {
-					session.flush();
-
-					session.clear();
-				}
+				session.clear();
 			}
 			catch (Exception exception) {
 				throw new SystemException(exception);
