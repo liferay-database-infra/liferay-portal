@@ -588,6 +588,8 @@ definition {
 			var script = '''
 				import com.liferay.portal.db.partition.util.DBPartitionUtil;
 
+				sleep(10000);
+
 				int total = 0;
 
 				DBPartitionUtil.forEachCompanyId({companyId -> total++});
@@ -656,6 +658,8 @@ definition {
 				import com.liferay.portal.kernel.instance.PortalInstancePool;
 
 				import java.util.List;
+
+				sleep(10000);
 
 				List <Long> companyIds = PortalInstancePool.getCompanyIds();
 
