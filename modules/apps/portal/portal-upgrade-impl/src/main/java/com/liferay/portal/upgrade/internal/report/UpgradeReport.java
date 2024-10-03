@@ -549,7 +549,31 @@ public class UpgradeReport {
 		).put(
 			"errors", _getMessagesPrinters(upgradeRecorder.getErrorMessages())
 		).put(
-			"failed.sqls", upgradeRecorder.getFailedSQLs()
+			"failed.sqls",
+			() -> {
+				List<SQLQuery> failedSQLQuerys = new ArrayList<>();
+
+				List<String> failedSQLs = upgradeRecorder.getFailedSQLs();
+
+				for (String failedSQL : failedSQLs) {
+					String sql = failedSQL;
+
+					String message = StringPool.BLANK;
+
+					if (failedSQL.contains(StringPool.PIPE)) {
+						int index = failedSQL.indexOf(StringPool.PIPE);
+
+						sql = failedSQL.substring(0, index);
+
+						message = failedSQL.substring(index + 1);
+					}
+
+					failedSQLQuerys.add(
+						new SQLQuery(0, message, sql, StringPool.BLANK));
+				}
+
+				return failedSQLQuerys;
+			}
 		).put(
 			"longest.upgrade.processes",
 			() -> {
@@ -623,7 +647,7 @@ public class UpgradeReport {
 		).put(
 			"longest.running.sqls",
 			() -> {
-				List<RunningSQL> longestRunningSQLs = new ArrayList<>();
+				List<SQLQuery> longestSQLQuerys = new ArrayList<>();
 
 				Map<String, Long> sqlExecutionTimes =
 					upgradeRecorder.getSQLExecutionTimes();
@@ -655,12 +679,13 @@ public class UpgradeReport {
 						sql = key.substring(index + 1);
 					}
 
-					longestRunningSQLs.add(
-						new RunningSQL(
-							entry.getValue(), sql, upgradeProcessClassName));
+					longestSQLQuerys.add(
+						new SQLQuery(
+							entry.getValue(), StringPool.BLANK, sql,
+							upgradeProcessClassName));
 				}
 
-				return longestRunningSQLs;
+				return longestSQLQuerys;
 			}
 		).put(
 			"warnings",
@@ -1085,35 +1110,6 @@ public class UpgradeReport {
 
 	}
 
-	private class RunningSQL {
-
-		public RunningSQL(
-			long duration, String sql, String upgradeProcessClassName) {
-
-			_duration = duration;
-			_sql = sql;
-			_upgradeProcessClassName = upgradeProcessClassName;
-		}
-
-		@Override
-		public String toString() {
-			if (_logContext) {
-				return StringBundler.concat(
-					_upgradeProcessClassName, StringPool.COLON, _sql,
-					StringPool.COLON, _duration, " ms");
-			}
-
-			return StringBundler.concat(
-				"Upgrade Process: ", _upgradeProcessClassName, "\nSQL: ", _sql,
-				"\nDuration: ", _duration, " ms\n");
-		}
-
-		private final long _duration;
-		private final String _sql;
-		private final String _upgradeProcessClassName;
-
-	}
-
 	private class RunningUpgradeProcess {
 
 		public RunningUpgradeProcess(
@@ -1137,6 +1133,78 @@ public class UpgradeReport {
 		}
 
 		private final String _timeDescription;
+		private final String _upgradeProcessClassName;
+
+	}
+
+	private class SQLQuery {
+
+		public SQLQuery(
+			long duration, String message, String sql,
+			String upgradeProcessClassName) {
+
+			_duration = duration;
+			_message = message;
+			_sql = sql;
+			_upgradeProcessClassName = upgradeProcessClassName;
+		}
+
+		@Override
+		public String toString() {
+			StringBundler sb = new StringBundler();
+
+			if (_logContext) {
+				if (!Validator.isBlank(_upgradeProcessClassName)) {
+					sb.append(_upgradeProcessClassName);
+					sb.append(StringPool.COLON);
+				}
+
+				sb.append(_sql);
+
+				if (_duration > 0) {
+					sb.append(StringPool.COLON);
+					sb.append(_duration);
+					sb.append(" ms");
+				}
+
+				if (!Validator.isBlank(_message)) {
+					sb.append(StringPool.COLON);
+					sb.append(_message);
+				}
+
+				return sb.toString();
+			}
+
+			if (!Validator.isBlank(_upgradeProcessClassName)) {
+				sb.append("Upgrade Process: ");
+				sb.append(_upgradeProcessClassName);
+				sb.append(StringPool.NEW_LINE);
+			}
+
+			sb.append("SQL: ");
+			sb.append(_sql);
+
+			if (_duration > 0) {
+				sb.append(StringPool.NEW_LINE);
+				sb.append("Duration: ");
+				sb.append(_duration);
+				sb.append(" ms");
+			}
+
+			if (!Validator.isBlank(_message)) {
+				sb.append(StringPool.NEW_LINE);
+				sb.append("Error: ");
+				sb.append(_message);
+			}
+
+			sb.append(StringPool.NEW_LINE);
+
+			return sb.toString();
+		}
+
+		private final long _duration;
+		private final String _message;
+		private final String _sql;
 		private final String _upgradeProcessClassName;
 
 	}
