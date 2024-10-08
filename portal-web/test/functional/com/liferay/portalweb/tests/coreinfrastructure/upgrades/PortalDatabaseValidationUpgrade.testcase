@@ -60,6 +60,8 @@ definition {
 
 			Portlet.startServer();
 
+            Pause(value1 = 20000);
+
 			User.firstLoginPG(
 				password = PropsUtil.get("default.admin.password"),
 				userEmailAddress = "test@liferay.com",
