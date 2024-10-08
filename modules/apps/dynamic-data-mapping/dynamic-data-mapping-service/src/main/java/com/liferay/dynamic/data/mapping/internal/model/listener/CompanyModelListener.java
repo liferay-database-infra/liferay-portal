@@ -1,9 +1,9 @@
 /**
- * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-FileCopyrightText: (c) 2024 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-package com.liferay.dynamic.data.mapping.internal.instance.lifecycle;
+package com.liferay.dynamic.data.mapping.internal.model.listener;
 
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
@@ -13,10 +13,12 @@ import com.liferay.dynamic.data.mapping.service.DDMTemplateLinkLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateVersionLocalService;
 import com.liferay.dynamic.data.mapping.storage.DDMStorageEngineManager;
-import com.liferay.portal.instance.lifecycle.BasePortalInstanceLifecycleListener;
-import com.liferay.portal.instance.lifecycle.PortalInstanceLifecycleListener;
 import com.liferay.portal.kernel.db.partition.DBPartition;
+import com.liferay.portal.kernel.exception.ModelListenerException;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.BaseModelListener;
 import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.ModelListener;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -26,20 +28,39 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 /**
+ * @author Mariano Álvaro Sáiz
  * @author Shuyang Zhou
  */
-@Component(service = PortalInstanceLifecycleListener.class)
-public class DDMCleanUpPortalInstanceLifecycleListener
-	extends BasePortalInstanceLifecycleListener {
+@Component(service = ModelListener.class)
+public class CompanyModelListener extends BaseModelListener<Company> {
 
 	@Override
-	public void portalInstancePreunregistered(Company company)
-		throws Exception {
-
+	public void onBeforeRemove(Company company) throws ModelListenerException {
 		if (DBPartition.isPartitionEnabled()) {
 			return;
 		}
 
+		try {
+			_onBeforeRemove(company);
+		}
+		catch (PortalException portalException) {
+			throw new ModelListenerException(portalException);
+		}
+	}
+
+	private void _deleteDDMTemplate(DDMTemplate ddmTemplate)
+		throws PortalException {
+
+		_ddmTemplateVersionLocalService.deleteTemplateVersions(
+			ddmTemplate.getTemplateId());
+
+		_ddmTemplateLinkLocalService.deleteTemplateLinks(
+			ddmTemplate.getTemplateId());
+
+		_ddmTemplateLocalService.deleteTemplate(ddmTemplate);
+	}
+
+	private void _onBeforeRemove(Company company) throws PortalException {
 		for (DDMTemplate ddmTemplate :
 				_ddmTemplateLocalService.getTemplatesByGroupId(
 					company.getGroupId())) {
@@ -79,16 +100,6 @@ public class DDMCleanUpPortalInstanceLifecycleListener
 
 			_ddmStructureLocalService.deleteStructure(ddmStructure);
 		}
-	}
-
-	private void _deleteDDMTemplate(DDMTemplate ddmTemplate) throws Exception {
-		_ddmTemplateVersionLocalService.deleteTemplateVersions(
-			ddmTemplate.getTemplateId());
-
-		_ddmTemplateLinkLocalService.deleteTemplateLinks(
-			ddmTemplate.getTemplateId());
-
-		_ddmTemplateLocalService.deleteTemplate(ddmTemplate);
 	}
 
 	@Reference
