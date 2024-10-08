@@ -1132,32 +1132,37 @@ public class ObjectDefinitionLocalServiceImpl
 			return;
 		}
 
-		for (Map.Entry
-				<ObjectDefinitionDeployer,
-				 Map<Long, List<ServiceRegistration<?>>>> entry :
-					_serviceRegistrationsMaps.entrySet()) {
+		try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
+				objectDefinition.getCompanyId())) {
 
-			ObjectDefinitionDeployer objectDefinitionDeployer = entry.getKey();
+			for (Map.Entry
+					<ObjectDefinitionDeployer,
+					 Map<Long, List<ServiceRegistration<?>>>> entry :
+						_serviceRegistrationsMaps.entrySet()) {
 
-			objectDefinitionDeployer.undeploy(objectDefinition);
+				ObjectDefinitionDeployer objectDefinitionDeployer =
+					entry.getKey();
 
-			Map<Long, List<ServiceRegistration<?>>> serviceRegistrationsMap =
-				entry.getValue();
+				objectDefinitionDeployer.undeploy(objectDefinition);
 
-			List<ServiceRegistration<?>> serviceRegistrations =
-				serviceRegistrationsMap.remove(
-					objectDefinition.getObjectDefinitionId());
+				Map<Long, List<ServiceRegistration<?>>>
+					serviceRegistrationsMap = entry.getValue();
 
-			if (serviceRegistrations != null) {
-				for (ServiceRegistration<?> serviceRegistration :
-						serviceRegistrations) {
+				List<ServiceRegistration<?>> serviceRegistrations =
+					serviceRegistrationsMap.remove(
+						objectDefinition.getObjectDefinitionId());
 
-					serviceRegistration.unregister();
+				if (serviceRegistrations != null) {
+					for (ServiceRegistration<?> serviceRegistration :
+							serviceRegistrations) {
+
+						serviceRegistration.unregister();
+					}
 				}
 			}
-		}
 
-		_invalidatePortalCache(objectDefinition);
+			_invalidatePortalCache(objectDefinition);
+		}
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
