@@ -2778,10 +2778,16 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 			companyPortlet.getCompanyId(), WebKeys.PORTLET_CATEGORY);
 
 		if (portletCategory == null) {
-			_log.error(
-				"Unable to register remote portlet for company " +
-					companyPortlet.getCompanyId() +
-						" because it does not exist");
+			try {
+				throw new NullPointerException();
+			}
+			catch (Exception exception) {
+				_log.error(
+					"Unable to register remote portlet for company " +
+						companyPortlet.getCompanyId() +
+							" because it does not exist",
+					exception);
+			}
 
 			return;
 		}

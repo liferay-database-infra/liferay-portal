@@ -24,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.osgi.service.component.annotations.Component;
@@ -57,10 +58,14 @@ public class PortalInstancesLocalServiceImpl
 
 			List<Long> removeableCompanyIds = ListUtil.fromArray(
 				initializedCompanyIds);
+			
+			_log.error("Initialized companies: " + Arrays.toString(initializedCompanyIds));
 
 			_companyLocalService.forEachCompanyId(
 				companyId -> {
 					removeableCompanyIds.remove(companyId);
+					
+					_log.error("Init companyId: " + companyId);
 
 					if (ArrayUtil.contains(initializedCompanyIds, companyId)) {
 						return;
@@ -70,6 +75,8 @@ public class PortalInstancesLocalServiceImpl
 						_companyLocalService.getCompany(companyId));
 				},
 				_getCompanyIdsBySQL());
+			
+			_log.error("Removed companyIds: " + Arrays.toString(ArrayUtil.toLongArray(removeableCompanyIds)));
 
 			_companyLocalService.forEachCompanyId(
 				companyId -> PortalInstances.removeCompany(companyId),
