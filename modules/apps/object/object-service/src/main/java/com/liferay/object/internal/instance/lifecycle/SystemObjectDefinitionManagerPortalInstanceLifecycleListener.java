@@ -64,6 +64,7 @@ import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.instance.lifecycle.BasePortalInstanceLifecycleListener;
 import com.liferay.portal.instance.lifecycle.EveryNodeEveryStartup;
 import com.liferay.portal.instance.lifecycle.PortalInstanceLifecycleListener;
+import com.liferay.portal.kernel.cluster.ClusterInvokeThreadLocal;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -207,9 +208,10 @@ public class SystemObjectDefinitionManagerPortalInstanceLifecycleListener
 				_objectDefinitionLocalService.fetchObjectDefinition(
 					companyId, systemObjectDefinitionManager.getName());
 
-			if ((objectDefinition == null) ||
-				(objectDefinition.getVersion() !=
-					systemObjectDefinitionManager.getVersion())) {
+			if (ClusterInvokeThreadLocal.isEnabled() &&
+				((objectDefinition == null) ||
+				 (objectDefinition.getVersion() !=
+					 systemObjectDefinitionManager.getVersion()))) {
 
 				ObjectFolder objectFolder =
 					_objectFolderLocalService.getOrAddDefaultObjectFolder(
