@@ -7,6 +7,7 @@ package com.liferay.portal.instances.service.impl;
 
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.instances.service.base.PortalInstancesLocalServiceBaseImpl;
+import com.liferay.portal.kernel.cluster.ClusterInvokeThreadLocal;
 import com.liferay.portal.kernel.cluster.Clusterable;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
@@ -52,6 +53,10 @@ public class PortalInstancesLocalServiceImpl
 	@Clusterable
 	@Override
 	public void synchronizePortalInstances() {
+		boolean enabled = ClusterInvokeThreadLocal.isEnabled();
+
+		ClusterInvokeThreadLocal.setEnabled(false);
+
 		try {
 			long[] initializedCompanyIds = _portal.getCompanyIds();
 
@@ -77,6 +82,9 @@ public class PortalInstancesLocalServiceImpl
 		}
 		catch (Exception exception) {
 			_log.error(exception);
+		}
+		finally {
+			ClusterInvokeThreadLocal.setEnabled(enabled);
 		}
 	}
 
