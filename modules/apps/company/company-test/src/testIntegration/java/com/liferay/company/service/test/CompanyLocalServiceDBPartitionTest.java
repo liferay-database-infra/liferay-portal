@@ -352,7 +352,7 @@ public class CompanyLocalServiceDBPartitionTest
 		String counterName = RandomTestUtil.randomString();
 
 		try (SafeCloseable safeCloseable =
-				CompanyThreadLocal.setWithSafeCloseable(
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
 					_company2.getCompanyId())) {
 
 			counter = _counterLocalService.increment(counterName);
@@ -369,7 +369,7 @@ public class CompanyLocalServiceDBPartitionTest
 			_company2.getName(), virtualHostname, _company2.getWebId());
 
 		try (SafeCloseable safeCloseable =
-				CompanyThreadLocal.setWithSafeCloseable(
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
 					_company2.getCompanyId())) {
 
 			Assert.assertEquals(
