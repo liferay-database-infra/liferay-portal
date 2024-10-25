@@ -454,6 +454,10 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
 
+		if (!DBPartition.isPartitionEnabled()) {
+			return;
+		}
+
 		ServiceLatch serviceLatch = SystemBundleUtil.newServiceLatch();
 
 		serviceLatch.waitFor(
