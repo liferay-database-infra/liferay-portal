@@ -2421,6 +2421,22 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 	}
 
 	private long _getNextCompanyId() {
+		if (PropsValues.COMPANY_DEFAULT_ID > 0) {
+			if (_nextCompanyId == -1) {
+				_nextCompanyId = PropsValues.COMPANY_DEFAULT_ID;
+			}
+			else {
+				if (PropsValues.COMPANY_ID_INCREMENT > 0) {
+					_nextCompanyId += PropsValues.COMPANY_ID_INCREMENT;
+				}
+				else {
+					_nextCompanyId += 1;
+				}
+			}
+
+			return _nextCompanyId;
+		}
+
 		long nextLong = 0;
 
 		ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
@@ -2574,6 +2590,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 	@BeanReference(type = LayoutSetPrototypeLocalService.class)
 	private LayoutSetPrototypeLocalService _layoutSetPrototypeLocalService;
+
+	private long _nextCompanyId = -1;
 
 	@BeanReference(type = OrganizationLocalService.class)
 	private OrganizationLocalService _organizationLocalService;
