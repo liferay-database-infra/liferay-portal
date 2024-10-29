@@ -358,6 +358,9 @@ public class PropsValues {
 	public static final String COMPANY_DEFAULT_HOME_URL = PropsUtil.get(
 		PropsKeys.COMPANY_DEFAULT_HOME_URL);
 
+	public static final long COMPANY_DEFAULT_ID = GetterUtil.getLong(
+		PropsUtil.get(PropsKeys.COMPANY_DEFAULT_ID));
+
 	public static String COMPANY_DEFAULT_LOCALE = PropsUtil.get(
 		PropsKeys.COMPANY_DEFAULT_LOCALE);
 
@@ -380,6 +383,9 @@ public class PropsValues {
 
 	public static String COMPANY_DEFAULT_WEB_ID = PropsUtil.get(
 		PropsKeys.COMPANY_DEFAULT_WEB_ID);
+
+	public static final int COMPANY_ID_INCREMENT = GetterUtil.getInteger(
+		PropsUtil.get(PropsKeys.COMPANY_ID_INCREMENT));
 
 	public static final boolean COMPANY_LOGIN_PREPOPULATE_DOMAIN =
 		GetterUtil.getBoolean(

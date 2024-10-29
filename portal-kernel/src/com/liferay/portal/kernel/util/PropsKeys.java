@@ -448,6 +448,8 @@ public interface PropsKeys {
 	public static final String COMPANY_DEFAULT_HOME_URL =
 		"company.default.home.url";
 
+	public static final String COMPANY_DEFAULT_ID = "company.default.id";
+
 	public static final String COMPANY_DEFAULT_LOCALE =
 		"company.default.locale";
 
@@ -473,6 +475,8 @@ public interface PropsKeys {
 
 	public static final String COMPANY_ENCRYPTION_KEY_SIZE =
 		"company.encryption.key.size";
+
+	public static final String COMPANY_ID_INCREMENT = "company.id.increment";
 
 	public static final String COMPANY_LOG_ENABLED = "company.log.enabled";
 
