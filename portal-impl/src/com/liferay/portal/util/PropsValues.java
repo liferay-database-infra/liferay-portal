@@ -381,6 +381,9 @@ public class PropsValues {
 	public static String COMPANY_DEFAULT_WEB_ID = PropsUtil.get(
 		PropsKeys.COMPANY_DEFAULT_WEB_ID);
 
+	public static final boolean COMPANY_ID_PREDICTABLE = GetterUtil.getBoolean(
+		PropsUtil.get(PropsKeys.COMPANY_ID_PREDICTABLE));
+
 	public static final boolean COMPANY_LOGIN_PREPOPULATE_DOMAIN =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.COMPANY_LOGIN_PREPOPULATE_DOMAIN));
