@@ -561,7 +561,7 @@ public class CompanyLocalServiceTest {
 	}
 
 	@Test
-	public void testAddCompanyStaticCompanyId() throws Exception {
+	public void testAddCompaniesStaticCompanyId() throws Exception {
 		boolean originalCompanyStaticIdEnabled =
 			ReflectionTestUtil.getAndSetFieldValue(
 				PropsValues.class, "COMPANY_STATIC_ID_ENABLED", true);
@@ -1108,7 +1108,9 @@ public class CompanyLocalServiceTest {
 		Company company = addCompany(
 			RandomTestUtil.randomString() + "test.com");
 
-		_verifyRandomCompanyId(company.getCompanyId(), counterCompanyId);
+		if (!PropsValues.COMPANY_STATIC_ID_ENABLED) {
+			_verifyRandomCompanyId(company.getCompanyId(), counterCompanyId);
+		}
 
 		return company;
 	}
