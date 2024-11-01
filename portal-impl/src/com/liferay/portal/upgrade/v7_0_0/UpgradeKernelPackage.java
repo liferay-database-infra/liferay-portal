@@ -177,7 +177,7 @@ public class UpgradeKernelPackage extends UpgradeProcess {
 			if ((DBManagerUtil.getDBType() == DBType.MYSQL) ||
 				(DBManagerUtil.getDBType() == DBType.MARIADB)) {
 
-				String[][] switchedNames = ArrayUtil.clone(names);
+				String[][] switchedNames = ArrayUtil.deepCopy(names);
 
 				for (String[] name : switchedNames) {
 					String temp = name[0];
