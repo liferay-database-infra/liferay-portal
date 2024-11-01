@@ -92,6 +92,7 @@ import com.liferay.portal.kernel.service.OrganizationLocalService;
 import com.liferay.portal.kernel.service.PasswordPolicyLocalService;
 import com.liferay.portal.kernel.service.PortalPreferencesLocalService;
 import com.liferay.portal.kernel.service.PortletLocalService;
+import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.SystemEventLocalService;
 import com.liferay.portal.kernel.service.UserGroupLocalService;
@@ -2216,6 +2217,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		preregisterCompany(company);
 
+		_resourceActionLocalService.checkResourceActions();
+
 		_portletLocalService.checkPortlets(company.getCompanyId());
 
 		TransactionCommitCallbackUtil.registerCallback(
@@ -2363,6 +2366,12 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			// Virtual host
 
 			company = syncVirtualHost(company);
+
+			// Resource actions
+
+			if (DBPartition.isPartitionEnabled()) {
+				_resourceActionLocalService.checkResourceActions();
+			}
 
 			// System roles
 
@@ -2677,6 +2686,9 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 	private PortletPersistence _portletPersistence;
 
 	private final Set<Company> _preregisterPendingCompanies = new HashSet<>();
+
+	@BeanReference(type = ResourceActionLocalService.class)
+	private ResourceActionLocalService _resourceActionLocalService;
 
 	@BeanReference(type = RoleLocalService.class)
 	private RoleLocalService _roleLocalService;
