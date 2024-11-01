@@ -841,6 +841,19 @@ public class ArrayUtil {
 		return count;
 	}
 
+	public static <T> T[][] deepCopy(T[][] array) {
+		Class<?> arrayClass = array.getClass();
+
+		T[][] newArray = (T[][])Array.newInstance(
+			arrayClass.getComponentType(), array.length);
+
+		for (int i = 0; i < array.length; i++) {
+			newArray[i] = clone(array[i]);
+		}
+
+		return newArray;
+	}
+
 	public static String[] distinct(String[] array) {
 		return distinct(array, null);
 	}
