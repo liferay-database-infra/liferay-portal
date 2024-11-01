@@ -295,6 +295,21 @@ public class ArrayUtilTest {
 	}
 
 	@Test
+	public void testDeepCopy() {
+		Integer[][] array = {new Integer[] {1, 2, 3}, new Integer[] {4, 5, 6}};
+
+		Integer[][] cloned = ArrayUtil.deepCopy(array);
+
+		Assert.assertArrayEquals(array, cloned);
+
+		cloned[0][1] = 0;
+
+		Assert.assertArrayEquals(
+			array,
+			new Integer[][] {new Integer[] {1, 2, 3}, new Integer[] {4, 5, 6}});
+	}
+
+	@Test
 	public void testFilterDoubleArray() {
 		double[] array = ArrayUtil.filter(
 			new double[] {0.1, 0.2, 1.2, 1.3}, _doublePredicate);
