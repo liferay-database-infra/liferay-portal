@@ -264,6 +264,10 @@ public class ArrayUtil_IW {
 		return ArrayUtil.count(array, predicate);
 	}
 
+	public <T> T[][] deepCopy(T[][] array) {
+		return ArrayUtil.deepCopy(array);
+	}
+
 	public java.lang.String[] distinct(java.lang.String[] array) {
 		return ArrayUtil.distinct(array);
 	}
