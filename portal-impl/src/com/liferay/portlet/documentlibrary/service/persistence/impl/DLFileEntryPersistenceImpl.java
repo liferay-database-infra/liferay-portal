@@ -15522,7 +15522,6 @@ public class DLFileEntryPersistenceImpl
 	static {
 		Set<String> ctControlColumnNames = new HashSet<String>();
 		Set<String> ctIgnoreColumnNames = new HashSet<String>();
-		Set<String> ctMergeColumnNames = new HashSet<String>();
 		Set<String> ctStrictColumnNames = new HashSet<String>();
 
 		ctControlColumnNames.add("mvccVersion");
@@ -15537,34 +15536,33 @@ public class DLFileEntryPersistenceImpl
 		ctIgnoreColumnNames.add("modifiedDate");
 		ctStrictColumnNames.add("classNameId");
 		ctStrictColumnNames.add("classPK");
-		ctMergeColumnNames.add("repositoryId");
-		ctMergeColumnNames.add("folderId");
-		ctMergeColumnNames.add("treePath");
-		ctMergeColumnNames.add("name");
-		ctMergeColumnNames.add("fileName");
-		ctMergeColumnNames.add("extension");
-		ctMergeColumnNames.add("mimeType");
-		ctMergeColumnNames.add("title");
-		ctMergeColumnNames.add("description");
-		ctMergeColumnNames.add("extraSettings");
-		ctMergeColumnNames.add("fileEntryTypeId");
-		ctMergeColumnNames.add("version");
-		ctMergeColumnNames.add("size_");
-		ctMergeColumnNames.add("smallImageId");
-		ctMergeColumnNames.add("largeImageId");
-		ctMergeColumnNames.add("custom1ImageId");
-		ctMergeColumnNames.add("custom2ImageId");
-		ctMergeColumnNames.add("manualCheckInRequired");
-		ctMergeColumnNames.add("displayDate");
-		ctMergeColumnNames.add("expirationDate");
-		ctMergeColumnNames.add("reviewDate");
-		ctMergeColumnNames.add("lastPublishDate");
+		ctStrictColumnNames.add("repositoryId");
+		ctStrictColumnNames.add("folderId");
+		ctStrictColumnNames.add("treePath");
+		ctStrictColumnNames.add("name");
+		ctStrictColumnNames.add("fileName");
+		ctStrictColumnNames.add("extension");
+		ctStrictColumnNames.add("mimeType");
+		ctStrictColumnNames.add("title");
+		ctStrictColumnNames.add("description");
+		ctStrictColumnNames.add("extraSettings");
+		ctStrictColumnNames.add("fileEntryTypeId");
+		ctStrictColumnNames.add("version");
+		ctStrictColumnNames.add("size_");
+		ctStrictColumnNames.add("smallImageId");
+		ctStrictColumnNames.add("largeImageId");
+		ctStrictColumnNames.add("custom1ImageId");
+		ctStrictColumnNames.add("custom2ImageId");
+		ctStrictColumnNames.add("manualCheckInRequired");
+		ctStrictColumnNames.add("displayDate");
+		ctStrictColumnNames.add("expirationDate");
+		ctStrictColumnNames.add("reviewDate");
+		ctStrictColumnNames.add("lastPublishDate");
 
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.CONTROL, ctControlColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.IGNORE, ctIgnoreColumnNames);
-		_ctColumnNamesMap.put(CTColumnResolutionType.MERGE, ctMergeColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.PK, Collections.singleton("fileEntryId"));
 		_ctColumnNamesMap.put(

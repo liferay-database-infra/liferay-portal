@@ -8819,7 +8819,6 @@ public class AnnouncementsEntryPersistenceImpl
 	static {
 		Set<String> ctControlColumnNames = new HashSet<String>();
 		Set<String> ctIgnoreColumnNames = new HashSet<String>();
-		Set<String> ctMergeColumnNames = new HashSet<String>();
 		Set<String> ctStrictColumnNames = new HashSet<String>();
 
 		ctControlColumnNames.add("mvccVersion");
@@ -8832,20 +8831,19 @@ public class AnnouncementsEntryPersistenceImpl
 		ctIgnoreColumnNames.add("modifiedDate");
 		ctStrictColumnNames.add("classNameId");
 		ctStrictColumnNames.add("classPK");
-		ctMergeColumnNames.add("title");
-		ctMergeColumnNames.add("content");
-		ctMergeColumnNames.add("url");
-		ctMergeColumnNames.add("type_");
-		ctMergeColumnNames.add("displayDate");
-		ctMergeColumnNames.add("expirationDate");
-		ctMergeColumnNames.add("priority");
-		ctMergeColumnNames.add("alert");
+		ctStrictColumnNames.add("title");
+		ctStrictColumnNames.add("content");
+		ctStrictColumnNames.add("url");
+		ctStrictColumnNames.add("type_");
+		ctStrictColumnNames.add("displayDate");
+		ctStrictColumnNames.add("expirationDate");
+		ctStrictColumnNames.add("priority");
+		ctStrictColumnNames.add("alert");
 
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.CONTROL, ctControlColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.IGNORE, ctIgnoreColumnNames);
-		_ctColumnNamesMap.put(CTColumnResolutionType.MERGE, ctMergeColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.PK, Collections.singleton("entryId"));
 		_ctColumnNamesMap.put(

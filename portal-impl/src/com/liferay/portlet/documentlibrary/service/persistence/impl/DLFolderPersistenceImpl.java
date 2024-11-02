@@ -15337,7 +15337,6 @@ public class DLFolderPersistenceImpl
 		Set<String> ctControlColumnNames = new HashSet<String>();
 		Set<String> ctIgnoreColumnNames = new HashSet<String>();
 		Set<String> ctMaxColumnNames = new HashSet<String>();
-		Set<String> ctMergeColumnNames = new HashSet<String>();
 		Set<String> ctStrictColumnNames = new HashSet<String>();
 
 		ctControlColumnNames.add("mvccVersion");
@@ -15350,29 +15349,28 @@ public class DLFolderPersistenceImpl
 		ctStrictColumnNames.add("userName");
 		ctStrictColumnNames.add("createDate");
 		ctIgnoreColumnNames.add("modifiedDate");
-		ctMergeColumnNames.add("repositoryId");
-		ctMergeColumnNames.add("mountPoint");
-		ctMergeColumnNames.add("parentFolderId");
-		ctMergeColumnNames.add("treePath");
-		ctMergeColumnNames.add("name");
-		ctMergeColumnNames.add("description");
+		ctStrictColumnNames.add("repositoryId");
+		ctStrictColumnNames.add("mountPoint");
+		ctStrictColumnNames.add("parentFolderId");
+		ctStrictColumnNames.add("treePath");
+		ctStrictColumnNames.add("name");
+		ctStrictColumnNames.add("description");
 		ctMaxColumnNames.add("lastPostDate");
-		ctMergeColumnNames.add("defaultFileEntryTypeId");
-		ctMergeColumnNames.add("hidden_");
-		ctMergeColumnNames.add("restrictionType");
-		ctMergeColumnNames.add("lastPublishDate");
-		ctMergeColumnNames.add("status");
-		ctMergeColumnNames.add("statusByUserId");
-		ctMergeColumnNames.add("statusByUserName");
-		ctMergeColumnNames.add("statusDate");
-		ctMergeColumnNames.add("fileEntryTypes");
+		ctStrictColumnNames.add("defaultFileEntryTypeId");
+		ctStrictColumnNames.add("hidden_");
+		ctStrictColumnNames.add("restrictionType");
+		ctStrictColumnNames.add("lastPublishDate");
+		ctStrictColumnNames.add("status");
+		ctStrictColumnNames.add("statusByUserId");
+		ctStrictColumnNames.add("statusByUserName");
+		ctStrictColumnNames.add("statusDate");
+		ctStrictColumnNames.add("fileEntryTypes");
 
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.CONTROL, ctControlColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.IGNORE, ctIgnoreColumnNames);
 		_ctColumnNamesMap.put(CTColumnResolutionType.MAX, ctMaxColumnNames);
-		_ctColumnNamesMap.put(CTColumnResolutionType.MERGE, ctMergeColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.PK, Collections.singleton("folderId"));
 		_ctColumnNamesMap.put(
