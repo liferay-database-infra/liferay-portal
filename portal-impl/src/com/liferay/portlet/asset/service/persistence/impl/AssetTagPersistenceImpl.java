@@ -5317,7 +5317,6 @@ public class AssetTagPersistenceImpl
 	static {
 		Set<String> ctControlColumnNames = new HashSet<String>();
 		Set<String> ctIgnoreColumnNames = new HashSet<String>();
-		Set<String> ctMergeColumnNames = new HashSet<String>();
 		Set<String> ctStrictColumnNames = new HashSet<String>();
 
 		ctControlColumnNames.add("mvccVersion");
@@ -5330,16 +5329,15 @@ public class AssetTagPersistenceImpl
 		ctStrictColumnNames.add("userName");
 		ctStrictColumnNames.add("createDate");
 		ctIgnoreColumnNames.add("modifiedDate");
-		ctMergeColumnNames.add("name");
-		ctMergeColumnNames.add("assetCount");
-		ctMergeColumnNames.add("lastPublishDate");
-		ctMergeColumnNames.add("entries");
+		ctStrictColumnNames.add("name");
+		ctStrictColumnNames.add("assetCount");
+		ctStrictColumnNames.add("lastPublishDate");
+		ctStrictColumnNames.add("entries");
 
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.CONTROL, ctControlColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.IGNORE, ctIgnoreColumnNames);
-		_ctColumnNamesMap.put(CTColumnResolutionType.MERGE, ctMergeColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.PK, Collections.singleton("tagId"));
 		_ctColumnNamesMap.put(

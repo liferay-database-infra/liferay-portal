@@ -6633,7 +6633,6 @@ public class AssetEntryPersistenceImpl
 	static {
 		Set<String> ctControlColumnNames = new HashSet<String>();
 		Set<String> ctIgnoreColumnNames = new HashSet<String>();
-		Set<String> ctMergeColumnNames = new HashSet<String>();
 		Set<String> ctStrictColumnNames = new HashSet<String>();
 
 		ctControlColumnNames.add("mvccVersion");
@@ -6646,30 +6645,29 @@ public class AssetEntryPersistenceImpl
 		ctIgnoreColumnNames.add("modifiedDate");
 		ctStrictColumnNames.add("classNameId");
 		ctStrictColumnNames.add("classPK");
-		ctMergeColumnNames.add("classUuid");
-		ctMergeColumnNames.add("classTypeId");
-		ctMergeColumnNames.add("listable");
-		ctMergeColumnNames.add("visible");
-		ctMergeColumnNames.add("startDate");
-		ctMergeColumnNames.add("endDate");
-		ctMergeColumnNames.add("publishDate");
-		ctMergeColumnNames.add("expirationDate");
-		ctMergeColumnNames.add("mimeType");
-		ctMergeColumnNames.add("title");
-		ctMergeColumnNames.add("description");
-		ctMergeColumnNames.add("summary");
-		ctMergeColumnNames.add("url");
-		ctMergeColumnNames.add("layoutUuid");
-		ctMergeColumnNames.add("height");
-		ctMergeColumnNames.add("width");
-		ctMergeColumnNames.add("priority");
-		ctMergeColumnNames.add("tags");
+		ctStrictColumnNames.add("classUuid");
+		ctStrictColumnNames.add("classTypeId");
+		ctStrictColumnNames.add("listable");
+		ctStrictColumnNames.add("visible");
+		ctStrictColumnNames.add("startDate");
+		ctStrictColumnNames.add("endDate");
+		ctStrictColumnNames.add("publishDate");
+		ctStrictColumnNames.add("expirationDate");
+		ctStrictColumnNames.add("mimeType");
+		ctStrictColumnNames.add("title");
+		ctStrictColumnNames.add("description");
+		ctStrictColumnNames.add("summary");
+		ctStrictColumnNames.add("url");
+		ctStrictColumnNames.add("layoutUuid");
+		ctStrictColumnNames.add("height");
+		ctStrictColumnNames.add("width");
+		ctStrictColumnNames.add("priority");
+		ctStrictColumnNames.add("tags");
 
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.CONTROL, ctControlColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.IGNORE, ctIgnoreColumnNames);
-		_ctColumnNamesMap.put(CTColumnResolutionType.MERGE, ctMergeColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.PK, Collections.singleton("entryId"));
 		_ctColumnNamesMap.put(

@@ -2122,7 +2122,6 @@ public class AnnouncementsFlagPersistenceImpl
 
 	static {
 		Set<String> ctControlColumnNames = new HashSet<String>();
-		Set<String> ctMergeColumnNames = new HashSet<String>();
 		Set<String> ctStrictColumnNames = new HashSet<String>();
 
 		ctControlColumnNames.add("mvccVersion");
@@ -2130,12 +2129,11 @@ public class AnnouncementsFlagPersistenceImpl
 		ctStrictColumnNames.add("companyId");
 		ctStrictColumnNames.add("userId");
 		ctStrictColumnNames.add("createDate");
-		ctMergeColumnNames.add("entryId");
-		ctMergeColumnNames.add("value");
+		ctStrictColumnNames.add("entryId");
+		ctStrictColumnNames.add("value");
 
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.CONTROL, ctControlColumnNames);
-		_ctColumnNamesMap.put(CTColumnResolutionType.MERGE, ctMergeColumnNames);
 		_ctColumnNamesMap.put(
 			CTColumnResolutionType.PK, Collections.singleton("flagId"));
 		_ctColumnNamesMap.put(
