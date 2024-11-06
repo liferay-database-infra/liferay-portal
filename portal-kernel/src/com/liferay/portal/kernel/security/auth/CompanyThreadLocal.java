@@ -190,6 +190,9 @@ public class CompanyThreadLocal {
 
 		if (!companyId.equals(_companyId.get())) {
 			if (isLocked()) {
+				_log.error("Current companyId: " + _companyId.get());
+				_log.error("Wanted companyId: " + companyId);
+				
 				throw new UnsupportedOperationException(
 					"CompanyThreadLocal modification is not allowed");
 			}
