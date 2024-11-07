@@ -6,6 +6,7 @@
 package com.liferay.portal.kernel.monitoring;
 
 import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.kernel.util.ListUtil;
 
 import java.util.List;
@@ -41,6 +42,13 @@ public class DataSampleThreadLocal {
 		_dataSampleThreadLocal.get();
 	}
 
+	public static SafeCloseable setDataSamplesWithSafeCloseable(
+		DataSampleThreadLocal dataSampleThreadLocal) {
+
+		return _dataSampleThreadLocal.setWithSafeCloseable(
+			dataSampleThreadLocal);
+	}
+
 	public long getMonitorTime() {
 		return _monitorTime;
 	}
@@ -57,7 +65,7 @@ public class DataSampleThreadLocal {
 		return _dataSamples;
 	}
 
-	private static final ThreadLocal<DataSampleThreadLocal>
+	private static final CentralizedThreadLocal<DataSampleThreadLocal>
 		_dataSampleThreadLocal = new CentralizedThreadLocal<>(
 			DataSampleThreadLocal.class + "._dataSampleThreadLocal",
 			DataSampleThreadLocal::new, Function.identity(), true);

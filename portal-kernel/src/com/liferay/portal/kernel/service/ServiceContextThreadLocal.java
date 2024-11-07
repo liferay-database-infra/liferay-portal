@@ -6,6 +6,7 @@
 package com.liferay.portal.kernel.service;
 
 import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.petra.lang.SafeCloseable;
 
 import java.util.LinkedList;
 
@@ -13,6 +14,15 @@ import java.util.LinkedList;
  * @author Michael C. Han
  */
 public class ServiceContextThreadLocal {
+
+	public static void clearServiceContext() {
+		LinkedList<ServiceContext> serviceContextStack =
+			_serviceContextThreadLocal.get();
+
+		if (serviceContextStack != null) {
+			serviceContextStack.clear();
+		}
+	}
 
 	public static ServiceContext getServiceContext() {
 		LinkedList<ServiceContext> serviceContextStack =
@@ -39,7 +49,14 @@ public class ServiceContextThreadLocal {
 		serviceContextStack.push(serviceContext);
 	}
 
-	private static final ThreadLocal<LinkedList<ServiceContext>>
+	public static SafeCloseable setServiceContextWithSafeCloseable(
+		LinkedList<ServiceContext> serviceContextStack) {
+
+		return _serviceContextThreadLocal.setWithSafeCloseable(
+			serviceContextStack);
+	}
+
+	private static final CentralizedThreadLocal<LinkedList<ServiceContext>>
 		_serviceContextThreadLocal = new CentralizedThreadLocal<>(
 			ServiceContextThreadLocal.class + "._serviceContextThreadLocal",
 			LinkedList::new,

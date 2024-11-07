@@ -6,6 +6,7 @@
 package com.liferay.portal.kernel.change.tracking;
 
 import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.petra.lang.SafeCloseable;
 
 /**
  * @author David Truong
@@ -20,10 +21,22 @@ public class CTCollectionPreviewThreadLocal {
 		return _indicatorEnabled.get();
 	}
 
+	public static void removeCTCollectionId() {
+		CTCollectionThreadLocal.removeCTCollectionId();
+	}
+
 	public static void setCTCollectionId(long collectionId) {
 		_ctCollectionId.set(collectionId);
 
 		CTCollectionThreadLocal.removeCTCollectionId();
+	}
+
+	public static SafeCloseable setCTCollectionIdWithSafeCloseable(
+		long collectionId) {
+
+		CTCollectionThreadLocal.removeCTCollectionId();
+
+		return _ctCollectionId.setWithSafeCloseable(collectionId);
 	}
 
 	public static void setIndicatorEnabled(boolean indicatorEnabled) {

@@ -30,6 +30,10 @@ public class GroupThreadLocal {
 		return _deleteInProcess.get();
 	}
 
+	public static void removeGroupId() {
+		_groupId.remove();
+	}
+
 	public static void setDeleteInProcess(boolean deleteInProcess) {
 		_deleteInProcess.set(deleteInProcess);
 	}

@@ -6,6 +6,7 @@
 package com.liferay.portal.kernel.security.auth;
 
 import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.petra.lang.SafeCloseable;
 
 /**
  * @author Michael C. Han
@@ -20,6 +21,10 @@ public class PasswordModificationThreadLocal {
 		return _passwordModified.get();
 	}
 
+	public static void removePasswordUnencrypted() {
+		_passwordUnencrypted.remove();
+	}
+
 	public static void setPasswordModified(boolean passwordModified) {
 		_passwordModified.set(passwordModified);
 	}
@@ -28,11 +33,17 @@ public class PasswordModificationThreadLocal {
 		_passwordUnencrypted.set(passwordUnencrypted);
 	}
 
+	public static SafeCloseable setPasswordUnencryptedWithSafeCloseable(
+		String passwordUnencrypted) {
+
+		return _passwordUnencrypted.setWithSafeCloseable(passwordUnencrypted);
+	}
+
 	private static final ThreadLocal<Boolean> _passwordModified =
 		new CentralizedThreadLocal<>(
 			PrincipalThreadLocal.class + "._passwordModified",
 			() -> Boolean.FALSE);
-	private static final ThreadLocal<String> _passwordUnencrypted =
+	private static final CentralizedThreadLocal<String> _passwordUnencrypted =
 		new CentralizedThreadLocal<>(
 			PrincipalThreadLocal.class + "._passwordUnencrypted");
 
