@@ -8,6 +8,7 @@ package com.liferay.portal.kernel.security.auth;
 import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.change.tracking.CTCollectionPreviewThreadLocal;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.db.partition.DBPartition;
@@ -17,8 +18,13 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserConstants;
+import com.liferay.portal.kernel.monitoring.DataSampleThreadLocal;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.spring.orm.LastSessionRecorderHelperUtil;
+import com.liferay.portal.kernel.util.GroupThreadLocal;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.TimeZoneThreadLocal;
 
@@ -27,6 +33,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -173,6 +180,8 @@ public class CompanyThreadLocal {
 			_companyId.set(CompanyConstants.SYSTEM);
 		}
 
+		_clearCompanyRelatedThreadLocals();
+
 		_clearUserThreadLocals();
 
 		CTCollectionThreadLocal.removeCTCollectionId();
@@ -207,6 +216,28 @@ public class CompanyThreadLocal {
 				safeCloseables.add(
 					_companyId.setWithSafeCloseable(CompanyConstants.SYSTEM));
 			}
+
+			safeCloseables.add(
+				CTCollectionPreviewThreadLocal.
+					setCTCollectionIdWithSafeCloseable(0));
+			safeCloseables.add(
+				DataSampleThreadLocal.setDataSamplesWithSafeCloseable(null));
+			safeCloseables.add(GroupThreadLocal.setGroupIdWithSafeCloseable(0));
+			safeCloseables.add(
+				PasswordModificationThreadLocal.
+					setPasswordUnencryptedWithSafeCloseable(null));
+			safeCloseables.add(
+				PermissionThreadLocal.setPermissionCheckerWithSafeCloseable(
+					null));
+			safeCloseables.add(
+				PrincipalThreadLocal.setNameWithSafeCloseable(null));
+			safeCloseables.add(
+				PrincipalThreadLocal.setPasswordWithSafeCloseable(null));
+			safeCloseables.add(
+				ServiceContextThreadLocal.setServiceContextWithSafeCloseable(
+					new LinkedList<ServiceContext>()));
+
+			_clearCompanyRelatedThreadLocals();
 
 			safeCloseables.add(
 				LocaleThreadLocal.setDefaultLocaleWithSafeCloseable(null));
@@ -246,6 +277,17 @@ public class CompanyThreadLocal {
 
 		return _initializingPortalInstance.setWithSafeCloseable(
 			initializingPortalInstance);
+	}
+
+	private static void _clearCompanyRelatedThreadLocals() {
+		CTCollectionPreviewThreadLocal.removeCTCollectionId();
+		DataSampleThreadLocal.clearDataSamples();
+		GroupThreadLocal.removeGroupId();
+		PasswordModificationThreadLocal.removePasswordUnencrypted();
+		PermissionThreadLocal.removePermissionChecker();
+		PrincipalThreadLocal.removeName();
+		PrincipalThreadLocal.removePassword();
+		ServiceContextThreadLocal.clearServiceContext();
 	}
 
 	private static void _clearUserThreadLocals() {
