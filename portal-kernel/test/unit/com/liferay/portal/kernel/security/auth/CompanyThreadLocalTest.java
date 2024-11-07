@@ -7,8 +7,16 @@ package com.liferay.portal.kernel.security.auth;
 
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.kernel.change.tracking.CTCollectionIdSupplier;
+import com.liferay.portal.kernel.change.tracking.CTCollectionPreviewThreadLocal;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
+import com.liferay.portal.kernel.monitoring.DataSample;
+import com.liferay.portal.kernel.monitoring.DataSampleThreadLocal;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.util.GroupThreadLocal;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Props;
@@ -16,12 +24,15 @@ import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyFactory;
 import com.liferay.portal.kernel.util.TimeZoneThreadLocal;
 
+import java.util.List;
 import java.util.TimeZone;
 import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import org.mockito.Mockito;
 
 import org.osgi.framework.BundleContext;
 
@@ -39,6 +50,92 @@ public class CompanyThreadLocalTest {
 			ProxyFactory.newDummyInstance(CTCollectionIdSupplier.class), null);
 
 		PropsUtil.setProps(ProxyFactory.newDummyInstance(Props.class));
+	}
+
+	@Test
+	public void testCompanyRelatedThreadLocalsWithSafeCloseable()
+		throws Exception {
+
+		CTCollectionPreviewThreadLocal.setCTCollectionId(1L);
+
+		DataSample dataSample = Mockito.mock(DataSample.class);
+
+		DataSampleThreadLocal.addDataSample(dataSample);
+
+		GroupThreadLocal.setGroupId(1L);
+
+		PasswordModificationThreadLocal.setPasswordUnencrypted("passwordTest");
+
+		PermissionChecker permissionChecker = Mockito.mock(
+			PermissionChecker.class);
+
+		PermissionThreadLocal.setPermissionChecker(permissionChecker);
+
+		PrincipalThreadLocal.setName("userTest");
+		PrincipalThreadLocal.setPassword("passwordTest");
+
+		ServiceContext serviceContext = Mockito.mock(ServiceContext.class);
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(1L)) {
+
+			Assert.assertNotEquals(
+				1L, CTCollectionPreviewThreadLocal.getCTCollectionId());
+
+			List<DataSample> dataSamples =
+				DataSampleThreadLocal.getDataSamples();
+
+			Assert.assertFalse(dataSamples.contains(dataSample));
+
+			Assert.assertNotEquals(
+				1L,
+				GroupThreadLocal.getGroupId(
+				).longValue());
+
+			Assert.assertNotEquals(
+				"passwordTest",
+				PasswordModificationThreadLocal.getPasswordUnencrypted());
+
+			Assert.assertNotEquals(
+				permissionChecker,
+				PermissionThreadLocal.getPermissionChecker());
+
+			Assert.assertNotEquals("userTest", PrincipalThreadLocal.getName());
+
+			Assert.assertNotEquals(
+				"passwordTest", PrincipalThreadLocal.getPassword());
+
+			Assert.assertNotEquals(
+				serviceContext, ServiceContextThreadLocal.getServiceContext());
+		}
+
+		Assert.assertEquals(
+			1L, CTCollectionPreviewThreadLocal.getCTCollectionId());
+
+		List<DataSample> dataSamples = DataSampleThreadLocal.getDataSamples();
+
+		Assert.assertTrue(dataSamples.contains(dataSample));
+
+		Assert.assertEquals(
+			1L,
+			GroupThreadLocal.getGroupId(
+			).longValue());
+
+		Assert.assertEquals(
+			"passwordTest",
+			PasswordModificationThreadLocal.getPasswordUnencrypted());
+
+		Assert.assertEquals(
+			permissionChecker, PermissionThreadLocal.getPermissionChecker());
+
+		Assert.assertEquals("userTest", PrincipalThreadLocal.getName());
+
+		Assert.assertEquals("passwordTest", PrincipalThreadLocal.getPassword());
+
+		Assert.assertEquals(
+			serviceContext, ServiceContextThreadLocal.getServiceContext());
 	}
 
 	@Test
