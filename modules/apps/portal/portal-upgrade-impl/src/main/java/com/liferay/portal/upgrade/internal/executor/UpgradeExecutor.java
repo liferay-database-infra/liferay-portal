@@ -12,6 +12,7 @@ import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.index.IndexUpdaterUtil;
+import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.log.Log;
@@ -55,6 +56,10 @@ import org.osgi.service.component.annotations.Reference;
 public class UpgradeExecutor {
 
 	public void execute(Bundle bundle, List<UpgradeInfo> upgradeInfos) {
+		if (!StartupHelperUtil.isNewRelease()) {
+			return;
+		}
+
 		ReleaseGraphManager releaseGraphManager = new ReleaseGraphManager(
 			upgradeInfos);
 
