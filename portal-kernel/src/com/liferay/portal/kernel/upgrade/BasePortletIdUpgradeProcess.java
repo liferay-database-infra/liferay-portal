@@ -8,8 +8,6 @@ package com.liferay.portal.kernel.upgrade;
 import com.liferay.exportimport.kernel.staging.constants.StagingConstants;
 import com.liferay.layout.admin.kernel.model.LayoutTypePortletConstants;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.kernel.dao.db.DBManagerUtil;
-import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -204,13 +202,7 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 				"_USER_%'"));
 
 		if (hasColumn("PortletPreferences", "preferences")) {
-			DBType dbType = DBManagerUtil.getDBType();
-
 			String preferencesExpression = "preferences";
-
-			if (dbType == DBType.SYBASE) {
-				preferencesExpression = "CAST_TEXT(preferences)";
-			}
 
 			runSQL(
 				StringBundler.concat(
