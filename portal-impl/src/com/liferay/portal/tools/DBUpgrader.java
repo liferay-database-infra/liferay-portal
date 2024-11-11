@@ -196,6 +196,10 @@ public class DBUpgrader {
 	}
 
 	public static void startUpgradeLogAppender() {
+		if (!StartupHelperUtil.isNewRelease()) {
+			return;
+		}
+
 		if (_stopWatch == null) {
 			_initUpgradeStopwatch();
 		}
@@ -231,6 +235,10 @@ public class DBUpgrader {
 	}
 
 	public static void upgradeModules() {
+		if (!StartupHelperUtil.isNewRelease()) {
+			return;
+		}
+
 		_registerModuleServiceLifecycle("portal.initialized");
 
 		if (_upgradeClient) {
@@ -250,6 +258,10 @@ public class DBUpgrader {
 	}
 
 	public static void upgradePortal() throws Exception {
+		if (!StartupHelperUtil.isNewRelease()) {
+			return;
+		}
+
 		try {
 			UpgradeLogContext.setContext(
 				ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
