@@ -134,7 +134,9 @@ public class StartupHelperUtil {
 					LogContext.class, UpgradeLogContext.getInstance(), null);
 			}
 
-			DBUpgrader.startUpgradeLogAppender();
+			if (_newRelease) {
+				DBUpgrader.startUpgradeLogAppender();
+			}
 		}
 		else {
 			DBUpgrader.stopUpgradeLogAppender();

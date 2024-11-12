@@ -382,13 +382,16 @@ public class MainServlet extends HttpServlet {
 			_log.error(exception);
 		}
 
-		if (DBUpgrader.isUpgradeDatabaseAutoRunEnabled()) {
+		if (DBUpgrader.isUpgradeDatabaseAutoRunEnabled() &&
+			StartupHelperUtil.isNewRelease()) {
+
 			DBUpgrader.upgradeModules();
 
 			StartupHelperUtil.setUpgrading(false);
 		}
 		else if (PropsValues.DATABASE_INDEXES_UPDATE_ON_STARTUP &&
-				 !StartupHelperUtil.isDBNew()) {
+				 !StartupHelperUtil.isDBNew() &&
+				 StartupHelperUtil.isNewRelease()) {
 
 			IndexUpdaterUtil.updateAllIndexes();
 		}

@@ -163,11 +163,13 @@ public class DBUpgrader {
 
 			StartupHelperUtil.printPatchLevel();
 
-			upgradePortal();
+			if (StartupHelperUtil.isNewRelease()) {
+				upgradePortal();
 
-			InitUtil.registerContext();
+				InitUtil.registerContext();
 
-			upgradeModules();
+				upgradeModules();
+			}
 
 			BundleContext bundleContext = SystemBundleUtil.getBundleContext();
 
