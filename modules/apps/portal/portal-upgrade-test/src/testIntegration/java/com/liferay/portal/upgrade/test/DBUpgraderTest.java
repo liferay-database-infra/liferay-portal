@@ -125,6 +125,9 @@ public class DBUpgraderTest {
 
 	@Test
 	public void testUpgradeWithFailureDoesNotSupportRetry() throws Exception {
+		boolean originalNewRelease = ReflectionTestUtil.getAndSetFieldValue(
+			StartupHelperUtil.class, "_newRelease", true);
+
 		_updatePortalRelease(
 			ReleaseInfo.RELEASE_6_2_0_BUILD_NUMBER,
 			ReleaseConstants.STATE_UPGRADE_FAILURE);
@@ -135,6 +138,10 @@ public class DBUpgraderTest {
 			Assert.fail();
 		}
 		catch (IllegalStateException illegalStateException) {
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(
+				StartupHelperUtil.class, "_newRelease", originalNewRelease);
 		}
 	}
 
