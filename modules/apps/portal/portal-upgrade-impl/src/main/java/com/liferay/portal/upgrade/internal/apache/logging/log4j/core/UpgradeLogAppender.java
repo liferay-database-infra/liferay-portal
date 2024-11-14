@@ -6,7 +6,6 @@
 package com.liferay.portal.upgrade.internal.apache.logging.log4j.core;
 
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.upgrade.internal.recorder.UpgradeRecorder;
 import com.liferay.portal.upgrade.internal.report.UpgradeReport;
@@ -116,9 +115,7 @@ public class UpgradeLogAppender implements Appender {
 
 		_upgradeRecorder.start();
 
-		if (PropsValues.UPGRADE_REPORT_ENABLED &&
-			!StartupHelperUtil.isDBNew()) {
-
+		if (PropsValues.UPGRADE_REPORT_ENABLED) {
 			_upgradeReport = new UpgradeReport();
 		}
 
@@ -130,9 +127,7 @@ public class UpgradeLogAppender implements Appender {
 		if (_started) {
 			_upgradeRecorder.stop();
 
-			if (PropsValues.UPGRADE_REPORT_ENABLED &&
-				!StartupHelperUtil.isDBNew()) {
-
+			if (PropsValues.UPGRADE_REPORT_ENABLED) {
 				_upgradeReport.generateReport(_upgradeRecorder);
 
 				_upgradeReport = null;

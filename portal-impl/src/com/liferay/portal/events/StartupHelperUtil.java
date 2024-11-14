@@ -134,10 +134,14 @@ public class StartupHelperUtil {
 					LogContext.class, UpgradeLogContext.getInstance(), null);
 			}
 
-			DBUpgrader.startUpgradeLogAppender();
+			if (!_dbNew) {
+				DBUpgrader.startUpgradeLogAppender();
+			}
 		}
 		else {
-			DBUpgrader.stopUpgradeLogAppender();
+			if (!_dbNew) {
+				DBUpgrader.stopUpgradeLogAppender();
+			}
 
 			ServiceRegistration<?> serviceRegistration = _serviceRegistration;
 
