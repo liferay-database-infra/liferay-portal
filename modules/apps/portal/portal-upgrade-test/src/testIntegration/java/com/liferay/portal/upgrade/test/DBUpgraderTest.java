@@ -129,7 +129,10 @@ public class DBUpgraderTest {
 			ReleaseInfo.RELEASE_6_2_0_BUILD_NUMBER,
 			ReleaseConstants.STATE_UPGRADE_FAILURE);
 
-		try {
+		try (AutoCloseable autoCloseable =
+				ReflectionTestUtil.setFieldValueWithAutoCloseable(
+					StartupHelperUtil.class, "_newRelease", true)) {
+
 			DBUpgrader.upgradePortal();
 
 			Assert.fail();

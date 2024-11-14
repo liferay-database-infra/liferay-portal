@@ -82,6 +82,9 @@ public class UpgradeRecorderTest {
 	public static void setUpClass() {
 		_bundle = FrameworkUtil.getBundle(UpgradeRecorderTest.class);
 
+		_originalNewRelease = ReflectionTestUtil.getAndSetFieldValue(
+			StartupHelperUtil.class, "_newRelease", true);
+
 		_originalStopWatch = ReflectionTestUtil.getFieldValue(
 			DBUpgrader.class, "_stopWatch");
 
@@ -97,6 +100,9 @@ public class UpgradeRecorderTest {
 		ReflectionTestUtil.setFieldValue(
 			_upgradeRecorder, "_verifyProcessError",
 			_originalVerifyProcessError);
+
+		ReflectionTestUtil.setFieldValue(
+			StartupHelperUtil.class, "_newRelease", _originalNewRelease);
 	}
 
 	@Before
@@ -449,6 +455,7 @@ public class UpgradeRecorderTest {
 		"UpgradeRecorderTestComponent.xml";
 
 	private static Bundle _bundle;
+	private static boolean _originalNewRelease;
 	private static StopWatch _originalStopWatch;
 	private static boolean _originalVerifyProcessError;
 
