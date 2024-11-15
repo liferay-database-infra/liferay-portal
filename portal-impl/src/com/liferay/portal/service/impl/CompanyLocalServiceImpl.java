@@ -756,13 +756,16 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			UnsafeConsumer<Company, E> unsafeConsumer)
 		throws E {
 
-		List<Company> companies = null;
-
 		if (!CompanyThreadLocal.isLocked()) {
-			companies = companyLocalService.getCompanies();
+			forEachCompanyId(
+				companyId -> unsafeConsumer.accept(
+					companyLocalService.fetchCompanyById(companyId)),
+				PortalInstancePool.getCompanyIds());
+
+			return;
 		}
 
-		forEachCompany(unsafeConsumer, companies);
+		forEachCompany(unsafeConsumer, null);
 	}
 
 	@Override
@@ -798,8 +801,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		long[] companyIds = null;
 
 		if (!CompanyThreadLocal.isLocked()) {
-			companyIds = ListUtil.toLongArray(
-				companyLocalService.getCompanies(), Company::getCompanyId);
+			companyIds = PortalInstancePool.getCompanyIds();
 		}
 
 		forEachCompanyId(unsafeConsumer, companyIds);
