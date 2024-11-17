@@ -31,6 +31,7 @@ import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.PortletKeys;
@@ -673,15 +674,13 @@ public class CompanyLocalServiceDBPartitionTest
 
 	@Test
 	public void testPrefsPropsImplCache() throws Exception {
-		Company company = CompanyTestUtil.addCompany();
-
 		try {
 			try (SafeCloseable safeCloseable =
 					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
-						company.getCompanyId())) {
+						TestPropsValues.getCompanyId())) {
 
 				_portalPreferencesLocalService.updatePreferences(
-					company.getCompanyId(),
+					TestPropsValues.getCompanyId(),
 					PortletKeys.PREFS_OWNER_TYPE_COMPANY,
 					"<portlet-preferences><preference><name>testName</name>" +
 						"<value>testValue</value></preference>" +
@@ -703,13 +702,13 @@ public class CompanyLocalServiceDBPartitionTest
 			}
 
 			PortletPreferences portletPreferences = portletPreferencesMap.get(
-				company.getCompanyId());
+				TestPropsValues.getCompanyId());
 
 			Assert.assertEquals(
 				"testValue", portletPreferences.getValue("testName", null));
 		}
 		finally {
-			companyLocalService.deleteCompany(company);
+			companyLocalService.deleteCompany(TestPropsValues.getCompanyId());
 		}
 	}
 
