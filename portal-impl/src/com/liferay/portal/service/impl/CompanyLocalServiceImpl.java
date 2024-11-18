@@ -758,7 +758,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		if (!CompanyThreadLocal.isLocked()) {
 			forEachCompanyId(
-				companyId -> unsafeConsumer.accept(fetchCompanyById(companyId)),
+				companyId -> unsafeConsumer.accept(
+					companyPersistence.fetchByPrimaryKey(companyId)),
 				PortalInstancePool.getCompanyIds());
 
 			return;
@@ -775,7 +776,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		if (CompanyThreadLocal.isLocked()) {
 			unsafeConsumer.accept(
-				companyLocalService.fetchCompanyById(
+				companyPersistence.fetchByPrimaryKey(
 					CompanyThreadLocal.getCompanyId()));
 
 			return;
