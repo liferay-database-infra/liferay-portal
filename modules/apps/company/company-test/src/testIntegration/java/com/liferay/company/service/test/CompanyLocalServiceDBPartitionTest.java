@@ -674,50 +674,45 @@ public class CompanyLocalServiceDBPartitionTest
 
 	@Test
 	public void testPrefsPropsImplCache() throws Exception {
-		try {
-			try (SafeCloseable safeCloseable =
-					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
-						TestPropsValues.getCompanyId())) {
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					TestPropsValues.getCompanyId())) {
 
-				_portalPreferencesLocalService.updatePreferences(
-					TestPropsValues.getCompanyId(),
-					PortletKeys.PREFS_OWNER_TYPE_COMPANY,
-					"<portlet-preferences><preference><name>testName</name>" +
-						"<value>testValue</value></preference>" +
-							"</portlet-preferences>");
-			}
-
-			EntityCacheUtil.clearCache(CompanyImpl.class);
-
-			Map<Long, PortletPreferences> portletPreferencesMap =
-				(Map<Long, PortletPreferences>)ReflectionTestUtil.getFieldValue(
-					PrefsPropsUtil.getPrefsProps(), "_portletPreferences");
-
-			portletPreferencesMap.clear();
-
-			try (SafeCloseable safeCloseable =
-					CompanyThreadLocal.setCompanyIdWithSafeCloseable(0L)) {
-
-				companyLocalService.forEachCompany(
-					company -> {
-						if (company.getCompanyId() !=
-								TestPropsValues.getCompanyId()) {
-
-							return;
-						}
-
-						PortletPreferences portletPreferences =
-							portletPreferencesMap.get(
-								TestPropsValues.getCompanyId());
-
-						Assert.assertEquals(
-							"testValue",
-							portletPreferences.getValue("testName", null));
-					});
-			}
+			_portalPreferencesLocalService.updatePreferences(
+				TestPropsValues.getCompanyId(),
+				PortletKeys.PREFS_OWNER_TYPE_COMPANY,
+				"<portlet-preferences><preference><name>testName</name>" +
+					"<value>testValue</value></preference>" +
+						"</portlet-preferences>");
 		}
-		finally {
-			companyLocalService.deleteCompany(TestPropsValues.getCompanyId());
+
+		EntityCacheUtil.clearCache(CompanyImpl.class);
+
+		Map<Long, PortletPreferences> portletPreferencesMap =
+			(Map<Long, PortletPreferences>)ReflectionTestUtil.getFieldValue(
+				PrefsPropsUtil.getPrefsProps(), "_portletPreferences");
+
+		portletPreferencesMap.clear();
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(0L)) {
+
+			companyLocalService.forEachCompany(
+				company -> {
+					if (company.getCompanyId() !=
+							TestPropsValues.getCompanyId()) {
+
+						return;
+					}
+
+					PortletPreferences portletPreferences =
+						portletPreferencesMap.get(
+							TestPropsValues.getCompanyId());
+
+					Assert.assertEquals(
+						"testValue",
+						portletPreferences.getValue("testName", null));
+				});
 		}
 	}
 
