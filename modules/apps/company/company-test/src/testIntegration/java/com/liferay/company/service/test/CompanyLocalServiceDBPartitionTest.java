@@ -673,7 +673,7 @@ public class CompanyLocalServiceDBPartitionTest
 	}
 
 	@Test
-	public void testPrefsPropsImplCache() throws Exception {
+	public void testForEachCompanyPrefsPropsImplCache() throws Exception {
 		try (SafeCloseable safeCloseable =
 				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
 					TestPropsValues.getCompanyId())) {
