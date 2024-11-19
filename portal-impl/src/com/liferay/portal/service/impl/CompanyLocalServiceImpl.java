@@ -759,8 +759,14 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		if (!CompanyThreadLocal.isLocked()) {
 			forEachCompanyId(
-				companyId -> unsafeConsumer.accept(
-					companyLocalService.fetchCompanyById(companyId)),
+				companyId -> {
+					Company company = companyLocalService.fetchCompanyById(
+						companyId);
+
+					if (company != null) {
+						unsafeConsumer.accept(company);
+					}
+				},
 				PortalInstancePool.getCompanyIds());
 
 			return;
