@@ -34,6 +34,7 @@ import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 
 import java.util.List;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -59,6 +60,11 @@ public class RoleModelListenerTest {
 	public static void setUpClass() throws Exception {
 		_company = _companyLocalService.getCompany(
 			TestPropsValues.getCompanyId());
+	}
+
+	@AfterClass
+	public static void tearDownClass() throws Exception {
+		_companyLocalService.deleteCompany(_company);
 	}
 
 	@Test

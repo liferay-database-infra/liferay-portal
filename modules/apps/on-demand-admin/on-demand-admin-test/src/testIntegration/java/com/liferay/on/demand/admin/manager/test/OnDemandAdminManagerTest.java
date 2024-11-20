@@ -39,19 +39,24 @@ public class OnDemandAdminManagerTest {
 	public void testCleanUpOnDemandAdminUsers() throws Exception {
 		Company company = CompanyTestUtil.addCompany();
 
-		User user1 = OnDemandAdminTestUtil.addOnDemandAdminUser(company);
+		try {
+			User user1 = OnDemandAdminTestUtil.addOnDemandAdminUser(company);
 
-		_assertOnDemandAdminUser(user1);
+			_assertOnDemandAdminUser(user1);
 
-		User user2 = OnDemandAdminTestUtil.addOnDemandAdminUser(company);
+			User user2 = OnDemandAdminTestUtil.addOnDemandAdminUser(company);
 
-		_assertOnDemandAdminUser(user2);
+			_assertOnDemandAdminUser(user2);
 
-		_onDemandAdminManager.cleanUpOnDemandAdminUsers(
-			new Date(System.currentTimeMillis()));
+			_onDemandAdminManager.cleanUpOnDemandAdminUsers(
+				new Date(System.currentTimeMillis()));
 
-		_assertDeleted(user1.getUserId());
-		_assertDeleted(user2.getUserId());
+			_assertDeleted(user1.getUserId());
+			_assertDeleted(user2.getUserId());
+		}
+		finally {
+			_companyLocalService.deleteCompany(company);
+		}
 	}
 
 	private void _assertDeleted(long userId) {

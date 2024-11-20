@@ -84,6 +84,8 @@ public class SetupAdminAutoLoginTest {
 
 	@AfterClass
 	public static void tearDownClass() {
+		_companyLocalService.deleteCompany(_company);
+
 		_safeCloseable.close();
 	}
 
@@ -171,6 +173,10 @@ public class SetupAdminAutoLoginTest {
 		SetupAdminAutoLoginTest.class);
 
 	private static Company _company;
+
+	@Inject
+	private static CompanyLocalService _companyLocalService;
+
 	private static String _emailAdressAdminUser;
 	private static SafeCloseable _safeCloseable;
 	private static User _user;
