@@ -12,6 +12,7 @@ import com.liferay.portal.kernel.feature.flag.FeatureFlagType;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -45,9 +46,9 @@ public class CompanyModelListenerTest {
 	public void testOnAfterCreate() throws Exception {
 		String originalName = PrincipalThreadLocal.getName();
 
-		try {
-			Company company = CompanyTestUtil.addCompany();
+		Company company = CompanyTestUtil.addCompany();
 
+		try {
 			User user = UserTestUtil.addUser(
 				company.getCompanyId(), TestPropsValues.getUserId(),
 				RandomTestUtil.randomString(), LocaleUtil.getDefault(),
@@ -67,8 +68,13 @@ public class CompanyModelListenerTest {
 		}
 		finally {
 			PrincipalThreadLocal.setName(originalName);
+
+			_companyLocalService.deleteCompany(company);
 		}
 	}
+
+	@Inject
+	private CompanyLocalService _companyLocalService;
 
 	@Inject
 	private FeatureFlagManager _featureFlagManager;
