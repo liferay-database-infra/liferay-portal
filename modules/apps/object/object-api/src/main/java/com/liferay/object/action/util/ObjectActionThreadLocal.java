@@ -6,6 +6,7 @@
 package com.liferay.object.action.util;
 
 import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.portal.kernel.security.auth.CentralizedCompanyThreadLocal;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -85,7 +86,7 @@ public class ObjectActionThreadLocal {
 			ObjectActionThreadLocal.class + "._httpServletRequestThreadLocal",
 			() -> null);
 	private static final ThreadLocal<Map<Long, Set<Long>>>
-		_objectEntryIdsMapThreadLocal = new CentralizedThreadLocal<>(
+		_objectEntryIdsMapThreadLocal = new CentralizedCompanyThreadLocal<>(
 			ObjectActionThreadLocal.class.getName() +
 				"._objectEntryIdsMapThreadLocal",
 			HashMap::new);

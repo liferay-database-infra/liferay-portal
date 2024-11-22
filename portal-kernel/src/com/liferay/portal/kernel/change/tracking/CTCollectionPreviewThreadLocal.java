@@ -6,6 +6,7 @@
 package com.liferay.portal.kernel.change.tracking;
 
 import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.portal.kernel.security.auth.CentralizedCompanyThreadLocal;
 
 /**
  * @author David Truong
@@ -34,7 +35,7 @@ public class CTCollectionPreviewThreadLocal {
 	}
 
 	private static final CentralizedThreadLocal<Long> _ctCollectionId =
-		new CentralizedThreadLocal<>(
+		new CentralizedCompanyThreadLocal<>(
 			CTCollectionPreviewThreadLocal.class + "._ctCollectionId",
 			() -> -1L);
 	private static final CentralizedThreadLocal<Boolean> _indicatorEnabled =
