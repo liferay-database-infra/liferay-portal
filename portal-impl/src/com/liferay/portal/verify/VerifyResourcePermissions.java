@@ -7,6 +7,7 @@ package com.liferay.portal.verify;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
+import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ResourceConstants;
@@ -24,6 +25,8 @@ import com.liferay.portal.verify.model.LayoutBranchVerifiableResourcedModel;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -72,6 +75,27 @@ public class VerifyResourcePermissions extends VerifyProcess {
 					_verifyResourcedModel(role, verifiableResourcedModel);
 				}
 			});
+	}
+
+	private int _getTotal(
+		Role role, VerifiableResourcedModel verifiableResourcedModel) {
+
+		try (LoggingTimer loggingTimer = new LoggingTimer(
+				verifiableResourcedModel.getTableName());
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				_getVerifyResourcedModelSQL(
+					true, verifiableResourcedModel, role));
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			if (resultSet.next()) {
+				return resultSet.getInt(1);
+			}
+
+			return 0;
+		}
+		catch (Exception exception) {
+			throw new SystemException(exception);
+		}
 	}
 
 	private String _getVerifyResourcedModelSQL(
@@ -123,23 +147,6 @@ public class VerifyResourcePermissions extends VerifyProcess {
 			Role role, VerifiableResourcedModel verifiableResourcedModel)
 		throws Exception {
 
-		int total;
-
-		try (LoggingTimer loggingTimer = new LoggingTimer(
-				verifiableResourcedModel.getTableName());
-			PreparedStatement preparedStatement = connection.prepareStatement(
-				_getVerifyResourcedModelSQL(
-					true, verifiableResourcedModel, role));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
-
-			if (resultSet.next()) {
-				total = resultSet.getInt(1);
-			}
-			else {
-				return;
-			}
-		}
-
 		try (LoggingTimer loggingTimer = new LoggingTimer(
 				verifiableResourcedModel.getTableName())) {
 
@@ -168,7 +175,11 @@ public class VerifyResourcePermissions extends VerifyProcess {
 					if (_log.isInfoEnabled() && ((count % 100000) == 0)) {
 						_log.info(
 							StringBundler.concat(
-								"Processed ", count, " of ", total,
+								"Processed ", count, " of ",
+								_modelTotal.computeIfAbsent(
+									modelName,
+									key -> _getTotal(
+										role, verifiableResourcedModel)),
 								" resource permissions for company ", companyId,
 								" and model ", modelName));
 					}
@@ -205,5 +216,7 @@ public class VerifyResourcePermissions extends VerifyProcess {
 		VerifyResourcePermissions.class);
 
 	private static VerifiableResourcedModel[] _verifiableResourcedModels;
+
+	private final Map<String, Integer> _modelTotal = new ConcurrentHashMap<>();
 
 }
