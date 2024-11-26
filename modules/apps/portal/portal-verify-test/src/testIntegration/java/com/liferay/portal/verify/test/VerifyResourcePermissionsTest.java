@@ -21,6 +21,9 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RoleTestUtil;
 import com.liferay.portal.kernel.verify.model.VerifiableResourcedModel;
 import com.liferay.portal.model.impl.ResourcePermissionImpl;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.verify.VerifyProcess;
@@ -28,6 +31,8 @@ import com.liferay.portal.verify.VerifyResourcePermissions;
 import com.liferay.portal.verify.model.GroupVerifiableResourcedModel;
 import com.liferay.portal.verify.model.RoleVerifiableModel;
 import com.liferay.portal.verify.test.util.BaseVerifyProcessTestCase;
+
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -54,6 +59,23 @@ public class VerifyResourcePermissionsTest extends BaseVerifyProcessTestCase {
 		_testVerifyResourcedModel(
 			_group.getCompanyId(), _group.getGroupId(),
 			_group.getCreatorUserId(), new GroupVerifiableResourcedModel());
+	}
+
+	@Test
+	public void testVerifyResourcePermissionsInnerQueriesCount()
+		throws Exception {
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.kernel.util.LoggingTimer",
+				LoggerTestUtil.INFO)) {
+
+			VerifyResourcePermissions.verify(
+				new GroupVerifiableResourcedModel());
+
+			List<LogEntry> logEntries = logCapture.getLogEntries();
+
+			Assert.assertEquals(logEntries.toString(), 2, logEntries.size());
+		}
 	}
 
 	@Test
