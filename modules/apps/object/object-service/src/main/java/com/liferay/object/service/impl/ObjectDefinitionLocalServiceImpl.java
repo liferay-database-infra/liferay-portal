@@ -623,13 +623,13 @@ public class ObjectDefinitionLocalServiceImpl
 
 		for (Map.Entry
 				<InactiveObjectDefinitionDeployer,
-				 Map<Long, List<ServiceRegistration<?>>>> entry :
+				 Map<String, List<ServiceRegistration<?>>>> entry :
 					_inactiveObjectDefinitionsServiceRegistrationsMaps.
 						entrySet()) {
 
 			InactiveObjectDefinitionDeployer inactiveObjectDefinitionDeployer =
 				entry.getKey();
-			Map<Long, List<ServiceRegistration<?>>> serviceRegistrationsMap =
+			Map<String, List<ServiceRegistration<?>>> serviceRegistrationsMap =
 				entry.getValue();
 
 			try (SafeCloseable safeCloseable =
@@ -637,7 +637,8 @@ public class ObjectDefinitionLocalServiceImpl
 						objectDefinition.getCompanyId())) {
 
 				serviceRegistrationsMap.computeIfAbsent(
-					objectDefinition.getObjectDefinitionId(),
+					objectDefinition.getCompanyId() + StringPool.AT +
+						objectDefinition.getObjectDefinitionId(),
 					objectDefinitionId ->
 						inactiveObjectDefinitionDeployer.deploy(
 							objectDefinition));
@@ -651,18 +652,19 @@ public class ObjectDefinitionLocalServiceImpl
 
 		for (Map.Entry
 				<ObjectDefinitionDeployer,
-				 Map<Long, List<ServiceRegistration<?>>>> entry :
+				 Map<String, List<ServiceRegistration<?>>>> entry :
 					_serviceRegistrationsMaps.entrySet()) {
 
 			ObjectDefinitionDeployer objectDefinitionDeployer = entry.getKey();
-			Map<Long, List<ServiceRegistration<?>>> serviceRegistrationsMap =
+			Map<String, List<ServiceRegistration<?>>> serviceRegistrationsMap =
 				entry.getValue();
 
 			try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
 					objectDefinition.getCompanyId())) {
 
 				serviceRegistrationsMap.computeIfAbsent(
-					objectDefinition.getObjectDefinitionId(),
+					objectDefinition.getCompanyId() + StringPool.AT +
+						objectDefinition.getObjectDefinitionId(),
 					objectDefinitionId -> objectDefinitionDeployer.deploy(
 						objectDefinition));
 			}
@@ -898,14 +900,14 @@ public class ObjectDefinitionLocalServiceImpl
 	public void setAopProxy(Object aopProxy) {
 		super.setAopProxy(aopProxy);
 
-		Map<Long, List<ServiceRegistration<?>>> activeServiceRegistrationsMap =
-			new ConcurrentHashMap<>();
+		Map<String, List<ServiceRegistration<?>>>
+			activeServiceRegistrationsMap = new ConcurrentHashMap<>();
 		InactiveObjectDefinitionDeployer inactiveObjectDefinitionDeployer =
 			new InactiveObjectDefinitionDeployerImpl(
 				_bundleContext, _objectEntryService, _objectFieldLocalService,
 				_objectRelatedModelsProviderRegistrarHelper,
 				_objectRelationshipLocalService);
-		Map<Long, List<ServiceRegistration<?>>>
+		Map<String, List<ServiceRegistration<?>>>
 			inactiveServiceRegistrationsMap = new ConcurrentHashMap<>();
 		ObjectDefinitionDeployer objectDefinitionDeployer =
 			new ObjectDefinitionDeployerImpl(
@@ -934,12 +936,14 @@ public class ObjectDefinitionLocalServiceImpl
 
 					if (objectDefinition.isActive()) {
 						activeServiceRegistrationsMap.put(
-							objectDefinition.getObjectDefinitionId(),
+							companyId + StringPool.AT +
+								objectDefinition.getObjectDefinitionId(),
 							objectDefinitionDeployer.deploy(objectDefinition));
 					}
 					else {
 						inactiveServiceRegistrationsMap.put(
-							objectDefinition.getObjectDefinitionId(),
+							companyId + StringPool.AT +
+								objectDefinition.getObjectDefinitionId(),
 							inactiveObjectDefinitionDeployer.deploy(
 								objectDefinition));
 					}
@@ -992,7 +996,7 @@ public class ObjectDefinitionLocalServiceImpl
 							}
 						});
 
-					Map<Long, List<ServiceRegistration<?>>>
+					Map<String, List<ServiceRegistration<?>>>
 						serviceRegistrationsMap =
 							_serviceRegistrationsMaps.remove(
 								objectDefinitionDeployer);
@@ -1028,19 +1032,20 @@ public class ObjectDefinitionLocalServiceImpl
 
 		for (Map.Entry
 				<ObjectDefinitionDeployer,
-				 Map<Long, List<ServiceRegistration<?>>>> entry :
+				 Map<String, List<ServiceRegistration<?>>>> entry :
 					_serviceRegistrationsMaps.entrySet()) {
 
 			ObjectDefinitionDeployer objectDefinitionDeployer = entry.getKey();
 
 			objectDefinitionDeployer.undeploy(objectDefinition);
 
-			Map<Long, List<ServiceRegistration<?>>> serviceRegistrationsMap =
+			Map<String, List<ServiceRegistration<?>>> serviceRegistrationsMap =
 				entry.getValue();
 
 			List<ServiceRegistration<?>> serviceRegistrations =
 				serviceRegistrationsMap.remove(
-					objectDefinition.getObjectDefinitionId());
+					objectDefinition.getCompanyId() + StringPool.AT +
+						objectDefinition.getObjectDefinitionId());
 
 			if (serviceRegistrations != null) {
 				for (ServiceRegistration<?> serviceRegistration :
@@ -1302,7 +1307,7 @@ public class ObjectDefinitionLocalServiceImpl
 	private ObjectDefinitionDeployer _addingObjectDefinitionDeployer(
 		ObjectDefinitionDeployer objectDefinitionDeployer) {
 
-		Map<Long, List<ServiceRegistration<?>>> serviceRegistrationsMap =
+		Map<String, List<ServiceRegistration<?>>> serviceRegistrationsMap =
 			new ConcurrentHashMap<>();
 
 		_companyLocalService.forEachCompanyId(
@@ -1313,7 +1318,8 @@ public class ObjectDefinitionLocalServiceImpl
 
 					if (objectDefinition.isActive()) {
 						serviceRegistrationsMap.put(
-							objectDefinition.getObjectDefinitionId(),
+							companyId + StringPool.AT +
+								objectDefinition.getObjectDefinitionId(),
 							objectDefinitionDeployer.deploy(objectDefinition));
 					}
 				}
@@ -2672,7 +2678,7 @@ public class ObjectDefinitionLocalServiceImpl
 
 	private final Map
 		<InactiveObjectDefinitionDeployer,
-		 Map<Long, List<ServiceRegistration<?>>>>
+		 Map<String, List<ServiceRegistration<?>>>>
 			_inactiveObjectDefinitionsServiceRegistrationsMaps =
 				Collections.synchronizedMap(new LinkedHashMap<>());
 
@@ -2769,7 +2775,7 @@ public class ObjectDefinitionLocalServiceImpl
 	private SearchLocalizationHelper _searchLocalizationHelper;
 
 	private final Map
-		<ObjectDefinitionDeployer, Map<Long, List<ServiceRegistration<?>>>>
+		<ObjectDefinitionDeployer, Map<String, List<ServiceRegistration<?>>>>
 			_serviceRegistrationsMaps = Collections.synchronizedMap(
 				new LinkedHashMap<>());
 
