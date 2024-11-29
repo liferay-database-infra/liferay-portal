@@ -68,7 +68,6 @@ import com.liferay.portal.kernel.model.UserConstants;
 import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.model.VirtualHost;
 import com.liferay.portal.kernel.model.role.RoleConstants;
-import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiServiceUtil;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.SearchContext;
@@ -79,7 +78,6 @@ import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherMa
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
-import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ImageLocalService;
 import com.liferay.portal.kernel.service.LayoutPrototypeLocalService;
@@ -118,7 +116,6 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TimeZoneUtil;
 import com.liferay.portal.kernel.util.TreeMapBuilder;
@@ -1490,9 +1487,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		_clearCompanyCache(companyId, false);
 	}
 
-	protected void addAssetEntriesFacet(SearchContext searchContext) {
-	}
-
 	protected Company checkLogo(long companyId) throws PortalException {
 		Company company = companyPersistence.findByPrimaryKey(companyId);
 
@@ -2154,29 +2148,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		private ActionableDynamicQuery _actionableDynamicQuery;
 
-	}
-
-	private static void _doSynchronizePortalInstances() {
-		CompanyLocalService companyLocalService =
-			(CompanyLocalService)
-				IdentifiableOSGiServiceUtil.getIdentifiableOSGiService(
-					CompanyLocalService.class.getName());
-
-		Set<Long> companyIds = SetUtil.fromArray(
-			PortalInstancePool.getCompanyIds());
-
-		companyLocalService.forEachCompany(
-			company -> {
-				if (companyIds.remove(company.getCompanyId())) {
-					return;
-				}
-
-				PortalInstances.initCompany(company);
-			});
-
-		companyLocalService.forEachCompanyId(
-			companyId -> PortalInstances.removeCompany(companyId),
-			ArrayUtil.toLongArray(companyIds));
 	}
 
 	private Company _addDBPartitionCompany(Company company)
