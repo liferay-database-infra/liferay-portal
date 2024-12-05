@@ -13,7 +13,6 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.ModelListener;
 import com.liferay.portal.kernel.transaction.TransactionCommitCallbackUtil;
 import com.liferay.search.experiences.internal.util.SXPElementUtil;
-import com.liferay.search.experiences.service.SXPBlueprintLocalService;
 import com.liferay.search.experiences.service.SXPElementLocalService;
 
 import org.osgi.service.component.annotations.Component;
@@ -41,25 +40,8 @@ public class CompanyModelListener extends BaseModelListener<Company> {
 			});
 	}
 
-	@Override
-	public void onAfterRemove(Company company) {
-		try {
-			_sxpBlueprintLocalService.deleteCompanySXPBlueprints(
-				company.getCompanyId());
-
-			_sxpElementLocalService.deleteCompanySXPElements(
-				company.getCompanyId());
-		}
-		catch (PortalException portalException) {
-			_log.error(portalException);
-		}
-	}
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		CompanyModelListener.class);
-
-	@Reference
-	private SXPBlueprintLocalService _sxpBlueprintLocalService;
 
 	@Reference
 	private SXPElementLocalService _sxpElementLocalService;
