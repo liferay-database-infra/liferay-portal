@@ -16,10 +16,12 @@ import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.model.ClassName;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.model.VirtualHost;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.VirtualHostLocalService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
@@ -362,6 +364,19 @@ public class CompanyLocalServiceDBPartitionTest
 		_company1 = CompanyTestUtil.addCompany();
 		_company2 = CompanyTestUtil.addCompany();
 
+		ClassName expectedClassName1 = null;
+		ClassName expectedClassName2 = null;
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					_company1.getCompanyId())) {
+
+			expectedClassName2 = _classNameLocalService.addClassName(
+				_CLASS_NAME_VALUE2);
+			expectedClassName1 = _classNameLocalService.addClassName(
+				_CLASS_NAME_VALUE1);
+		}
+
 		long counter = 0;
 
 		String counterName = RandomTestUtil.randomString();
@@ -373,6 +388,9 @@ public class CompanyLocalServiceDBPartitionTest
 			counter = _counterLocalService.increment(counterName);
 
 			_counterLocalService.reset(counterName, 100000);
+
+			_classNameLocalService.addClassName(_CLASS_NAME_VALUE1);
+			_classNameLocalService.addClassName(_CLASS_NAME_VALUE2);
 		}
 
 		String virtualHostname = _company2.getVirtualHostname();
@@ -389,6 +407,13 @@ public class CompanyLocalServiceDBPartitionTest
 
 			Assert.assertEquals(
 				counter, _counterLocalService.increment(counterName));
+
+			Assert.assertEquals(
+				expectedClassName1,
+				_classNameLocalService.getClassName(_CLASS_NAME_VALUE1));
+			Assert.assertEquals(
+				expectedClassName2,
+				_classNameLocalService.getClassName(_CLASS_NAME_VALUE2));
 		}
 	}
 
@@ -896,6 +921,13 @@ public class CompanyLocalServiceDBPartitionTest
 
 		return viewNames.size();
 	}
+
+	private static final String _CLASS_NAME_VALUE1 = "com.liferay.test1";
+
+	private static final String _CLASS_NAME_VALUE2 = "com.liferay.test2";
+
+	@Inject
+	private static ClassNameLocalService _classNameLocalService;
 
 	@Inject
 	private static CounterLocalService _counterLocalService;
