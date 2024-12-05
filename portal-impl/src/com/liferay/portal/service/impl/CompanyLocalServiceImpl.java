@@ -6,8 +6,6 @@
 package com.liferay.portal.service.impl;
 
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
-import com.liferay.expando.kernel.model.ExpandoColumn;
-import com.liferay.expando.kernel.model.ExpandoTable;
 import com.liferay.expando.kernel.service.ExpandoColumnLocalService;
 import com.liferay.expando.kernel.service.ExpandoTableLocalService;
 import com.liferay.petra.function.UnsafeConsumer;
@@ -22,6 +20,8 @@ import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
 import com.liferay.portal.kernel.cluster.ClusterExecutorUtil;
 import com.liferay.portal.kernel.cluster.ClusterRequest;
+import com.liferay.portal.kernel.dao.db.DBInspector;
+import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Disjunction;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
@@ -54,18 +54,10 @@ import com.liferay.portal.kernel.model.ContactConstants;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.GroupTable;
-import com.liferay.portal.kernel.model.LayoutPrototype;
 import com.liferay.portal.kernel.model.LayoutSetPrototype;
-import com.liferay.portal.kernel.model.Organization;
-import com.liferay.portal.kernel.model.OrganizationConstants;
-import com.liferay.portal.kernel.model.PasswordPolicy;
-import com.liferay.portal.kernel.model.PortalPreferences;
-import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.Role;
-import com.liferay.portal.kernel.model.SystemEvent;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserConstants;
-import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.model.VirtualHost;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiServiceUtil;
@@ -78,7 +70,6 @@ import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcher;
 import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherManagerUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
-import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ImageLocalService;
@@ -107,6 +98,7 @@ import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -140,6 +132,8 @@ import java.net.IDN;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
+import java.sql.Connection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1566,24 +1560,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		companyPersistence.remove(company);
 
-		_companyInfoPersistence.remove(company.getCompanyInfo());
-
-		// Expando
-
-		DeleteExpandoColumnActionableDynamicQuery
-			deleteExpandoColumnActionableDynamicQuery =
-				new DeleteExpandoColumnActionableDynamicQuery(
-					company.getCompanyId());
-
-		deleteExpandoColumnActionableDynamicQuery.performActions();
-
-		DeleteExpandoTableActionableDynamicQuery
-			deleteExpandoTableActionableDynamicQuery =
-				new DeleteExpandoTableActionableDynamicQuery(
-					company.getCompanyId());
-
-		deleteExpandoTableActionableDynamicQuery.performActions();
-
 		// Group
 
 		DeleteGroupActionableDynamicQuery deleteGroupActionableDynamicQuery =
@@ -1609,121 +1585,20 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		deleteGroupActionableDynamicQuery.deleteGroup(
 			_groupLocalService.getCompanyGroup(companyId));
 
-		// Layout prototype
+		TransactionCommitCallbackUtil.registerCallback(
+			() -> {
+				PortalInstances.removeCompany(company.getCompanyId());
 
-		ActionableDynamicQuery layoutPrototypeActionableDynamicQuery =
-			_layoutPrototypeLocalService.getActionableDynamicQuery();
+				unregisterCompany(company);
 
-		layoutPrototypeActionableDynamicQuery.setCompanyId(companyId);
-		layoutPrototypeActionableDynamicQuery.setPerformActionMethod(
-			(LayoutPrototype layoutPrototype) ->
-				_layoutPrototypeLocalService.deleteLayoutPrototype(
-					layoutPrototype));
+				_deleteFromRelatedTables(companyId);
 
-		layoutPrototypeActionableDynamicQuery.performActions();
+				EntityCacheUtil.clearCache();
 
-		// Layout set prototype
+				_synchronizePortalInstances();
 
-		ActionableDynamicQuery layoutSetPrototypeActionableDynamicQuery =
-			_layoutSetPrototypeLocalService.getActionableDynamicQuery();
-
-		layoutSetPrototypeActionableDynamicQuery.setCompanyId(companyId);
-		layoutSetPrototypeActionableDynamicQuery.setPerformActionMethod(
-			(LayoutSetPrototype layoutSetPrototype) ->
-				_layoutSetPrototypeLocalService.deleteLayoutSetPrototype(
-					layoutSetPrototype));
-
-		layoutSetPrototypeActionableDynamicQuery.performActions();
-
-		// Organization
-
-		DeleteOrganizationActionableDynamicQuery
-			deleteOrganizationActionableDynamicQuery =
-				new DeleteOrganizationActionableDynamicQuery();
-
-		deleteOrganizationActionableDynamicQuery.setCompanyId(companyId);
-
-		deleteOrganizationActionableDynamicQuery.performActions();
-
-		// User group
-
-		DeleteUserGroupActionableDynamicQuery
-			deleteUserGroupActionableDynamicQuery =
-				new DeleteUserGroupActionableDynamicQuery(
-					company.getCompanyId());
-
-		deleteUserGroupActionableDynamicQuery.performActions();
-
-		// Password policy
-
-		_passwordPolicyLocalService.deleteNondefaultPasswordPolicies(companyId);
-
-		PasswordPolicy defaultPasswordPolicy =
-			_passwordPolicyLocalService.getDefaultPasswordPolicy(companyId);
-
-		if (defaultPasswordPolicy != null) {
-			_passwordPolicyLocalService.deletePasswordPolicy(
-				defaultPasswordPolicy);
-		}
-
-		// Portal preferences
-
-		PortalPreferences portalPreferences =
-			_portalPreferencesPersistence.findByO_O(
-				companyId, PortletKeys.PREFS_OWNER_TYPE_COMPANY);
-
-		_portalPreferencesLocalService.deletePortalPreferences(
-			portalPreferences);
-
-		// User
-
-		User guestUser = _userLocalService.getGuestUser(companyId);
-
-		String name = PrincipalThreadLocal.getName();
-
-		try {
-			PrincipalThreadLocal.setName(guestUser.getUserId());
-
-			ActionableDynamicQuery userActionableDynamicQuery =
-				_userLocalService.getActionableDynamicQuery();
-
-			userActionableDynamicQuery.setCompanyId(companyId);
-			userActionableDynamicQuery.setPerformActionMethod(
-				(User user) -> {
-					if (!user.isGuestUser()) {
-						_userLocalService.deleteUser(user.getUserId());
-					}
-				});
-
-			userActionableDynamicQuery.performActions();
-		}
-		finally {
-			PrincipalThreadLocal.setName(name);
-		}
-
-		_userLocalService.deleteUser(guestUser);
-
-		// Role
-
-		ActionableDynamicQuery roleActionableDynamicQuery =
-			_roleLocalService.getActionableDynamicQuery();
-
-		roleActionableDynamicQuery.setCompanyId(companyId);
-		roleActionableDynamicQuery.setPerformActionMethod(
-			(Role role) -> _roleLocalService.deleteRole(role));
-
-		roleActionableDynamicQuery.performActions();
-
-		// System event
-
-		DeleteSystemEventActionableDynamicQuery
-			deleteSystemEventActionableDynamicQuery =
-				new DeleteSystemEventActionableDynamicQuery(
-					company.getCompanyId());
-
-		deleteSystemEventActionableDynamicQuery.performActions();
-
-		_deletePortalInstance(company);
+				return null;
+			});
 
 		return company;
 	}
@@ -1953,46 +1828,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		}
 	}
 
-	protected class DeleteExpandoColumnActionableDynamicQuery {
-
-		protected DeleteExpandoColumnActionableDynamicQuery(long companyId) {
-			_actionableDynamicQuery =
-				_expandoColumnLocalService.getActionableDynamicQuery();
-
-			_actionableDynamicQuery.setCompanyId(companyId);
-			_actionableDynamicQuery.setPerformActionMethod(
-				(ExpandoColumn expandoColumn) ->
-					_expandoColumnLocalService.deleteColumn(expandoColumn));
-		}
-
-		protected void performActions() throws PortalException {
-			_actionableDynamicQuery.performActions();
-		}
-
-		private ActionableDynamicQuery _actionableDynamicQuery;
-
-	}
-
-	protected class DeleteExpandoTableActionableDynamicQuery {
-
-		protected DeleteExpandoTableActionableDynamicQuery(long companyId) {
-			_actionableDynamicQuery =
-				_expandoTableLocalService.getActionableDynamicQuery();
-
-			_actionableDynamicQuery.setCompanyId(companyId);
-			_actionableDynamicQuery.setPerformActionMethod(
-				(ExpandoTable expandoTable) ->
-					_expandoTableLocalService.deleteExpandoTable(expandoTable));
-		}
-
-		protected void performActions() throws PortalException {
-			_actionableDynamicQuery.performActions();
-		}
-
-		private ActionableDynamicQuery _actionableDynamicQuery;
-
-	}
-
 	protected class DeleteGroupActionableDynamicQuery {
 
 		protected DeleteGroupActionableDynamicQuery() {
@@ -2058,101 +1893,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			_parentGroupId = parentGroupId;
 		}
 
-		private ActionableDynamicQuery _actionableDynamicQuery;
+		private final ActionableDynamicQuery _actionableDynamicQuery;
 		private long _parentGroupId = GroupConstants.DEFAULT_PARENT_GROUP_ID;
-
-	}
-
-	protected class DeleteOrganizationActionableDynamicQuery {
-
-		public void setParentOrganizationId(long parentOrganizationId) {
-			_parentOrganizationId = parentOrganizationId;
-		}
-
-		protected DeleteOrganizationActionableDynamicQuery() {
-			_actionableDynamicQuery =
-				_organizationLocalService.getActionableDynamicQuery();
-
-			_actionableDynamicQuery.setAddCriteriaMethod(
-				dynamicQuery -> {
-					Property property = PropertyFactoryUtil.forName(
-						"parentOrganizationId");
-
-					dynamicQuery.add(property.eq(_parentOrganizationId));
-				});
-			_actionableDynamicQuery.setPerformActionMethod(
-				(Organization organization) -> deleteOrganization(
-					organization));
-		}
-
-		protected void deleteOrganization(Organization organization)
-			throws PortalException {
-
-			DeleteOrganizationActionableDynamicQuery
-				deleteOrganizationActionableDynamicQuery =
-					new DeleteOrganizationActionableDynamicQuery();
-
-			deleteOrganizationActionableDynamicQuery.setCompanyId(
-				organization.getCompanyId());
-			deleteOrganizationActionableDynamicQuery.setParentOrganizationId(
-				organization.getOrganizationId());
-
-			deleteOrganizationActionableDynamicQuery.performActions();
-
-			_organizationLocalService.deleteOrganization(organization);
-		}
-
-		protected void performActions() throws PortalException {
-			_actionableDynamicQuery.performActions();
-		}
-
-		protected void setCompanyId(long companyId) {
-			_actionableDynamicQuery.setCompanyId(companyId);
-		}
-
-		private ActionableDynamicQuery _actionableDynamicQuery;
-		private long _parentOrganizationId =
-			OrganizationConstants.DEFAULT_PARENT_ORGANIZATION_ID;
-
-	}
-
-	protected class DeleteSystemEventActionableDynamicQuery {
-
-		protected DeleteSystemEventActionableDynamicQuery(long companyId) {
-			_actionableDynamicQuery =
-				_systemEventLocalService.getActionableDynamicQuery();
-
-			_actionableDynamicQuery.setCompanyId(companyId);
-			_actionableDynamicQuery.setPerformActionMethod(
-				(SystemEvent systemEvent) ->
-					_systemEventLocalService.deleteSystemEvent(systemEvent));
-		}
-
-		protected void performActions() throws PortalException {
-			_actionableDynamicQuery.performActions();
-		}
-
-		private ActionableDynamicQuery _actionableDynamicQuery;
-
-	}
-
-	protected class DeleteUserGroupActionableDynamicQuery {
-
-		protected DeleteUserGroupActionableDynamicQuery(long companyId) {
-			_actionableDynamicQuery =
-				_userGroupLocalService.getActionableDynamicQuery();
-
-			_actionableDynamicQuery.setCompanyId(companyId);
-			_actionableDynamicQuery.setPerformActionMethod(
-				(UserGroup userGroup) -> _userGroupLocalService.deleteUserGroup(
-					userGroup));
-		}
-
-		protected void performActions() throws PortalException {
-			_actionableDynamicQuery.performActions();
-		}
-
-		private ActionableDynamicQuery _actionableDynamicQuery;
 
 	}
 
@@ -2430,39 +2172,26 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		}
 	}
 
-	private void _deletePortalInstance(Company company) throws PortalException {
+	private void _deleteFromRelatedTables(long companyId) {
+		try (Connection connection = CurrentConnectionUtil.getConnection(
+				InfrastructureUtil.getDataSource())) {
 
-		// Portlet
+			DBInspector dbInspector = new DBInspector(connection);
 
-		List<Portlet> portlets = _portletPersistence.findByCompanyId(
-			company.getCompanyId());
+			for (String tableName : dbInspector.getTableNames(null)) {
+				if (dbInspector.hasColumn(tableName, "companyId") &&
+					!tableName.equals("company")) {
 
-		for (Portlet portlet : portlets) {
-			_portletLocalService.deletePortlet(portlet.getId());
+					runSQL(
+						StringBundler.concat(
+							"delete from ", tableName, " where companyId = ",
+							companyId));
+				}
+			}
 		}
-
-		_portletLocalService.removeCompanyPortletsPool(company.getCompanyId());
-
-		// Virtual host
-
-		VirtualHost companyVirtualHost =
-			_virtualHostLocalService.fetchVirtualHost(
-				company.getCompanyId(), 0);
-
-		_virtualHostLocalService.deleteVirtualHost(companyVirtualHost);
-
-		// Portal instance
-
-		TransactionCommitCallbackUtil.registerCallback(
-			() -> {
-				PortalInstances.removeCompany(company.getCompanyId());
-
-				unregisterCompany(company);
-
-				_synchronizePortalInstances();
-
-				return null;
-			});
+		catch (Exception exception) {
+			_log.error(exception);
+		}
 	}
 
 	private long _getNextCompanyId() {
