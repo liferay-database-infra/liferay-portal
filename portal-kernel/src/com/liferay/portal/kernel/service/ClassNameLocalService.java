@@ -278,6 +278,8 @@ public interface ClassNameLocalService
 
 	public void invalidate();
 
+	public void invalidate(long companyId);
+
 	/**
 	 * Updates the class name in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *

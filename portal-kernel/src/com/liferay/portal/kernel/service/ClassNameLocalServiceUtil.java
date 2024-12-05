@@ -316,6 +316,10 @@ public class ClassNameLocalServiceUtil {
 		getService().invalidate();
 	}
 
+	public static void invalidate(long companyId) {
+		getService().invalidate(companyId);
+	}
+
 	/**
 	 * Updates the class name in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
