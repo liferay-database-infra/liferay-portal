@@ -26,12 +26,6 @@ public class CompanyModelListener extends BaseModelListener<Company> {
 			_commerceCurrencyLocalService, company);
 	}
 
-	@Override
-	public void onBeforeRemove(Company company) {
-		_commerceCurrencyLocalService.deleteCommerceCurrencies(
-			company.getCompanyId());
-	}
-
 	@Reference
 	private CommerceCurrencyLocalService _commerceCurrencyLocalService;
 
