@@ -173,7 +173,7 @@ public class VerifyResourcePermissions extends VerifyProcess {
 
 					int processedCount = atomicInteger.getAndIncrement();
 
-					if (_log.isInfoEnabled() &&
+					if (_log.isInfoEnabled() && (processedCount > 0) &&
 						((processedCount % 100000) == 0)) {
 
 						_log.info(
