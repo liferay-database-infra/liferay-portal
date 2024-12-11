@@ -103,9 +103,12 @@ public class FragmentServiceUpgradeStepRegistrator
 				"FragmentEntry", "readOnly BOOLEAN"));
 
 		registry.register(
-			"2.2.1", "2.3.0",
+			"2.2.1", "2.2.2",
 			UpgradeProcessFactory.addColumns(
-				"FragmentEntry", "cacheable BOOLEAN"),
+				"FragmentEntry", "cacheable BOOLEAN"));
+
+		registry.register(
+			"2.2.2", "2.3.0",
 			new com.liferay.fragment.internal.upgrade.v2_3_0.
 				SchemaUpgradeProcess());
 
