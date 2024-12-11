@@ -25,9 +25,12 @@ import com.liferay.exportimport.kernel.service.StagingLocalService;
 import com.liferay.layout.friendly.url.LayoutFriendlyURLEntryHelper;
 import com.liferay.layout.set.model.adapter.StagedLayoutSet;
 import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskThreadLocal;
+import com.liferay.portal.kernel.dao.db.DBInspector;
+import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.CompanyMxException;
@@ -106,6 +109,10 @@ import com.liferay.sites.kernel.util.Sites;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -630,6 +637,29 @@ public class CompanyLocalServiceTest {
 		Assert.assertNull(
 			_userGroupRoleLocalService.fetchUserGroupRole(
 				user.getUserId(), group.getGroupId(), role.getRoleId()));
+	}
+
+	@Test
+	public void testCleanupCompanyData() throws Exception {
+		try (Connection connection = DataAccess.getConnection()) {
+			Company company = addCompany();
+
+			long companyId = company.getCompanyId();
+
+			Assert.assertNotEquals(
+				0, _getRowsCount(connection, companyId, "portlet"));
+
+			_companyLocalService.deleteCompany(company);
+
+			DBInspector dbInspector = new DBInspector(connection);
+
+			for (String tableName : dbInspector.getTableNames(null)) {
+				if (dbInspector.hasColumn(tableName, "companyId")) {
+					Assert.assertEquals(
+						0, _getRowsCount(connection, companyId, tableName));
+				}
+			}
+		}
 	}
 
 	@Test(expected = NoSuchPasswordPolicyException.class)
@@ -1320,6 +1350,24 @@ public class CompanyLocalServiceTest {
 		finally {
 			_companyLocalService.deleteCompany(company.getCompanyId());
 		}
+	}
+
+	private int _getRowsCount(
+			Connection connection, long companyId, String tableName)
+		throws Exception {
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				StringBundler.concat(
+					"select count(*) from ", tableName, " where companyId = ",
+					companyId));
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			if (resultSet.next()) {
+				return resultSet.getInt(1);
+			}
+		}
+
+		return 0;
 	}
 
 	private List<String> _registerModelListeners() {
