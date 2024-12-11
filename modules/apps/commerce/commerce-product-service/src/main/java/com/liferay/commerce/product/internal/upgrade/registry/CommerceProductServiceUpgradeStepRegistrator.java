@@ -25,7 +25,6 @@ import com.liferay.commerce.product.internal.upgrade.v1_6_0.CommerceCatalogUpgra
 import com.liferay.commerce.product.internal.upgrade.v1_6_0.util.CommerceCatalogTable;
 import com.liferay.commerce.product.internal.upgrade.v1_7_0.CPDefinitionFiltersUpgradeProcess;
 import com.liferay.commerce.product.internal.upgrade.v2_0_0.CPInstanceOptionValueRelUpgradeProcess;
-import com.liferay.commerce.product.internal.upgrade.v2_0_0.util.CPInstanceOptionValueRelTable;
 import com.liferay.commerce.product.internal.upgrade.v2_2_0.CPDefinitionOptionValueRelUpgradeProcess;
 import com.liferay.commerce.product.internal.upgrade.v2_3_0.CommerceChannelUpgradeProcess;
 import com.liferay.commerce.product.internal.upgrade.v2_5_0.FriendlyURLEntryUpgradeProcess;
@@ -175,7 +174,7 @@ public class CommerceProductServiceUpgradeStepRegistrator
 				CPDefinitionLinkUpgradeProcess());
 
 		registry.register(
-			"1.11.2", "2.0.0", CPInstanceOptionValueRelTable.create(),
+			"1.11.2", "2.0.0",
 			new CPInstanceOptionValueRelUpgradeProcess(_jsonFactory));
 
 		registry.register(
