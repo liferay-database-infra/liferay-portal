@@ -122,11 +122,14 @@ public class FaroServiceUpgradeStepRegistrator
 				UpgradeFaroProjectEmailDomainUpgradeProcess());
 
 		registry.register(
-			"17.0.0", "18.0.0",
+			"17.0.0", "17.0.1",
 			UpgradeProcessFactory.runSQL(
 				"update LayoutSet set themeId = " +
 					"'osbfarotheme_WAR_osbfarotheme' where themeId = " +
-						"'osbfaro_WAR_osbfarotheme'"),
+						"'osbfaro_WAR_osbfarotheme'"));
+
+		registry.register(
+			"17.0.1", "17.0.2",
 			new MVCCVersionUpgradeProcess() {
 
 				@Override
@@ -138,7 +141,10 @@ public class FaroServiceUpgradeStepRegistrator
 					};
 				}
 
-			},
+			});
+
+		registry.register(
+			"17.0.2", "18.0.0",
 			new com.liferay.osb.faro.internal.upgrade.v18_0_0.
 				UpgradeCompanyId());
 
