@@ -37,13 +37,16 @@ public class FaroServiceUpgradeStepRegistrator
 				UpgradeFaroProjectUpgradeProcess());
 
 		registry.register(
-			"3.0.0", "4.0.0",
+			"3.0.0", "3.0.1",
 			UpgradeProcessFactory.runSQL(
 				StringBundler.concat(
 					"create table OSBFaro_FaroPreferences (faroPreferencesId ",
 					"LONG not null primary key, groupId LONG, userId LONG, ",
 					"userName VARCHAR(75) null, createTime LONG, modifiedTime ",
-					"LONG, ownerId LONG, preferences STRING null)")),
+					"LONG, ownerId LONG, preferences STRING null)")));
+
+		registry.register(
+			"3.0.1", "4.0.0",
 			new com.liferay.osb.faro.internal.upgrade.v4_0_0.
 				UpgradeFaroProjectUpgradeProcess());
 
