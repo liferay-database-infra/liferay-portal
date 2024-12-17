@@ -126,7 +126,7 @@ public class ObjectServiceUpgradeStepRegistrator
 			"3.8.0", "3.8.1", new ObjectLayoutBoxUpgradeProcess());
 
 		registry.register(
-			"3.8.2", "3.9.0",
+			"3.8.1", "3.9.0",
 			new com.liferay.object.internal.upgrade.v3_9_0.
 				ObjectViewColumnUpgradeProcess());
 

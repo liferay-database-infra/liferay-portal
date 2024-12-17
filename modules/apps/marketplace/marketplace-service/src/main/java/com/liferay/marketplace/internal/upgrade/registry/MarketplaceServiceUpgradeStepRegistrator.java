@@ -41,7 +41,7 @@ public class MarketplaceServiceUpgradeStepRegistrator
 				"version VARCHAR(75)"));
 
 		registry.register(
-			"1.0.0.step-1", "1.0.1",
+			"1.0.0.service", "1.0.1",
 			new com.liferay.marketplace.internal.upgrade.v1_0_0.
 				ModuleUpgradeProcess());
 
