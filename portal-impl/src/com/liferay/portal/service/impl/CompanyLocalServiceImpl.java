@@ -22,6 +22,10 @@ import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
 import com.liferay.portal.kernel.cluster.ClusterExecutorUtil;
 import com.liferay.portal.kernel.cluster.ClusterRequest;
+import com.liferay.portal.kernel.dao.db.DB;
+import com.liferay.portal.kernel.dao.db.DBInspector;
+import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.jdbc.ConnectionUtil;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Disjunction;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
@@ -140,6 +144,8 @@ import java.net.IDN;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
+import java.sql.Connection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1729,6 +1735,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		_deletePortalInstance(company);
 
+		_cleanupCompanyData(companyId);
+
 		return company;
 	}
 
@@ -2392,6 +2400,31 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		}
 
 		return company;
+	}
+
+	private void _cleanupCompanyData(long companyId) {
+		try (Connection connection = ConnectionUtil.getConnection(
+				companyPersistence.getDataSource())) {
+
+			DB db = DBManagerUtil.getDB();
+
+			DBInspector dbInspector = new DBInspector(connection);
+
+			for (String tableName : dbInspector.getTableNames(null)) {
+				if (dbInspector.hasColumn(tableName, "companyId") &&
+					!tableName.equals("company")) {
+
+					db.runSQL(
+						connection,
+						StringBundler.concat(
+							"delete from ", tableName, " where companyId = ",
+							companyId));
+				}
+			}
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
 	}
 
 	private void _clearCache(long companyId) {
