@@ -33,17 +33,12 @@ import java.util.List;
 public class CompanyThreadLocal {
 
 	public static User fetchGuestUser() {
-		Long companyId = _companyId.get();
-
-		if (companyId == CompanyConstants.SYSTEM) {
-			return null;
-		}
-
 		User guestUser = null;
 
 		if (!isUpgradingPortalInstance()) {
 			try {
-				guestUser = UserLocalServiceUtil.fetchGuestUser(companyId);
+				guestUser = UserLocalServiceUtil.fetchGuestUser(
+					getNonsystemCompanyId());
 			}
 			catch (Exception exception) {
 				if (_log.isDebugEnabled()) {
@@ -61,7 +56,7 @@ public class CompanyThreadLocal {
 				"select userId, languageId, timeZoneId from User_ where " +
 					"companyId = ? and type_ = ?")) {
 
-			preparedStatement.setLong(1, companyId);
+			preparedStatement.setLong(1, getNonsystemCompanyId());
 			preparedStatement.setInt(2, UserConstants.TYPE_GUEST);
 
 			try (ResultSet resultSet = preparedStatement.executeQuery()) {
