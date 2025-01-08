@@ -112,7 +112,12 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 		colorSchemeId = GetterUtil.getString(colorSchemeId);
 
+		System.out.println("#####Getting Color Scheme#####");
+		System.out.println("ThemeID: " + themeId);
 		Theme theme = getTheme(companyId, themeId);
+		System.out.println("Theme: " + theme.getName());
+		System.out.println("CompanyId: " + companyId);
+		System.out.println("###########");
 
 		Map<String, ColorScheme> colorSchemesMap = theme.getColorSchemesMap();
 
@@ -320,12 +325,29 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 		for (Theme theme : themes) {
 			String themeId = theme.getThemeId();
 
+			System.out.println("##Clearing Theme#######");
+			System.out.println("ThemeID: " + themeId);
+			System.out.println("Theme: " + theme.getName());
+			System.out.println("#####Theme Cleared######");
+
 			_themes.remove(themeId);
 
 			_layoutTemplateLocalService.uninstallLayoutTemplates(themeId);
 		}
 
+
+		System.out.println("####Clearing Theme Pool#######");
+		for (Long companyId : _themesPool.keySet()) {
+			System.out.println("CompanyId: " + companyId);
+			Map<String,Theme> themeMapBeforeCleared = _themesPool.get(companyId);
+			for( String themeName : themeMapBeforeCleared.keySet()) {
+				System.out.println("Theme: " + themeName);
+			}
+		}
+
 		_themesPool.clear();
+		System.out.println("####Cleared Theme Pool#######");
+
 	}
 
 	private List<ThemeCompanyId> _getCompanyLimitExcludes(Element element) {
@@ -413,7 +435,14 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 			}
 		}
 
+		System.out.println("###Adding to Theme Pool########");
 		_themesPool.put(companyId, themes);
+		System.out.println("CompanyID: " + companyId);
+		for (String themeName : themes.keySet()) {
+			System.out.println("Theme: " + themeName);
+		}
+		System.out.println("###Added to Theme Pool########");
+
 
 		return themes;
 	}
@@ -833,7 +862,11 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 			}
 
 			if (!_themes.containsKey(themeId)) {
+				System.out.println("####Adding theme to Cache#######");
+				System.out.println("ThemeID: " + themeId);
+				System.out.println("Theme: " + theme.getName());
 				_themes.put(themeId, theme);
+				System.out.println("#####Theme Added to Cache######");
 			}
 
 			_readPortletDecorators(
