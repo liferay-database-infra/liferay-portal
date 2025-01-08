@@ -101,187 +101,204 @@ public class UpgradePartitionedConfigurationTableTest
 		Company company = companyLocalService.fetchCompanyByVirtualHost(
 			TestPropsValues.COMPANY_WEB_ID);
 
-		DBPartitionUtil.forEachCompanyId(
-			companyId -> {
-				if (companyId != _companyId) {
-					db.runSQL("drop table if exists Configuration_");
-					db.runSQL(
-						StringBundler.concat(
-							"create or replace view Configuration_ as select ",
-							"* from ", defaultPartitionName,
-							".Configuration_"));
-				}
-			});
+		int maxRuns = 100;
+		for (int i = 0; i < maxRuns; i++) {
 
-		Map<Long, ConfigurationEntry> validConfigurationEntries =
-			HashMapBuilder.<Long, ConfigurationEntry>put(
-				_companyId,
-				new ConfigurationEntry(
-					ExtendedObjectClassDefinition.Scope.SYSTEM, null)
-			).put(
-				0L,
-				new ConfigurationEntry(
-					ExtendedObjectClassDefinition.Scope.PORTLET_INSTANCE,
-					RandomTestUtil.randomLong())
-			).put(
-				company.getCompanyId(),
-				() -> {
-					Group group = GroupLocalServiceUtil.getGroup(
-						company.getCompanyId(), GroupConstants.GUEST);
+			System.out.println("---------- Executing run " + (i + 1) + " of " + maxRuns + "----------");
 
-					return new ConfigurationEntry(
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					System.out.println("CompanyId existing: " + companyId);
+
+					if (companyId != _companyId) {
+						db.runSQL("drop table if exists Configuration_");
+						db.runSQL(
+							StringBundler.concat(
+								"create or replace view Configuration_ as select ",
+								"* from ", defaultPartitionName,
+								".Configuration_"));
+					}
+				});
+
+			Map<Long, ConfigurationEntry> validConfigurationEntries =
+				HashMapBuilder.<Long, ConfigurationEntry>put(
+					_companyId,
+					new ConfigurationEntry(
+						ExtendedObjectClassDefinition.Scope.SYSTEM, null)
+				).put(
+					0L,
+					new ConfigurationEntry(
+						ExtendedObjectClassDefinition.Scope.PORTLET_INSTANCE,
+						RandomTestUtil.randomLong())
+				).put(
+					company.getCompanyId(),
+					() -> {
+						Group group = GroupLocalServiceUtil.getGroup(
+							company.getCompanyId(), GroupConstants.GUEST);
+
+						return new ConfigurationEntry(
+							ExtendedObjectClassDefinition.Scope.GROUP,
+							group.getGroupId());
+					}
+				).put(
+					company.getCompanyId(),
+					new ConfigurationEntry(
+						ExtendedObjectClassDefinition.Scope.COMPANY,
+						company.getCompanyId())
+				).build();
+
+			long randomCompanyId = RandomTestUtil.randomLong();
+			long randomGroupId = RandomTestUtil.randomLong();
+
+			System.out.println("Random companyId generated: " + randomCompanyId);
+			System.out.println("Random groupId generated: " + randomGroupId);
+
+			Map<Long, ConfigurationEntry> invalidConfigurationEntries =
+				HashMapBuilder.<Long, ConfigurationEntry>put(
+					randomCompanyId,
+					new ConfigurationEntry(
+						ExtendedObjectClassDefinition.Scope.COMPANY,
+						randomCompanyId)
+				).put(
+					randomGroupId,
+					new ConfigurationEntry(
 						ExtendedObjectClassDefinition.Scope.GROUP,
-						group.getGroupId());
-				}
-			).put(
-				company.getCompanyId(),
-				new ConfigurationEntry(
-					ExtendedObjectClassDefinition.Scope.COMPANY,
-					company.getCompanyId())
-			).build();
+						randomGroupId)
+				).build();
 
-		long randomCompanyId = RandomTestUtil.randomLong();
-		long randomGroupId = RandomTestUtil.randomLong();
+			try {
+				try (SafeCloseable safeCloseable =
+						 CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+							 PortalInstancePool.getDefaultCompanyId());
+					 PreparedStatement preparedStatement =
+						 connection.prepareStatement(
+							 "insert into Configuration_ (configurationId, " +
+							 "dictionary) values (?, ?)")) {
 
-		Map<Long, ConfigurationEntry> invalidConfigurationEntries =
-			HashMapBuilder.<Long, ConfigurationEntry>put(
-				randomCompanyId,
-				new ConfigurationEntry(
-					ExtendedObjectClassDefinition.Scope.COMPANY,
-					randomCompanyId)
-			).put(
-				randomGroupId,
-				new ConfigurationEntry(
-					ExtendedObjectClassDefinition.Scope.GROUP, randomGroupId)
-			).build();
-
-		try {
-			try (SafeCloseable safeCloseable =
-					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
-						PortalInstancePool.getDefaultCompanyId());
-				PreparedStatement preparedStatement =
-					connection.prepareStatement(
-						"insert into Configuration_ (configurationId, " +
-							"dictionary) values (?, ?)")) {
-
-				for (ConfigurationEntry configurationEntry :
+					for (ConfigurationEntry configurationEntry :
 						validConfigurationEntries.values()) {
 
-					preparedStatement.setString(1, configurationEntry.getPid());
-					preparedStatement.setString(
-						2, configurationEntry.getDictionary());
-
-					preparedStatement.executeUpdate();
-				}
-
-				for (ConfigurationEntry configurationEntry :
-						invalidConfigurationEntries.values()) {
-
-					preparedStatement.setString(1, configurationEntry.getPid());
-					preparedStatement.setString(
-						2, configurationEntry.getDictionary());
-
-					preparedStatement.executeUpdate();
-				}
-			}
-
-			Bundle bundle = BundleUtil.getBundle(
-				SystemBundleUtil.getBundleContext(),
-				"com.liferay.portal.configuration.persistence.impl");
-
-			Class<?> upgradeProcessClass = bundle.loadClass(
-				_UPGRADE_CLASS_NAME);
-
-			UpgradeProcess upgradeProcess =
-				(UpgradeProcess)upgradeProcessClass.newInstance();
-
-			try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
-					_UPGRADE_CLASS_NAME, LoggerTestUtil.INFO)) {
-
-				upgradeProcess.upgrade();
-
-				String logMessage = StringUtil.merge(
-					logCapture.getLogEntries(), StringPool.NEW_LINE);
-
-				for (Map.Entry<Long, ConfigurationEntry>
-						configurationEntryEntry :
-							invalidConfigurationEntries.entrySet()) {
-
-					ConfigurationEntry configurationEntry =
-						configurationEntryEntry.getValue();
-
-					Assert.assertTrue(
-						logMessage,
-						logMessage.contains(
-							StringBundler.concat(
-								StringUtil.upperCaseFirstLetter(
-									configurationEntry.getScope(
-									).getValue()),
-								" scope configuration with ID ",
-								configurationEntry.getPid(),
-								" has been removed because the ",
-								configurationEntry.getScope(
-								).getValue(),
-								" ID ", configurationEntryEntry.getKey(),
-								" does not exist")));
-				}
-			}
-
-			for (Map.Entry<Long, ConfigurationEntry> configurationEntryEntry :
-					validConfigurationEntries.entrySet()) {
-
-				ConfigurationEntry configurationEntry =
-					configurationEntryEntry.getValue();
-				Long companyId = configurationEntryEntry.getKey();
-
-				DBPartitionUtil.forEachCompanyId(
-					currentCompanyId -> {
-						try (Connection connection =
-								_dataSource.getConnection();
-							PreparedStatement preparedStatement =
-								connection.prepareStatement(
-									"select dictionary from Configuration_ " +
-										"where configurationId = ?")) {
-
-							preparedStatement.setString(
-								1, configurationEntry.getPid());
-
-							try (ResultSet resultSet =
-									preparedStatement.executeQuery()) {
-
-								if ((companyId == CompanyConstants.SYSTEM) ||
-									Objects.equals(
-										currentCompanyId, companyId)) {
-
-									Assert.assertTrue(resultSet.next());
-									Assert.assertEquals(
-										configurationEntry.getDictionary(),
-										resultSet.getString(1));
-								}
-								else {
-									Assert.assertFalse(resultSet.next());
-								}
-							}
-						}
-					});
-			}
-		}
-		finally {
-			DBPartitionUtil.forEachCompanyId(
-				currentCompanyId -> {
-					try (Connection connection = DataAccess.getConnection();
-						PreparedStatement preparedStatement =
-							connection.prepareStatement(
-								StringBundler.concat(
-									"delete from Configuration_ where ",
-									"configurationId like '%",
-									UpgradePartitionedConfigurationTableTest.
-										class.getName(),
-									"%'"))) {
+						preparedStatement.setString(
+							1, configurationEntry.getPid());
+						preparedStatement.setString(
+							2, configurationEntry.getDictionary());
 
 						preparedStatement.executeUpdate();
 					}
-				});
+
+					for (ConfigurationEntry configurationEntry :
+						invalidConfigurationEntries.values()) {
+
+						preparedStatement.setString(
+							1, configurationEntry.getPid());
+						preparedStatement.setString(
+							2, configurationEntry.getDictionary());
+
+						preparedStatement.executeUpdate();
+					}
+				}
+
+				Bundle bundle = BundleUtil.getBundle(
+					SystemBundleUtil.getBundleContext(),
+					"com.liferay.portal.configuration.persistence.impl");
+
+				Class<?> upgradeProcessClass = bundle.loadClass(
+					_UPGRADE_CLASS_NAME);
+
+				UpgradeProcess upgradeProcess =
+					(UpgradeProcess) upgradeProcessClass.newInstance();
+
+				try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+					_UPGRADE_CLASS_NAME, LoggerTestUtil.INFO)) {
+
+					upgradeProcess.upgrade();
+
+					String logMessage = StringUtil.merge(
+						logCapture.getLogEntries(), StringPool.NEW_LINE);
+
+					for (Map.Entry<Long, ConfigurationEntry>
+						configurationEntryEntry :
+						invalidConfigurationEntries.entrySet()) {
+
+						ConfigurationEntry configurationEntry =
+							configurationEntryEntry.getValue();
+
+						Assert.assertTrue(
+							logMessage,
+							logMessage.contains(
+								StringBundler.concat(
+									StringUtil.upperCaseFirstLetter(
+										configurationEntry.getScope(
+										).getValue()),
+									" scope configuration with ID ",
+									configurationEntry.getPid(),
+									" has been removed because the ",
+									configurationEntry.getScope(
+									).getValue(),
+									" ID ", configurationEntryEntry.getKey(),
+									" does not exist")));
+					}
+				}
+
+				for (Map.Entry<Long, ConfigurationEntry> configurationEntryEntry :
+					validConfigurationEntries.entrySet()) {
+
+					ConfigurationEntry configurationEntry =
+						configurationEntryEntry.getValue();
+					Long companyId = configurationEntryEntry.getKey();
+
+					DBPartitionUtil.forEachCompanyId(
+						currentCompanyId -> {
+							try (Connection connection =
+									 _dataSource.getConnection();
+								 PreparedStatement preparedStatement =
+									 connection.prepareStatement(
+										 "select dictionary from Configuration_ " +
+										 "where configurationId = ?")) {
+
+								preparedStatement.setString(
+									1, configurationEntry.getPid());
+
+								try (ResultSet resultSet =
+										 preparedStatement.executeQuery()) {
+
+									if ((companyId ==
+										 CompanyConstants.SYSTEM) ||
+										Objects.equals(
+											currentCompanyId, companyId)) {
+
+										Assert.assertTrue(resultSet.next());
+										Assert.assertEquals(
+											configurationEntry.getDictionary(),
+											resultSet.getString(1));
+									}
+									else {
+										Assert.assertFalse(resultSet.next());
+									}
+								}
+							}
+						});
+				}
+			}
+			finally {
+				DBPartitionUtil.forEachCompanyId(
+					currentCompanyId -> {
+						try (Connection connection = DataAccess.getConnection();
+							 PreparedStatement preparedStatement =
+								 connection.prepareStatement(
+									 StringBundler.concat(
+										 "delete from Configuration_ where ",
+										 "configurationId like '%",
+										 UpgradePartitionedConfigurationTableTest.
+											 class.getName(),
+										 "%'"))) {
+
+							preparedStatement.executeUpdate();
+						}
+					});
+
+				System.out.println("---------- Finished run " + (i + 1) + " of " + maxRuns + "----------");
+			}
 		}
 	}
 
