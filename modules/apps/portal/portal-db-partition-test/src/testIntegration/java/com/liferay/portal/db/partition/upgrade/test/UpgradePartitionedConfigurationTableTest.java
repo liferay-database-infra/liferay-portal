@@ -216,6 +216,8 @@ public class UpgradePartitionedConfigurationTableTest
 					String logMessage = StringUtil.merge(
 						logCapture.getLogEntries(), StringPool.NEW_LINE);
 
+					System.out.println("The log content is: " + logMessage);
+
 					for (Map.Entry<Long, ConfigurationEntry>
 						configurationEntryEntry :
 						invalidConfigurationEntries.entrySet()) {

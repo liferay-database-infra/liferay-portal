@@ -103,11 +103,19 @@ public class ConfigurationDBPartitionUpgradeProcess extends UpgradeProcess {
 
 		int remainingCompanies = _atomicInteger.decrementAndGet();
 
+		if (remainingCompanies == 0) {
+			System.out.println("There are remaining scoped configurations to remove: " + _scopeConfigurations.size());
+		}
+
 		if ((remainingCompanies == 0) && _log.isWarnEnabled()) {
+			System.out.println("Entering to removal section");
+
 			for (ScopeConfiguration scopeConfiguration : _scopeConfigurations) {
 				if (Objects.equals(
 						scopeConfiguration.getScope(),
 						ExtendedObjectClassDefinition.Scope.COMPANY)) {
+
+					System.out.println("Removed company scope configuration with ID " + scopeConfiguration.getConfigurationId() + " because the company ID " + scopeConfiguration.getScopePK() + " does not exist");
 
 					_log.warn(
 						StringBundler.concat(
@@ -122,6 +130,8 @@ public class ConfigurationDBPartitionUpgradeProcess extends UpgradeProcess {
 						scopeConfiguration.getScope(),
 						ExtendedObjectClassDefinition.Scope.GROUP)) {
 
+					System.out.println("Removed group scope configuration with ID " + scopeConfiguration.getConfigurationId() + " because the group ID " + scopeConfiguration.getScopePK() + " does not exist");
+
 					_log.warn(
 						StringBundler.concat(
 							"Group scope configuration with ID ",
@@ -131,6 +141,8 @@ public class ConfigurationDBPartitionUpgradeProcess extends UpgradeProcess {
 							" does not exist"));
 				}
 			}
+
+			_scopeConfigurations.clear();
 		}
 	}
 
