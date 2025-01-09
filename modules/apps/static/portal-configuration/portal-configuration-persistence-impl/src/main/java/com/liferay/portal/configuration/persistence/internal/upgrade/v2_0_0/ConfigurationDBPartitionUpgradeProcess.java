@@ -51,11 +51,18 @@ public class ConfigurationDBPartitionUpgradeProcess extends UpgradeProcess {
 						_getScopeConfiguration(
 							resultSet.getString(1), resultSet.getString(2));
 
+					System.out.println("There is one configuration in company " + CompanyThreadLocal.getCompanyId() + " to process");
+
 					if (scopeConfiguration != null) {
+
+						System.out.println("The configuration is scoped");
+
 						if (Objects.equals(
 								scopeConfiguration.getScope(),
 								ExtendedObjectClassDefinition.Scope.
 									PORTLET_INSTANCE)) {
+
+							System.out.println("Inserting configuration because is PORLTLET_INSTANCE scoped");
 
 							_scopeConfigurations.add(scopeConfiguration);
 
@@ -65,6 +72,8 @@ public class ConfigurationDBPartitionUpgradeProcess extends UpgradeProcess {
 						if (!_isApplicable(
 								scopeConfiguration,
 								PortalInstancePool.getDefaultCompanyId())) {
+
+							System.out.println("Inserting configuration is not applicable to the current company");
 
 							_scopeConfigurations.add(scopeConfiguration);
 
@@ -77,10 +86,14 @@ public class ConfigurationDBPartitionUpgradeProcess extends UpgradeProcess {
 
 			long[] companyIds = PortalInstancePool.getCompanyIds();
 
+			System.out.println("There are " + (companyIds.length - 1) + " companies to process");
+
 			_atomicInteger.set(companyIds.length - 1);
 
 			return;
 		}
+
+		System.out.println("Entering upgrade process for company " + CompanyThreadLocal.getCompanyId());
 
 		DBPartitionUtil.replaceByTable(connection, false, "Configuration_");
 
@@ -96,12 +109,16 @@ public class ConfigurationDBPartitionUpgradeProcess extends UpgradeProcess {
 						scopeConfiguration.getScope(),
 						ExtendedObjectClassDefinition.Scope.PORTLET_INSTANCE)) {
 
+					System.out.println("Removed scoped configuration due to company " + CompanyThreadLocal.getCompanyId());
+
 					_scopeConfigurations.remove(scopeConfiguration);
 				}
 			}
 		}
 
 		int remainingCompanies = _atomicInteger.decrementAndGet();
+
+		System.out.println("There are " + remainingCompanies + " pending to process");
 
 		if (remainingCompanies == 0) {
 			System.out.println("There are remaining scoped configurations to remove: " + _scopeConfigurations.size());

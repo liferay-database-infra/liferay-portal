@@ -111,6 +111,8 @@ public class UpgradePartitionedConfigurationTableTest
 					System.out.println("CompanyId existing: " + companyId);
 
 					if (companyId != _companyId) {
+						System.out.println("Dropping Configuration_ table from company " + companyId);
+
 						db.runSQL("drop table if exists Configuration_");
 						db.runSQL(
 							StringBundler.concat(
@@ -174,6 +176,8 @@ public class UpgradePartitionedConfigurationTableTest
 						 connection.prepareStatement(
 							 "insert into Configuration_ (configurationId, " +
 							 "dictionary) values (?, ?)")) {
+
+					System.out.println("Inserting configurations in company " + PortalInstancePool.getDefaultCompanyId());
 
 					for (ConfigurationEntry configurationEntry :
 						validConfigurationEntries.values()) {
