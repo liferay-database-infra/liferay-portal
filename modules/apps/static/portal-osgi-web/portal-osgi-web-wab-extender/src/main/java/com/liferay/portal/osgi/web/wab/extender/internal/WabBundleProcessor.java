@@ -433,9 +433,21 @@ public class WabBundleProcessor {
 			_bundleContext.getServiceReference(
 				ServletContextHelperRegistration.class);
 
-		ServletContextHelperRegistration servletContextHelperRegistration =
-			_bundleContext.getService(
-				_servletContextHelperRegistrationServiceReference);
+		ServletContextHelperRegistration servletContextHelperRegistration;
+
+		try
+		{
+			servletContextHelperRegistration =
+				_bundleContext.getService(
+					_servletContextHelperRegistrationServiceReference);
+		}
+		catch (Exception e) {
+			System.out.println("####ContextName: " + _contextName);
+			System.out.println("####BundleName: " + _bundle.getSymbolicName());
+			System.out.println("####BundleName: " + _bundleContext.toString());
+
+			throw e;
+		}
 
 		WebXMLDefinition webXMLDefinition =
 			servletContextHelperRegistration.getWebXMLDefinition();
