@@ -101,6 +101,8 @@ public class UpgradePartitionedConfigurationTableTest
 		Company company = companyLocalService.fetchCompanyByVirtualHost(
 			TestPropsValues.COMPANY_WEB_ID);
 
+		System.out.println("The default company ID is " + _companyId);
+
 		int maxRuns = 100;
 		for (int i = 0; i < maxRuns; i++) {
 

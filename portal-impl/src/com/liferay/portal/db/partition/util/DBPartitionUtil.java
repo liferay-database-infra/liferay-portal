@@ -149,10 +149,15 @@ public class DBPartitionUtil {
 		}
 
 		if (_DATABASE_PARTITION_THREAD_POOL_ENABLED) {
+
+			System.out.println("Thread pool is enabled");
+
 			_forEachCompanyIdConcurrently(unsafeConsumer);
 
 			return;
 		}
+
+		System.out.println("Thread pool is NOT enabled");
 
 		long[] companyIds = PortalInstancePool.getCompanyIds();
 
@@ -161,6 +166,9 @@ public class DBPartitionUtil {
 		}
 		else {
 			for (long companyId : companyIds) {
+
+				System.out.println("Upgrading company ID " + companyId);
+
 				try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
 						companyId)) {
 
@@ -848,6 +856,9 @@ public class DBPartitionUtil {
 			else {
 				for (long companyId : companyIds) {
 					if (companyId == _defaultCompanyId) {
+
+						System.out.println("Upgrading company ID " + companyId + " which is the default company");
+
 						try (SafeCloseable safeCloseable =
 								CompanyThreadLocal.lock(companyId)) {
 
@@ -855,6 +866,8 @@ public class DBPartitionUtil {
 						}
 					}
 					else {
+						System.out.println("Upgrading company ID " + companyId + " which is NOT the default company");
+
 						Future<Void> future = executorService.submit(
 							() -> {
 								try (SafeCloseable safeCloseable =

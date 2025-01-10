@@ -37,6 +37,9 @@ public class ConfigurationDBPartitionUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
+
+		System.out.println("Entering upgrade process for company " + CompanyThreadLocal.getCompanyId());
+
 		if (PortalInstancePool.getDefaultCompanyId() ==
 				CompanyThreadLocal.getCompanyId()) {
 
@@ -90,10 +93,10 @@ public class ConfigurationDBPartitionUpgradeProcess extends UpgradeProcess {
 
 			_atomicInteger.set(companyIds.length - 1);
 
+			System.out.println("Finished upgrade for company " + CompanyThreadLocal.getCompanyId());
+
 			return;
 		}
-
-		System.out.println("Entering upgrade process for company " + CompanyThreadLocal.getCompanyId());
 
 		DBPartitionUtil.replaceByTable(connection, false, "Configuration_");
 
@@ -161,6 +164,8 @@ public class ConfigurationDBPartitionUpgradeProcess extends UpgradeProcess {
 
 			_scopeConfigurations.clear();
 		}
+
+		System.out.println("Finished upgrade for company " + CompanyThreadLocal.getCompanyId());
 	}
 
 	@Override
