@@ -35,6 +35,14 @@ public abstract class BaseDBColumnSizeUpgradeProcess extends UpgradeProcess {
 		_size = size;
 	}
 
+	public BaseDBColumnSizeUpgradeProcess(
+		DBType dbType, String oldColumnType, int size, int decimalDigits) {
+
+		this(dbType, oldColumnType, size);
+
+		_decimalDigits = decimalDigits;
+	}
+
 	@Override
 	protected void doUpgrade() throws Exception {
 		if (DBManagerUtil.getDBType() == _dbType) {
@@ -91,9 +99,13 @@ public abstract class BaseDBColumnSizeUpgradeProcess extends UpgradeProcess {
 						catalog, schema, tableName, null)) {
 
 					while (columnResultSet.next()) {
+						int decimalDigits = columnResultSet.getInt(
+							"DECIMAL_DIGITS");
 						int size = columnResultSet.getInt("COLUMN_SIZE");
 
-						if ((size == _size) &&
+						if (((_decimalDigits == null) ||
+							 (decimalDigits == _decimalDigits)) &&
+							(size == _size) &&
 							StringUtil.equalsIgnoreCase(
 								_oldColumnType,
 								columnResultSet.getString("TYPE_NAME"))) {
@@ -131,6 +143,7 @@ public abstract class BaseDBColumnSizeUpgradeProcess extends UpgradeProcess {
 		BaseDBColumnSizeUpgradeProcess.class);
 
 	private final DBType _dbType;
+	private Integer _decimalDigits;
 	private final String _oldColumnType;
 	private final int _size;
 
