@@ -554,6 +554,8 @@ public class PortalUpgradeProcessRegistryImpl
 				}
 
 			});
+
+		upgradeVersionTreeMap.put(new Version(31, 14, 1), new UpgradeOracle());
 	}
 
 }
