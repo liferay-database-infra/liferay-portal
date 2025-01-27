@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 /**
  * @author Shuyang Zhou
  */
-public class CentralizedThreadLocal<T> extends ThreadLocal<T> {
+public class CentralizedThreadLocal<T> extends InheritableThreadLocal<T> {
 
 	public static void clearLongLivedCentralizedThreadLocals() {
 		_longLivedCentralizedThreadLocals.remove();
@@ -257,14 +257,30 @@ public class CentralizedThreadLocal<T> extends ThreadLocal<T> {
 		Arrays.asList(
 			Boolean.class, Byte.class, Character.class, Double.class,
 			Float.class, Integer.class, Long.class, Short.class, String.class));
-	private static final ThreadLocal<ThreadLocalMap>
-		_longLivedCentralizedThreadLocals = ThreadLocal.withInitial(
-			ThreadLocalMap::new);
+
+	private static final InheritableThreadLocal<ThreadLocalMap>
+		_longLivedCentralizedThreadLocals = new InheritableThreadLocal<>() {
+
+			@Override
+			protected ThreadLocalMap initialValue() {
+				return new ThreadLocalMap();
+			}
+
+		};
+
 	private static final AtomicInteger _longLivedNextHasCode =
 		new AtomicInteger();
-	private static final ThreadLocal<ThreadLocalMap>
-		_shortLivedCentralizedThreadLocals = ThreadLocal.withInitial(
-			ThreadLocalMap::new);
+
+	private static final InheritableThreadLocal<ThreadLocalMap>
+		_shortLivedCentralizedThreadLocals = new InheritableThreadLocal<>() {
+
+			@Override
+			protected ThreadLocalMap initialValue() {
+				return new ThreadLocalMap();
+			}
+
+		};
+
 	private static final AtomicInteger _shortLivedNextHasCode =
 		new AtomicInteger();
 
