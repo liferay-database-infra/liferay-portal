@@ -23,6 +23,9 @@ import com.liferay.portal.kernel.util.TimeZoneThreadLocal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import org.junit.Assert;
@@ -97,6 +100,29 @@ public class CompanyThreadLocalTest {
 			}
 		}
 		finally {
+			CompanyThreadLocal.setCompanyId(_originalCompanyId);
+		}
+	}
+
+	@Test
+	public void testSetCompanyIdChildThread() throws Exception {
+		_originalCompanyId = CompanyThreadLocal.getCompanyId();
+
+		CompanyThreadLocal.setCompanyId(1L);
+
+		Long companyId = CompanyThreadLocal.getCompanyId();
+
+		ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+		try {
+			Future<Long> future = executorService.submit(
+				CompanyThreadLocal::getCompanyId);
+
+			Assert.assertEquals(companyId, future.get());
+		}
+		finally {
+			executorService.shutdown();
+
 			CompanyThreadLocal.setCompanyId(_originalCompanyId);
 		}
 	}
