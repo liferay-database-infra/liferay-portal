@@ -282,6 +282,12 @@ public class CompanyThreadLocal {
 		_initializingPortalInstance = new CentralizedThreadLocal<>(
 			CompanyThreadLocal.class + "._initializingPortalInstance",
 			() -> Boolean.FALSE);
+	private static final CompanyIdInheritableThreadLocal _initialValue =
+		new CompanyIdInheritableThreadLocal() {
+			{
+				set(CompanyConstants.SYSTEM);
+			}
+		};
 	private static final ThreadLocal<Boolean> _locked =
 		new CentralizedThreadLocal<>(
 			CompanyThreadLocal.class + "._locked", () -> Boolean.FALSE);
@@ -292,8 +298,17 @@ public class CompanyThreadLocal {
 
 	static {
 		_companyId = new CentralizedThreadLocal<>(
-			CompanyThreadLocal.class + "._companyId",
-			() -> CompanyConstants.SYSTEM);
+			CompanyThreadLocal.class + "._companyId", _initialValue::get);
+	}
+
+	private static class CompanyIdInheritableThreadLocal
+		extends InheritableThreadLocal<Long> {
+
+		@Override
+		protected Long childValue(Long parentValue) {
+			return _companyId.get();
+		}
+
 	}
 
 }
