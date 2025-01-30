@@ -19,7 +19,9 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -50,6 +52,8 @@ public class DBColumnSizeUpgradeProcess extends UpgradeProcess {
 
 		String catalog = dbInspector.getCatalog();
 		String schema = dbInspector.getSchema();
+
+		Map<String, String> oldTypeNameTableColumns = new HashMap<>();
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
 			ResultSet tableResultSet = databaseMetaData.getTables(
@@ -105,22 +109,27 @@ public class DBColumnSizeUpgradeProcess extends UpgradeProcess {
 								continue;
 							}
 
-							try {
-								alterColumnType(
-									tableName, columnName, _newColumnType);
-							}
-							catch (SQLException sqlException) {
-								if (_log.isWarnEnabled()) {
-									_log.warn(
-										StringBundler.concat(
-											"Unable to alter length of column ",
-											columnName, " for table ",
-											tableName),
-										sqlException);
-								}
-							}
+							oldTypeNameTableColumns.put(tableName, columnName);
 						}
 					}
+				}
+			}
+		}
+
+		for (Map.Entry<String, String> entry :
+				oldTypeNameTableColumns.entrySet()) {
+
+			try {
+				alterColumnType(
+					entry.getKey(), entry.getValue(), _newColumnType);
+			}
+			catch (SQLException sqlException) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"Unable to alter length of column ", entry.getKey(),
+							" for table ", entry.getValue()),
+						sqlException);
 				}
 			}
 		}
