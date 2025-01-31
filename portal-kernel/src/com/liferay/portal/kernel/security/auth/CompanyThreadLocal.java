@@ -5,6 +5,7 @@
 
 package com.liferay.portal.kernel.security.auth;
 
+import com.liferay.petra.lang.CentralizedInheritableThreadLocal;
 import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
@@ -140,7 +141,7 @@ public class CompanyThreadLocal {
 
 		_syncLastDBPartitionSessionState();
 
-		SafeCloseable safeCloseable = _companyId.setWithSafeCloseable(
+		SafeCloseable safeCloseable = _companyId.setValueWithSafeCloseable(
 			companyId);
 
 		_locked.set(true);
@@ -210,11 +211,13 @@ public class CompanyThreadLocal {
 			}
 
 			if (companyId > 0) {
-				safeCloseables.add(_companyId.setWithSafeCloseable(companyId));
+				safeCloseables.add(
+					_companyId.setValueWithSafeCloseable(companyId));
 			}
 			else {
 				safeCloseables.add(
-					_companyId.setWithSafeCloseable(CompanyConstants.SYSTEM));
+					_companyId.setValueWithSafeCloseable(
+						CompanyConstants.SYSTEM));
 			}
 
 			for (CompanyCentralizedThreadLocal<?>
@@ -248,10 +251,10 @@ public class CompanyThreadLocal {
 		long companyId) {
 
 		if (companyId > 0) {
-			return _companyId.setWithSafeCloseable(companyId);
+			return _companyId.setValueWithSafeCloseable(companyId);
 		}
 
-		return _companyId.setWithSafeCloseable(CompanyConstants.SYSTEM);
+		return _companyId.setValueWithSafeCloseable(CompanyConstants.SYSTEM);
 	}
 
 	public static SafeCloseable setInitializingPortalInstanceWithSafeCloseable(
@@ -277,7 +280,7 @@ public class CompanyThreadLocal {
 	private static final Log _log = LogFactoryUtil.getLog(
 		CompanyThreadLocal.class);
 
-	private static final CentralizedThreadLocal<Long> _companyId;
+	private static final CentralizedInheritableThreadLocal<Long> _companyId;
 	private static final CentralizedThreadLocal<Boolean>
 		_initializingPortalInstance = new CentralizedThreadLocal<>(
 			CompanyThreadLocal.class + "._initializingPortalInstance",
@@ -291,7 +294,7 @@ public class CompanyThreadLocal {
 			() -> Boolean.FALSE);
 
 	static {
-		_companyId = new CentralizedThreadLocal<>(
+		_companyId = new CentralizedInheritableThreadLocal<>(
 			CompanyThreadLocal.class + "._companyId",
 			() -> CompanyConstants.SYSTEM);
 	}
