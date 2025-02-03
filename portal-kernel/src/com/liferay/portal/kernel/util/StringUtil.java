@@ -3532,7 +3532,7 @@ public class StringUtil {
 	 * <p>
 	 * <pre>
 	 * <code>
-	 * splitLines("First;Second;Third", ';') returns {"First","Second","Third"}
+	 * split("First;Second;Third", ';') returns {"First","Second","Third"}
 	 * </code>
 	 * </pre></p>
 	 *
@@ -3647,7 +3647,7 @@ public class StringUtil {
 	 * <p>
 	 * <pre>
 	 * <code>
-	 * splitLines("oneandtwoandthreeandfour", "and") returns {"one","two","three","four"}
+	 * split("oneandtwoandthreeandfour", "and") returns {"one","two","three","four"}
 	 * </code>
 	 * </pre></p>
 	 *
