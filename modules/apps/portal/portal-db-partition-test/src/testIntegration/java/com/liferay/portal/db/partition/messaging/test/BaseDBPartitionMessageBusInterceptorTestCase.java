@@ -344,7 +344,7 @@ public abstract class BaseDBPartitionMessageBusInterceptorTestCase {
 
 		@Override
 		protected void doReceive(Message message) {
-			_companyIds.add(CompanyThreadLocal.getCompanyId());
+			_companyIds.add(message.getLong("companyId"));
 			_countDownLatch.countDown();
 		}
 
