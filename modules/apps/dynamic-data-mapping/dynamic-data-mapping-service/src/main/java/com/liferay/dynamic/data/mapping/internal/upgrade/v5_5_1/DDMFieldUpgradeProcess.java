@@ -6,7 +6,6 @@
 package com.liferay.dynamic.data.mapping.internal.upgrade.v5_5_1;
 
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.dao.orm.common.SQLTransformer;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.log.Log;
@@ -65,38 +64,27 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 		}
 
 		processConcurrently(
-			SQLTransformer.transform(
-				StringBundler.concat(
-					"select DDMField.ctCollectionId, DDMField.fieldId, ",
-					"DDMStructureVersion.companyId from DDMStructureVersion ",
-					"inner join DDMField on ",
-					"DDMStructureVersion.ctCollectionId = ",
-					"DDMField.ctCollectionId and ",
-					"DDMStructureVersion.structureVersionId = ",
-					"DDMField.structureVersionId where DDMField.companyId = ",
-					"0")),
-			"update DDMField set companyId = ? where ctCollectionId = ? and " +
-				"fieldId = ?",
-			resultSet -> new Object[] {
-				resultSet.getLong("ctCollectionId"),
-				resultSet.getLong("fieldId"), resultSet.getLong("companyId")
-			},
-			(values, preparedStatement) -> {
-				long companyId = (Long)values[2];
-				long fieldId = (Long)values[1];
+			"select companyId from Company",
+			resultSet -> new Object[] {resultSet.getLong("companyId")},
+			values -> {
+				long companyId = (Long)values[0];
 
-				preparedStatement.setLong(1, companyId);
-
-				preparedStatement.setLong(2, (Long)values[0]);
-				preparedStatement.setLong(3, fieldId);
-
-				preparedStatement.addBatch();
+				runSQL(
+					StringBundler.concat(
+						"update DDMField set companyId = ", companyId,
+						" where exists (select 1 from DDMStructureVersion ",
+						"where DDMStructureVersion.structureVersionId = ",
+						"DDMField.structureVersionId and ",
+						"DDMStructureVersion.ctCollectionId = ",
+						"DDMField.ctCollectionId and ",
+						"DDMStructureVersion.companyId = ", companyId,
+						") and DDMField.companyId = 0"));
 
 				if (_log.isInfoEnabled()) {
 					_log.info(
 						StringBundler.concat(
-							"Update company ID for dynamic data mapping field ",
-							fieldId, " from 0 to ", companyId));
+							"Update company IDs for dynamic data mapping ",
+							"fields from 0 to ", companyId));
 				}
 			},
 			"Unable to update company IDs for dynamic data mapping fields");
