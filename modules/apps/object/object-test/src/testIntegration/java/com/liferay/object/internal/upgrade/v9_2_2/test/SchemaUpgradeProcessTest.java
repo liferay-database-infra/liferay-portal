@@ -136,7 +136,9 @@ public class SchemaUpgradeProcessTest extends BaseDBPartitionTestCase {
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
 
 		ResultSet resultSet = databaseMetaData.getTables(
-			_partitionName, null, null, new String[] {"VIEW"});
+			dbPartitionDB.getCatalog(connection, _partitionName),
+			dbPartitionDB.getSchema(connection, _partitionName), null,
+			new String[] {"VIEW"});
 
 		while (resultSet.next()) {
 			viewNames.add(
