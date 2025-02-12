@@ -13,9 +13,11 @@ import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.model.ReleaseConstants;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.tools.DBUpgrader;
@@ -25,6 +27,8 @@ import com.liferay.portal.util.PropsUtil;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
+import java.util.Objects;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -33,6 +37,9 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 
 /**
  * @author Luis Ortiz
@@ -92,7 +99,25 @@ public class DBUpgraderTest {
 		String upgradeDatabaseAutoRun = PropsUtil.get(
 			PropsKeys.UPGRADE_DATABASE_AUTO_RUN);
 
-		try {
+		try (AutoCloseable autoCloseable =
+				ReflectionTestUtil.setFieldValueWithAutoCloseable(
+					DBUpgrader.class, "_systemBundleUtil",
+					ProxyUtil.newProxyInstance(
+						DBUpgrader.class.getClassLoader(),
+						new Class<?>[] {DBUpgrader.class},
+						(proxy, method, args) -> {
+							if (Objects.equals(
+									method.getName(), "getBundleContext")) {
+
+								Bundle bundle = FrameworkUtil.getBundle(
+									DBUpgraderTest.class);
+
+								return bundle.getBundleContext();
+							}
+
+							return method.invoke(_systemBundleUtil, args);
+						}))) {
+
 			PropsUtil.set(PropsKeys.UPGRADE_DATABASE_AUTO_RUN, "false");
 
 			DBUpgrader.upgradeModules();
@@ -171,6 +196,7 @@ public class DBUpgraderTest {
 	private static Connection _connection;
 	private static int _currentBuildNumber;
 	private static int _currentState;
+	private static SystemBundleUtil _systemBundleUtil;
 	private static boolean _upgrading;
 
 }
