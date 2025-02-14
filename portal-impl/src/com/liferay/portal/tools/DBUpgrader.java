@@ -230,7 +230,7 @@ public class DBUpgrader {
 	}
 
 	public static void upgradeModules() {
-		_registerModuleServiceLifecycle("portal.initialized");
+		_registerModuleServiceLifecycle(portal_initialized);
 
 		if (_upgradeClient) {
 			DependencyManagerSyncUtil.sync();
@@ -239,7 +239,7 @@ public class DBUpgrader {
 		PortalCacheHelperUtil.clearPortalCaches(
 			PortalCacheManagerNames.MULTI_VM);
 
-		_registerModuleServiceLifecycle("portlets.initialized");
+		_registerModuleServiceLifecycle(portlets_initialized);
 
 		if (_upgradeClient || StartupHelperUtil.isNewRelease()) {
 			IndexUpdaterUtil.updateAllIndexes();
@@ -354,6 +354,9 @@ public class DBUpgrader {
 
 		verifyProcessSuite.verify();
 	}
+
+	protected static String portal_initialized = "portal.initialized";
+	protected static String portlets_initialized = "portlets.initialized";
 
 	private static void _checkClassNamesAndResourceActions() {
 		if (_log.isDebugEnabled()) {
