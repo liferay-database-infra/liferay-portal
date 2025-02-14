@@ -230,7 +230,7 @@ public class DBUpgrader {
 	}
 
 	public static void upgradeModules() {
-		_registerModuleServiceLifecycle(_PORTAL_INITIALIZED_);
+		_registerModuleServiceLifecycle(portal_initialized);
 
 		if (_upgradeClient) {
 			DependencyManagerSyncUtil.sync();
@@ -239,7 +239,7 @@ public class DBUpgrader {
 		PortalCacheHelperUtil.clearPortalCaches(
 			PortalCacheManagerNames.MULTI_VM);
 
-		_registerModuleServiceLifecycle(_PORTLETS_INITIALIZED_);
+		_registerModuleServiceLifecycle(portlets_initialized);
 
 		if (_upgradeClient || StartupHelperUtil.isNewRelease()) {
 			IndexUpdaterUtil.updateAllIndexes();
@@ -355,6 +355,9 @@ public class DBUpgrader {
 		verifyProcessSuite.verify();
 	}
 
+	protected static String portal_initialized = "portal.initialized";
+	protected static String portlets_initialized = "portlets.initialized";
+
 	private static void _checkClassNamesAndResourceActions() {
 		if (_log.isDebugEnabled()) {
 			_log.debug("Check class names");
@@ -433,10 +436,6 @@ public class DBUpgrader {
 	private static final Version _VERSION_7010 = new Version(0, 0, 6);
 
 	private static final Log _log = LogFactoryUtil.getLog(DBUpgrader.class);
-
-	private static String _PORTLETS_INITIALIZED_ = "portlets.initialized";
-	
-	private static String _PORTAL_INITIALIZED_ = "portal.initialized";
 
 	private static volatile Appender _appender;
 	private static volatile StopWatch _stopWatch;
