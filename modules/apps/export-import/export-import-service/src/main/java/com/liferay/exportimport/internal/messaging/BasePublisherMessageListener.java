@@ -9,7 +9,6 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.messaging.MessageListener;
-import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
@@ -38,7 +37,9 @@ public abstract class BasePublisherMessageListener implements MessageListener {
 
 		User user = UserLocalServiceUtil.getUserById(userId);
 
-		CompanyThreadLocal.setCompanyId(user.getCompanyId());
+		SafeCloseable safeCloseable =
+			CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+				user.getCompanyId());
 
 		PrincipalThreadLocal.setName(userId);
 
@@ -87,10 +88,9 @@ public abstract class BasePublisherMessageListener implements MessageListener {
 		ServiceContextThreadLocal.pushServiceContext(serviceContext);
 
 		return () -> {
-			CompanyThreadLocal.setCompanyId(CompanyConstants.SYSTEM);
 			PermissionThreadLocal.setPermissionChecker(null);
-			PrincipalThreadLocal.setName(null);
-			ServiceContextThreadLocal.popServiceContext();
+
+			safeCloseable.close();
 		};
 	}
 
