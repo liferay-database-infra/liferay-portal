@@ -94,7 +94,7 @@ public class BackgroundTaskThreadLocalManagerImpl
 		long companyId, Map<String, Serializable> threadLocalValues) {
 
 		if (companyId > 0) {
-			CompanyThreadLocal.setCompanyId(_requireCompany(companyId));
+			CompanyThreadLocal.setOrLockCompanyId(_requireCompany(companyId));
 		}
 
 		if (MapUtil.isEmpty(threadLocalValues)) {

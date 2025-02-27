@@ -57,7 +57,7 @@ public class LanguageImplGetAvailableLocalesTest {
 			Assert.assertEquals(_locales, _language.getAvailableLocales());
 		}
 		finally {
-			CompanyThreadLocal.setCompanyId(companyId);
+			CompanyThreadLocal.setOrLockCompanyId(companyId);
 		}
 	}
 
@@ -69,7 +69,7 @@ public class LanguageImplGetAvailableLocalesTest {
 			_resetCompanyLocales();
 		}
 		finally {
-			CompanyThreadLocal.setCompanyId(companyId);
+			CompanyThreadLocal.setOrLockCompanyId(companyId);
 		}
 
 		Assert.assertEquals(

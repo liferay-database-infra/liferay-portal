@@ -99,7 +99,7 @@ public class CompanyTestUtil {
 
 		// Reset thread locals
 
-		CompanyThreadLocal.setCompanyId(companyId);
+		CompanyThreadLocal.setOrLockCompanyId(companyId);
 
 		LocaleThreadLocal.setDefaultLocale(
 			LocaleUtil.fromLanguageId(defaultLanguageId, false));

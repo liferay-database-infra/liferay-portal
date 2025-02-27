@@ -246,7 +246,7 @@ public class LayoutServiceContextHelperImpl
 
 		@Override
 		public void close() {
-			CompanyThreadLocal.setCompanyId(_originalCompanyId);
+			CompanyThreadLocal.setOrLockCompanyId(_originalCompanyId);
 			PermissionThreadLocal.setPermissionChecker(
 				_originalPermissionChecker);
 			PrincipalThreadLocal.setName(_originalName, false);
@@ -441,7 +441,7 @@ public class LayoutServiceContextHelperImpl
 		}
 
 		private void _setCompanyServiceContext() throws PortalException {
-			CompanyThreadLocal.setCompanyId(_company.getCompanyId());
+			CompanyThreadLocal.setOrLockCompanyId(_company.getCompanyId());
 
 			PermissionThreadLocal.setPermissionChecker(_permissionChecker);
 

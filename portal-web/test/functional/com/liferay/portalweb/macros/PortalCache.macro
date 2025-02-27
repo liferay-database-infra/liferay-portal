@@ -9,7 +9,7 @@ definition {
 		var getCacheGroovy = '''
 			import com.liferay.portal.kernel.cache.*;
 
-			com.liferay.portal.kernel.security.auth.CompanyThreadLocal.setCompanyId(${companyId}L);
+			com.liferay.portal.kernel.security.auth.CompanyThreadLocal.setOrLockCompanyId(${companyId}L);
 
 			PortalCache<String, String> testCache = PortalCacheHelperUtil.getPortalCache(PortalCacheManagerNames.MULTI_VM, "test.cache", false, true);
 
@@ -34,7 +34,7 @@ definition {
 		var putCacheGroovy = '''
 			import com.liferay.portal.kernel.cache.*;
 
-			com.liferay.portal.kernel.security.auth.CompanyThreadLocal.setCompanyId(${companyId}L);
+			com.liferay.portal.kernel.security.auth.CompanyThreadLocal.setOrLockCompanyId(${companyId}L);
 
 			PortalCache<String, String> testCache = PortalCacheHelperUtil.getPortalCache(PortalCacheManagerNames.MULTI_VM, "test.cache", false, true);
 

@@ -71,7 +71,7 @@ public class SetupAdminAutoLoginTest {
 
 		_originalCompanyId = CompanyThreadLocal.getCompanyId();
 
-		CompanyThreadLocal.setCompanyId(_company.getCompanyId());
+		CompanyThreadLocal.setOrLockCompanyId(_company.getCompanyId());
 
 		try {
 			_emailAdressAdminUser =
@@ -92,7 +92,7 @@ public class SetupAdminAutoLoginTest {
 	public static void tearDownClass() {
 		_safeCloseable.close();
 
-		CompanyThreadLocal.setCompanyId(_originalCompanyId);
+		CompanyThreadLocal.setOrLockCompanyId(_originalCompanyId);
 	}
 
 	@Test

@@ -210,7 +210,7 @@ public abstract class BaseAuthFilter extends BasePortalFilter {
 	}
 
 	protected void initThreadLocals(User user) throws Exception {
-		CompanyThreadLocal.setCompanyId(user.getCompanyId());
+		CompanyThreadLocal.setOrLockCompanyId(user.getCompanyId());
 
 		PrincipalThreadLocal.setName(user.getUserId());
 

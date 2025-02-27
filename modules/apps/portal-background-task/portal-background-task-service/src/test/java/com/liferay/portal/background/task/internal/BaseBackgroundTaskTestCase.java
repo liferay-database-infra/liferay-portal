@@ -165,7 +165,7 @@ public abstract class BaseBackgroundTaskTestCase {
 	}
 
 	protected void initalizeThreadLocals() {
-		CompanyThreadLocal.setCompanyId(COMPANY_ID);
+		CompanyThreadLocal.setOrLockCompanyId(COMPANY_ID);
 		ClusterInvokeThreadLocal.setEnabled(true);
 		GroupThreadLocal.setGroupId(_GROUP_ID);
 		LocaleThreadLocal.setDefaultLocale(_defaultLocale);

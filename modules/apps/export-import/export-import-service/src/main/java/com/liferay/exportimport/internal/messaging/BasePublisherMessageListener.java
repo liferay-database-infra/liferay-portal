@@ -38,7 +38,7 @@ public abstract class BasePublisherMessageListener implements MessageListener {
 
 		User user = UserLocalServiceUtil.getUserById(userId);
 
-		CompanyThreadLocal.setCompanyId(user.getCompanyId());
+		CompanyThreadLocal.setOrLockCompanyId(user.getCompanyId());
 
 		PrincipalThreadLocal.setName(userId);
 
@@ -87,7 +87,7 @@ public abstract class BasePublisherMessageListener implements MessageListener {
 		ServiceContextThreadLocal.pushServiceContext(serviceContext);
 
 		return () -> {
-			CompanyThreadLocal.setCompanyId(CompanyConstants.SYSTEM);
+			CompanyThreadLocal.setOrLockCompanyId(CompanyConstants.SYSTEM);
 			PermissionThreadLocal.setPermissionChecker(null);
 			PrincipalThreadLocal.setName(null);
 			ServiceContextThreadLocal.popServiceContext();

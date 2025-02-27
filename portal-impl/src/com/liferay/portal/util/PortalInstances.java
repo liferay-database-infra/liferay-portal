@@ -153,7 +153,7 @@ public class PortalInstances {
 		httpServletRequest.setAttribute(
 			WebKeys.COMPANY_ID, Long.valueOf(companyId));
 
-		CompanyThreadLocal.setCompanyId(companyId);
+		CompanyThreadLocal.setOrLockCompanyId(companyId);
 
 		if (Validator.isNotNull(PropsValues.VIRTUAL_HOSTS_DEFAULT_SITE_NAME) &&
 			(httpServletRequest.getAttribute(WebKeys.VIRTUAL_HOST_LAYOUT_SET) ==
@@ -444,7 +444,7 @@ public class PortalInstances {
 				return 0;
 			}
 
-			CompanyThreadLocal.setCompanyId(virtualHost.getCompanyId());
+			CompanyThreadLocal.setOrLockCompanyId(virtualHost.getCompanyId());
 
 			if (virtualHost.getLayoutSetId() != 0) {
 				_setAttributes(virtualHost, httpServletRequest);

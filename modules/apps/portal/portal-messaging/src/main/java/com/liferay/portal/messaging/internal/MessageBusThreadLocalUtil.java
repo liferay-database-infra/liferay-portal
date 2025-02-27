@@ -76,7 +76,7 @@ public class MessageBusThreadLocalUtil {
 		long companyId = message.getLong("companyId");
 
 		if (companyId > 0) {
-			CompanyThreadLocal.setCompanyId(companyId);
+			CompanyThreadLocal.setOrLockCompanyId(companyId);
 		}
 
 		Boolean clusterInvoke = (Boolean)message.get("clusterInvoke");

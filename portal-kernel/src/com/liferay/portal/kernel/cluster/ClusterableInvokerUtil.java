@@ -155,7 +155,7 @@ public class ClusterableInvokerUtil {
 		long companyId = GetterUtil.getLong(context.get("companyId"));
 
 		if (companyId > 0) {
-			CompanyThreadLocal.setCompanyId(companyId);
+			CompanyThreadLocal.setOrLockCompanyId(companyId);
 		}
 
 		Locale defaultLocale = (Locale)context.get("defaultLocale");

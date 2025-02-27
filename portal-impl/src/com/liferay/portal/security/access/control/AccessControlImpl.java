@@ -61,7 +61,7 @@ public class AccessControlImpl implements AccessControl {
 		try {
 			User user = UserLocalServiceUtil.getUser(userId);
 
-			CompanyThreadLocal.setCompanyId(user.getCompanyId());
+			CompanyThreadLocal.setOrLockCompanyId(user.getCompanyId());
 
 			PrincipalThreadLocal.setName(userId);
 

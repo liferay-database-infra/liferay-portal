@@ -21,12 +21,12 @@ public class CompanyProviderClassTestRule extends ClassTestRule<Long> {
 
 	@Override
 	protected void afterClass(Description description, Long previousCompanyId) {
-		CompanyThreadLocal.setCompanyId(previousCompanyId);
+		CompanyThreadLocal.setOrLockCompanyId(previousCompanyId);
 	}
 
 	@Override
 	protected Long beforeClass(Description description) throws PortalException {
-		CompanyThreadLocal.setCompanyId(TestPropsValues.getCompanyId());
+		CompanyThreadLocal.setOrLockCompanyId(TestPropsValues.getCompanyId());
 
 		return CompanyThreadLocal.getCompanyId();
 	}
