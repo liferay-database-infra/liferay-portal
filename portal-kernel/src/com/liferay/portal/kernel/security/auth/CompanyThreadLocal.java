@@ -261,6 +261,17 @@ public class CompanyThreadLocal {
 			initializingPortalInstance);
 	}
 
+	public static void setOrLockCompanyId(Long companyId) {
+		if ((companyId == CompanyConstants.SYSTEM) ||
+			(companyId == PortalInstancePool.getDefaultCompanyId())) {
+
+			setCompanyId(companyId);
+		}
+		else {
+			lock(companyId);
+		}
+	}
+
 	public static SafeCloseable setUpgradingPortalInstanceWithSafeCloseable(
 		boolean upgradingPortalInstance) {
 
