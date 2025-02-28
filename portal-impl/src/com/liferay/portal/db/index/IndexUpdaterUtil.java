@@ -6,6 +6,7 @@
 package com.liferay.portal.db.index;
 
 import com.liferay.petra.concurrent.DCLSingleton;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.DBResourceUtil;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -174,7 +175,8 @@ public class IndexUpdaterUtil {
 
 		ExecutorService executorService = _getExecutorService();
 
-		Map<String, String> indexesSQLMap = _getIndexesSQLMap(indexesSQL);
+		Map<String, String> indexesSQLMap = _getIndexesSQLMap(
+			tablesSQL, indexesSQL);
 
 		for (Map.Entry<String, String> entry : indexesSQLMap.entrySet()) {
 			_futures.add(
@@ -213,7 +215,9 @@ public class IndexUpdaterUtil {
 			});
 	}
 
-	private static Map<String, String> _getIndexesSQLMap(String indexesSQL) {
+	private static Map<String, String> _getIndexesSQLMap(
+		String tablesSQL, String indexesSQL) {
+
 		Map<String, String> indexesSQLMap = new LinkedHashMap<>();
 
 		String[] indexesSQLArray = StringUtil.split(indexesSQL, "\n\n");
@@ -223,6 +227,17 @@ public class IndexUpdaterUtil {
 				element.indexOf("on ") + 3, element.indexOf(" ("));
 
 			indexesSQLMap.put(tableName, element);
+		}
+
+		String[] tablesSQLArray = StringUtil.split(tablesSQL, "\n\n");
+
+		for (String element : tablesSQLArray) {
+			String tableName = element.substring(
+				element.indexOf("create table ") + 13, element.indexOf(" ("));
+
+			if (!indexesSQLMap.containsKey(tableName)) {
+				indexesSQLMap.put(tableName, StringPool.BLANK);
+			}
 		}
 
 		return indexesSQLMap;
