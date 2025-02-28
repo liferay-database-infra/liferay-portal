@@ -55,6 +55,12 @@ alter table LayoutRevision drop column wapColorSchemeId;
 
 alter table Organization_ add logoId LONG;
 
+alter table QUARTZ_TRIGGERS drop primary key;
+
+drop index IX_186442A4 on QUARTZ_TRIGGERS;
+
+alter table QUARTZ_TRIGGERS add primary key (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP);
+
 alter table RatingsEntry add uuid_ VARCHAR(75) null;
 
 create table RecentLayoutBranch (
