@@ -24,8 +24,8 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.kernel.cache.MultiVMPool;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.db.partition.DBPartition;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
@@ -77,7 +77,7 @@ public class DDMFieldAttributeUpgradeProcessTest {
 		_group = GroupTestUtil.addGroup();
 
 		_safeCloseable = CompanyThreadLocal.setCompanyIdWithSafeCloseable(
-			CompanyConstants.SYSTEM);
+			PortalInstancePool.getDefaultCompanyId());
 	}
 
 	@After
@@ -91,7 +91,7 @@ public class DDMFieldAttributeUpgradeProcessTest {
 	public void testUpgradeProcess() throws Exception {
 		_addDDMFormValues();
 
-		_assertCompanyId(CompanyConstants.SYSTEM);
+		_assertCompanyId(PortalInstancePool.getDefaultCompanyId());
 
 		_runUpgrade();
 

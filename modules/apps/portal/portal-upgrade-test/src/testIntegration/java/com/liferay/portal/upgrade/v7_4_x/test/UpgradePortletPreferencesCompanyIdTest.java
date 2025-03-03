@@ -11,7 +11,6 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
-import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.PortletPreferenceValue;
@@ -60,11 +59,12 @@ public class UpgradePortletPreferencesCompanyIdTest {
 	public void testUpgrade() throws Exception {
 		try (SafeCloseable safeCloseable =
 				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
-					CompanyConstants.SYSTEM)) {
+					PortalUtil.getDefaultCompanyId())) {
 
 			PortletPreferences portletPreferences =
 				_portletPreferencesLocalService.addPortletPreferences(
-					CompanyConstants.SYSTEM, PortletKeys.PREFS_OWNER_ID_DEFAULT,
+					PortalUtil.getDefaultCompanyId(),
+					PortletKeys.PREFS_OWNER_ID_DEFAULT,
 					PortletKeys.PREFS_OWNER_TYPE_LAYOUT, _testLayout.getPlid(),
 					"test", null,
 					"<portlet-preferences><preference><name>testName</name>" +
@@ -72,13 +72,15 @@ public class UpgradePortletPreferencesCompanyIdTest {
 							"</preference></portlet-preferences>");
 
 			Assert.assertEquals(
-				CompanyConstants.SYSTEM, portletPreferences.getCompanyId());
+				PortalUtil.getDefaultCompanyId(),
+				portletPreferences.getCompanyId());
 
 			List<PortletPreferenceValue> portletPreferenceValues =
 				_getPortletPreferenceValues(
 					portletPreferences.getPortletPreferencesId());
 
-			assertCompanyIds(CompanyConstants.SYSTEM, portletPreferenceValues);
+			assertCompanyIds(
+				PortalUtil.getDefaultCompanyId(), portletPreferenceValues);
 
 			UpgradeProcess upgradeProcess =
 				new UpgradePortletPreferencesCompanyId();
