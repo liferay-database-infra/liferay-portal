@@ -160,6 +160,26 @@ public class CompanyThreadLocalTest {
 		}
 	}
 
+	@Test
+	public void testSetServiceContextThreadLocal() {
+		Assert.assertNull(ServiceContextThreadLocal.getServiceContext());
+
+		long companyId = CompanyThreadLocal.getCompanyId();
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId)) {
+
+			ServiceContext serviceContext = Mockito.mock(ServiceContext.class);
+
+			ServiceContextThreadLocal.pushServiceContext(serviceContext);
+
+			Assert.assertEquals(
+				serviceContext, ServiceContextThreadLocal.getServiceContext());
+		}
+
+		Assert.assertNull(ServiceContextThreadLocal.getServiceContext());
+	}
+
 	private void _testLock(Consumer<Long> consumer) {
 		try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
 				CompanyConstants.SYSTEM)) {
