@@ -216,17 +216,16 @@ public class CompanyThreadLocal {
 				safeCloseables.add(
 					_companyId.setWithSafeCloseable(CompanyConstants.SYSTEM));
 			}
+		}
 
-			for (CompanyCentralizedThreadLocal<?>
-					companyCentralizedThreadLocal :
-						CompanyCentralizedThreadLocal.
-							getCompanyCentralizedThreadLocals()) {
+		for (CompanyCentralizedThreadLocal<?> companyCentralizedThreadLocal :
+				CompanyCentralizedThreadLocal.
+					getCompanyCentralizedThreadLocals()) {
 
-				safeCloseables.add(
-					companyCentralizedThreadLocal.setWithSafeCloseable(null));
+			safeCloseables.add(
+				companyCentralizedThreadLocal.setWithSafeCloseable(null));
 
-				companyCentralizedThreadLocal.remove();
-			}
+			companyCentralizedThreadLocal.remove();
 		}
 
 		safeCloseables.add(
