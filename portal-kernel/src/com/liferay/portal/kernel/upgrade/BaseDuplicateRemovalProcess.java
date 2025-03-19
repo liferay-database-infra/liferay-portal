@@ -81,9 +81,9 @@ public class BaseDuplicateRemovalProcess extends UpgradeProcess {
 		String sql = sb.toString();
 
 		try (Connection connection = DataAccess.getConnection();
-			 PreparedStatement preparedStatement = connection.prepareStatement(
-				 sql);
-			 ResultSet resultSet = preparedStatement.executeQuery()) {
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				sql);
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			ResultSetMetaData metaData = resultSet.getMetaData();
 
@@ -241,7 +241,7 @@ public class BaseDuplicateRemovalProcess extends UpgradeProcess {
 				int counter = 0;
 
 				for (Map.Entry<String, String> querySet :
-					duplicate.entrySet()) {
+						duplicate.entrySet()) {
 
 					sb.append(querySet.getKey());
 

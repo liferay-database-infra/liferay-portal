@@ -104,16 +104,16 @@ public class DefaultDuplicateRemovalProcessTest {
 			new DefaultDuplicateRemovalProcess(
 				"TestTable",
 				"uniqueIndexColumn1, uniqueIndexColumn2, uniqueIndexColumn3, " +
-				"uniqueIndexColumn4");
+					"uniqueIndexColumn4");
 
 		upgradeProcess.upgrade();
 
 		_assertDuplicates(true);
 
 		try (Connection connection = DataAccess.getConnection();
-			 PreparedStatement preparedStatement = connection.prepareStatement(
-				 "SELECT primaryKeyColumn FROM TestTable;");
-			 ResultSet resultSet = preparedStatement.executeQuery()) {
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				"SELECT primaryKeyColumn FROM TestTable;");
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			Assert.assertTrue(resultSet.next());
 
@@ -131,7 +131,7 @@ public class DefaultDuplicateRemovalProcessTest {
 			new DefaultDuplicateRemovalProcess(
 				"TestTable",
 				"uniqueIndexColumn1, uniqueIndexColumn2, uniqueIndexColumn3, " +
-				"uniqueIndexColumn4",
+					"uniqueIndexColumn4",
 				"primaryKeyColumn", "desc");
 
 		upgradeProcess.upgrade();
@@ -139,9 +139,9 @@ public class DefaultDuplicateRemovalProcessTest {
 		_assertDuplicates(true);
 
 		try (Connection connection = DataAccess.getConnection();
-			 PreparedStatement preparedStatement = connection.prepareStatement(
-				 "SELECT primaryKeyColumn FROM TestTable;");
-			 ResultSet resultSet = preparedStatement.executeQuery()) {
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				"SELECT primaryKeyColumn FROM TestTable;");
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			Assert.assertTrue(resultSet.next());
 
@@ -159,10 +159,10 @@ public class DefaultDuplicateRemovalProcessTest {
 			_companyLocalService.forEachCompany(
 				company -> {
 					try (Connection connection = DataAccess.getConnection();
-						 PreparedStatement preparedStatement =
-							 connection.prepareStatement(countSQL);
-						 ResultSet resultSet =
-							 preparedStatement.executeQuery()) {
+						PreparedStatement preparedStatement =
+							connection.prepareStatement(countSQL);
+						ResultSet resultSet =
+							preparedStatement.executeQuery()) {
 
 						Assert.assertFalse(resultSet.next());
 					}
@@ -172,10 +172,10 @@ public class DefaultDuplicateRemovalProcessTest {
 			_companyLocalService.forEachCompany(
 				company -> {
 					try (Connection connection = DataAccess.getConnection();
-						 PreparedStatement preparedStatement =
-							 connection.prepareStatement(countSQL);
-						 ResultSet resultSet =
-							 preparedStatement.executeQuery()) {
+						PreparedStatement preparedStatement =
+							connection.prepareStatement(countSQL);
+						ResultSet resultSet =
+							preparedStatement.executeQuery()) {
 
 						Assert.assertTrue(resultSet.next());
 
