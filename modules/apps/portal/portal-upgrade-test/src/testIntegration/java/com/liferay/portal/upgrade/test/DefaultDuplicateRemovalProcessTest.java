@@ -23,8 +23,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -49,9 +51,19 @@ public class DefaultDuplicateRemovalProcessTest {
 		_primaryKey = RandomTestUtil.randomLong(9000, 10000);
 
 		_minKey = RandomTestUtil.randomLong(10, 10);
+	}
 
+	@After
+	public static void tearDown() throws Exception {
+		_companyLocalService.forEachCompany(
+			company -> _db.runSQL("drop table TestTable"));
+	}
+
+	@Before
+	public void setUp() throws Exception {
 		_companyLocalService.forEachCompany(
 			company -> {
+
 				_db.runSQL(
 					StringBundler.concat(
 						"create table TestTable (mvccVersion LONG default 0 ",
@@ -63,15 +75,21 @@ public class DefaultDuplicateRemovalProcessTest {
 				_db.runSQL(
 					StringBundler.concat(
 						"insert into TestTable values (0, '",
-						RandomTestUtil.randomString(10), "', ",
-						RandomTestUtil.randomLong(1, 8999),
+						RandomTestUtil.randomString(10), "', ", _minKey,
 						", 1, 2, 3, 4, 1)"));
 
 				_db.runSQL(
 					StringBundler.concat(
 						"insert into TestTable values (0, '",
 						RandomTestUtil.randomString(10), "', ",
-						RandomTestUtil.randomLong(1, 8999),
+						RandomTestUtil.randomLong(10, 8999),
+						", 1, 2, 3, 4, 1)"));
+
+				_db.runSQL(
+					StringBundler.concat(
+						"insert into TestTable values (0, '",
+						RandomTestUtil.randomString(10), "', ",
+						RandomTestUtil.randomLong(10, 8999),
 						", 1, 2, 3, 4, 1)"));
 
 				_db.runSQL(
@@ -79,19 +97,8 @@ public class DefaultDuplicateRemovalProcessTest {
 						"insert into TestTable values (0, '",
 						RandomTestUtil.randomString(10), "', ", _primaryKey,
 						", 1, 2, 3, 4, 1)"));
-
-				_db.runSQL(
-					StringBundler.concat(
-						"insert into TestTable values (0, '",
-						RandomTestUtil.randomString(10), "', ", _minKey,
-						", 1, 2, 3, 4, 1)"));
 			});
-	}
 
-	@AfterClass
-	public static void tearDownClass() throws Exception {
-		_companyLocalService.forEachCompany(
-			company -> _db.runSQL("drop table TestTable"));
 	}
 
 	@Test
@@ -112,7 +119,7 @@ public class DefaultDuplicateRemovalProcessTest {
 
 		try (Connection connection = DataAccess.getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				"SELECT primaryKeyColumn FROM TestTable;");
+				"SELECT primaryKeyColumn FROM TestTable");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			Assert.assertTrue(resultSet.next());
@@ -140,7 +147,7 @@ public class DefaultDuplicateRemovalProcessTest {
 
 		try (Connection connection = DataAccess.getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				"SELECT primaryKeyColumn FROM TestTable;");
+				"SELECT primaryKeyColumn FROM TestTable");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			Assert.assertTrue(resultSet.next());
