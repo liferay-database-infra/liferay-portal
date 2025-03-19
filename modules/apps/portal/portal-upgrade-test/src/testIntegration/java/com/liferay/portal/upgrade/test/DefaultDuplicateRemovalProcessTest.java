@@ -24,7 +24,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -53,17 +52,10 @@ public class DefaultDuplicateRemovalProcessTest {
 		_minKey = RandomTestUtil.randomLong(10, 10);
 	}
 
-	@After
-	public static void tearDown() throws Exception {
-		_companyLocalService.forEachCompany(
-			company -> _db.runSQL("drop table TestTable"));
-	}
-
 	@Before
 	public void setUp() throws Exception {
 		_companyLocalService.forEachCompany(
 			company -> {
-
 				_db.runSQL(
 					StringBundler.concat(
 						"create table TestTable (mvccVersion LONG default 0 ",
@@ -98,7 +90,12 @@ public class DefaultDuplicateRemovalProcessTest {
 						RandomTestUtil.randomString(10), "', ", _primaryKey,
 						", 1, 2, 3, 4, 1)"));
 			});
+	}
 
+	@After
+	public void tearDown() throws Exception {
+		_companyLocalService.forEachCompany(
+			company -> _db.runSQL("drop table TestTable"));
 	}
 
 	@Test

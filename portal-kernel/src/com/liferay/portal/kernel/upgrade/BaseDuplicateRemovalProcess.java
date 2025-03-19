@@ -198,7 +198,6 @@ public class BaseDuplicateRemovalProcess extends UpgradeProcess {
 				);
 
 				ordeByClause.append(sortOrder);
-
 			}
 
 			return ordeByClause.toString();
