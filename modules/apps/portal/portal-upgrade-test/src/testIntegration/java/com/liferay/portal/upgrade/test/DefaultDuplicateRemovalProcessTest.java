@@ -14,6 +14,8 @@ import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeException;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.upgrade.DefaultDuplicateRemovalProcess;
@@ -67,12 +69,6 @@ public class DefaultDuplicateRemovalProcessTest {
 				_db.runSQL(
 					StringBundler.concat(
 						"insert into TestTable values (0, '",
-						RandomTestUtil.randomString(10), "', ", _minKey,
-						", 1, 2, 3, 4, 1)"));
-
-				_db.runSQL(
-					StringBundler.concat(
-						"insert into TestTable values (0, '",
 						RandomTestUtil.randomString(10), "', ",
 						RandomTestUtil.randomLong(10, 8999),
 						", 1, 2, 3, 4, 1)"));
@@ -110,7 +106,12 @@ public class DefaultDuplicateRemovalProcessTest {
 				"uniqueIndexColumn1, uniqueIndexColumn2, uniqueIndexColumn3, " +
 					"uniqueIndexColumn4");
 
-		upgradeProcess.upgrade();
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.kernel.upgrade.BaseDuplicateRemovalProcess",
+				LoggerTestUtil.OFF)) {
+
+			upgradeProcess.upgrade();
+		}
 
 		_assertDuplicates(true);
 
@@ -138,7 +139,12 @@ public class DefaultDuplicateRemovalProcessTest {
 					"uniqueIndexColumn4",
 				"primaryKeyColumn", "desc");
 
-		upgradeProcess.upgrade();
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.kernel.upgrade.BaseDuplicateRemovalProcess",
+				LoggerTestUtil.OFF)) {
+
+			upgradeProcess.upgrade();
+		}
 
 		_assertDuplicates(true);
 
