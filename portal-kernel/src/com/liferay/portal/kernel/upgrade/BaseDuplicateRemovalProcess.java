@@ -76,8 +76,6 @@ public class BaseDuplicateRemovalProcess extends UpgradeProcess {
 			sb.append(_orderByClause);
 		}
 
-		sb.append(";");
-
 		String sql = sb.toString();
 
 		try (Connection connection = DataAccess.getConnection();
@@ -135,7 +133,7 @@ public class BaseDuplicateRemovalProcess extends UpgradeProcess {
 		sb.append(_tableName);
 		sb.append(" GROUP BY ");
 		sb.append(_columns);
-		sb.append(" HAVING COUNT(*) > 1;");
+		sb.append(" HAVING COUNT(*) > 1");
 
 		String sql = sb.toString();
 
@@ -200,6 +198,7 @@ public class BaseDuplicateRemovalProcess extends UpgradeProcess {
 				);
 
 				ordeByClause.append(sortOrder);
+
 			}
 
 			return ordeByClause.toString();
@@ -260,8 +259,6 @@ public class BaseDuplicateRemovalProcess extends UpgradeProcess {
 
 					counter++;
 				}
-
-				sb.append(";");
 
 				String sql = sb.toString();
 
