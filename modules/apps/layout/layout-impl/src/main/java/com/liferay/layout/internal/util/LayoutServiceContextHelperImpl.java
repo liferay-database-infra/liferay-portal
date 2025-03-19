@@ -6,6 +6,7 @@
 package com.liferay.layout.internal.util;
 
 import com.liferay.layout.util.LayoutServiceContextHelper;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -146,27 +147,23 @@ public class LayoutServiceContextHelperImpl
 				ServletContextPool.get(_portal.getServletContextName())
 			).build();
 
-			_originalCompanyId = CompanyThreadLocal.getCompanyId();
 			_originalPermissionChecker =
 				PermissionThreadLocal.getPermissionChecker();
-			_originalName = PrincipalThreadLocal.getName();
 
-			_originalServiceContext =
+			ServiceContext serviceContext =
 				ServiceContextThreadLocal.getServiceContext();
 
-			if (_originalServiceContext == null) {
+			if (serviceContext == null) {
 				_httpServletRequest = _createMockHttpServletRequest();
 				_httpServletResponse = new DummyHttpServletResponse();
 				_originalHttpServletRequest = null;
 			}
 			else {
-				ThemeDisplay themeDisplay =
-					_originalServiceContext.getThemeDisplay();
+				ThemeDisplay themeDisplay = serviceContext.getThemeDisplay();
 
-				if (_originalServiceContext.getRequest() != null) {
-					_httpServletRequest = _originalServiceContext.getRequest();
-					_originalHttpServletRequest =
-						_originalServiceContext.getRequest();
+				if (serviceContext.getRequest() != null) {
+					_httpServletRequest = serviceContext.getRequest();
+					_originalHttpServletRequest = serviceContext.getRequest();
 				}
 				else if ((themeDisplay != null) &&
 						 (themeDisplay.getRequest() != null)) {
@@ -179,9 +176,8 @@ public class LayoutServiceContextHelperImpl
 					_originalHttpServletRequest = null;
 				}
 
-				if (_originalServiceContext.getResponse() != null) {
-					_httpServletResponse =
-						_originalServiceContext.getResponse();
+				if (serviceContext.getResponse() != null) {
+					_httpServletResponse = serviceContext.getResponse();
 				}
 				else if ((themeDisplay != null) &&
 						 (themeDisplay.getResponse() != null)) {
@@ -235,7 +231,7 @@ public class LayoutServiceContextHelperImpl
 			_originalHttpServletRequestAttributesMap =
 				_setHttpServletRequestAttributes(_permissionChecker, _user);
 
-			_setCompanyServiceContext();
+			_safeCloseable = _setCompanyServiceContext();
 		}
 
 		public ServiceContextTemporarySwapper(Company company, User user)
@@ -246,12 +242,9 @@ public class LayoutServiceContextHelperImpl
 
 		@Override
 		public void close() {
-			CompanyThreadLocal.setCompanyId(_originalCompanyId);
+			_safeCloseable.close();
 			PermissionThreadLocal.setPermissionChecker(
 				_originalPermissionChecker);
-			PrincipalThreadLocal.setName(_originalName, false);
-			ServiceContextThreadLocal.pushServiceContext(
-				_originalServiceContext);
 
 			if (_originalHttpServletRequest == null) {
 				return;
@@ -440,8 +433,12 @@ public class LayoutServiceContextHelperImpl
 			}
 		}
 
-		private void _setCompanyServiceContext() throws PortalException {
-			CompanyThreadLocal.setCompanyId(_company.getCompanyId());
+		private SafeCloseable _setCompanyServiceContext()
+			throws PortalException {
+
+			SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					_company.getCompanyId());
 
 			PermissionThreadLocal.setPermissionChecker(_permissionChecker);
 
@@ -456,6 +453,8 @@ public class LayoutServiceContextHelperImpl
 			serviceContext.setUserId(_user.getUserId());
 
 			ServiceContextThreadLocal.pushServiceContext(serviceContext);
+
+			return safeCloseable;
 		}
 
 		private Map<String, Object> _setHttpServletRequestAttributes(
@@ -545,14 +544,12 @@ public class LayoutServiceContextHelperImpl
 				ProxyFactory.newDummyInstance(HttpSession.class));
 
 		private final Layout _layout;
-		private final long _originalCompanyId;
 		private final HttpServletRequest _originalHttpServletRequest;
 		private final Map<String, Object>
 			_originalHttpServletRequestAttributesMap;
-		private final String _originalName;
 		private final PermissionChecker _originalPermissionChecker;
-		private final ServiceContext _originalServiceContext;
 		private final PermissionChecker _permissionChecker;
+		private final SafeCloseable _safeCloseable;
 		private final User _user;
 
 	}
