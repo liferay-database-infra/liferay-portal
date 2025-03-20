@@ -165,8 +165,7 @@ public class DefaultDuplicateRemovalProcessTest {
 	private void _assertDuplicates(boolean removed) throws SQLException {
 		String countSQL = StringBundler.concat(
 			"SELECT COUNT(*) FROM TestTable GROUP BY column1, ",
-			"column2, column3, column4 ",
-			"HAVING COUNT(*) > 1");
+			"column2, column3, column4 HAVING COUNT(*) > 1");
 
 		if (removed) {
 			_companyLocalService.forEachCompany(
