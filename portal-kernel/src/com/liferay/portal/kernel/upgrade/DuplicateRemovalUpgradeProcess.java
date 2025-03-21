@@ -46,13 +46,19 @@ public class DuplicateRemovalUpgradeProcess extends UpgradeProcess {
 	}
 
 	protected List<Map<String, String>> getDuplicatesSQL(
-		String[] duplicatedColumnValues) {
+			String[] duplicatedColumnValues)
+		throws SQLException {
 
 		List<Map<String, String>> queryResult = new ArrayList<>();
 
 		StringBundler sb = new StringBundler();
 
-		sb.append("select * from ");
+		String[] primaryKeyColumns = getPrimaryKeyColumnNames(
+			connection, _tableName);
+
+		sb.append("select ");
+		sb.append(String.join(", ", primaryKeyColumns));
+		sb.append(" from ");
 		sb.append(_tableName);
 		sb.append(" where ");
 
@@ -95,8 +101,10 @@ public class DuplicateRemovalUpgradeProcess extends UpgradeProcess {
 			while (resultSet.next()) {
 				Map<String, String> queryMap = new LinkedHashMap<>();
 
-				for (String columnName : columnNames) {
-					queryMap.put(columnName, resultSet.getString(columnName));
+				for (String primaryKeyColumnName : primaryKeyColumns) {
+					queryMap.put(
+						primaryKeyColumnName,
+						resultSet.getString(primaryKeyColumnName));
 				}
 
 				queryResult.add(queryMap);
