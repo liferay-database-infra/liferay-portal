@@ -189,7 +189,9 @@ public class DBUpgrader {
 			result = "Failed";
 		}
 		finally {
-			StartupHelperUtil.setUpgrading(false);
+			if (StartupHelperUtil.isUpgrading()) {
+				StartupHelperUtil.setUpgrading(false);
+			}
 
 			System.out.println(
 				StringBundler.concat(
@@ -239,6 +241,8 @@ public class DBUpgrader {
 
 		PortalCacheHelperUtil.clearPortalCaches(
 			PortalCacheManagerNames.MULTI_VM);
+
+		StartupHelperUtil.setUpgrading(false);
 
 		_registerModuleServiceLifecycle(
 			moduleServiceLifecyclePortletsInitialized);
