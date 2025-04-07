@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.security.auth.CompanyInheritableThreadLocalCallable;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.upgrade.recorder.UpgradeSQLRecorder;
 import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -284,6 +285,32 @@ public abstract class BaseDBProcess implements DBProcess {
 				newTableName));
 	}
 
+	protected void closeConnections(Long companyId) {
+		Map<Thread, Connection> connectionMap = companyConnectionMap.get(
+			companyId);
+
+		if (connectionMap == null) {
+			return;
+		}
+
+		Collection<Connection> connections = connectionMap.values();
+
+		try {
+			Iterator<Connection> iterator = connections.iterator();
+
+			while (iterator.hasNext()) {
+				Connection connection = iterator.next();
+
+				iterator.remove();
+
+				connection.close();
+			}
+		}
+		catch (SQLException sqlException) {
+			_log.error(sqlException);
+		}
+	}
+
 	/**
 	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link #hasTable(String)}
 	 */
@@ -493,6 +520,8 @@ public abstract class BaseDBProcess implements DBProcess {
 		db.removePrimaryKey(connection, tableName);
 	}
 
+	protected final Map<Long, Map<Thread, Connection>> companyConnectionMap =
+		new ConcurrentHashMap<>();
 	protected Connection connection;
 
 	private PreparedStatement _getConcurrentPreparedStatement(
@@ -688,6 +717,9 @@ public abstract class BaseDBProcess implements DBProcess {
 		}
 	}
 
+	private static final int _MAXIMUM_POOL_SIZE = GetterUtil.getInteger(
+		PropsUtil.get("jdbc.default.maximumPoolSize"), 180);
+
 	private static final Log _log = LogFactoryUtil.getLog(BaseDBProcess.class);
 
 	private class ConnectionThreadProxyInvocationHandler
@@ -697,32 +729,56 @@ public abstract class BaseDBProcess implements DBProcess {
 		public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
 
+			int totalConnections = 0;
+
+			for (Map<Thread, Connection> connectionMap :
+					companyConnectionMap.values()) {
+
+				totalConnections += connectionMap.size();
+			}
+
+			if (totalConnections >= (_MAXIMUM_POOL_SIZE * 0.8)) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"Number of open connections (", totalConnections,
+							") is near the connection pool limit (",
+							_MAXIMUM_POOL_SIZE, "). Consider increasing ",
+							"\"jdbc.default.maximumPoolSize\" to improve ",
+							"performance."));
+				}
+			}
+
 			String methodName = method.getName();
 
-			if (methodName.equals("close")) {
-				Collection<Connection> connections = _connectionMap.values();
+			if (!methodName.equals("close") &&
+				(totalConnections >= _MAXIMUM_POOL_SIZE)) {
 
-				Iterator<Connection> iterator = connections.iterator();
-
-				while (iterator.hasNext()) {
-					Connection connection = iterator.next();
-
-					iterator.remove();
-
-					method.invoke(connection, args);
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Maximum connections reached, waiting briefly before " +
+							"retrying...");
 				}
+
+				Thread.sleep(100);
+			}
+
+			if (methodName.equals("close")) {
+				closeConnections(CompanyThreadLocal.getCompanyId());
 
 				return null;
 			}
 
+			Map<Thread, Connection> connectionMap =
+				companyConnectionMap.computeIfAbsent(
+					CompanyThreadLocal.getCompanyId(),
+					key -> new ConcurrentHashMap<>());
+
 			return method.invoke(
-				_connectionMap.computeIfAbsent(
+				connectionMap.computeIfAbsent(
 					Thread.currentThread(), thread -> _getConnection()),
 				args);
 		}
-
-		private final Map<Thread, Connection> _connectionMap =
-			new ConcurrentHashMap<>();
 
 	}
 

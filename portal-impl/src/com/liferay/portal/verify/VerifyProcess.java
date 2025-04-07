@@ -25,6 +25,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,11 +50,15 @@ public abstract class VerifyProcess extends BaseDBProcess {
 	public void verify() throws VerifyException {
 		long start = System.currentTimeMillis();
 
+		AtomicReference<Long> companyIdReference = new AtomicReference<>();
+
 		try (Connection connection = getConnection()) {
 			this.connection = connection;
 
 			process(
 				companyId -> {
+					companyIdReference.set(companyId);
+
 					if (_log.isInfoEnabled()) {
 						String info =
 							"Verifying " + ClassUtil.getClassName(this);
@@ -66,6 +71,8 @@ public abstract class VerifyProcess extends BaseDBProcess {
 					}
 
 					doVerify();
+
+					closeConnections(companyId);
 				});
 		}
 		catch (Exception exception) {
@@ -73,6 +80,12 @@ public abstract class VerifyProcess extends BaseDBProcess {
 		}
 		finally {
 			this.connection = null;
+
+			Long companyId = companyIdReference.get();
+
+			if (companyId != null) {
+				closeConnections(companyId);
+			}
 
 			if (_log.isInfoEnabled()) {
 				_log.info(

@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Brian Wing Shun Chan
@@ -97,6 +98,8 @@ public abstract class UpgradeProcess
 			(_upgradeInfo == null) ? ClassUtil.getClassName(this) :
 				_upgradeInfo;
 
+		AtomicReference<Long> companyIdReference = new AtomicReference<>();
+
 		try (Connection connection = getConnection()) {
 			this.connection = connection;
 
@@ -106,6 +109,8 @@ public abstract class UpgradeProcess
 
 			process(
 				companyId -> {
+					companyIdReference.set(companyId);
+
 					NotificationThreadLocal.setEnabled(false);
 					WorkflowThreadLocal.setEnabled(false);
 
@@ -120,6 +125,8 @@ public abstract class UpgradeProcess
 					}
 
 					doUpgrade();
+
+					closeConnections(companyId);
 				});
 		}
 		catch (Throwable throwable) {
@@ -129,6 +136,12 @@ public abstract class UpgradeProcess
 		}
 		finally {
 			this.connection = null;
+
+			Long companyId = companyIdReference.get();
+
+			if (companyId != null) {
+				closeConnections(companyId);
+			}
 
 			NotificationThreadLocal.setEnabled(notificationEnabled);
 			WorkflowThreadLocal.setEnabled(workflowEnabled);
