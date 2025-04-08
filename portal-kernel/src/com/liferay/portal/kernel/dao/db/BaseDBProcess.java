@@ -18,10 +18,12 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.security.auth.CompanyInheritableThreadLocalCallable;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.upgrade.recorder.UpgradeSQLRecorder;
 import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.NotificationThreadLocal;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
@@ -284,6 +286,22 @@ public abstract class BaseDBProcess implements DBProcess {
 				newTableName));
 	}
 
+	protected void closeConnections(boolean closeAllConnections) {
+		if (closeAllConnections) {
+			for (Map<Thread, Connection> connectionMap :
+					_companyConnectionMap.values()) {
+
+				_closeConnectionsInMap(connectionMap);
+			}
+		}
+		else {
+			Map<Thread, Connection> connectionMap = _companyConnectionMap.get(
+				CompanyThreadLocal.getCompanyId());
+
+			_closeConnectionsInMap(connectionMap);
+		}
+	}
+
 	/**
 	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link #hasTable(String)}
 	 */
@@ -495,6 +513,29 @@ public abstract class BaseDBProcess implements DBProcess {
 
 	protected Connection connection;
 
+	private void _closeConnectionsInMap(Map<Thread, Connection> connectionMap) {
+		if (MapUtil.isEmpty(connectionMap)) {
+			return;
+		}
+
+		Collection<Connection> connections = connectionMap.values();
+
+		try {
+			Iterator<Connection> iterator = connections.iterator();
+
+			while (iterator.hasNext()) {
+				Connection connection = iterator.next();
+
+				iterator.remove();
+
+				connection.close();
+			}
+		}
+		catch (SQLException sqlException) {
+			_log.error(sqlException);
+		}
+	}
+
 	private PreparedStatement _getConcurrentPreparedStatement(
 		String updateSQL,
 		Map<Thread, PreparedStatement> preparedStatementHashMap) {
@@ -690,6 +731,9 @@ public abstract class BaseDBProcess implements DBProcess {
 
 	private static final Log _log = LogFactoryUtil.getLog(BaseDBProcess.class);
 
+	private final Map<Long, Map<Thread, Connection>> _companyConnectionMap =
+		new ConcurrentHashMap<>();
+
 	private class ConnectionThreadProxyInvocationHandler
 		implements InvocationHandler {
 
@@ -697,32 +741,62 @@ public abstract class BaseDBProcess implements DBProcess {
 		public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
 
+			int maximumPoolSize = GetterUtil.getInteger(
+				PropsUtil.get("jdbc.default.maximumPoolSize"), 180);
+
+			int totalConnections = 0;
+
+			for (Map<Thread, Connection> connectionMap :
+					_companyConnectionMap.values()) {
+
+				totalConnections += connectionMap.size();
+			}
+
+			if (totalConnections >= (maximumPoolSize * 0.8)) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"Number of open connections (", totalConnections,
+							") is near the connection pool limit (",
+							maximumPoolSize, "). Consider increasing ",
+							"\"jdbc.default.maximumPoolSize\" to improve ",
+							"performance."));
+				}
+			}
+
 			String methodName = method.getName();
 
-			if (methodName.equals("close")) {
-				Collection<Connection> connections = _connectionMap.values();
+			if (!methodName.equals("close") &&
+				(totalConnections >= maximumPoolSize)) {
 
-				Iterator<Connection> iterator = connections.iterator();
-
-				while (iterator.hasNext()) {
-					Connection connection = iterator.next();
-
-					iterator.remove();
-
-					method.invoke(connection, args);
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Maximum connections reached, waiting briefly before " +
+							"retrying...");
 				}
+
+				Thread.sleep(100);
+			}
+
+			if (methodName.equals("close") && (totalConnections > 0)) {
+				/* Closing all connections for all companies if the process
+				failed or closeConnections(false) could not be called. */
+
+				closeConnections(true);
 
 				return null;
 			}
 
+			Map<Thread, Connection> connectionMap =
+				_companyConnectionMap.computeIfAbsent(
+					CompanyThreadLocal.getCompanyId(),
+					key -> new ConcurrentHashMap<>());
+
 			return method.invoke(
-				_connectionMap.computeIfAbsent(
+				connectionMap.computeIfAbsent(
 					Thread.currentThread(), thread -> _getConnection()),
 				args);
 		}
-
-		private final Map<Thread, Connection> _connectionMap =
-			new ConcurrentHashMap<>();
 
 	}
 
