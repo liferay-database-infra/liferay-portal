@@ -520,6 +520,8 @@ public abstract class BaseDBProcess implements DBProcess {
 				iterator.remove();
 
 				connection.close();
+
+				_totalConnectionsCount.decrementAndGet();
 			}
 		}
 		catch (SQLException sqlException) {
@@ -570,7 +572,11 @@ public abstract class BaseDBProcess implements DBProcess {
 
 					try {
 						if (dataSource != null) {
-							return dataSource.getConnection();
+							Connection connection = dataSource.getConnection();
+
+							_totalConnectionsCount.incrementAndGet();
+
+							return connection;
 						}
 					}
 					finally {
@@ -579,7 +585,11 @@ public abstract class BaseDBProcess implements DBProcess {
 				}
 			}
 
-			return DataAccess.getConnection();
+			Connection connection = DataAccess.getConnection();
+
+			_totalConnectionsCount.incrementAndGet();
+
+			return connection;
 		}
 		catch (Exception exception) {
 			return ReflectionUtil.throwException(exception);
@@ -733,6 +743,9 @@ public abstract class BaseDBProcess implements DBProcess {
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(BaseDBProcess.class);
+
+	private static final AtomicInteger _totalConnectionsCount =
+		new AtomicInteger(0);
 
 	private final Map<Long, Map<Thread, Connection>> _connectionsMaps =
 		new ConcurrentHashMap<>();
