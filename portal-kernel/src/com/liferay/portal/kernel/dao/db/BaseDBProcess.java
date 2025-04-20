@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.security.auth.CompanyInheritableThreadLocalCallable;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.recorder.UpgradeSQLRecorder;
 import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -55,6 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.NamingException;
@@ -576,6 +578,8 @@ public abstract class BaseDBProcess implements DBProcess {
 
 							_totalConnectionsCount.incrementAndGet();
 
+							_setParallel();
+
 							return connection;
 						}
 					}
@@ -588,6 +592,8 @@ public abstract class BaseDBProcess implements DBProcess {
 			Connection connection = DataAccess.getConnection();
 
 			_totalConnectionsCount.incrementAndGet();
+
+			_setParallel();
 
 			return connection;
 		}
@@ -629,6 +635,34 @@ public abstract class BaseDBProcess implements DBProcess {
 		return inputStream;
 	}
 
+	private boolean _isPoolNearLimit() {
+		boolean highLoad = false;
+
+		int maximumPoolSize = GetterUtil.getInteger(
+			PropsUtil.get("jdbc.default.maximumPoolSize"), 180);
+
+		if (_totalConnectionsCount.intValue() >= (0.9 * maximumPoolSize)) {
+			highLoad = true;
+		}
+
+		if (highLoad) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					StringBundler.concat(
+						"Number of open connections (", _totalConnectionsCount,
+						") is near the connection pool limit (",
+						maximumPoolSize, "). Consider increasing ",
+						"\"jdbc.default.maximumPoolSize\" to improve ",
+						"performance. Upgrade process will continue in single ",
+						"threaded mode"));
+			}
+
+			UpgradeProcess.setParallel(false);
+		}
+
+		return highLoad;
+	}
+
 	private <T> void _processConcurrently(
 			String updateSQL, UnsafeSupplier<T, Exception> unsafeSupplier,
 			UnsafeConsumer<T, Exception> unsafeConsumer,
@@ -648,7 +682,7 @@ public abstract class BaseDBProcess implements DBProcess {
 		Runtime runtime = Runtime.getRuntime();
 
 		ExecutorService executorService = Executors.newFixedThreadPool(
-			runtime.availableProcessors());
+			_parallel.get() ? runtime.availableProcessors() : 1);
 
 		ThrowableCollector throwableCollector = new ThrowableCollector();
 
@@ -742,8 +776,17 @@ public abstract class BaseDBProcess implements DBProcess {
 		}
 	}
 
+	private void _setParallel() {
+		if (!_parallel.get()) {
+			return;
+		}
+
+		_parallel.compareAndSet(true, _isPoolNearLimit());
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(BaseDBProcess.class);
 
+	private static final AtomicBoolean _parallel = new AtomicBoolean(true);
 	private static final AtomicInteger _totalConnectionsCount =
 		new AtomicInteger(0);
 
