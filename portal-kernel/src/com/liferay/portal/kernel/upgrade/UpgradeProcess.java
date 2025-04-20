@@ -54,6 +54,14 @@ import java.util.concurrent.atomic.AtomicLong;
 public abstract class UpgradeProcess
 	extends BaseDBProcess implements UpgradeStep {
 
+	public static boolean isParallel() {
+		return _parallel;
+	}
+
+	public static void setParallel(boolean parallel) {
+		_parallel = parallel;
+	}
+
 	public UpgradeProcess() {
 	}
 
@@ -362,6 +370,7 @@ public abstract class UpgradeProcess
 
 	private static final Log _log = LogFactoryUtil.getLog(UpgradeProcess.class);
 
+	private static volatile boolean _parallel = true;
 	private static final Set<String> _portal62TableNames = new HashSet<>(
 		Arrays.asList(
 			"account_", "address", "announcementsdelivery",
