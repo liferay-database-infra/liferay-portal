@@ -1593,8 +1593,11 @@ public class DBPartitionUtil {
 			public int executeUpdate(String sql) throws SQLException {
 				String lowerCaseSQL = StringUtil.toLowerCase(sql);
 
+				Connection connection = statement.getConnection();
+
 				if (CompanyThreadLocal.getNonsystemCompanyId() !=
-						PortalInstancePool.getDefaultCompanyId()) {
+						PortalInstancePool.getDefaultCompanyIdBySQL(
+							connection)) {
 
 					int count = StringUtil.count(
 						lowerCaseSQL, _DATABASE_PARTITION_SCHEMA_NAME_PREFIX);
@@ -1610,8 +1613,6 @@ public class DBPartitionUtil {
 							"Unsupported SQL: " + sql);
 					}
 				}
-
-				Connection connection = statement.getConnection();
 
 				String[] query = sql.split(StringPool.SPACE);
 
@@ -1654,7 +1655,9 @@ public class DBPartitionUtil {
 						return returnValue;
 					}
 
-					for (long companyId : PortalInstancePool.getCompanyIds()) {
+					for (long companyId :
+							PortalInstancePool.getCompanyIdsBySQL(connection)) {
+
 						if (companyId == _defaultCompanyId) {
 							continue;
 						}
