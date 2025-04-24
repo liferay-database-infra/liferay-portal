@@ -7,6 +7,7 @@ package com.liferay.portal.workflow.kaleo.service.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.portal.kernel.test.rule.DataGuard;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowException;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.workflow.kaleo.exception.NoSuchDefinitionException;
@@ -30,6 +31,19 @@ public class KaleoDefinitionLocalServiceTest
 		KaleoDefinition kaleoDefinition = addKaleoDefinition();
 
 		Assert.assertEquals(1, kaleoDefinition.getVersion());
+	}
+
+	@Test
+	public void testAddKaleoDefinitionWithLongTitle() throws Exception {
+		KaleoDefinition kaleoDefinition = addKaleoDefinition(
+			StringUtil.randomString(), StringUtil.randomString(),
+			StringUtil.randomString(4001), StringUtil.randomString());
+
+		Assert.assertNotNull(kaleoDefinition);
+
+		deactivateKaleoDefinition(kaleoDefinition);
+
+		deleteKaleoDefinition(kaleoDefinition);
 	}
 
 	@Test

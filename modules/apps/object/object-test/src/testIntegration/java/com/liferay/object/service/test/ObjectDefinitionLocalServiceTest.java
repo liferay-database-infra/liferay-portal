@@ -620,6 +620,18 @@ public class ObjectDefinitionLocalServiceTest {
 	}
 
 	@Test
+	public void testAddCustomObjectDefinitionWithLongPluralLabel()
+		throws Exception {
+
+		ObjectDefinition objectDefinition = _addCustomObjectDefinition(
+			"Test", "Test", RandomTestUtil.randomString(4001));
+
+		Assert.assertNotNull(objectDefinition);
+
+		_objectDefinitionLocalService.deleteObjectDefinition(objectDefinition);
+	}
+
+	@Test
 	public void testAddObjectDefinition() throws Exception {
 		AssertUtils.assertFailure(
 			ObjectDefinitionModifiableException.MustBeModifiable.class,
