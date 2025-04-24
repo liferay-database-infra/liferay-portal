@@ -8,6 +8,7 @@ package com.liferay.portal.security.service.access.policy.model;
 import com.liferay.petra.sql.dsl.Column;
 import com.liferay.petra.sql.dsl.base.BaseTable;
 
+import java.sql.Clob;
 import java.sql.Types;
 
 import java.util.Date;
@@ -47,8 +48,8 @@ public class SAPEntryTable extends BaseTable<SAPEntryTable> {
 		"enabled", Boolean.class, Types.BOOLEAN, Column.FLAG_DEFAULT);
 	public final Column<SAPEntryTable, String> name = createColumn(
 		"name", String.class, Types.VARCHAR, Column.FLAG_DEFAULT);
-	public final Column<SAPEntryTable, String> title = createColumn(
-		"title", String.class, Types.VARCHAR, Column.FLAG_DEFAULT);
+	public final Column<SAPEntryTable, Clob> title = createColumn(
+		"title", Clob.class, Types.CLOB, Column.FLAG_DEFAULT);
 
 	private SAPEntryTable() {
 		super("SAPEntry", SAPEntryTable::new);

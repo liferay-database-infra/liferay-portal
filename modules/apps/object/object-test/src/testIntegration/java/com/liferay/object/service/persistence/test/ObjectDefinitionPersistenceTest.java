@@ -555,8 +555,8 @@ public class ObjectDefinitionPersistenceTest {
 			true, "label", true, "modifiable", true, "name", true,
 			"panelAppOrder", true, "panelCategoryKey", true,
 			"pkObjectFieldDBColumnName", true, "pkObjectFieldName", true,
-			"pluralLabel", true, "portlet", true, "scope", true, "storageType",
-			true, "system", true, "version", true, "status", true);
+			"portlet", true, "scope", true, "storageType", true, "system", true,
+			"version", true, "status", true);
 	}
 
 	@Test

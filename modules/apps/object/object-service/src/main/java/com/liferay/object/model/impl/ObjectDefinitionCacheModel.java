@@ -316,7 +316,9 @@ public class ObjectDefinitionCacheModel
 	}
 
 	@Override
-	public void readExternal(ObjectInput objectInput) throws IOException {
+	public void readExternal(ObjectInput objectInput)
+		throws ClassNotFoundException, IOException {
+
 		mvccVersion = objectInput.readLong();
 		uuid = objectInput.readUTF();
 		externalReferenceCode = objectInput.readUTF();
@@ -369,7 +371,7 @@ public class ObjectDefinitionCacheModel
 		panelCategoryKey = objectInput.readUTF();
 		pkObjectFieldDBColumnName = objectInput.readUTF();
 		pkObjectFieldName = objectInput.readUTF();
-		pluralLabel = objectInput.readUTF();
+		pluralLabel = (String)objectInput.readObject();
 
 		portlet = objectInput.readBoolean();
 		scope = objectInput.readUTF();
@@ -505,10 +507,10 @@ public class ObjectDefinitionCacheModel
 		}
 
 		if (pluralLabel == null) {
-			objectOutput.writeUTF("");
+			objectOutput.writeObject("");
 		}
 		else {
-			objectOutput.writeUTF(pluralLabel);
+			objectOutput.writeObject(pluralLabel);
 		}
 
 		objectOutput.writeBoolean(portlet);

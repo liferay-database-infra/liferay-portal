@@ -225,7 +225,7 @@ public class KaleoDefinitionCacheModel
 		createDate = objectInput.readLong();
 		modifiedDate = objectInput.readLong();
 		name = objectInput.readUTF();
-		title = objectInput.readUTF();
+		title = (String)objectInput.readObject();
 		description = objectInput.readUTF();
 		content = (String)objectInput.readObject();
 		scope = objectInput.readUTF();
@@ -283,10 +283,10 @@ public class KaleoDefinitionCacheModel
 		}
 
 		if (title == null) {
-			objectOutput.writeUTF("");
+			objectOutput.writeObject("");
 		}
 		else {
-			objectOutput.writeUTF(title);
+			objectOutput.writeObject(title);
 		}
 
 		if (description == null) {

@@ -8,6 +8,7 @@ package com.liferay.object.model;
 import com.liferay.petra.sql.dsl.Column;
 import com.liferay.petra.sql.dsl.base.BaseTable;
 
+import java.sql.Clob;
 import java.sql.Types;
 
 import java.util.Date;
@@ -131,9 +132,8 @@ public class ObjectDefinitionTable extends BaseTable<ObjectDefinitionTable> {
 		createColumn(
 			"pkObjectFieldName", String.class, Types.VARCHAR,
 			Column.FLAG_DEFAULT);
-	public final Column<ObjectDefinitionTable, String> pluralLabel =
-		createColumn(
-			"pluralLabel", String.class, Types.VARCHAR, Column.FLAG_DEFAULT);
+	public final Column<ObjectDefinitionTable, Clob> pluralLabel = createColumn(
+		"pluralLabel", Clob.class, Types.CLOB, Column.FLAG_DEFAULT);
 	public final Column<ObjectDefinitionTable, Boolean> portlet = createColumn(
 		"portlet", Boolean.class, Types.BOOLEAN, Column.FLAG_DEFAULT);
 	public final Column<ObjectDefinitionTable, String> scope = createColumn(

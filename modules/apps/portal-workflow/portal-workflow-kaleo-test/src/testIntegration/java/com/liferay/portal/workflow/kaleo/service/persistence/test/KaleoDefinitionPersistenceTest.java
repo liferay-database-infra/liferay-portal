@@ -367,8 +367,8 @@ public class KaleoDefinitionPersistenceTest {
 			"uuid", true, "externalReferenceCode", true, "kaleoDefinitionId",
 			true, "groupId", true, "companyId", true, "userId", true,
 			"userName", true, "createDate", true, "modifiedDate", true, "name",
-			true, "title", true, "description", true, "scope", true, "version",
-			true, "active", true);
+			true, "description", true, "scope", true, "version", true, "active",
+			true);
 	}
 
 	@Test

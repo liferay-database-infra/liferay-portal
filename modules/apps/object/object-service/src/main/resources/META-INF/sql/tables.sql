@@ -56,7 +56,7 @@ create table ObjectDefinition (
 	panelCategoryKey VARCHAR(75) null,
 	pkObjectFieldDBColumnName VARCHAR(75) null,
 	pkObjectFieldName VARCHAR(75) null,
-	pluralLabel STRING null,
+	pluralLabel TEXT null,
 	portlet BOOLEAN,
 	scope VARCHAR(75) null,
 	storageType VARCHAR(255) null,

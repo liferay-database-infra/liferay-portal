@@ -149,7 +149,9 @@ public class SAPEntryCacheModel
 	}
 
 	@Override
-	public void readExternal(ObjectInput objectInput) throws IOException {
+	public void readExternal(ObjectInput objectInput)
+		throws ClassNotFoundException, IOException {
+
 		uuid = objectInput.readUTF();
 
 		sapEntryId = objectInput.readLong();
@@ -166,7 +168,7 @@ public class SAPEntryCacheModel
 
 		enabled = objectInput.readBoolean();
 		name = objectInput.readUTF();
-		title = objectInput.readUTF();
+		title = (String)objectInput.readObject();
 	}
 
 	@Override
@@ -213,10 +215,10 @@ public class SAPEntryCacheModel
 		}
 
 		if (title == null) {
-			objectOutput.writeUTF("");
+			objectOutput.writeObject("");
 		}
 		else {
-			objectOutput.writeUTF(title);
+			objectOutput.writeObject(title);
 		}
 	}
 
