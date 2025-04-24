@@ -71,6 +71,7 @@
 		<field name="PKObjectFieldDBColumnName" type="String" />
 		<field name="PKObjectFieldName" type="String" />
 		<field localized="true" name="pluralLabel" type="String">
+			<hint-collection name="CLOB" />
 			<validator name="required" />
 		</field>
 		<field name="portlet" type="boolean" />
