@@ -225,6 +225,13 @@ public class KaleoServiceUpgradeStepRegistrator
 				WorkflowContextUpgradeProcess());
 
 		registry.register("4.2.1", "4.3.0", new KaleoLogUpgradeProcess());
+
+		registry.register(
+			"4.3.0", "4.3.1",
+			UpgradeProcessFactory.alterColumnType(
+				"KaleoDefinition", "title", "TEXT null"),
+			UpgradeProcessFactory.alterColumnType(
+				"KaleoDefinitionVersion", "title", "TEXT null"));
 	}
 
 }
