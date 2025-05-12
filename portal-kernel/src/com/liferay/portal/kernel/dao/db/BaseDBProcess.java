@@ -611,7 +611,7 @@ public abstract class BaseDBProcess implements DBProcess {
 
 		Runtime runtime = Runtime.getRuntime();
 
-		if ((companyIds.length * runtime.availableProcessors()) >
+		if (((companyIds.length - 1) * runtime.availableProcessors()) >
 				(0.9 * maximumPoolSize)) {
 
 			if (_log.isWarnEnabled()) {
