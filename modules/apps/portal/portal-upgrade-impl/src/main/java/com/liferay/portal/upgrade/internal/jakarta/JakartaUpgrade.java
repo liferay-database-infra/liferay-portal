@@ -109,7 +109,9 @@ public class JakartaUpgrade {
 			JakartaUpgradeConfiguration jakartaUpgradeConfiguration)
 		throws Exception {
 
-		if (jakartaUpgradeConfiguration.customSeparators().length == 0) {
+		if ((jakartaUpgradeConfiguration.customSeparators() == null) ||
+			(jakartaUpgradeConfiguration.customSeparators().length == 0)) {
+
 			return new char[0];
 		}
 
