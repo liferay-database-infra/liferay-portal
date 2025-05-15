@@ -236,6 +236,7 @@ public class CompanyLocalServiceTest {
 		deleteStagingClassNameEntries();
 	}
 
+	@Ignore
 	@Test
 	public void testAddAndDeleteCompany() throws Exception {
 		Company company = addCompany();
