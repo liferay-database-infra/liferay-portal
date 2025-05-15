@@ -45,8 +45,9 @@ import com.liferay.portal.util.InitUtil;
 import com.liferay.portal.util.PortalClassPathUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
+import com.liferay.portal.verify.PreUpgradeVerifyProcessSuite;
+import com.liferay.portal.verify.VerifyException;
 import com.liferay.portal.verify.VerifyProcessSuite;
-import com.liferay.portal.verify.VerifyProperties;
 import com.liferay.util.dao.orm.CustomSQLUtil;
 
 import java.sql.Connection;
@@ -198,6 +199,22 @@ public class DBUpgrader {
 		System.out.println("Exiting DBUpgrader#main(String[]).");
 	}
 
+	public static void preUpgradeVerify() {
+		PreUpgradeVerifyProcessSuite preUpgradeVerifyProcessSuite =
+			new PreUpgradeVerifyProcessSuite();
+
+		try {
+			preUpgradeVerifyProcessSuite.verify();
+		}
+		catch (VerifyException verifyException) {
+			_log.error(verifyException);
+
+			StartupHelperUtil.setUpgrading(false);
+
+			System.exit(1);
+		}
+	}
+
 	public static void startUpgradeLogAppender() {
 		_initUpgradeStopwatch();
 
@@ -254,7 +271,7 @@ public class DBUpgrader {
 			UpgradeLogContext.setContext(
 				ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
 
-			VerifyProperties.verify();
+			preUpgradeVerify();
 
 			if (FeatureFlagManagerUtil.isEnabled("LPS-157670")) {
 				checkRequiredBuildNumber(
