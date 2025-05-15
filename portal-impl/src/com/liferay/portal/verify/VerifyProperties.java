@@ -39,7 +39,7 @@ public class VerifyProperties {
 				"Stopping the server due to incorrect use of migrated portal " +
 					"properties " + keys);
 
-			System.exit(1);
+			throw new Exception();
 		}
 	}
 
