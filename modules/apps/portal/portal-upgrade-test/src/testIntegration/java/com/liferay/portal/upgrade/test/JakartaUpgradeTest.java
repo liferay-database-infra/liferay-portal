@@ -53,7 +53,8 @@ public class JakartaUpgradeTest extends BaseJakartaUpgradeTestCase {
 				StringBundler.concat(
 					"tableAndColumnNames=[ \\\n\"", COLUMN_NAME_1, "@",
 					TABLE_NAME, "\", \\\n\"", COLUMN_NAME_2, "@", TABLE_NAME,
-					"\", \\\n\"", COLUMN_NAME_3, "@", TABLE_NAME,
+					"\", \\\n\"", COLUMN_NAME_3, "@", TABLE_NAME, "\", \\\n\"",
+					COLUMN_NAME_4, "@", TABLE_NAME,
 					"\", \\\n]\ncustomSeparators=[ \\\n\"$\", \\\n]")));
 
 		_assertConfigurationFileIsDeletedAfterDeploy(_PID);
@@ -72,8 +73,8 @@ public class JakartaUpgradeTest extends BaseJakartaUpgradeTestCase {
 				StringBundler.concat(
 					"tableAndColumnNames=[ \\\n\"", COLUMN_NAME_1, "@",
 					TABLE_NAME, "\", \\\n\"", COLUMN_NAME_2, "@", TABLE_NAME,
-					"\", \\\n\"", COLUMN_NAME_3, "@", TABLE_NAME,
-					"\", \\\n]")));
+					"\", \\\n\"", COLUMN_NAME_3, "@", TABLE_NAME, "\", \\\n\"",
+					COLUMN_NAME_4, "@", TABLE_NAME, "\", \\\n]")));
 
 		_assertConfigurationFileIsDeletedAfterDeploy(_PID);
 	}
