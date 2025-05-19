@@ -58,8 +58,9 @@ public abstract class BaseJakartaUpgradeTestCase {
 					"create table ", TABLE_NAME,
 					" (mvccVersion LONG default 0 not null, uuid_ VARCHAR(75) ",
 					"not null, ", COLUMN_NAME_1, " TEXT null, ", COLUMN_NAME_2,
-					" VARCHAR(255) null, ", COLUMN_NAME_3,
-					" STRING null, primary key (mvccVersion, uuid_))")));
+					" VARCHAR(255) null, ", COLUMN_NAME_3, " STRING null, ",
+					COLUMN_NAME_4,
+					" TEXT null, primary key (mvccVersion, uuid_))")));
 	}
 
 	@After
@@ -112,6 +113,7 @@ public abstract class BaseJakartaUpgradeTestCase {
 					resultString, resultSet.getString(COLUMN_NAME_2));
 				Assert.assertEquals(
 					resultString, resultSet.getString(COLUMN_NAME_3));
+				Assert.assertNull(resultSet.getString(COLUMN_NAME_4));
 
 				Assert.assertTrue(resultSet.next());
 
@@ -122,13 +124,14 @@ public abstract class BaseJakartaUpgradeTestCase {
 				Assert.assertEquals(
 					resultString, resultSet.getString(COLUMN_NAME_2));
 				Assert.assertNull(resultSet.getString(COLUMN_NAME_3));
+				Assert.assertNull(resultSet.getString(COLUMN_NAME_4));
 
 				Assert.assertFalse(resultSet.next());
 			}
 
 			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			int logEntriesSize = 3;
+			int logEntriesSize = 4;
 
 			if (DBPartition.isPartitionEnabled()) {
 				logEntriesSize =
@@ -176,6 +179,15 @@ public abstract class BaseJakartaUpgradeTestCase {
 					logEntries.get(
 						i.getAndIncrement()
 					).toString());
+
+				_assertLogEntry(
+					StringBundler.concat(
+						"Table/column ", TABLE_NAME, "/", COLUMN_NAME_4,
+						companyIdMessage, " has not been upgraded for any ID"),
+					new HashSet<>(),
+					logEntries.get(
+						i.getAndIncrement()
+					).toString());
 			}
 		}
 	}
@@ -185,6 +197,8 @@ public abstract class BaseJakartaUpgradeTestCase {
 	protected static final String COLUMN_NAME_2 = "script2";
 
 	protected static final String COLUMN_NAME_3 = "script3";
+
+	protected static final String COLUMN_NAME_4 = "script4";
 
 	protected static final String TABLE_NAME = "BaseJakartaUpgradeProcessTest";
 

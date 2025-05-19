@@ -40,7 +40,8 @@ public class BaseJakartaUpgradeProcessTest extends BaseJakartaUpgradeTestCase {
 							return new String[][] {
 								{TABLE_NAME, COLUMN_NAME_1},
 								{TABLE_NAME, COLUMN_NAME_2},
-								{TABLE_NAME, COLUMN_NAME_3}
+								{TABLE_NAME, COLUMN_NAME_3},
+								{TABLE_NAME, COLUMN_NAME_4}
 							};
 						}
 
@@ -67,7 +68,8 @@ public class BaseJakartaUpgradeProcessTest extends BaseJakartaUpgradeTestCase {
 							return new String[][] {
 								{TABLE_NAME, COLUMN_NAME_1},
 								{TABLE_NAME, COLUMN_NAME_2},
-								{TABLE_NAME, COLUMN_NAME_3}
+								{TABLE_NAME, COLUMN_NAME_3},
+								{TABLE_NAME, COLUMN_NAME_4}
 							};
 						}
 
