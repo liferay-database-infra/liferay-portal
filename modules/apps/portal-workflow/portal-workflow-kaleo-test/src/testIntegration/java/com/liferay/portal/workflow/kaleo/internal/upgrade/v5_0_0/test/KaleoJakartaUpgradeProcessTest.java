@@ -8,6 +8,7 @@ package com.liferay.portal.workflow.kaleo.internal.upgrade.v5_0_0.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.cache.MultiVMPool;
+import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
@@ -83,6 +84,7 @@ public class KaleoJakartaUpgradeProcessTest
 	}
 
 	@Test
+	@TestInfo("LPD-52638")
 	public void testUpgrade() throws Exception {
 		KaleoAction kaleoAction = null;
 		KaleoCondition kaleoCondition = null;
