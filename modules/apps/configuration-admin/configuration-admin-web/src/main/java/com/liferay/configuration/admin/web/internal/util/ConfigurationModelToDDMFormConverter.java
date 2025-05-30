@@ -58,6 +58,10 @@ public class ConfigurationModelToDDMFormConverter {
 	public static final String NUMBER_TYPE_VALUE_VALIDATION_EXPRESSION_NAME =
 		"numberTypeValueValidation";
 
+	public static final String
+		SINGLE_CHARACTER_VALUE_VALIDATION_EXPRESSION_NAME =
+			"singleCharacterValueValidation";
+
 	public ConfigurationModelToDDMFormConverter(
 		ConfigurationModel configurationModel, Locale locale,
 		ResourceBundle resourceBundle) {
@@ -131,6 +135,10 @@ public class ConfigurationModelToDDMFormConverter {
 
 		if (type == AttributeDefinition.BOOLEAN) {
 			return FieldConstants.BOOLEAN;
+		}
+
+		if (type == AttributeDefinition.CHARACTER) {
+			return FieldConstants.CHARACTER;
 		}
 		else if (type == AttributeDefinition.DOUBLE) {
 			return FieldConstants.DOUBLE;
@@ -483,6 +491,7 @@ public class ConfigurationModelToDDMFormConverter {
 		String dataType = ddmFormField.getDataType();
 
 		String maxNumericValue = null;
+		boolean character = false;
 
 		if (dataType.equals(FieldConstants.DOUBLE)) {
 			maxNumericValue = String.valueOf(Double.MAX_VALUE);
@@ -499,33 +508,53 @@ public class ConfigurationModelToDDMFormConverter {
 		else if (dataType.equals(FieldConstants.SHORT)) {
 			maxNumericValue = String.valueOf(Short.MAX_VALUE);
 		}
+		else if (dataType.equals(FieldConstants.CHARACTER)) {
+			character = true;
+		}
 
-		if (maxNumericValue == null) {
+		if ((maxNumericValue == null) && !character) {
 			return;
 		}
 
 		DDMFormFieldValidation ddmFormFieldValidation =
 			new DDMFormFieldValidation();
 
-		LocalizedValue errorMessageLocalizedValue = new LocalizedValue();
-
-		errorMessageLocalizedValue.addString(
-			_locale,
-			LanguageUtil.format(
-				_locale, "please-enter-a-value-less-than-or-equal-to-x",
-				maxNumericValue));
-
-		ddmFormFieldValidation.setErrorMessageLocalizedValue(
-			errorMessageLocalizedValue);
-
 		DDMFormFieldValidationExpression ddmFormFieldValidationExpression =
 			new DDMFormFieldValidationExpression();
 
-		ddmFormFieldValidationExpression.setName(
-			NUMBER_TYPE_VALUE_VALIDATION_EXPRESSION_NAME);
-		ddmFormFieldValidationExpression.setValue(
-			StringBundler.concat(
-				"(", ddmFormField.getName(), "<=", maxNumericValue, ")"));
+		LocalizedValue errorMessageLocalizedValue = new LocalizedValue();
+
+		if (maxNumericValue != null) {
+			errorMessageLocalizedValue.addString(
+				_locale,
+				LanguageUtil.format(
+					_locale, "please-enter-a-value-less-than-or-equal-to-x",
+					maxNumericValue));
+
+			ddmFormFieldValidation.setErrorMessageLocalizedValue(
+				errorMessageLocalizedValue);
+
+			ddmFormFieldValidationExpression.setName(
+				NUMBER_TYPE_VALUE_VALIDATION_EXPRESSION_NAME);
+			ddmFormFieldValidationExpression.setValue(
+				StringBundler.concat(
+					"(", ddmFormField.getName(), "<=", maxNumericValue, ")"));
+		}
+		else {
+			errorMessageLocalizedValue.addString(
+				_locale,
+				LanguageUtil.get(
+					_locale, "please-enter-a-single-character-value"));
+
+			ddmFormFieldValidation.setErrorMessageLocalizedValue(
+				errorMessageLocalizedValue);
+
+			ddmFormFieldValidationExpression.setName(
+				SINGLE_CHARACTER_VALUE_VALIDATION_EXPRESSION_NAME);
+			ddmFormFieldValidationExpression.setValue(
+				StringBundler.concat(
+					"length(", ddmFormField.getName(), ") <= ", 1));
+		}
 
 		ddmFormFieldValidation.setDDMFormFieldValidationExpression(
 			ddmFormFieldValidationExpression);

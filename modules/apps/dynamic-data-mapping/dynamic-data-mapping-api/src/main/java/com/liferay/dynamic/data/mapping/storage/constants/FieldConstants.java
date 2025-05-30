@@ -37,6 +37,8 @@ public class FieldConstants {
 
 	public static final String BOOLEAN = "boolean";
 
+	public static final String CHARACTER = "character";
+
 	public static final String DATA_TYPE = "dataType";
 
 	public static final String DATE = "date";
