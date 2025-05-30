@@ -170,6 +170,14 @@ public class Configurable<T> {
 			if (resultType.isPrimitive())
 				throw new IllegalArgumentException("Unknown primitive: " + resultType);
 
+			if (resultType == Character.class) {
+				if (o.toString().length() > 1) {
+					throw new Exception("No conversion to " + resultType + " from " + actualType + " value " + o);
+				}
+
+				return o.toString().charAt(0);
+			}
+
 			if (Number.class.isAssignableFrom(resultType) && actualType == Boolean.class) {
 				Boolean b = (Boolean) o;
 				o = b ? "1" : "0";
