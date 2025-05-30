@@ -1,6 +1,6 @@
 dependencies {
 	compileInclude group: "com.microsoft.azure", name: "msal4j", version: "1.16.2"
-	compileOnly group: "com.liferay", name: "biz.aQute.bnd.annotation", version: "4.2.0.LIFERAY-PATCHED-2"
+	compileOnly group: "com.liferay", name: "biz.aQute.bnd.annotation", version: "4.2.0.LIFERAY-PATCHED-3"
 	compileOnly group: "com.liferay.portal", name: "com.liferay.portal.kernel", version: "default"
 	compileOnly group: "com.nimbusds", name: "content-type", version: "2.3"
 	compileOnly group: "com.nimbusds", name: "lang-tag", version: "1.7"

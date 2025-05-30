@@ -12,7 +12,7 @@ dependencies {
 	compileInclude group: "org.codehaus.woodstox", name: "stax2-api", version: "3.1.4"
 	compileInclude group: "org.codehaus.woodstox", name: "woodstox-core-asl", version: "4.4.1"
 	compileInclude group: "org.noggit", name: "noggit", version: "0.8"
-	compileOnly group: "com.liferay", name: "biz.aQute.bnd.annotation", version: "4.2.0.LIFERAY-PATCHED-2"
+	compileOnly group: "com.liferay", name: "biz.aQute.bnd.annotation", version: "4.2.0.LIFERAY-PATCHED-3"
 	compileOnly group: "com.liferay.portal", name: "com.liferay.portal.impl", version: "default"
 	compileOnly group: "com.liferay.portal", name: "com.liferay.portal.kernel", version: "default"
 	compileOnly group: "commons-io", name: "commons-io", version: "2.19.0"
