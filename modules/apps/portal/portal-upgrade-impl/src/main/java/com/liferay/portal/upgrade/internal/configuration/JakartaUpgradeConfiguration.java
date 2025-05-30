@@ -22,7 +22,7 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
 public interface JakartaUpgradeConfiguration {
 
 	@Meta.AD(name = "custom-separators", required = false)
-	public String[] customSeparators();
+	public char[] customSeparators();
 
 	@Meta.AD(name = "table-column-names")
 	public String[] tableAndColumnNames();

@@ -106,8 +106,7 @@ public class JakartaUpgrade {
 	}
 
 	private char[] _getCustomSeparators(
-			JakartaUpgradeConfiguration jakartaUpgradeConfiguration)
-		throws Exception {
+		JakartaUpgradeConfiguration jakartaUpgradeConfiguration) {
 
 		if ((jakartaUpgradeConfiguration.customSeparators() == null) ||
 			(jakartaUpgradeConfiguration.customSeparators().length == 0)) {
@@ -120,15 +119,8 @@ public class JakartaUpgrade {
 
 		int i = 0;
 
-		for (String separator :
-				jakartaUpgradeConfiguration.customSeparators()) {
-
-			if (separator.length() != 1) {
-				throw new Exception(
-					"All custom separators must be one single character");
-			}
-
-			separators[i++] = separator.charAt(0);
+		for (char separator : jakartaUpgradeConfiguration.customSeparators()) {
+			separators[i++] = separator;
 		}
 
 		return separators;
