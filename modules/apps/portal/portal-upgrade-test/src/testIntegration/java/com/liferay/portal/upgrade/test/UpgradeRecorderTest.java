@@ -146,9 +146,30 @@ public class UpgradeRecorderTest {
 		VerifyExceptionProcess verifyExceptionProcess =
 			new VerifyExceptionProcess();
 
-		verifyExceptionProcess.doVerify();
+		try {
+			verifyExceptionProcess.verify();
+		}
+		catch (Exception exception) {
+			_appender.start();
 
-		StartupHelperUtil.setUpgrading(false);
+			LogEvent logEvent = Log4jLogEvent.newBuilder(
+			).setLoggerName(
+				"Verify Exception Error"
+			).setLevel(
+				Level.ERROR
+			).setThrown(
+				exception
+			).setMessage(
+				new SimpleMessage(exception.getMessage())
+			).build();
+
+			_appender.append(logEvent);
+
+			_appender.stop();
+		}
+		finally {
+			StartupHelperUtil.setUpgrading(false);
+		}
 
 		Assert.assertEquals("failure", _getResult());
 	}
@@ -484,21 +505,8 @@ public class UpgradeRecorderTest {
 	private class VerifyExceptionProcess extends VerifyProcess {
 
 		@Override
-		protected void doVerify() {
-			_appender.start();
-
-			LogEvent logEvent = Log4jLogEvent.newBuilder(
-			).setLoggerName(
-				"Verify Exception Error"
-			).setLevel(
-				Level.ERROR
-			).setMessage(
-				new SimpleMessage("com.liferay.portal.verify.VerifyException")
-			).build();
-
-			_appender.append(logEvent);
-
-			_appender.stop();
+		protected void doVerify() throws Exception {
+			throw new Exception("Exception message");
 		}
 
 	}
