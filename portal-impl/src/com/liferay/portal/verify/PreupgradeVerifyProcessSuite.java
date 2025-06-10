@@ -5,6 +5,13 @@
 
 package com.liferay.portal.verify;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.StringUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author István András Dézsi
  */
@@ -12,14 +19,30 @@ public class PreupgradeVerifyProcessSuite extends PreupgradeVerifyProcess {
 
 	@Override
 	public void doVerify() throws Exception {
-		verify(new PreupgradeVerifyCompanyUsers());
-		verify(new PreupgradeVerifyDatabaseCharacterSet());
-		verify(new PreupgradeVerifyProperties());
+		_safeVerify(new PreupgradeVerifyCompanyUsers());
+		_safeVerify(new PreupgradeVerifyDatabaseCharacterSet());
+		_safeVerify(new PreupgradeVerifyProperties());
+
+		if (ListUtil.isNotEmpty(_exceptionMessages)) {
+			throw new VerifyException(
+				StringUtil.merge(_exceptionMessages, StringPool.NEW_LINE));
+		}
 	}
 
 	@Override
 	protected boolean isSkipDBPartitions() {
 		return true;
 	}
+
+	private void _safeVerify(VerifyProcess verifyProcess) {
+		try {
+			verify(verifyProcess);
+		}
+		catch (VerifyException verifyException) {
+			_exceptionMessages.add(verifyException.getMessage());
+		}
+	}
+
+	private final List<String> _exceptionMessages = new ArrayList<>();
 
 }
