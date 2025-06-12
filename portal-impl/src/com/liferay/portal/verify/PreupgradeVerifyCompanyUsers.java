@@ -29,10 +29,24 @@ public class PreupgradeVerifyCompanyUsers extends PreupgradeVerifyProcess {
 
 		CompanyLocalServiceUtil.forEachCompanyId(
 			companyId -> {
-				_verifyCompanyAdminUser(companyId);
-				_verifyCompanyGuestUser(companyId);
+				if (_companyExists(companyId)) {
+					_verifyCompanyAdminUser(companyId);
+					_verifyCompanyGuestUser(companyId);
+				}
 			},
 			PortalInstancePool.getCompanyIds());
+	}
+
+	private boolean _companyExists(long companyId) throws Exception {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				"select 1 from Company where companyId = ?")) {
+
+			preparedStatement.setLong(1, companyId);
+
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				return resultSet.next();
+			}
+		}
 	}
 
 	private void _verifyCompanyAdminUser(long companyId) throws Exception {
