@@ -45,6 +45,8 @@ public class ReleaseTable extends BaseTable<ReleaseTable> {
 		"state_", Integer.class, Types.INTEGER, Column.FLAG_DEFAULT);
 	public final Column<ReleaseTable, String> testString = createColumn(
 		"testString", String.class, Types.VARCHAR, Column.FLAG_DEFAULT);
+	public final Column<ReleaseTable, String> versionName = createColumn(
+		"versionName", String.class, Types.VARCHAR, Column.FLAG_DEFAULT);
 
 	private ReleaseTable() {
 		super("Release_", ReleaseTable::new);

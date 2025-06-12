@@ -1348,6 +1348,7 @@
 		<field name="testString" type="String">
 			<hint name="max-length">1024</hint>
 		</field>
+		<field name="versionName" type="String" />
 	</model>
 	<model name="com.liferay.portal.kernel.model.RememberMeToken">
 		<field name="mvccVersion" type="long" />

@@ -67,7 +67,7 @@ public class ReleaseCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(23);
+		StringBundler sb = new StringBundler(25);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -91,6 +91,8 @@ public class ReleaseCacheModel
 		sb.append(state);
 		sb.append(", testString=");
 		sb.append(testString);
+		sb.append(", versionName=");
+		sb.append(versionName);
 		sb.append("}");
 
 		return sb.toString();
@@ -150,6 +152,13 @@ public class ReleaseCacheModel
 			releaseImpl.setTestString(testString);
 		}
 
+		if (versionName == null) {
+			releaseImpl.setVersionName("");
+		}
+		else {
+			releaseImpl.setVersionName(versionName);
+		}
+
 		releaseImpl.resetOriginalValues();
 
 		return releaseImpl;
@@ -172,6 +181,7 @@ public class ReleaseCacheModel
 
 		state = objectInput.readInt();
 		testString = objectInput.readUTF();
+		versionName = objectInput.readUTF();
 	}
 
 	@Override
@@ -209,6 +219,13 @@ public class ReleaseCacheModel
 		else {
 			objectOutput.writeUTF(testString);
 		}
+
+		if (versionName == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(versionName);
+		}
 	}
 
 	public long mvccVersion;
@@ -222,5 +239,6 @@ public class ReleaseCacheModel
 	public boolean verified;
 	public int state;
 	public String testString;
+	public String versionName;
 
 }

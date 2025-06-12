@@ -43,6 +43,7 @@ public class ReleaseWrapper
 		attributes.put("verified", isVerified());
 		attributes.put("state", getState());
 		attributes.put("testString", getTestString());
+		attributes.put("versionName", getVersionName());
 
 		return attributes;
 	}
@@ -114,6 +115,12 @@ public class ReleaseWrapper
 
 		if (testString != null) {
 			setTestString(testString);
+		}
+
+		String versionName = (String)attributes.get("versionName");
+
+		if (versionName != null) {
+			setVersionName(versionName);
 		}
 	}
 
@@ -245,6 +252,16 @@ public class ReleaseWrapper
 	@Override
 	public boolean getVerified() {
 		return model.getVerified();
+	}
+
+	/**
+	 * Returns the version name of this release.
+	 *
+	 * @return the version name of this release
+	 */
+	@Override
+	public String getVersionName() {
+		return model.getVersionName();
 	}
 
 	/**
@@ -380,6 +397,16 @@ public class ReleaseWrapper
 	@Override
 	public void setVerified(boolean verified) {
 		model.setVerified(verified);
+	}
+
+	/**
+	 * Sets the version name of this release.
+	 *
+	 * @param versionName the version name of this release
+	 */
+	@Override
+	public void setVersionName(String versionName) {
+		model.setVersionName(versionName);
 	}
 
 	@Override

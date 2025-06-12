@@ -1180,7 +1180,8 @@ create table Release_ (
 	buildDate DATE null,
 	verified BOOLEAN,
 	state_ INTEGER,
-	testString VARCHAR(1024) null
+	testString VARCHAR(1024) null,
+	versionName VARCHAR(75) null
 );
 
 create table RememberMeToken (

@@ -62,7 +62,7 @@ public class ReleaseModelImpl
 		{"servletContextName", Types.VARCHAR}, {"schemaVersion", Types.VARCHAR},
 		{"buildNumber", Types.INTEGER}, {"buildDate", Types.TIMESTAMP},
 		{"verified", Types.BOOLEAN}, {"state_", Types.INTEGER},
-		{"testString", Types.VARCHAR}
+		{"testString", Types.VARCHAR}, {"versionName", Types.VARCHAR}
 	};
 
 	public static final Map<String, Integer> TABLE_COLUMNS_MAP =
@@ -80,10 +80,11 @@ public class ReleaseModelImpl
 		TABLE_COLUMNS_MAP.put("verified", Types.BOOLEAN);
 		TABLE_COLUMNS_MAP.put("state_", Types.INTEGER);
 		TABLE_COLUMNS_MAP.put("testString", Types.VARCHAR);
+		TABLE_COLUMNS_MAP.put("versionName", Types.VARCHAR);
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table Release_ (mvccVersion LONG default 0 not null,releaseId LONG not null primary key,createDate DATE null,modifiedDate DATE null,servletContextName VARCHAR(75) null,schemaVersion VARCHAR(75) null,buildNumber INTEGER,buildDate DATE null,verified BOOLEAN,state_ INTEGER,testString VARCHAR(1024) null)";
+		"create table Release_ (mvccVersion LONG default 0 not null,releaseId LONG not null primary key,createDate DATE null,modifiedDate DATE null,servletContextName VARCHAR(75) null,schemaVersion VARCHAR(75) null,buildNumber INTEGER,buildDate DATE null,verified BOOLEAN,state_ INTEGER,testString VARCHAR(1024) null,versionName VARCHAR(75) null)";
 
 	public static final String TABLE_SQL_DROP = "drop table Release_";
 
@@ -243,6 +244,8 @@ public class ReleaseModelImpl
 			attributeGetterFunctions.put("verified", Release::getVerified);
 			attributeGetterFunctions.put("state", Release::getState);
 			attributeGetterFunctions.put("testString", Release::getTestString);
+			attributeGetterFunctions.put(
+				"versionName", Release::getVersionName);
 
 			_attributeGetterFunctions = Collections.unmodifiableMap(
 				attributeGetterFunctions);
@@ -288,6 +291,9 @@ public class ReleaseModelImpl
 			attributeSetterBiConsumers.put(
 				"testString",
 				(BiConsumer<Release, String>)Release::setTestString);
+			attributeSetterBiConsumers.put(
+				"versionName",
+				(BiConsumer<Release, String>)Release::setVersionName);
 
 			_attributeSetterBiConsumers = Collections.unmodifiableMap(
 				(Map)attributeSetterBiConsumers);
@@ -484,6 +490,25 @@ public class ReleaseModelImpl
 		_testString = testString;
 	}
 
+	@Override
+	public String getVersionName() {
+		if (_versionName == null) {
+			return "";
+		}
+		else {
+			return _versionName;
+		}
+	}
+
+	@Override
+	public void setVersionName(String versionName) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_versionName = versionName;
+	}
+
 	public long getColumnBitmask() {
 		if (_columnBitmask > 0) {
 			return _columnBitmask;
@@ -551,6 +576,7 @@ public class ReleaseModelImpl
 		releaseImpl.setVerified(isVerified());
 		releaseImpl.setState(getState());
 		releaseImpl.setTestString(getTestString());
+		releaseImpl.setVersionName(getVersionName());
 
 		releaseImpl.resetOriginalValues();
 
@@ -582,6 +608,8 @@ public class ReleaseModelImpl
 		releaseImpl.setState(this.<Integer>getColumnOriginalValue("state_"));
 		releaseImpl.setTestString(
 			this.<String>getColumnOriginalValue("testString"));
+		releaseImpl.setVersionName(
+			this.<String>getColumnOriginalValue("versionName"));
 
 		return releaseImpl;
 	}
@@ -722,6 +750,14 @@ public class ReleaseModelImpl
 			releaseCacheModel.testString = null;
 		}
 
+		releaseCacheModel.versionName = getVersionName();
+
+		String versionName = releaseCacheModel.versionName;
+
+		if ((versionName != null) && (versionName.length() == 0)) {
+			releaseCacheModel.versionName = null;
+		}
+
 		return releaseCacheModel;
 	}
 
@@ -795,6 +831,7 @@ public class ReleaseModelImpl
 	private boolean _verified;
 	private int _state;
 	private String _testString;
+	private String _versionName;
 
 	public <T> T getColumnValue(String columnName) {
 		columnName = _attributeNames.getOrDefault(columnName, columnName);
@@ -837,6 +874,7 @@ public class ReleaseModelImpl
 		_columnOriginalValues.put("verified", _verified);
 		_columnOriginalValues.put("state_", _state);
 		_columnOriginalValues.put("testString", _testString);
+		_columnOriginalValues.put("versionName", _versionName);
 	}
 
 	private static final Map<String, String> _attributeNames;
@@ -881,6 +919,8 @@ public class ReleaseModelImpl
 		columnBitmasks.put("state_", 512L);
 
 		columnBitmasks.put("testString", 1024L);
+
+		columnBitmasks.put("versionName", 2048L);
 
 		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
 	}

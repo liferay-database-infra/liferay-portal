@@ -134,6 +134,8 @@ public class ReleasePersistenceTest {
 
 		newRelease.setTestString(RandomTestUtil.randomString());
 
+		newRelease.setVersionName(RandomTestUtil.randomString());
+
 		_releases.add(_persistence.update(newRelease));
 
 		Release existingRelease = _persistence.findByPrimaryKey(
@@ -164,6 +166,8 @@ public class ReleasePersistenceTest {
 		Assert.assertEquals(existingRelease.getState(), newRelease.getState());
 		Assert.assertEquals(
 			existingRelease.getTestString(), newRelease.getTestString());
+		Assert.assertEquals(
+			existingRelease.getVersionName(), newRelease.getVersionName());
 	}
 
 	@Test
@@ -203,7 +207,8 @@ public class ReleasePersistenceTest {
 			"Release_", "mvccVersion", true, "releaseId", true, "createDate",
 			true, "modifiedDate", true, "servletContextName", true,
 			"schemaVersion", true, "buildNumber", true, "buildDate", true,
-			"verified", true, "state", true, "testString", true);
+			"verified", true, "state", true, "testString", true, "versionName",
+			true);
 	}
 
 	@Test
@@ -489,6 +494,8 @@ public class ReleasePersistenceTest {
 		release.setState(RandomTestUtil.nextInt());
 
 		release.setTestString(RandomTestUtil.randomString());
+
+		release.setVersionName(RandomTestUtil.randomString());
 
 		_releases.add(_persistence.update(release));
 
