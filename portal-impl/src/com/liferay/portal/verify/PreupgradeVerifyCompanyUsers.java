@@ -32,7 +32,7 @@ public class PreupgradeVerifyCompanyUsers extends PreupgradeVerifyProcess {
 				_verifyCompanyAdminUser(companyId);
 				_verifyCompanyGuestUser(companyId);
 			},
-			PortalInstancePool.getCompanyIds());
+			PortalInstancePool.getCompanyIdsBySQL(connection));
 	}
 
 	private void _verifyCompanyAdminUser(long companyId) throws Exception {
