@@ -1952,6 +1952,7 @@
 		<column name="verified" type="boolean" />
 		<column name="state" type="int" />
 		<column name="testString" type="String" />
+		<column name="versionName" type="String" />
 
 		<!-- Finder methods -->
 
