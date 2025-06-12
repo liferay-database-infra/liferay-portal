@@ -50,9 +50,10 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 				StringBundler.concat(
 					"insert into Release_ (releaseId, createDate, ",
 					"modifiedDate, servletContextName, schemaVersion, ",
-					"buildNumber, buildDate, verified, testString) values (",
+					"buildNumber, buildDate, versionName, verified, ",
+					"testString, versionName) values (",
 					ReleaseConstants.DEFAULT_ID,
-					", ?, ?, ?, ?, ?, ?, ?, ?)"))) {
+					", ?, ?, ?, ?, ?, ?, ?, ?, ?)"))) {
 
 			Date date = new Date(System.currentTimeMillis());
 
@@ -72,8 +73,9 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 			preparedStatement.setDate(6, new Date(buildDate.getTime()));
 
-			preparedStatement.setBoolean(7, false);
-			preparedStatement.setString(8, ReleaseConstants.TEST_STRING);
+			preparedStatement.setString(7, ReleaseInfo.getVersionDisplayName());
+			preparedStatement.setBoolean(8, false);
+			preparedStatement.setString(9, ReleaseConstants.TEST_STRING);
 
 			preparedStatement.executeUpdate();
 
