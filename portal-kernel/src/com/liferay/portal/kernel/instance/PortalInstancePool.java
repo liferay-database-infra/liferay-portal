@@ -62,7 +62,7 @@ public class PortalInstancePool {
 	}
 
 	public static long[] getCompanyIds() {
-		if (_cacheEnabled) {
+		if (_cacheEnabled && !_portalInstances.isEmpty()) {
 			return ArrayUtil.toLongArray(_portalInstances.keySet());
 		}
 
