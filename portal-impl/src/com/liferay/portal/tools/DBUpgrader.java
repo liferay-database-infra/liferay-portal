@@ -337,6 +337,7 @@ public class DBUpgrader {
 
 			try (Connection connection = DataAccess.getConnection()) {
 				PortalUpgradeProcess.updateBuildInfo(connection);
+				PortalUpgradeProcess.updateVersionName(connection);
 			}
 
 			CustomSQLUtil.reloadCustomSQL();
