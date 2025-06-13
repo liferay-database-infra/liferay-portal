@@ -408,6 +408,7 @@ public class DBUpgrader {
 				}
 
 				PortalUpgradeProcess.updateBuildInfo(connection);
+				PortalUpgradeProcess.updateVersionName(connection);
 			}
 
 			CustomSQLUtil.reloadCustomSQL();
