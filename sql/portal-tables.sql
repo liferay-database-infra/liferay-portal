@@ -1178,6 +1178,7 @@ create table Release_ (
 	schemaVersion VARCHAR(75) null,
 	buildNumber INTEGER,
 	buildDate DATE null,
+	versionName VARCHAR(75) null,
 	verified BOOLEAN,
 	state_ INTEGER,
 	testString VARCHAR(1024) null
