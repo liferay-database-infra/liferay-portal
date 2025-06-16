@@ -91,7 +91,7 @@ public class PreupgradeVerifyFileSystemStoreWritePermissionTest
 		}
 
 		try {
-			super.testVerify();
+			testVerify();
 
 			Assert.fail();
 		}
