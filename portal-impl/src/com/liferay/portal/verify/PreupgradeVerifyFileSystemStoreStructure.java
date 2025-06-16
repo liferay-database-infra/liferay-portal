@@ -39,11 +39,9 @@ public class PreupgradeVerifyFileSystemStoreStructure
 
 		boolean advancedFileSystemStore = StringUtil.equals(
 			PropsValues.DL_STORE_IMPL, _ADVANCED_FILE_SYSTEM_STORE);
+
 		boolean fileSystemStore = StringUtil.equals(
 			PropsValues.DL_STORE_IMPL, _FILE_SYSTEM_STORE);
-
-		Set<Long> companyIdSet = SetUtil.fromArray(
-			PortalInstancePool.getCompanyIdsBySQL(connection));
 
 		Path fileSystemStoreRootDir =
 			PreupgradeFileSystemStoreVerifyUtil.getFileSystemStoreRootDir(
@@ -63,11 +61,10 @@ public class PreupgradeVerifyFileSystemStoreStructure
 					continue;
 				}
 
-				Long companyIdDirectoryNumericalFileName = 0L;
+				Long companyId = 0L;
 
 				try {
-					companyIdDirectoryNumericalFileName = Long.valueOf(
-						companyIdDirectoryFileName);
+					companyId = Long.valueOf(companyIdDirectoryFileName);
 				}
 				catch (NumberFormatException numberFormatException) {
 					_log.error(
@@ -77,8 +74,8 @@ public class PreupgradeVerifyFileSystemStoreStructure
 					throw new VerifyException(numberFormatException);
 				}
 
-				if (!Files.isDirectory(companyIdDirectory) ||
-					!companyIdSet.remove(companyIdDirectoryNumericalFileName)) {
+				if (!_companyIdSet.remove(companyId) ||
+					!Files.isDirectory(companyIdDirectory)) {
 
 					continue;
 				}
@@ -107,11 +104,33 @@ public class PreupgradeVerifyFileSystemStoreStructure
 						fileSystemStoreRootDir.toString()));
 			}
 		}
+
+		if (!_companyIdSet.isEmpty()) {
+			throw new VerifyException(
+				"No folders exists for companies: " + _companyIdSet);
+		}
 	}
 
 	@Override
 	protected boolean isSkipDBPartitions() {
 		return true;
+	}
+
+	private static Set<Long> _getCompanyIdSet() {
+		try {
+			long[] companyIds = PortalInstancePool.getCompanyIds();
+
+			if (companyIds == null) {
+				return SetUtil.fromArray(new long[0]);
+			}
+
+			return SetUtil.fromArray(companyIds);
+		}
+		catch (Exception exception) {
+			_log.error("Unable to retrieve company IDs", exception);
+
+			return SetUtil.fromArray(new long[0]);
+		}
 	}
 
 	private boolean _hasAdvancedFileSystemPattern(Path companyIdDirectory) {
@@ -343,5 +362,7 @@ public class PreupgradeVerifyFileSystemStoreStructure
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		PreupgradeVerifyFileSystemStoreStructure.class);
+
+	private static final Set<Long> _companyIdSet = _getCompanyIdSet();
 
 }
