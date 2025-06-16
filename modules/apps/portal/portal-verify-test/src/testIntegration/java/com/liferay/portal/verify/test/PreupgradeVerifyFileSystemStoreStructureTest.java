@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
@@ -206,6 +207,34 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 	}
 
 	@Test
+	public void testFileSystemStoreWithMissingCompanyFolder() throws Exception {
+		String originalDLStoreImpl = ReflectionTestUtil.getAndSetFieldValue(
+			PropsValues.class, "DL_STORE_IMPL", _FILE_SYSTEM_STORE);
+
+		Long missingCompanyId = RandomTestUtil.nextLong();
+
+		try {
+			ReflectionTestUtil.setFieldValue(
+				PreupgradeVerifyFileSystemStoreStructure.class, "_companyIdSet",
+				SetUtil.fromArray(new Long[] {missingCompanyId}));
+
+			testVerify();
+
+			Assert.fail();
+		}
+		catch (Exception exception) {
+			String expectedMessage =
+				"No folders exists for companies: [" + missingCompanyId + "]";
+
+			Assert.assertEquals(expectedMessage, exception.getMessage());
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(
+				PropsValues.class, "DL_STORE_IMPL", originalDLStoreImpl);
+		}
+	}
+
+	@Test
 	public void testFileSystemStoreWithMissingValidVersionFiles()
 		throws Exception {
 
@@ -265,7 +294,11 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 				Files.createFile(filePath);
 			}
 
-			super.testVerify();
+			ReflectionTestUtil.setFieldValue(
+				PreupgradeVerifyFileSystemStoreStructure.class, "_companyIdSet",
+				SetUtil.fromArray(new Long[] {_companyId}));
+
+			testVerify();
 
 			_validateLogEntries(logCapture, expectedMessages.length);
 
