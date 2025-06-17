@@ -1620,6 +1620,10 @@ public class DBPartitionUtil {
 					(StringUtil.startsWith(
 						lowerCaseSQL, "create unique index") &&
 					 _isSkip(connection, query[5])) ||
+					(StringUtil.startsWith(lowerCaseSQL, "delete") &&
+					 _isSkip(connection, query[1])) ||
+					(StringUtil.startsWith(lowerCaseSQL, "delete from") &&
+					 _isSkip(connection, query[2])) ||
 					(StringUtil.startsWith(lowerCaseSQL, "insert into") &&
 					 _isSkip(connection, query[2])) ||
 					(StringUtil.startsWith(lowerCaseSQL, "update") &&
