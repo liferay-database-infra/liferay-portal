@@ -85,18 +85,20 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 				"rootDir", _advancedFileSystemStoreRootDir
 			).build());
 
-		_fileSystemStoreRootDir =
-			_props.get(PropsKeys.LIFERAY_HOME) + "/test/store/file_system";
+		_basicFileSystemStoreRootDir =
+			_props.get(PropsKeys.LIFERAY_HOME) +
+				"/test/store/basic_file_system";
 
-		_fileSystemStoreConfiguration = _configurationAdmin.getConfiguration(
-			"com.liferay.portal.store.file.system.configuration." +
-				"FileSystemStoreConfiguration",
-			StringPool.QUESTION);
+		_basicFileSystemStoreConfiguration =
+			_configurationAdmin.getConfiguration(
+				"com.liferay.portal.store.file.system.configuration." +
+					"FileSystemStoreConfiguration",
+				StringPool.QUESTION);
 
 		ConfigurationTestUtil.saveConfiguration(
-			_fileSystemStoreConfiguration,
+			_basicFileSystemStoreConfiguration,
 			HashMapDictionaryBuilder.<String, Object>put(
-				"rootDir", _fileSystemStoreRootDir
+				"rootDir", _basicFileSystemStoreRootDir
 			).build());
 
 		_originalCacheEnabled = ReflectionTestUtil.getAndSetFieldValue(
@@ -112,10 +114,10 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 		ConfigurationTestUtil.deleteConfiguration(
 			_advancedFileSystemStoreConfiguration);
 		ConfigurationTestUtil.deleteConfiguration(
-			_fileSystemStoreConfiguration);
+			_basicFileSystemStoreConfiguration);
 
 		FileUtil.deltree(_advancedFileSystemStoreRootDir);
-		FileUtil.deltree(_fileSystemStoreRootDir);
+		FileUtil.deltree(_basicFileSystemStoreRootDir);
 
 		ReflectionTestUtil.setFieldValue(
 			PortalInstancePool.class, "_cacheEnabled", _originalCacheEnabled);
@@ -134,7 +136,8 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 						String.valueOf(companyId)));
 				Files.createDirectories(
 					Paths.get(
-						_fileSystemStoreRootDir, String.valueOf(companyId)));
+						_basicFileSystemStoreRootDir,
+						String.valueOf(companyId)));
 			},
 			PortalInstancePool.getCompanyIds());
 	}
@@ -142,7 +145,7 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 	@After
 	public void tearDown() {
 		FileUtil.deltree(_advancedFileSystemStoreRootDir);
-		FileUtil.deltree(_fileSystemStoreRootDir);
+		FileUtil.deltree(_basicFileSystemStoreRootDir);
 	}
 
 	@Test
@@ -176,11 +179,11 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 	}
 
 	@Test
-	public void testFileSystemStoreWithDirectoryContainingExtension()
+	public void testBasicFileSystemStoreWithDirectoryContainingExtension()
 		throws Exception {
 
 		Path directoryWithExtension = Paths.get(
-			_fileSystemStoreRootDir, String.valueOf(_companyId),
+			_basicFileSystemStoreRootDir, String.valueOf(_companyId),
 			String.valueOf(_repositoryId), "100.txt");
 
 		String expectedLogEntry =
@@ -188,21 +191,22 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 				"(no extensions expected): " + directoryWithExtension;
 
 		_assertVerify(
-			_FILE_SYSTEM_STORE, directoryWithExtension, null, null, 1,
+			_BASIC_FILE_SYSTEM_STORE, directoryWithExtension, null, null, 1,
 			expectedLogEntry);
 	}
 
 	@Test
-	public void testFileSystemStoreWithFileInsteadOfCompanyIdDirectory()
+	public void testBasicFileSystemStoreWithFileInsteadOfCompanyIdDirectory()
 		throws Exception {
 
-		Path fileSystemStoreRootPath = Paths.get(_fileSystemStoreRootDir);
+		Path basicFileSystemStoreRootPath = Paths.get(
+			_basicFileSystemStoreRootDir);
 
 		long companyId = PortalInstancePool.getCompanyIds()[0];
 
-		Path companyIdPath = fileSystemStoreRootPath.resolve(
+		Path companyIdPath = basicFileSystemStoreRootPath.resolve(
 			String.valueOf(companyId));
-		Path companyIdBackupPath = fileSystemStoreRootPath.resolve(
+		Path companyIdBackupPath = basicFileSystemStoreRootPath.resolve(
 			String.valueOf(companyId) + "_backup");
 
 		try {
@@ -213,7 +217,8 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 				companyIdPath + " is not a directory";
 
 			_assertVerify(
-				_FILE_SYSTEM_STORE, null, null, expectedExceptionMessage, 0);
+				_BASIC_FILE_SYSTEM_STORE, null, null, expectedExceptionMessage,
+				0);
 		}
 		finally {
 			Files.delete(companyIdPath);
@@ -222,29 +227,29 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 	}
 
 	@Test
-	public void testFileSystemStoreWithFileInsteadOfFolderIdDirectory()
+	public void testBasicFileSystemStoreWithFileInsteadOfFolderIdDirectory()
 		throws Exception {
 
 		Path companyIdPath = Paths.get(
-			_fileSystemStoreRootDir, String.valueOf(_companyId));
+			_basicFileSystemStoreRootDir, String.valueOf(_companyId));
 
 		Path invalidFilePath = companyIdPath.resolve("invalidFile.txt");
 
 		String expectedLogEntry =
-			"Found file in basic file system structure directory (only " +
-				"directories expected): " + invalidFilePath;
+			"Found file in basic file system structure directory when only " +
+				"directories are expected: " + invalidFilePath;
 
 		_assertVerify(
-			_FILE_SYSTEM_STORE, null, invalidFilePath, null, 1,
+			_BASIC_FILE_SYSTEM_STORE, null, invalidFilePath, null, 1,
 			expectedLogEntry);
 	}
 
 	@Test
-	public void testFileSystemStoreWithFileInsteadOfNumericFileEntryNameDirectory()
+	public void testBasicFileSystemStoreWithFileInsteadOfNumericFileEntryNameDirectory()
 		throws Exception {
 
 		Path folderIdPath = Paths.get(
-			_fileSystemStoreRootDir, String.valueOf(_companyId),
+			_basicFileSystemStoreRootDir, String.valueOf(_companyId),
 			String.valueOf(_repositoryId));
 
 		Path invalidFilePath = folderIdPath.resolve("invalidFile.txt");
@@ -254,29 +259,32 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 				"directories expected): " + invalidFilePath;
 
 		_assertVerify(
-			_FILE_SYSTEM_STORE, null, invalidFilePath, null, 1,
+			_BASIC_FILE_SYSTEM_STORE, null, invalidFilePath, null, 1,
 			expectedLogEntry);
 	}
 
 	@Test
-	public void testFileSystemStoreWithMissingCompanyFolder() throws Exception {
+	public void testBasicFileSystemStoreWithMissingCompanyFolder()
+		throws Exception {
+
 		Files.deleteIfExists(
-			Paths.get(_fileSystemStoreRootDir, String.valueOf(_companyId)));
+			Paths.get(
+				_basicFileSystemStoreRootDir, String.valueOf(_companyId)));
 
 		String expectedExceptionMessage = StringBundler.concat(
-			"Missing directories in ", Paths.get(_fileSystemStoreRootDir),
+			"Missing directories in ", Paths.get(_basicFileSystemStoreRootDir),
 			" for companies: [", _companyId, "]");
 
 		_assertVerify(
-			_FILE_SYSTEM_STORE, null, null, expectedExceptionMessage, 0);
+			_BASIC_FILE_SYSTEM_STORE, null, null, expectedExceptionMessage, 0);
 	}
 
 	@Test
-	public void testFileSystemStoreWithMissingValidVersionFiles()
+	public void testBasicFileSystemStoreWithMissingValidVersionFiles()
 		throws Exception {
 
 		Path numericFileEntryNamePath = Paths.get(
-			_fileSystemStoreRootDir, String.valueOf(_companyId),
+			_basicFileSystemStoreRootDir, String.valueOf(_companyId),
 			String.valueOf(_repositoryId), "100");
 
 		Path invalidVersionFile = numericFileEntryNamePath.resolve(
@@ -291,17 +299,17 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 				"basic file system structure: " + numericFileEntryNamePath;
 
 		_assertVerify(
-			_FILE_SYSTEM_STORE, null, invalidVersionFile, null, 2,
+			_BASIC_FILE_SYSTEM_STORE, null, invalidVersionFile, null, 2,
 			expectedLogEntry1, expectedLogEntry2);
 	}
 
 	@Test
-	public void testFileSystemStoreWithValidStructure() throws Exception {
+	public void testBasicFileSystemStoreWithValidStructure() throws Exception {
 		Path validDirectory = Paths.get(
-			_fileSystemStoreRootDir, String.valueOf(_companyId),
+			_basicFileSystemStoreRootDir, String.valueOf(_companyId),
 			String.valueOf(_repositoryId), "100", "1.0");
 
-		_assertVerify(_FILE_SYSTEM_STORE, validDirectory, null, null, 0);
+		_assertVerify(_BASIC_FILE_SYSTEM_STORE, validDirectory, null, null, 0);
 	}
 
 	@Override
@@ -345,23 +353,22 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 		}
 		catch (Exception exception) {
 			if (expectedExceptionMessage == null) {
-				String expectedType;
+				boolean advancedFileSystemStore = StringUtil.equals(
+					storeImpl, _ADVANCED_FILE_SYSTEM_STORE);
+
 				Path rootDirPath;
 
-				if (StringUtil.equals(storeImpl, _ADVANCED_FILE_SYSTEM_STORE)) {
-					expectedType = "an advanced file system";
+				if (advancedFileSystemStore) {
 					rootDirPath = Paths.get(_advancedFileSystemStoreRootDir);
 				}
 				else {
-					expectedType = "a file system";
-					rootDirPath = Paths.get(_fileSystemStoreRootDir);
+					rootDirPath = Paths.get(_basicFileSystemStoreRootDir);
 				}
 
 				expectedExceptionMessage = StringBundler.concat(
-					"File system store directory structure mismatch. Expected ",
-					expectedType,
-					" structure, but found an invalid structure in: ",
-					rootDirPath);
+					"File system store directory structure is an invalid ",
+					advancedFileSystemStore ? "advanced" : "basic",
+					" file system structure: ", rootDirPath);
 			}
 
 			Assert.assertEquals(
@@ -401,18 +408,18 @@ public class PreupgradeVerifyFileSystemStoreStructureTest
 	private static final String _ADVANCED_FILE_SYSTEM_STORE =
 		"com.liferay.portal.store.file.system.AdvancedFileSystemStore";
 
-	private static final String _FILE_SYSTEM_STORE =
+	private static final String _BASIC_FILE_SYSTEM_STORE =
 		"com.liferay.portal.store.file.system.FileSystemStore";
 
 	private static Configuration _advancedFileSystemStoreConfiguration;
 	private static String _advancedFileSystemStoreRootDir;
+	private static Configuration _basicFileSystemStoreConfiguration;
+	private static String _basicFileSystemStoreRootDir;
 	private static long _companyId;
 
 	@Inject
 	private static ConfigurationAdmin _configurationAdmin;
 
-	private static Configuration _fileSystemStoreConfiguration;
-	private static String _fileSystemStoreRootDir;
 	private static boolean _originalCacheEnabled;
 
 	@Inject

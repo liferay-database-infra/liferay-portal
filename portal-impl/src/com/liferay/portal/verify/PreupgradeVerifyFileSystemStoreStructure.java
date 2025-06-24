@@ -49,11 +49,11 @@ public class PreupgradeVerifyFileSystemStoreStructure
 		boolean advancedFileSystemStore = StringUtil.equals(
 			PropsValues.DL_STORE_IMPL,
 			"com.liferay.portal.store.file.system.AdvancedFileSystemStore");
-		boolean fileSystemStore = StringUtil.equals(
+		boolean basicFileSystemStore = StringUtil.equals(
 			PropsValues.DL_STORE_IMPL,
 			"com.liferay.portal.store.file.system.FileSystemStore");
 
-		if (!advancedFileSystemStore && !fileSystemStore) {
+		if (!advancedFileSystemStore && !basicFileSystemStore) {
 			return;
 		}
 
@@ -84,14 +84,16 @@ public class PreupgradeVerifyFileSystemStoreStructure
 					continue;
 				}
 
-				if (fileSystemStore && _hasBasicFileSystemStructure(path)) {
+				if (basicFileSystemStore &&
+					_hasBasicFileSystemStructure(path)) {
+
 					continue;
 				}
 
 				throw new VerifyException(
 					StringBundler.concat(
 						"File system store directory structure is an invalid ",
-						advancedFileSystemStore ? "advanced" : "",
+						advancedFileSystemStore ? "advanced" : "basic",
 						" file system structure: ",
 						fileSystemStoreRootDirPath.toString()));
 			}
@@ -195,8 +197,9 @@ public class PreupgradeVerifyFileSystemStoreStructure
 
 				if (!Files.isDirectory(folderIdPath)) {
 					_log.error(
-						"Found file in file system structure directory when " +
-							"only directories are expected: " + folderIdPath);
+						"Found file in basic file system structure directory " +
+							"when only directories are expected: " +
+								folderIdPath);
 
 					return false;
 				}
