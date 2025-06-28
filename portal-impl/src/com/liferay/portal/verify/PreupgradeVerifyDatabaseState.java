@@ -8,12 +8,16 @@ package com.liferay.portal.verify;
 import com.liferay.portal.db.DBResourceUtil;
 import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.dao.db.DBInspector;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.ReleaseConstants;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Jorge Avalos
@@ -48,13 +52,44 @@ public class PreupgradeVerifyDatabaseState extends PreupgradeVerifyProcess {
 			dbInspector.getTableNames(null));
 
 		if (!databaseTables.containsAll(serviceComponentTableNames)) {
-			Set<String> missingTables = new HashSet<>(
-				serviceComponentTableNames);
+			Set<String> missingTables = ConcurrentHashMap.newKeySet();
+
+			missingTables.addAll(serviceComponentTableNames);
 
 			missingTables.removeAll(databaseTables);
 
-			throw new VerifyException(
-				"Missing tables detected: " + new TreeSet<>(missingTables));
+			if (CompanyThreadLocal.getNonsystemCompanyId() !=
+					PortalInstancePool.getDefaultCompanyId()) {
+
+				Set<String> missingViews = new HashSet<>();
+
+				for (String missingTable : missingTables) {
+					if (dbInspector.isControlTable(missingTable)) {
+						missingTables.remove(missingTable);
+
+						if (!dbInspector.hasView(missingTable)) {
+							missingViews.add(missingTable);
+						}
+					}
+				}
+
+				if (!missingViews.isEmpty()) {
+					throw new VerifyException(
+						StringBundler.concat(
+							"Missing views detected: ",
+							new TreeSet<>(
+								missingViews
+							).toString(),
+							" in company ",
+							String.valueOf(
+								CompanyThreadLocal.getNonsystemCompanyId())));
+				}
+			}
+
+			if (!missingTables.isEmpty()) {
+				throw new VerifyException(
+					"Missing tables detected: " + new TreeSet<>(missingTables));
+			}
 		}
 
 		if (serviceComponentPortalTableNames.isEmpty()) {
