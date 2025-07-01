@@ -526,6 +526,17 @@
 			file.suffix.bat="${file.suffix.bat}"
 		/>
 
+		<loadfile
+			property="db.upgrade.client.log"
+			srcFile="${db.upgrade.client.log}"
+		>
+			<filterchain>
+				<linecontains negate="true">
+					<contains value="Adding the extensions from bundle" />
+				</linecontains>
+			</loadresource>
+		</loadfile>
+
 		<fail message="Exception thrown, failing.">
 			<condition>
 				<resourcecontains
