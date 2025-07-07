@@ -77,7 +77,6 @@ import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.randomizerbumpers.NumericStringRandomizerBumper;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DataGuard;
-import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.PropsValuesTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -216,10 +215,14 @@ public class CompanyLocalServiceTest {
 		_companyLocalService.deleteCompany(_deletedCompany);
 
 		_cleanupData();
+
+		_exportedCompany = addCompany();
 	}
 
 	@AfterClass
-	public static void tearDownClass() {
+	public static void tearDownClass() throws Exception {
+		_companyLocalService.deleteCompany(_exportedCompany);
+
 		if (_safeCloseable != null) {
 			_safeCloseable.close();
 		}
@@ -876,38 +879,36 @@ public class CompanyLocalServiceTest {
 	public void testExportCompany() throws Exception {
 		Assume.assumeTrue(_db.isSupportsDBPartition());
 
-		Company company = CompanyTestUtil.addCompany();
-
 		try {
 			Configuration configuration =
 				CompanyLocalServiceTestUtil.createFactoryConfiguration(
-					_configurationAdmin, company.getCompanyId());
+					_configurationAdmin, _exportedCompany.getCompanyId());
 
 			String pid = configuration.getPid();
 
-			_companyLocalService.exportCompany(company.getCompanyId());
+			_companyLocalService.exportCompany(_exportedCompany.getCompanyId());
 
 			Assert.assertTrue(
 				ArrayUtil.contains(
 					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
-					company.getCompanyId()));
+					_exportedCompany.getCompanyId()));
 			Assert.assertTrue(
 				_dbPartitionDB.existsPartition(
 					_connection,
 					CompanyLocalServiceTestUtil.getExportedPartitionName(
-						company.getCompanyId())));
+						_exportedCompany.getCompanyId())));
 
 			CompanyLocalServiceTestUtil.checkStandaloneDBPartitionTables(
 				_connection, _dbPartitionDB,
 				CompanyLocalServiceTestUtil.getExportedPartitionName(
-					company.getCompanyId()),
+					_exportedCompany.getCompanyId()),
 				"Company", "VirtualHost");
 
 			Collection<ServiceReference<Portlet>> serviceReferences =
 				_bundleContext.getServiceReferences(
 					Portlet.class,
-					"(com.liferay.portlet.company=" + company.getCompanyId() +
-						")");
+					"(com.liferay.portlet.company=" +
+						_exportedCompany.getCompanyId() + ")");
 
 			Assert.assertFalse(serviceReferences.isEmpty());
 
@@ -918,9 +919,7 @@ public class CompanyLocalServiceTest {
 			_db.runSQL(
 				_dbPartitionDB.getDropPartitionSQL(
 					CompanyLocalServiceTestUtil.getExportedPartitionName(
-						company.getCompanyId())));
-
-			_companyLocalService.deleteCompany(company);
+						_exportedCompany.getCompanyId())));
 		}
 	}
 
@@ -945,10 +944,8 @@ public class CompanyLocalServiceTest {
 	public void testExportCompanyWhenDBPartitionUtilFails() throws Exception {
 		Assume.assumeTrue(_db.isSupportsDBPartition());
 
-		Company company = CompanyTestUtil.addCompany();
-
-		int tablesCount = _getTablesCount(company.getCompanyId());
-		int viewsCount = _getViewsCount(company.getCompanyId());
+		int tablesCount = _getTablesCount(_exportedCompany.getCompanyId());
+		int viewsCount = _getViewsCount(_exportedCompany.getCompanyId());
 
 		try (AutoCloseable autoCloseable =
 				ReflectionTestUtil.setFieldValueWithAutoCloseable(
@@ -968,7 +965,7 @@ public class CompanyLocalServiceTest {
 							return method.invoke(_dbPartitionDB, args);
 						}))) {
 
-			_companyLocalService.exportCompany(company.getCompanyId());
+			_companyLocalService.exportCompany(_exportedCompany.getCompanyId());
 
 			Assert.fail();
 		}
@@ -976,24 +973,22 @@ public class CompanyLocalServiceTest {
 			Assert.assertTrue(
 				ArrayUtil.contains(
 					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
-					company.getCompanyId()));
+					_exportedCompany.getCompanyId()));
 			Assert.assertEquals(
-				tablesCount, _getTablesCount(company.getCompanyId()));
+				tablesCount, _getTablesCount(_exportedCompany.getCompanyId()));
 			Assert.assertEquals(
-				viewsCount, _getViewsCount(company.getCompanyId()));
+				viewsCount, _getViewsCount(_exportedCompany.getCompanyId()));
 			Assert.assertFalse(
 				_dbPartitionDB.existsPartition(
 					_connection,
 					CompanyLocalServiceTestUtil.getExportedPartitionName(
-						company.getCompanyId())));
+						_exportedCompany.getCompanyId())));
 		}
 		finally {
 			_db.runSQL(
 				_dbPartitionDB.getDropPartitionSQL(
 					CompanyLocalServiceTestUtil.getExportedPartitionName(
-						company.getCompanyId())));
-
-			_companyLocalService.deleteCompany(company);
+						_exportedCompany.getCompanyId())));
 		}
 	}
 
@@ -1606,6 +1601,7 @@ public class CompanyLocalServiceTest {
 	private static DB _db;
 	private static DBPartitionDB _dbPartitionDB;
 	private static Company _deletedCompany;
+	private static Company _exportedCompany;
 	private static List<String> _modelListenerList;
 
 	@Inject
