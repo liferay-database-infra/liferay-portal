@@ -16,6 +16,8 @@ import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
 import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
+import com.liferay.portal.kernel.cache.thread.local.Lifecycle;
+import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCacheManager;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
@@ -174,13 +176,22 @@ public class DBUpgrader {
 					PropsUtil.getArray(PropsKeys.SPRING_CONFIGS)),
 				true, false, () -> StartupHelperUtil.setUpgrading(true));
 
+			ThreadLocalCacheManager.disable(Lifecycle.ETERNAL);
+			ThreadLocalCacheManager.disable(Lifecycle.REQUEST);
+
 			StartupHelperUtil.printPatchLevel();
 
 			upgradePortal();
 
 			InitUtil.registerContext();
 
-			upgradeModules(() -> StartupHelperUtil.setUpgrading(false));
+			upgradeModules(
+				() -> {
+					ThreadLocalCacheManager.enable(Lifecycle.ETERNAL);
+					ThreadLocalCacheManager.enable(Lifecycle.REQUEST);
+
+					StartupHelperUtil.setUpgrading(false);
+				});
 
 			BundleContext bundleContext = SystemBundleUtil.getBundleContext();
 
