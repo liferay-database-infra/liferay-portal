@@ -6,6 +6,7 @@
 package com.liferay.portal.kernel.cache.thread.local;
 
 import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.transaction.NewTransactionLifecycleListener;
 import com.liferay.portal.kernel.transaction.TransactionAttribute;
 import com.liferay.portal.kernel.transaction.TransactionLifecycleListener;
@@ -99,7 +100,9 @@ public class ThreadLocalCacheManager {
 
 		ThreadLocalCaches threadLocalCaches = _getThreadLocalCaches(lifecycle);
 
-		if ((threadLocalCaches == null) || threadLocalCaches._disabled) {
+		if ((threadLocalCaches == null) || threadLocalCaches._disabled ||
+			StartupHelperUtil.isUpgrading()) {
+
 			return (ThreadLocalCache<T>)_emptyThreadLocalCache;
 		}
 
