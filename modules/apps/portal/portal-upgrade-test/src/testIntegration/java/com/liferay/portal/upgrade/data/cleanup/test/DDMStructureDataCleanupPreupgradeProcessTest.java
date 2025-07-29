@@ -83,6 +83,10 @@ public class DDMStructureDataCleanupPreupgradeProcessTest
 							"')"));
 				},
 				logMessages -> {
+
+					System.out.println("There are " + logMessages.size() + " messages in the log");
+					System.out.println("Log messages: " + logMessages.toString());
+
 					Assert.assertTrue(
 						logMessages.contains(
 							_getExpectedMessage(
