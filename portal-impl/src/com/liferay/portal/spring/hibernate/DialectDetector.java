@@ -89,8 +89,21 @@ public class DialectDetector {
 			else if (dbName.startsWith("Microsoft") && (dbMajorVersion == 9)) {
 				dialect = new SQLServer2005Dialect();
 			}
-			else if (dbName.startsWith("Microsoft") && (dbMajorVersion >= 10)) {
-				dialect = new SQLServer2008Dialect();
+			else if (dbName.startsWith("Microsoft")) {
+				if (dbMajorVersion == 9) {
+					dialect = new SQLServer2005Dialect();
+				}
+				else if (dbMajorVersion >= 10) {
+					dialect = new SQLServer2008Dialect();
+				}
+
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"To avoid deadlock issues, enable ",
+							"read_committed_snapshot with: alter database ",
+							"[database_name] set read_committed_snapshot on"));
+				}
 			}
 			else if (dbName.startsWith("Oracle") && (dbMajorVersion >= 10)) {
 				dialect = new Oracle10gDialect();
