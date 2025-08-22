@@ -18,11 +18,17 @@ import com.liferay.data.cleanup.internal.upgrade.util.ConfigurationUtil;
 import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ReleaseLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.upgrade.data.cleanup.DataCleanupPreupgradeProcess;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.upgrade.data.cleanup.DataCleanupPreupgradeProcessSuite;
+import com.liferay.portal.util.PropsValues;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -79,6 +85,118 @@ public class DataRemovalExecutor {
 			"com.liferay.layout.service",
 			() -> new WidgetLayoutTypeSettingsUpgradeProcess(
 				_layoutLocalService));
+
+		_executeDataCleanupPreupgradeProcesses(dataRemovalConfiguration);
+	}
+
+	private void _executeDataCleanupPreupgradeProcesses(
+			DataRemovalConfiguration dataRemovalConfiguration)
+		throws Exception {
+
+		DataCleanupPreupgradeProcessSuite dataCleanupPreupgradeProcessSuite =
+			new DataCleanupPreupgradeProcessSuite();
+
+		for (DataCleanupPreupgradeProcess dataCleanupPreupgradeProcess :
+				dataCleanupPreupgradeProcessSuite.
+					getDataCleanupPreupgradeProcesses()) {
+
+			Class<?> clazz = dataCleanupPreupgradeProcess.getClass();
+
+			if (ArrayUtil.contains(
+					PropsValues.
+						UPGRADE_DATABASE_PREUPGRADE_DATA_CLEANUP_BLACKLIST,
+					clazz.getName())) {
+
+				if (_log.isInfoEnabled()) {
+					_log.info(
+						"Skipping blacklisted data cleanup process: " +
+							clazz.getName());
+				}
+
+				continue;
+			}
+
+			if (_isDataCleanupPreupgradeProcessEnabled(
+					dataRemovalConfiguration, dataCleanupPreupgradeProcess)) {
+
+				dataCleanupPreupgradeProcess.upgrade();
+
+				CacheRegistryUtil.clear();
+			}
+		}
+	}
+
+	private boolean _isDataCleanupPreupgradeProcessEnabled(
+		DataRemovalConfiguration dataRemovalConfiguration,
+		DataCleanupPreupgradeProcess dataCleanupPreupgradeProcess) {
+
+		String className = dataCleanupPreupgradeProcess.getClass(
+		).getName();
+
+		if (className.equals(
+				"com.liferay.portal.upgrade.data.cleanup." +
+					"CompanyDataCleanupPreupgradeProcess")) {
+
+			return dataRemovalConfiguration.removeCompanyData();
+		}
+
+		if (className.equals(
+				"com.liferay.portal.upgrade.data.cleanup." +
+					"UserDataCleanupPreupgradeProcess")) {
+
+			return dataRemovalConfiguration.removeUserData();
+		}
+
+		if (className.equals(
+				"com.liferay.portal.upgrade.data.cleanup." +
+					"GroupDataCleanupPreupgradeProcess")) {
+
+			return dataRemovalConfiguration.removeGroupData();
+		}
+
+		if (className.equals(
+				"com.liferay.portal.upgrade.data.cleanup." +
+					"AnalyticsMessageDataCleanupPreupgradeProcess")) {
+
+			return dataRemovalConfiguration.removeAnalyticsMessageData();
+		}
+
+		if (className.equals(
+				"com.liferay.portal.upgrade.data.cleanup." +
+					"ConfigurationDataCleanupPreupgradeProcess")) {
+
+			return dataRemovalConfiguration.removeConfigurationData();
+		}
+
+		if (className.equals(
+				"com.liferay.portal.upgrade.data.cleanup." +
+					"DDMStructureDataCleanupPreupgradeProcess")) {
+
+			return dataRemovalConfiguration.removeDDMStructureData();
+		}
+
+		if (className.equals(
+				"com.liferay.portal.upgrade.data.cleanup." +
+					"DLFileEntryDataCleanupPreupgradeProcess")) {
+
+			return dataRemovalConfiguration.removeDLFileEntryData();
+		}
+
+		if (className.equals(
+				"com.liferay.portal.upgrade.data.cleanup." +
+					"NullUnicodeContentDataCleanupPreupgradeProcess")) {
+
+			return dataRemovalConfiguration.removeNullUnicodeContentData();
+		}
+
+		if (className.equals(
+				"com.liferay.portal.upgrade.data.cleanup." +
+					"QuartzJobDetailsDataCleanupPreupgradeProcess")) {
+
+			return dataRemovalConfiguration.removeQuartzJobDetailsData();
+		}
+
+		return false;
 	}
 
 	private void _removeModuleData(
@@ -99,6 +217,9 @@ public class DataRemovalExecutor {
 			}
 		}
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		DataRemovalExecutor.class);
 
 	@Reference
 	private ConfigurationAdmin _configurationAdmin;
