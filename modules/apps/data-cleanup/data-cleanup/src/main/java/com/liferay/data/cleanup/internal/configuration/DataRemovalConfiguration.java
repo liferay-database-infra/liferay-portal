@@ -49,4 +49,46 @@ public interface DataRemovalConfiguration {
 	)
 	public boolean removeWidgetLayoutTypeSettings();
 
+	@Meta.AD(deflt = "false", name = "remove-company-data", required = false)
+	public boolean removeCompanyData();
+
+	@Meta.AD(deflt = "false", name = "remove-user-data", required = false)
+	public boolean removeUserData();
+
+	@Meta.AD(deflt = "false", name = "remove-group-data", required = false)
+	public boolean removeGroupData();
+
+	@Meta.AD(
+		deflt = "false", name = "remove-analytics-message-data",
+		required = false
+	)
+	public boolean removeAnalyticsMessageData();
+
+	@Meta.AD(
+		deflt = "false", name = "remove-configuration-data", required = false
+	)
+	public boolean removeConfigurationData();
+
+	@Meta.AD(
+		deflt = "false", name = "remove-ddm-structure-data", required = false
+	)
+	public boolean removeDDMStructureData();
+
+	@Meta.AD(
+		deflt = "false", name = "remove-dl-file-entry-data", required = false
+	)
+	public boolean removeDLFileEntryData();
+
+	@Meta.AD(
+		deflt = "false", name = "remove-null-unicode-content-data",
+		required = false
+	)
+	public boolean removeNullUnicodeContentData();
+
+	@Meta.AD(
+		deflt = "false", name = "remove-quartz-job-details-data",
+		required = false
+	)
+	public boolean removeQuartzJobDetailsData();
+
 }
