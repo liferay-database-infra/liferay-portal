@@ -25,6 +25,7 @@ import com.liferay.portal.upgrade.test.util.UpgradeTestUtil;
 
 import java.io.Serializable;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -101,6 +102,14 @@ public class BackgroundTaskCompanyIdUpgradeProcessTest {
 				"backgroundTaskId = " + _backgroundTask.getBackgroundTaskId());
 
 		_upgradeProcess.upgrade();
+
+		_entityCache.clearCache();
+
+		_backgroundTask = _backgroundTaskLocalService.getBackgroundTask(
+			_backgroundTask.getBackgroundTaskId());
+
+		Assert.assertEquals(
+			Collections.emptyMap(), _backgroundTask.getTaskContextMap());
 	}
 
 	private Map<String, Serializable> _getTaskContextMap(boolean addCompanyId) {
