@@ -8,10 +8,12 @@ package com.liferay.portal.background.task.internal.upgrade.v2_0_1;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.io.Serializable;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Jorge Avalos
@@ -33,6 +35,16 @@ public class BackgroundTaskCompanyIdUpgradeProcess extends UpgradeProcess {
 					String taskContextMapValue = (String)values[1];
 
 					if (taskContextMapValue != null) {
+						if (_isEmpty(taskContextMapValue)) {
+							preparedStatement.setString(1, null);
+
+							preparedStatement.setLong(2, (Long)values[0]);
+
+							preparedStatement.addBatch();
+
+							return;
+						}
+
 						Map<String, Serializable> taskContextMap =
 							(Map<String, Serializable>)
 								JSONFactoryUtil.deserialize(
@@ -58,6 +70,16 @@ public class BackgroundTaskCompanyIdUpgradeProcess extends UpgradeProcess {
 				},
 				null);
 		}
+	}
+
+	private boolean _isEmpty(String json) {
+		if (Validator.isNull(json) || Objects.equals(json, "[]") ||
+			Objects.equals(json, "{}")) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 }
