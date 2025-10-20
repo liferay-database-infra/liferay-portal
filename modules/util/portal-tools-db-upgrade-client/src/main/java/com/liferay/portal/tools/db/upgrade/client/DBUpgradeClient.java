@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 
+import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
 
@@ -418,6 +419,22 @@ public class DBUpgradeClient {
 		return sb.toString();
 	}
 
+	private File _getResolvedFile(
+		String directory, File baseDirectory, boolean allowAbsolutePaths) {
+
+		File file = new File(directory);
+
+		if (file.isAbsolute()) {
+			if (allowAbsolutePaths) {
+				return file;
+			}
+
+			return null;
+		}
+
+		return new File(baseDirectory, directory);
+	}
+
 	private GogoShellClient _initGogoShellClient() throws IOException {
 		String value = _portalUpgradeExtProperties.getProperty(
 			"module.framework.properties.osgi.console");
@@ -463,6 +480,14 @@ public class DBUpgradeClient {
 		}
 
 		return true;
+	}
+
+	private boolean _isValidDirectory(File directory) {
+		if (directory.exists() && directory.isDirectory()) {
+			return true;
+		}
+
+		return false;
 	}
 
 	private void _printHelp() {
@@ -522,6 +547,173 @@ public class DBUpgradeClient {
 		return properties;
 	}
 
+	private String _requestAndVerifyDirectories(
+			File baseDirectory, String defaultDirectories, String prompt,
+			boolean allowAbsolutePaths)
+		throws IOException {
+
+		while (true) {
+			System.out.println(prompt + " (" + defaultDirectories + "): ");
+
+			String response = _consoleReader.readLine();
+
+			if (response.isEmpty()) {
+				return null;
+			}
+
+			String directoriesToVerify = response.trim();
+
+			String[] directories = directoriesToVerify.split(",");
+
+			List<String> invalidDirectories = new ArrayList<>();
+
+			for (String directory : directories) {
+				directory = directory.trim();
+
+				File testDirectory = _getResolvedFile(
+					directory, baseDirectory, allowAbsolutePaths);
+
+				if (testDirectory == null) {
+					System.err.println(
+						"Please enter relative paths, not absolute paths.");
+
+					invalidDirectories = null;
+
+					break;
+				}
+
+				if (!_isValidDirectory(testDirectory)) {
+					invalidDirectories.add(testDirectory.getAbsolutePath());
+				}
+			}
+
+			if (invalidDirectories == null) {
+				continue;
+			}
+
+			if (!invalidDirectories.isEmpty()) {
+				System.err.println(
+					"The following directories do not exist or are not " +
+						"directories:");
+
+				for (String invalidDirectory : invalidDirectories) {
+					System.err.println("  " + invalidDirectory);
+				}
+
+				continue;
+			}
+
+			return directoriesToVerify;
+		}
+	}
+
+	private String _requestAndVerifyDirectory(
+			File baseDirectory, String defaultDirectory, String prompt,
+			boolean allowAbsolutePaths)
+		throws IOException {
+
+		while (true) {
+			System.out.println(prompt + " (" + defaultDirectory + "): ");
+
+			String response = _consoleReader.readLine();
+
+			if (response.isEmpty()) {
+				return null;
+			}
+
+			String directoryToVerify = response.trim();
+
+			File testDirectory = _getResolvedFile(
+				directoryToVerify, baseDirectory, allowAbsolutePaths);
+
+			if (testDirectory == null) {
+				System.err.println(
+					"Please enter a relative path, not an absolute path.");
+
+				continue;
+			}
+
+			if (!_isValidDirectory(testDirectory)) {
+				System.err.println(
+					testDirectory.getAbsolutePath() +
+						" does not exist or is not a directory.");
+
+				continue;
+			}
+
+			return directoryToVerify;
+		}
+	}
+
+	private String _requestAndVerifyHost(String defaultHost, String prompt)
+		throws IOException {
+
+		while (true) {
+			System.out.println(prompt + " (" + defaultHost + "): ");
+
+			String response = _consoleReader.readLine();
+
+			if (response.isEmpty()) {
+				return null;
+			}
+
+			String hostToVerify = response.trim();
+
+			try {
+				InetAddress.getByName(hostToVerify);
+
+				return hostToVerify;
+			}
+			catch (Exception exception) {
+				System.err.println(
+					"Unable to resolve host " + hostToVerify + ". " +
+						exception.getMessage());
+			}
+		}
+	}
+
+	private Integer _requestAndVerifyPort(int defaultPort, String prompt)
+		throws IOException {
+
+		String port = null;
+
+		if (defaultPort > 0) {
+			port = String.valueOf(defaultPort);
+		}
+		else {
+			port = "none";
+		}
+
+		while (true) {
+			System.out.println(prompt + " (" + port + "): ");
+
+			String response = _consoleReader.readLine();
+
+			if (response.isEmpty()) {
+				return null;
+			}
+
+			if (response.equals("none")) {
+				return 0;
+			}
+
+			try {
+				int portNumber = Integer.parseInt(response);
+
+				if ((portNumber < 0) || (portNumber > 65535)) {
+					System.err.println("Port must be between 0 and 65535.");
+
+					continue;
+				}
+
+				return portNumber;
+			}
+			catch (NumberFormatException numberFormatException) {
+				System.err.println(response + " is not a valid port number.");
+			}
+		}
+	}
+
 	private void _saveProperties() throws IOException {
 		_appServerProperties.store(_appServerPropertiesFile);
 		_portalUpgradeDatabaseProperties.store(
@@ -565,46 +757,45 @@ public class DBUpgradeClient {
 				}
 			}
 
-			System.out.println(
-				"Please enter your application server directory (" +
-					_appServer.getDir() + "): ");
+			String appServerDir = _requestAndVerifyDirectory(
+				new File(
+					_portalUpgradeExtProperties.getProperty("liferay.home")),
+				_appServer.getDir(
+				).getPath(),
+				"Please enter your application server directory", true);
 
-			response = _consoleReader.readLine();
-
-			if (!response.isEmpty()) {
-				_appServer.setDirName(response);
+			if (appServerDir != null) {
+				_appServer.setDirName(appServerDir);
 			}
 
-			System.out.println(
+			String extraLibDirs = _requestAndVerifyDirectories(
+				_appServer.getDir(), _appServer.getExtraLibDirNames(),
 				"Please enter your extra library directories in application " +
-					"server directory (" + _appServer.getExtraLibDirNames() +
-						"): ");
+					"server directory",
+				false);
 
-			response = _consoleReader.readLine();
-
-			if (!response.isEmpty()) {
-				_appServer.setExtraLibDirNames(response);
+			if (extraLibDirs != null) {
+				_appServer.setExtraLibDirNames(extraLibDirs);
 			}
 
-			System.out.println(
+			String globalLibDir = _requestAndVerifyDirectory(
+				_appServer.getDir(), _appServer.getGlobalLibDirName(),
 				"Please enter your global library directory in application " +
-					"server directory (" + _appServer.getGlobalLibDirName() +
-						"): ");
+					"server directory",
+				false);
 
-			response = _consoleReader.readLine();
-
-			if (!response.isEmpty()) {
-				_appServer.setGlobalLibDirName(response);
+			if (globalLibDir != null) {
+				_appServer.setGlobalLibDirName(globalLibDir);
 			}
 
-			System.out.println(
+			String portalDir = _requestAndVerifyDirectory(
+				_appServer.getDir(), _appServer.getPortalDirName(),
 				"Please enter your portal directory in application server " +
-					"directory (" + _appServer.getPortalDirName() + "): ");
+					"directory",
+				false);
 
-			response = _consoleReader.readLine();
-
-			if (!response.isEmpty()) {
-				_appServer.setPortalDirName(response);
+			if (portalDir != null) {
+				_appServer.setPortalDirName(portalDir);
 			}
 
 			File dir = _appServer.getDir();
@@ -697,35 +888,18 @@ public class DBUpgradeClient {
 			dataSource.setProtocol(response);
 		}
 
-		System.out.println(
-			"Please enter your database host (" + dataSource.getHost() + "): ");
+		String host = _requestAndVerifyHost(
+			dataSource.getHost(), "Please enter your database host");
 
-		response = _consoleReader.readLine();
-
-		if (!response.isEmpty()) {
-			dataSource.setHost(response);
+		if (host != null) {
+			dataSource.setHost(host);
 		}
 
-		String port = null;
+		Integer port = _requestAndVerifyPort(
+			dataSource.getPort(), "Please enter your database port");
 
-		if (dataSource.getPort() > 0) {
-			port = String.valueOf(dataSource.getPort());
-		}
-		else {
-			port = "none";
-		}
-
-		System.out.println("Please enter your database port (" + port + "): ");
-
-		response = _consoleReader.readLine();
-
-		if (!response.isEmpty()) {
-			if (response.equals("none")) {
-				dataSource.setPort(0);
-			}
-			else {
-				dataSource.setPort(Integer.parseInt(response));
-			}
+		if (port != null) {
+			dataSource.setPort(port);
 		}
 
 		System.out.println(
