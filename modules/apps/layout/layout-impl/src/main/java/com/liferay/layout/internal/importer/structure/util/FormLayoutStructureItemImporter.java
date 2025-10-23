@@ -425,7 +425,7 @@ public class FormLayoutStructureItemImporter
 				getLayoutFromItemReferenceJSONObject(
 					itemReference, layoutStructureItemImporterContext)
 			).put(
-				"type", "layout"
+				"type", "page"
 			);
 		}
 		else if (formSuccessSubmissionResultMap.containsKey("url")) {
