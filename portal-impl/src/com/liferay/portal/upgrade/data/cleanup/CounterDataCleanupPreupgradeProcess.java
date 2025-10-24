@@ -226,29 +226,37 @@ public class CounterDataCleanupPreupgradeProcess
 
 		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
 				SQLTransformer.transform(
-					StringBundler.concat(
-						"select max(layoutId) from Layout where groupId = ",
-						groupId, " and privateLayout = ",
-						privateLayout ? "[$TRUE$]" : "[$FALSE$]")));
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+					"select max(layoutId) from Layout where groupId = ? and " +
+						"privateLayout = ?"))) {
 
-			if (resultSet.next()) {
-				long maxValue = resultSet.getLong(1);
+			preparedStatement1.setLong(1, groupId);
 
-				if (resultSet.wasNull()) {
-					_deleteCounter(counterName);
+			if (privateLayout) {
+				preparedStatement1.setString(2, "[$TRUE$]");
+			}
+			else {
+				preparedStatement1.setString(2, "[$FALSE$]");
+			}
 
-					return;
-				}
+			try (ResultSet resultSet = preparedStatement1.executeQuery()) {
+				if (resultSet.next()) {
+					long maxValue = resultSet.getLong(1);
 
-				if (counterValue >= maxValue) {
-					return;
-				}
+					if (resultSet.wasNull()) {
+						_deleteCounter(counterName);
 
-				CounterLocalServiceUtil.reset(counterName, maxValue);
+						return;
+					}
 
-				if (_log.isInfoEnabled()) {
-					_log.info(_getLogMessage(counterName, maxValue, null));
+					if (counterValue >= maxValue) {
+						return;
+					}
+
+					CounterLocalServiceUtil.reset(counterName, maxValue);
+
+					if (_log.isInfoEnabled()) {
+						_log.info(_getLogMessage(counterName, maxValue, null));
+					}
 				}
 			}
 		}
