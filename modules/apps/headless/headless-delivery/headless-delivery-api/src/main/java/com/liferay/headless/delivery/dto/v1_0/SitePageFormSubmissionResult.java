@@ -98,6 +98,94 @@ public class SitePageFormSubmissionResult implements Serializable {
 	@JsonIgnore
 	private Supplier<ClassFieldsReference> _itemReferenceSupplier;
 
+	@io.swagger.v3.oas.annotations.media.Schema(
+		description = "The localized text for the secondary notification pop-up."
+	)
+	@Valid
+	public FragmentInlineValue getNotificationText() {
+		if (_notificationTextSupplier != null) {
+			notificationText = _notificationTextSupplier.get();
+
+			_notificationTextSupplier = null;
+		}
+
+		return notificationText;
+	}
+
+	public void setNotificationText(FragmentInlineValue notificationText) {
+		this.notificationText = notificationText;
+
+		_notificationTextSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setNotificationText(
+		UnsafeSupplier<FragmentInlineValue, Exception>
+			notificationTextUnsafeSupplier) {
+
+		_notificationTextSupplier = () -> {
+			try {
+				return notificationTextUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField(
+		description = "The localized text for the secondary notification pop-up."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected FragmentInlineValue notificationText;
+
+	@JsonIgnore
+	private Supplier<FragmentInlineValue> _notificationTextSupplier;
+
+	@io.swagger.v3.oas.annotations.media.Schema
+	public Boolean getShowNotification() {
+		if (_showNotificationSupplier != null) {
+			showNotification = _showNotificationSupplier.get();
+
+			_showNotificationSupplier = null;
+		}
+
+		return showNotification;
+	}
+
+	public void setShowNotification(Boolean showNotification) {
+		this.showNotification = showNotification;
+
+		_showNotificationSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setShowNotification(
+		UnsafeSupplier<Boolean, Exception> showNotificationUnsafeSupplier) {
+
+		_showNotificationSupplier = () -> {
+			try {
+				return showNotificationUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Boolean showNotification;
+
+	@JsonIgnore
+	private Supplier<Boolean> _showNotificationSupplier;
+
 	@Override
 	public boolean equals(Object object) {
 		if (this == object) {
@@ -137,6 +225,30 @@ public class SitePageFormSubmissionResult implements Serializable {
 			sb.append("\"itemReference\": ");
 
 			sb.append(String.valueOf(itemReference));
+		}
+
+		FragmentInlineValue notificationText = getNotificationText();
+
+		if (notificationText != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"notificationText\": ");
+
+			sb.append(String.valueOf(notificationText));
+		}
+
+		Boolean showNotification = getShowNotification();
+
+		if (showNotification != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"showNotification\": ");
+
+			sb.append(showNotification);
 		}
 
 		sb.append("}");

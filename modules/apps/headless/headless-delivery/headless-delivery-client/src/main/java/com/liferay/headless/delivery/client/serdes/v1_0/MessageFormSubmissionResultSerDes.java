@@ -74,6 +74,18 @@ public class MessageFormSubmissionResultSerDes {
 			sb.append("\"");
 		}
 
+		if (messageFormSubmissionResult.getNotificationText() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"notificationText\": ");
+
+			sb.append(
+				String.valueOf(
+					messageFormSubmissionResult.getNotificationText()));
+		}
+
 		if (messageFormSubmissionResult.getShowNotification() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -124,6 +136,16 @@ public class MessageFormSubmissionResultSerDes {
 				String.valueOf(messageFormSubmissionResult.getMessageType()));
 		}
 
+		if (messageFormSubmissionResult.getNotificationText() == null) {
+			map.put("notificationText", null);
+		}
+		else {
+			map.put(
+				"notificationText",
+				String.valueOf(
+					messageFormSubmissionResult.getNotificationText()));
+		}
+
 		if (messageFormSubmissionResult.getShowNotification() == null) {
 			map.put("showNotification", null);
 		}
@@ -158,6 +180,9 @@ public class MessageFormSubmissionResultSerDes {
 			else if (Objects.equals(jsonParserFieldName, "messageType")) {
 				return false;
 			}
+			else if (Objects.equals(jsonParserFieldName, "notificationText")) {
+				return false;
+			}
 			else if (Objects.equals(jsonParserFieldName, "showNotification")) {
 				return false;
 			}
@@ -181,6 +206,13 @@ public class MessageFormSubmissionResultSerDes {
 				if (jsonParserFieldValue != null) {
 					messageFormSubmissionResult.setMessageType(
 						MessageFormSubmissionResult.MessageType.create(
+							(String)jsonParserFieldValue));
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "notificationText")) {
+				if (jsonParserFieldValue != null) {
+					messageFormSubmissionResult.setNotificationText(
+						FragmentInlineValueSerDes.toDTO(
 							(String)jsonParserFieldValue));
 				}
 			}

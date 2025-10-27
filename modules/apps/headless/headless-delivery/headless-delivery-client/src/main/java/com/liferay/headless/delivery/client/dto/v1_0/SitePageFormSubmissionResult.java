@@ -47,6 +47,49 @@ public class SitePageFormSubmissionResult implements Cloneable, Serializable {
 
 	protected ClassFieldsReference itemReference;
 
+	public FragmentInlineValue getNotificationText() {
+		return notificationText;
+	}
+
+	public void setNotificationText(FragmentInlineValue notificationText) {
+		this.notificationText = notificationText;
+	}
+
+	public void setNotificationText(
+		UnsafeSupplier<FragmentInlineValue, Exception>
+			notificationTextUnsafeSupplier) {
+
+		try {
+			notificationText = notificationTextUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected FragmentInlineValue notificationText;
+
+	public Boolean getShowNotification() {
+		return showNotification;
+	}
+
+	public void setShowNotification(Boolean showNotification) {
+		this.showNotification = showNotification;
+	}
+
+	public void setShowNotification(
+		UnsafeSupplier<Boolean, Exception> showNotificationUnsafeSupplier) {
+
+		try {
+			showNotification = showNotificationUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Boolean showNotification;
+
 	@Override
 	public SitePageFormSubmissionResult clone()
 		throws CloneNotSupportedException {
