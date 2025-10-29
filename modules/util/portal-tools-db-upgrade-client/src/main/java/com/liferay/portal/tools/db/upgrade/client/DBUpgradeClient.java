@@ -432,7 +432,7 @@ public class DBUpgradeClient {
 			return _DXP_DATABASE_TYPES;
 		}
 
-		return _CE_DATABASE_TYPES;
+		return _PORTAL_DATABASE_TYPES;
 	}
 
 	private File _getResolvedDir(
@@ -952,7 +952,7 @@ public class DBUpgradeClient {
 		"jboss", "tomcat", "weblogic", "wildfly"
 	};
 
-	private static final String[] _CE_DATABASE_TYPES = {
+	private static final String[] _PORTAL_DATABASE_TYPES = {
 		"mariadb", "mysql", "postgresql"
 	};
 
