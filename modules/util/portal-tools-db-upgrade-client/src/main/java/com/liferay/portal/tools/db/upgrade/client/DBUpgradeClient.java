@@ -952,10 +952,6 @@ public class DBUpgradeClient {
 		"jboss", "tomcat", "weblogic", "wildfly"
 	};
 
-	private static final String[] _PORTAL_DATABASE_TYPES = {
-		"mariadb", "mysql", "postgresql"
-	};
-
 	private static final String[] _DXP_DATABASE_TYPES = {
 		"db2", "mariadb", "mysql", "oracle", "postgresql", "sqlserver"
 	};
@@ -966,6 +962,10 @@ public class DBUpgradeClient {
 
 	private static final String _PORTAL_DAO_DB_JAR_NAME =
 		"com.liferay.portal.dao.db.jar";
+
+	private static final String[] _PORTAL_DATABASE_TYPES = {
+		"mariadb", "mysql", "postgresql"
+	};
 
 	private static final Pattern _gogoShellAddressPattern = Pattern.compile(
 		"^([^\\:]+):([0-9]{1,5})$");
