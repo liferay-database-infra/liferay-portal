@@ -421,12 +421,17 @@ public class DBUpgradeClient {
 	}
 
 	private String[] _getDBTypes() {
-		String portalShieldedContainerPath =
-			_appServer.getPortalShieldedContainerLibDir(
-			).getAbsolutePath();
+		File portalShieldedContainerLibDir =
+			_appServer.getPortalShieldedContainerLibDir();
 
-		Path portalDaoDBPath = Paths.get(
-			portalShieldedContainerPath, _PORTAL_DAO_DB_JAR_NAME);
+		if (portalShieldedContainerLibDir == null) {
+			return _PORTAL_DATABASE_TYPES;
+		}
+
+		Path portalDaoDBPath = portalShieldedContainerLibDir.toPath(
+		).resolve(
+			_PORTAL_DAO_DB_JAR_NAME
+		);
 
 		if (Files.exists(portalDaoDBPath)) {
 			return _DXP_DATABASE_TYPES;
