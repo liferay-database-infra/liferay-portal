@@ -5,8 +5,10 @@
 
 package com.liferay.portal.dao.jdbc;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.jdbc.DataSourceFactoryUtil;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
@@ -147,6 +149,48 @@ public class DataSourceFactoryTest {
 					jndiName),
 				namingException.getMessage());
 		}
+	}
+
+	@Test
+	public void testRewriteJDBCURL() throws Exception {
+		String mySQLJDBCURL = "jdbc:mysql://localhost/lportal1";
+
+		String rewrittenMySQLJDBCURL = ReflectionTestUtil.invoke(
+			DataSourceFactoryUtil.class, "_rewriteJDBCURL",
+			new Class<?>[] {String.class}, mySQLJDBCURL);
+
+		Assert.assertEquals(
+			StringBundler.concat(
+				"jdbc:mysql://localhost/lportal1?cachePrepStmts=",
+				"true&characterEncoding=UTF-8&dontTrackOpenResources=true",
+				"&holdResultsOpenOverStatementClose=true&prepStmtCacheSize=",
+				"1000&prepStmtCacheSqlLimit=2048&rewriteBatchedStatements=",
+				"true&serverTimezone=GMT&useFastDateParsing=false",
+				"&useLocalSessionState=true&useLocalTransactionState=true",
+				"&useUnicode=true"),
+			rewrittenMySQLJDBCURL);
+
+		String postgreSQLJDBCURL = "jdbc:postgresql://localhost/lportal2";
+
+		String rewrittenPostgreSQLJDBCURL = ReflectionTestUtil.invoke(
+			DataSourceFactoryUtil.class, "_rewriteJDBCURL",
+			new Class<?>[] {String.class}, postgreSQLJDBCURL);
+
+		Assert.assertEquals(
+			"jdbc:postgresql://localhost/lportal2?reWriteBatchedInserts=true",
+			rewrittenPostgreSQLJDBCURL);
+
+		String sqlServerJDBCURL =
+			"jdbc:sqlserver://localhost;databaseName=lportal3";
+
+		String rewrittenSQLServerJDBCURL = ReflectionTestUtil.invoke(
+			DataSourceFactoryUtil.class, "_rewriteJDBCURL",
+			new Class<?>[] {String.class}, sqlServerJDBCURL);
+
+		Assert.assertEquals(
+			"jdbc:sqlserver://localhost;databaseName=lportal3;" +
+				"useBulkCopyForBatchInsert=true",
+			rewrittenSQLServerJDBCURL);
 	}
 
 	private File _tempDir;
