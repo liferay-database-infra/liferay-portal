@@ -292,6 +292,86 @@ public class DataSourceFactoryUtil {
 		}
 	}
 
+	private static Map<String, String> _addDefaultParameters(
+		String[][] defaultParameters,
+		Map<String, String> existingParameterValues) {
+
+		for (String[] parameter : defaultParameters) {
+			if (existingParameterValues.containsKey(parameter[0])) {
+				if (_log.isDebugEnabled()) {
+					_log.debug("Skipped " + Arrays.toString(parameter));
+				}
+			}
+			else {
+				existingParameterValues.put(parameter[0], parameter[1]);
+			}
+		}
+
+		return existingParameterValues;
+	}
+
+	private static String _buildQueryStyleURL(
+		String baseURL, Map<String, String> existingParameterValues) {
+
+		if (existingParameterValues.isEmpty()) {
+			return baseURL;
+		}
+
+		StringBundler sb = new StringBundler(
+			(existingParameterValues.size() * 4) + 2);
+
+		sb.append(baseURL);
+		sb.append(CharPool.QUESTION);
+
+		for (Map.Entry<String, String> entry :
+				existingParameterValues.entrySet()) {
+
+			sb.append(entry.getKey());
+
+			String value = entry.getValue();
+
+			if (!_MALFORMED_PARAMETER_PLACE_HOLDER.equals(value)) {
+				sb.append(CharPool.EQUAL);
+				sb.append(value);
+			}
+
+			sb.append(CharPool.AMPERSAND);
+		}
+
+		sb.setIndex(sb.index() - 1);
+
+		return sb.toString();
+	}
+
+	private static String _buildSemicolonStyleURL(
+		String baseURL, Map<String, String> existingParameterValues) {
+
+		if (existingParameterValues.isEmpty()) {
+			return baseURL;
+		}
+
+		StringBundler sb = new StringBundler(
+			(existingParameterValues.size() * 4) + 1);
+
+		sb.append(baseURL);
+
+		for (Map.Entry<String, String> entry :
+				existingParameterValues.entrySet()) {
+
+			sb.append(CharPool.SEMICOLON);
+			sb.append(entry.getKey());
+
+			String value = entry.getValue();
+
+			if (!_MALFORMED_PARAMETER_PLACE_HOLDER.equals(value)) {
+				sb.append(CharPool.EQUAL);
+				sb.append(value);
+			}
+		}
+
+		return sb.toString();
+	}
+
 	private static void _downloadAndInstallJar(
 			URL url, Path path, URLClassLoader urlClassLoader, String sha1)
 		throws Exception {
@@ -313,6 +393,29 @@ public class DataSourceFactoryUtil {
 				StringBundler.concat(
 					"Installed ", path, " to ", urlClassLoader));
 		}
+	}
+
+	private static Map<String, String> _getExistingParameterValues(
+		char delimiter, String paramString) {
+
+		Map<String, String> existingParameterValues = new TreeMap<>();
+
+		for (String parameterString :
+				StringUtil.split(paramString, delimiter)) {
+
+			String[] parameter = StringUtil.split(
+				parameterString, CharPool.EQUAL);
+
+			if (parameter.length == 2) {
+				existingParameterValues.put(parameter[0], parameter[1]);
+			}
+			else {
+				existingParameterValues.put(
+					parameterString, _MALFORMED_PARAMETER_PLACE_HOLDER);
+			}
+		}
+
+		return existingParameterValues;
 	}
 
 	private static void _populateIBMCipherSuites(Class<?> clazz) {
@@ -350,77 +453,85 @@ public class DataSourceFactoryUtil {
 	}
 
 	private static String _rewriteJDBCURL(String url) {
-		if (!url.startsWith("jdbc:mariadb://") &&
-			!url.startsWith("jdbc:mysql://")) {
+		if (url.startsWith("jdbc:mariadb://") ||
+			url.startsWith("jdbc:mysql://")) {
 
-			return url;
+			return _rewriteQueryStyleJDBCURL(_MYSQL_DEFAULT_PARAMETERS, url);
 		}
 
+		if (url.startsWith("jdbc:postgresql://")) {
+			return _rewriteQueryStyleJDBCURL(
+				_POSTGRESQL_DEFAULT_PARAMETERS, url);
+		}
+
+		if (url.startsWith("jdbc:sqlserver://")) {
+			return _rewriteSemicolonStyleJDBCURL(
+				_SQLSERVER_DEFAULT_PARAMETERS, url);
+		}
+
+		return url;
+	}
+
+	private static String _rewriteQueryStyleJDBCURL(
+		String[][] defaultParameters, String url) {
+
 		Map<String, String> existingParameterValues = new TreeMap<>();
+
+		String baseURL = url;
 
 		int index = url.indexOf(CharPool.QUESTION);
 
 		if (index != -1) {
+			baseURL = url.substring(0, index);
+
 			String queryString = url.substring(index + 1);
 
-			for (String parameterString :
-					StringUtil.split(queryString, CharPool.AMPERSAND)) {
-
-				String[] parameter = StringUtil.split(
-					parameterString, CharPool.EQUAL);
-
-				if (parameter.length == 2) {
-					existingParameterValues.put(parameter[0], parameter[1]);
-				}
-				else {
-					existingParameterValues.put(
-						parameterString, _MALFORMED_PARAMETER_PLACE_HOLDER);
-				}
+			if (!queryString.isEmpty()) {
+				existingParameterValues = _getExistingParameterValues(
+					CharPool.AMPERSAND, queryString);
 			}
 		}
 
-		for (String[] parameter : _MYSQL_DEFAULT_PARAMETERS) {
-			if (existingParameterValues.containsKey(parameter[0])) {
-				if (_log.isDebugEnabled()) {
-					_log.debug("Skipped " + Arrays.toString(parameter));
-				}
+		existingParameterValues = _addDefaultParameters(
+			defaultParameters, existingParameterValues);
+
+		String newURL = _buildQueryStyleURL(baseURL, existingParameterValues);
+
+		if (!Objects.equals(url, newURL) && _log.isInfoEnabled()) {
+			_log.info(
+				StringBundler.concat(
+					"Rewrite JDBC URL from ", url, " to ", newURL));
+		}
+
+		return newURL;
+	}
+
+	private static String _rewriteSemicolonStyleJDBCURL(
+		String[][] defaultParameters, String url) {
+
+		Map<String, String> existingParameterValues = new TreeMap<>();
+
+		int firstSemicolonIndex = url.indexOf(
+			CharPool.SEMICOLON, url.indexOf("://") + 3);
+
+		String baseURL = url;
+
+		if (firstSemicolonIndex != -1) {
+			baseURL = url.substring(0, firstSemicolonIndex);
+
+			String paramString = url.substring(firstSemicolonIndex + 1);
+
+			if (!paramString.isEmpty()) {
+				existingParameterValues = _getExistingParameterValues(
+					CharPool.SEMICOLON, paramString);
 			}
-			else {
-				existingParameterValues.put(parameter[0], parameter[1]);
-			}
 		}
 
-		StringBundler sb = new StringBundler(
-			(existingParameterValues.size() * 4) + 2);
+		existingParameterValues = _addDefaultParameters(
+			defaultParameters, existingParameterValues);
 
-		if (index == -1) {
-			sb.append(url);
-			sb.append(CharPool.QUESTION);
-		}
-		else {
-			sb.append(url.substring(0, index + 1));
-		}
-
-		for (Map.Entry<String, String> entry :
-				existingParameterValues.entrySet()) {
-
-			sb.append(entry.getKey());
-
-			String value = entry.getValue();
-
-			if (!_MALFORMED_PARAMETER_PLACE_HOLDER.equals(value)) {
-				sb.append(CharPool.EQUAL);
-				sb.append(value);
-			}
-
-			sb.append(CharPool.AMPERSAND);
-		}
-
-		if (!existingParameterValues.isEmpty()) {
-			sb.setIndex(sb.index() - 1);
-		}
-
-		String newURL = sb.toString();
+		String newURL = _buildSemicolonStyleURL(
+			baseURL, existingParameterValues);
 
 		if (!Objects.equals(url, newURL) && _log.isInfoEnabled()) {
 			_log.info(
@@ -551,6 +662,14 @@ public class DataSourceFactoryUtil {
 		{"rewriteBatchedStatements", "true"}, {"serverTimezone", "GMT"},
 		{"useFastDateParsing", "false"}, {"useLocalSessionState", "true"},
 		{"useLocalTransactionState", "true"}, {"useUnicode", "true"}
+	};
+
+	private static final String[][] _POSTGRESQL_DEFAULT_PARAMETERS = {
+		{"reWriteBatchedInserts", "true"}
+	};
+
+	private static final String[][] _SQLSERVER_DEFAULT_PARAMETERS = {
+		{"useBulkCopyForBatchInsert", "true"}
 	};
 
 	private static final Log _log = LogFactoryUtil.getLog(
