@@ -153,8 +153,8 @@ public class FormLayoutStructureItemMapper
 		JSONObject successMessageJSONObject =
 			formStyledLayoutStructureItem.getSuccessMessageJSONObject();
 
-if ((!saveInlineContent && !saveMappingConfiguration) ||
-	successMessageJSONObject == null) {
+		if ((!saveInlineContent && !saveMappingConfiguration) ||
+			successMessageJSONObject == null) {
 
 			return null;
 		}
@@ -168,8 +168,10 @@ if ((!saveInlineContent && !saveMappingConfiguration) ||
 			};
 
 		}
-		if (!successMessageJSONObject.has("layout")  && !successMessageJSONObject.has("displayPage")) {
-			MessageFormSubmissionResult messageFormSubmissionResult = new MessageFormSubmissionResult();
+		if (!successMessageJSONObject.has("layout") &&
+			!successMessageJSONObject.has("displayPage")) {
+			MessageFormSubmissionResult messageFormSubmissionResult =
+				new MessageFormSubmissionResult();
 
 			messageFormSubmissionResult.setNotificationText(
 				() -> {
@@ -208,41 +210,43 @@ if ((!saveInlineContent && !saveMappingConfiguration) ||
 		}
 
 		if (successMessageJSONObject.has("layout")) {
-			SitePageFormSubmissionResult sitePageFormSubmissionResult = new SitePageFormSubmissionResult();
+			SitePageFormSubmissionResult sitePageFormSubmissionResult =
+				new SitePageFormSubmissionResult();
 
-			JSONObject layoutJSONObject = successMessageJSONObject.getJSONObject(
-				"layout");
+			JSONObject layoutJSONObject =
+				successMessageJSONObject.getJSONObject(
+					"layout");
 
 			sitePageFormSubmissionResult.setItemReference(
-						() -> FragmentMappedValueUtil.toLayoutClassFieldsReference(
-							layoutJSONObject));
+				() -> FragmentMappedValueUtil.toLayoutClassFieldsReference(
+					layoutJSONObject));
 
-					sitePageFormSubmissionResult.setNotificationText(
-						() -> {
-							if (!successMessageJSONObject.has(
-								"notificationText")) {
+			sitePageFormSubmissionResult.setNotificationText(
+				() -> {
+					if (!successMessageJSONObject.has(
+						"notificationText")) {
 
-								return null;
-							}
+						return null;
+					}
 
-							return _toFragmentInlineValue(
-								successMessageJSONObject.getJSONObject(
-									"notificationText"));
-						});
-					sitePageFormSubmissionResult.setShowNotification(
-						() -> {
-							if (!successMessageJSONObject.has(
-								"showNotification")) {
+					return _toFragmentInlineValue(
+						successMessageJSONObject.getJSONObject(
+							"notificationText"));
+				});
+			sitePageFormSubmissionResult.setShowNotification(
+				() -> {
+					if (!successMessageJSONObject.has(
+						"showNotification")) {
 
-								return null;
-							}
+						return null;
+					}
 
-							return successMessageJSONObject.getBoolean(
-								"showNotification");
-						});
+					return successMessageJSONObject.getBoolean(
+						"showNotification");
+				});
 
-					return sitePageFormSubmissionResult;
-			};
+			return sitePageFormSubmissionResult;
+		}
 
 		if (successMessageJSONObject.has("displayPage")) {
 			DisplayPageFormSubmissionResult displayPageFormSubmissionResult = new DisplayPageFormSubmissionResult();
