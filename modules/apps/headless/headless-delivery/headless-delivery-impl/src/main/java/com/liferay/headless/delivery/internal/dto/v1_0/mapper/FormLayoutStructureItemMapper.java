@@ -166,7 +166,7 @@ public class FormLayoutStructureItemMapper
 			};
 
 		}
-		if (!successMessageJSONObject.has("layout")) {x
+		if (!successMessageJSONObject.has("layout")) {
 			MessageFormSubmissionResult messageFormSubmissionResult = new MessageFormSubmissionResult();
 
 			messageFormSubmissionResult.setNotificationText(
@@ -241,6 +241,43 @@ public class FormLayoutStructureItemMapper
 
 					return sitePageFormSubmissionResult;
 			};
+
+		if (successMessageJSONObject.has("displayPage")) {
+			SitePageFormSubmissionResult sitePageFormSubmissionResult = new SitePageFormSubmissionResult();
+
+			JSONObject layoutJSONObject = successMessageJSONObject.getJSONObject(
+				"displayPage");
+
+			sitePageFormSubmissionResult.setItemReference(
+				() -> FragmentMappedValueUtil.toLayoutClassFieldsReference(
+					layoutJSONObject));
+
+			sitePageFormSubmissionResult.setNotificationText(
+				() -> {
+					if (!successMessageJSONObject.has(
+						"notificationText")) {
+
+						return null;
+					}
+
+					return _toFragmentInlineValue(
+						successMessageJSONObject.getJSONObject(
+							"notificationText"));
+				});
+			sitePageFormSubmissionResult.setShowNotification(
+				() -> {
+					if (!successMessageJSONObject.has(
+						"showNotification")) {
+
+						return null;
+					}
+
+					return successMessageJSONObject.getBoolean(
+						"showNotification");
+				});
+
+			return sitePageFormSubmissionResult;
+		};
 		return null;
 	}
 
