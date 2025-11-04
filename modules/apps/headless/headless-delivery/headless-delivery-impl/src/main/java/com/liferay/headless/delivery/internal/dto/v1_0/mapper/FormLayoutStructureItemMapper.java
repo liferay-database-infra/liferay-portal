@@ -153,8 +153,8 @@ public class FormLayoutStructureItemMapper
 		JSONObject successMessageJSONObject =
 			formStyledLayoutStructureItem.getSuccessMessageJSONObject();
 
-		if ((!saveInlineContent || !saveMappingConfiguration) ||
-			successMessageJSONObject == null) {
+if ((!saveInlineContent && !saveMappingConfiguration) ||
+	successMessageJSONObject == null) {
 
 			return null;
 		}
