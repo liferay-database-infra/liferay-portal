@@ -1147,6 +1147,28 @@ components:
                             type: string
                     type: object
             type: object
+        DisplayPageFormSubmissionResult:
+            # @revieww
+            description:
+                Represents a definition of an submission result of type display page.
+            properties:
+                showNotification:
+                    type: boolean
+                notificationText:
+                    $ref: "#/components/schemas/FragmentInlineValue"
+                    description: The localized text for the secondary notification pop-up.
+                mapping:
+                    # @review
+                    description:
+                        The mapping of the display page submission result.
+                    properties:
+                        fieldKey:
+                            # @review
+                            description:
+                                The mapping's field key.
+                            type: string
+                    type: object
+            type: object
         DisplayPageTemplate:
             description:
                 Represents a Display Page template.

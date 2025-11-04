@@ -425,7 +425,69 @@ public class FormLayoutStructureItemImporter
 				getLayoutFromItemReferenceJSONObject(
 					itemReference, layoutStructureItemImporterContext)
 			).put(
+				"showNotification",
+				() -> {
+					if (!formSuccessSubmissionResultMap.containsKey(
+						"showNotification")) {
+
+						return null;
+					}
+
+					return GetterUtil.getBoolean(
+						formSuccessSubmissionResultMap.get(
+							"showNotification"));
+				}
+			).put(
+				"notificationText",
+				() -> {
+					JSONObject notificationTextJSONObject = _getLocalizedValuesJSONObject(
+						"notificationText", formSuccessSubmissionResultMap);
+
+					if(notificationTextJSONObject.length() > 0){
+						return notificationTextJSONObject;
+					}
+
+					return null;
+				}
+			).put(
 				"type", "page"
+			);
+		}
+		else if (formSuccessSubmissionResultMap.containsKey("mapping")) {
+			Map<String, Object> mappingMap =
+				(Map<String, Object>)formSuccessSubmissionResultMap.get(
+					"mapping");
+
+			return JSONUtil.put(
+				"displayPage",
+				mappingMap.get("fieldKey")
+			).put(
+				"showNotification",
+				() -> {
+					if (!formSuccessSubmissionResultMap.containsKey(
+						"showNotification")) {
+
+						return null;
+					}
+
+					return GetterUtil.getBoolean(
+						formSuccessSubmissionResultMap.get(
+							"showNotification"));
+				}
+			).put(
+				"notificationText",
+				() -> {
+					JSONObject notificationTextJSONObject = _getLocalizedValuesJSONObject(
+						"notificationText", formSuccessSubmissionResultMap);
+
+					if(notificationTextJSONObject.length() > 0){
+						return notificationTextJSONObject;
+					}
+
+					return null;
+				}
+			).put(
+				"type", "displayPage"
 			);
 		}
 		else if (formSuccessSubmissionResultMap.containsKey("url")) {

@@ -7,10 +7,12 @@ package com.liferay.headless.delivery.internal.dto.v1_0.mapper;
 
 import com.liferay.headless.delivery.dto.v1_0.ClassTypeReference;
 import com.liferay.headless.delivery.dto.v1_0.ContextReference;
+import com.liferay.headless.delivery.dto.v1_0.DisplayPageFormSubmissionResult;
 import com.liferay.headless.delivery.dto.v1_0.FormConfig;
 import com.liferay.headless.delivery.dto.v1_0.FragmentInlineValue;
 import com.liferay.headless.delivery.dto.v1_0.Layout;
 import com.liferay.headless.delivery.dto.v1_0.LocalizationConfig;
+import com.liferay.headless.delivery.dto.v1_0.Mapping;
 import com.liferay.headless.delivery.dto.v1_0.MessageFormSubmissionResult;
 import com.liferay.headless.delivery.dto.v1_0.PageElement;
 import com.liferay.headless.delivery.dto.v1_0.PageFormDefinition;
@@ -166,7 +168,7 @@ public class FormLayoutStructureItemMapper
 			};
 
 		}
-		if (!successMessageJSONObject.has("layout")) {
+		if (!successMessageJSONObject.has("layout")  && !successMessageJSONObject.has("displayPage")) {
 			MessageFormSubmissionResult messageFormSubmissionResult = new MessageFormSubmissionResult();
 
 			messageFormSubmissionResult.setNotificationText(
@@ -243,16 +245,19 @@ public class FormLayoutStructureItemMapper
 			};
 
 		if (successMessageJSONObject.has("displayPage")) {
-			SitePageFormSubmissionResult sitePageFormSubmissionResult = new SitePageFormSubmissionResult();
+			DisplayPageFormSubmissionResult displayPageFormSubmissionResult = new DisplayPageFormSubmissionResult();
 
-			JSONObject layoutJSONObject = successMessageJSONObject.getJSONObject(
+			String displayPage = successMessageJSONObject.getString(
 				"displayPage");
 
-			sitePageFormSubmissionResult.setItemReference(
-				() -> FragmentMappedValueUtil.toLayoutClassFieldsReference(
-					layoutJSONObject));
+			displayPageFormSubmissionResult.setMapping(
+				() -> new Mapping() {
+					{
+						setFieldKey(displayPage);
+					}
+				});
 
-			sitePageFormSubmissionResult.setNotificationText(
+			displayPageFormSubmissionResult.setNotificationText(
 				() -> {
 					if (!successMessageJSONObject.has(
 						"notificationText")) {
@@ -264,7 +269,7 @@ public class FormLayoutStructureItemMapper
 						successMessageJSONObject.getJSONObject(
 							"notificationText"));
 				});
-			sitePageFormSubmissionResult.setShowNotification(
+			displayPageFormSubmissionResult.setShowNotification(
 				() -> {
 					if (!successMessageJSONObject.has(
 						"showNotification")) {
@@ -276,7 +281,7 @@ public class FormLayoutStructureItemMapper
 						"showNotification");
 				});
 
-			return sitePageFormSubmissionResult;
+			return displayPageFormSubmissionResult;
 		};
 		return null;
 	}
