@@ -248,6 +248,38 @@ public class FormLayoutStructureItemImporter
 		return PageElement.Type.FORM;
 	}
 
+	private JSONObject _addNotificationConfig(
+		JSONObject jsonObject,
+		Map<String, Object> formSuccessSubmissionResultMap) {
+
+		return jsonObject.put(
+			"notificationText",
+			() -> {
+				JSONObject notificationTextJSONObject =
+					_getLocalizedValuesJSONObject(
+						"notificationText", formSuccessSubmissionResultMap);
+
+				if (notificationTextJSONObject.length() > 0) {
+					return notificationTextJSONObject;
+				}
+
+				return null;
+			}
+		).put(
+			"showNotification",
+			() -> {
+				if (!formSuccessSubmissionResultMap.containsKey(
+						"showNotification")) {
+
+					return null;
+				}
+
+				return GetterUtil.getBoolean(
+					formSuccessSubmissionResultMap.get("showNotification"));
+			}
+		);
+	}
+
 	private LayoutPageTemplateEntry _getLayoutPageTemplateEntry(
 		LayoutStructureItemImporterContext layoutStructureItemImporterContext) {
 
@@ -346,39 +378,6 @@ public class FormLayoutStructureItemImporter
 		return jsonObject;
 	}
 
-	private JSONObject _addNotificationConfig(
-		JSONObject jsonObject,
-		Map<String, Object> formSuccessSubmissionResultMap) {
-
-		return jsonObject.put(
-			"showNotification",
-			() -> {
-				if (!formSuccessSubmissionResultMap.containsKey(
-					"showNotification")) {
-
-					return null;
-				}
-
-				return GetterUtil.getBoolean(
-					formSuccessSubmissionResultMap.get(
-						"showNotification"));
-			}
-		).put(
-			"notificationText",
-			() -> {
-				JSONObject notificationTextJSONObject =
-					_getLocalizedValuesJSONObject(
-						"notificationText", formSuccessSubmissionResultMap);
-
-				if (notificationTextJSONObject.length() > 0) {
-					return notificationTextJSONObject;
-				}
-
-				return null;
-			}
-		);
-	}
-
 	private JSONObject _getSuccessMessageJSONObject(
 		LayoutStructureItemImporterContext layoutStructureItemImporterContext,
 		Map<String, Object> sourceMap) {
@@ -453,12 +452,11 @@ public class FormLayoutStructureItemImporter
 				(Map<String, Object>)formSuccessSubmissionResultMap.get(
 					"itemReference");
 
-			 return _addNotificationConfig(
+			return _addNotificationConfig(
 				JSONUtil.put(
 					"layout",
 					getLayoutFromItemReferenceJSONObject(
-						itemReference, layoutStructureItemImporterContext)
-				),
+						itemReference, layoutStructureItemImporterContext)),
 				formSuccessSubmissionResultMap
 			).put(
 				"type", "page"
@@ -469,15 +467,12 @@ public class FormLayoutStructureItemImporter
 				(Map<String, Object>)formSuccessSubmissionResultMap.get(
 					"mapping");
 
-				return _addNotificationConfig(
-					JSONUtil.put(
-						"displayPage",
-						mappingMap.get("fieldKey")
-					),
-					formSuccessSubmissionResultMap
-				).put(
-					"type", "displayPage"
-				);
+			return _addNotificationConfig(
+				JSONUtil.put("displayPage", mappingMap.get("fieldKey")),
+				formSuccessSubmissionResultMap
+			).put(
+				"type", "displayPage"
+			);
 		}
 		else if (formSuccessSubmissionResultMap.containsKey("url")) {
 			return JSONUtil.put(

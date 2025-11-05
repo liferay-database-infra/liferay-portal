@@ -346,7 +346,7 @@ public class FormStyledLayoutStructureItem extends StyledLayoutStructureItem {
 	private String _justify = "";
 	private JSONObject _localizationConfigJSONObject;
 	private int _numberOfSteps;
-	private JSONObject 	_successMessageJSONObject;
+	private JSONObject _successMessageJSONObject;
 	private String _widthType = StyledLayoutStructureConstants.WIDTH_TYPE;
 
 }

@@ -490,9 +490,9 @@ public abstract class BaseLayoutStructureItemImporter {
 		return JSONUtil.put(
 			"groupId", String.valueOf(layout.getGroupId())
 		).put(
-			"layoutId", String.valueOf(layout.getLayoutId())
-		).put(
 			"id", layout.getUuid()
+		).put(
+			"layoutId", String.valueOf(layout.getLayoutId())
 		).put(
 			"layoutUuid", layout.getUuid()
 		).put(

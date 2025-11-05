@@ -129,7 +129,7 @@ public class FormLayoutStructureItemMapper
 		FormStyledLayoutStructureItem formStyledLayoutStructureItem) {
 
 		if (formStyledLayoutStructureItem.getFormConfig() ==
-			FormStyledLayoutStructureItem.FORM_CONFIG_OTHER_ITEM_TYPE) {
+				FormStyledLayoutStructureItem.FORM_CONFIG_OTHER_ITEM_TYPE) {
 
 			return new ClassTypeReference() {
 				{
@@ -154,10 +154,11 @@ public class FormLayoutStructureItemMapper
 			formStyledLayoutStructureItem.getSuccessMessageJSONObject();
 
 		if ((!saveInlineContent && !saveMappingConfiguration) ||
-			successMessageJSONObject == null) {
+			(successMessageJSONObject == null)) {
 
 			return null;
 		}
+
 		if (successMessageJSONObject.has("url")) {
 			return new URLFormSubmissionResult() {
 				{
@@ -166,18 +167,17 @@ public class FormLayoutStructureItemMapper
 							successMessageJSONObject.getJSONObject("url")));
 				}
 			};
-
 		}
+
 		if (!successMessageJSONObject.has("layout") &&
 			!successMessageJSONObject.has("displayPage")) {
+
 			MessageFormSubmissionResult messageFormSubmissionResult =
 				new MessageFormSubmissionResult();
 
 			messageFormSubmissionResult.setNotificationText(
 				() -> {
-					if (!successMessageJSONObject.has(
-						"notificationText")) {
-
+					if (!successMessageJSONObject.has("notificationText")) {
 						return null;
 					}
 
@@ -187,9 +187,7 @@ public class FormLayoutStructureItemMapper
 				});
 			messageFormSubmissionResult.setShowNotification(
 				() -> {
-					if (!successMessageJSONObject.has(
-						"showNotification")) {
-
+					if (!successMessageJSONObject.has("showNotification")) {
 						return null;
 					}
 
@@ -214,8 +212,7 @@ public class FormLayoutStructureItemMapper
 				new SitePageFormSubmissionResult();
 
 			JSONObject layoutJSONObject =
-				successMessageJSONObject.getJSONObject(
-					"layout");
+				successMessageJSONObject.getJSONObject("layout");
 
 			sitePageFormSubmissionResult.setItemReference(
 				() -> FragmentMappedValueUtil.toLayoutClassFieldsReference(
@@ -223,9 +220,7 @@ public class FormLayoutStructureItemMapper
 
 			sitePageFormSubmissionResult.setNotificationText(
 				() -> {
-					if (!successMessageJSONObject.has(
-						"notificationText")) {
-
+					if (!successMessageJSONObject.has("notificationText")) {
 						return null;
 					}
 
@@ -235,9 +230,7 @@ public class FormLayoutStructureItemMapper
 				});
 			sitePageFormSubmissionResult.setShowNotification(
 				() -> {
-					if (!successMessageJSONObject.has(
-						"showNotification")) {
-
+					if (!successMessageJSONObject.has("showNotification")) {
 						return null;
 					}
 
@@ -249,7 +242,8 @@ public class FormLayoutStructureItemMapper
 		}
 
 		if (successMessageJSONObject.has("displayPage")) {
-			DisplayPageFormSubmissionResult displayPageFormSubmissionResult = new DisplayPageFormSubmissionResult();
+			DisplayPageFormSubmissionResult displayPageFormSubmissionResult =
+				new DisplayPageFormSubmissionResult();
 
 			String displayPage = successMessageJSONObject.getString(
 				"displayPage");
@@ -263,9 +257,7 @@ public class FormLayoutStructureItemMapper
 
 			displayPageFormSubmissionResult.setNotificationText(
 				() -> {
-					if (!successMessageJSONObject.has(
-						"notificationText")) {
-
+					if (!successMessageJSONObject.has("notificationText")) {
 						return null;
 					}
 
@@ -275,9 +267,7 @@ public class FormLayoutStructureItemMapper
 				});
 			displayPageFormSubmissionResult.setShowNotification(
 				() -> {
-					if (!successMessageJSONObject.has(
-						"showNotification")) {
-
+					if (!successMessageJSONObject.has("showNotification")) {
 						return null;
 					}
 
@@ -287,15 +277,15 @@ public class FormLayoutStructureItemMapper
 
 			return displayPageFormSubmissionResult;
 		};
+
 		return null;
 	}
-
 
 	private FormConfig.FormType _toFormType(
 		FormStyledLayoutStructureItem formStyledLayoutStructureItem) {
 
 		if (Objects.equals(
-			formStyledLayoutStructureItem.getFormType(), "multistep")) {
+				formStyledLayoutStructureItem.getFormType(), "multistep")) {
 
 			return FormConfig.FormType.MULTISTEP;
 		}
@@ -398,7 +388,7 @@ public class FormLayoutStructureItemMapper
 		return new LocalizationConfig() {
 			{
 				if (localizationConfigJSONObject.has(
-					"unlocalizedFieldsMessage")) {
+						"unlocalizedFieldsMessage")) {
 
 					setUnlocalizedFieldsMessage(
 						() -> _toFragmentInlineValue(
@@ -407,14 +397,14 @@ public class FormLayoutStructureItemMapper
 				}
 
 				if (localizationConfigJSONObject.has(
-					"unlocalizedFieldsState")) {
+						"unlocalizedFieldsState")) {
 
 					setUnlocalizedFieldsState(
 						() -> {
 							if (Objects.equals(
-								localizationConfigJSONObject.getString(
-									"unlocalizedFieldsState"),
-								"disabled")) {
+									localizationConfigJSONObject.getString(
+										"unlocalizedFieldsState"),
+									"disabled")) {
 
 								return LocalizationConfig.
 									UnlocalizedFieldsState.DISABLED;

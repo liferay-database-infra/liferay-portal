@@ -274,7 +274,7 @@ public class UpdateFormItemConfigMVCActionCommand
 			}
 		}
 
-			_layoutPageTemplateStructureService.
+		_layoutPageTemplateStructureService.
 			updateLayoutPageTemplateStructureData(
 				themeDisplay.getScopeGroupId(), themeDisplay.getPlid(),
 				segmentsExperienceId, layoutStructure.toString());

@@ -1152,11 +1152,6 @@ components:
             description:
                 Represents a definition of an submission result of type display page.
             properties:
-                showNotification:
-                    type: boolean
-                notificationText:
-                    $ref: "#/components/schemas/FragmentInlineValue"
-                    description: The localized text for the secondary notification pop-up.
                 mapping:
                     # @review
                     description:
@@ -1168,6 +1163,12 @@ components:
                                 The mapping's field key.
                             type: string
                     type: object
+                notificationText:
+                    $ref: "#/components/schemas/FragmentInlineValue"
+                    description:
+                        The localized text for the secondary notification pop-up.
+                showNotification:
+                    type: boolean
             type: object
         DisplayPageTemplate:
             description:
@@ -3424,7 +3425,8 @@ components:
                     type: string
                 notificationText:
                     $ref: "#/components/schemas/FragmentInlineValue"
-                    description: The localized text for the secondary notification pop-up.
+                    description:
+                        The localized text for the secondary notification pop-up.
                 showNotification:
                     type: boolean
             type: object
@@ -5428,7 +5430,8 @@ components:
                         The localized submission of page type.
                 notificationText:
                     $ref: "#/components/schemas/FragmentInlineValue"
-                    description: The localized text for the secondary notification pop-up.
+                    description:
+                        The localized text for the secondary notification pop-up.
                 showNotification:
                     type: boolean
             type: object

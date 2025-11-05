@@ -88,7 +88,6 @@ import com.liferay.layout.page.template.service.LayoutPageTemplateStructureServi
 import com.liferay.layout.page.template.util.CheckUnlockedLayoutThreadLocal;
 import com.liferay.layout.util.LayoutServiceContextHelper;
 import com.liferay.layout.util.constants.LayoutStructureConstants;
-import com.liferay.layout.util.structure.FormStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.util.structure.LayoutStructureItem;
@@ -2417,6 +2416,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 		_layoutPageTemplateStructureLocalService;
 
 	@Reference
+	private LayoutPageTemplateStructureService
+		_layoutPageTemplateStructureService;
+
+	@Reference
 	private LayoutServiceContextHelper _layoutServiceContextHelper;
 
 	private final EnumMap<PageElement.Type, LayoutStructureItemImporter>
@@ -2453,10 +2456,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 	@Reference
 	private SegmentsExperienceLocalService _segmentsExperienceLocalService;
-
-	@Reference
-	private LayoutPageTemplateStructureService
-		_layoutPageTemplateStructureService;
 
 	@Reference
 	private StyleBookEntryLocalService _styleBookEntryLocalService;
