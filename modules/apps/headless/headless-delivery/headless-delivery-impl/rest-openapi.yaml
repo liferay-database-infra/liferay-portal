@@ -1148,7 +1148,7 @@ components:
                     type: object
             type: object
         DisplayPageFormSubmissionResult:
-            # @revieww
+            # @review
             description:
                 Represents a definition of an submission result of type display page.
             properties:
@@ -3422,11 +3422,11 @@ components:
                         The message form submission type (embedded, none).
                     enum: [Embedded, None]
                     type: string
-                showNotification:
-                    type: boolean
                 notificationText:
                     $ref: "#/components/schemas/FragmentInlineValue"
                     description: The localized text for the secondary notification pop-up.
+                showNotification:
+                    type: boolean
             type: object
         NavigationMenu:
             # @review
@@ -3999,6 +3999,7 @@ components:
                                 -   $ref: "#/components/schemas/MessageFormSubmissionResult"
                                 -   $ref: "#/components/schemas/SitePageFormSubmissionResult"
                                 -   $ref: "#/components/schemas/URLFormSubmissionResult"
+                                -   $ref: "#/components/schemas/DisplayPageFormSubmissionResult"
                             type: object
                         formType:
                             # @review
@@ -5420,16 +5421,16 @@ components:
             description:
                 Represents a definition of a submission result of type page.
             properties:
-                showNotification:
-                    type: boolean
-                notificationText:
-                    $ref: "#/components/schemas/FragmentInlineValue"
-                    description: The localized text for the secondary notification pop-up.
                 itemReference:
                     $ref: "#/components/schemas/ClassFieldsReference"
                     # @review
                     description:
                         The localized submission of page type.
+                notificationText:
+                    $ref: "#/components/schemas/FragmentInlineValue"
+                    description: The localized text for the secondary notification pop-up.
+                showNotification:
+                    type: boolean
             type: object
         SitePageNavigationMenuSettings:
             # @review
