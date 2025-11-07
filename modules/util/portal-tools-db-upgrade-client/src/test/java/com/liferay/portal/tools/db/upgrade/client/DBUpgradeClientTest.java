@@ -114,6 +114,13 @@ public class DBUpgradeClientTest {
 			appServerPropertiesFile.delete();
 		}
 
+		File portalUpgradeDatabasePropertiesFile = new File(
+			_rootDir, "portal-upgrade-database.properties");
+
+		if (portalUpgradeDatabasePropertiesFile.exists()) {
+			portalUpgradeDatabasePropertiesFile.delete();
+		}
+
 		File portalUpgradeExtPropertiesFile = new File(
 			_rootDir, "portal-upgrade-ext.properties");
 
@@ -288,10 +295,13 @@ public class DBUpgradeClientTest {
 	}
 
 	@Test
-	public void testVerifyPortalUpgradeDatabaseProperties() throws Exception {
-		_createPortalUpgradeExtPropertiesFile();
+	public void testVerifyPortalUpgradeExtProperties() throws Exception {
+		File liferayHomeDir = new File(_rootDir, "custom-liferay-home");
+
+		liferayHomeDir.mkdirs();
 
 		String[] answers = {
+			RandomTestUtil.randomString(), liferayHomeDir.getAbsolutePath(),
 			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, "invalidHost",
 			"localhost", "abc", "99999", StringPool.BLANK, StringPool.BLANK,
 			StringPool.BLANK, StringPool.BLANK
@@ -303,7 +313,7 @@ public class DBUpgradeClientTest {
 			_dbUpgradeClient, "_appServer", _appServer);
 
 		ReflectionTestUtil.invoke(
-			_dbUpgradeClient, "_verifyPortalUpgradeDatabaseProperties",
+			_dbUpgradeClient, "_verifyPortalUpgradeExtProperties",
 			new Class<?>[0]);
 
 		String consoleString = _consoleByteArrayOutputStream.toString();
@@ -312,15 +322,27 @@ public class DBUpgradeClientTest {
 
 		String errorOutput = _errorByteArrayOutputStream.toString();
 
+		Assert.assertTrue(
+			errorOutput.contains("does not exist or is not a directory"));
+
 		Assert.assertTrue(errorOutput.contains("Unable to resolve host"));
 		Assert.assertTrue(errorOutput.contains("is not a valid port number"));
 		Assert.assertTrue(
 			errorOutput.contains("Port must be between 0 and 65535"));
 
 		Properties properties = ReflectionTestUtil.getFieldValue(
-			_dbUpgradeClient, "_portalUpgradeDatabaseProperties");
+			_dbUpgradeClient, "_portalUpgradeExtProperties");
 
 		Assert.assertNotNull(properties);
+
+		String liferayHomeDirName = properties.getProperty("liferay.home");
+
+		Assert.assertEquals(
+			liferayHomeDir.getCanonicalPath(),
+			new File(
+				liferayHomeDirName
+			).getCanonicalPath());
+
 		Assert.assertEquals(
 			"com.mysql.cj.jdbc.Driver",
 			properties.getProperty("jdbc.default.driverClassName"));
@@ -339,15 +361,87 @@ public class DBUpgradeClientTest {
 	}
 
 	@Test
-	public void testVerifyPortalUpgradeDatabasePropertiesWithEmptyAnswers()
+	public void testVerifyPortalUpgradeExtPropertiesWithDeprecatedDatabasePropertiesFile()
 		throws Exception {
 
 		_createPortalUpgradeExtPropertiesFile();
 
+		File portalUpgradeDatabasePropertiesFile = new File(
+			_rootDir, "portal-upgrade-database.properties");
+
+		Properties portalUpgradeDatabaseProperties = new Properties();
+
+		portalUpgradeDatabaseProperties.setProperty(
+			"jdbc.default.driverClassName", "com.mysql.cj.jdbc.Driver");
+		portalUpgradeDatabaseProperties.setProperty(
+			"jdbc.default.url",
+			StringBundler.concat(
+				"jdbc:mysql://localhost/lportal?characterEncoding=UTF-8",
+				"&dontTrackOpenResources=true",
+				"&holdResultsOpenOverStatementClose=true",
+				"&serverTimezone=GMT&useFastDateParsing=false",
+				"&useUnicode=true"));
+		portalUpgradeDatabaseProperties.setProperty(
+			"jdbc.default.username", "root");
+		portalUpgradeDatabaseProperties.setProperty(
+			"jdbc.default.password", "password");
+
+		portalUpgradeDatabaseProperties.store(
+			portalUpgradeDatabasePropertiesFile);
+
+		_dbUpgradeClient = _createDBUpgradeClient(new String[0]);
+
+		ReflectionTestUtil.setFieldValue(
+			_dbUpgradeClient, "_appServer", _appServer);
+
+		ReflectionTestUtil.invoke(
+			_dbUpgradeClient, "_verifyPortalUpgradeExtProperties",
+			new Class<?>[0]);
+
+		String errorOutput = _errorByteArrayOutputStream.toString();
+
+		Assert.assertTrue(
+			errorOutput.contains(
+				"The portal-upgrade-database.properties file is deprecated"));
+
+		Properties properties = ReflectionTestUtil.getFieldValue(
+			_dbUpgradeClient, "_portalUpgradeExtProperties");
+
+		Assert.assertNotNull(properties);
+
+		String liferayHomeDirName = properties.getProperty("liferay.home");
+
+		Assert.assertEquals(
+			_liferayHomeDir.getCanonicalPath(),
+			new File(
+				liferayHomeDirName
+			).getCanonicalPath());
+
+		Assert.assertEquals(
+			"com.mysql.cj.jdbc.Driver",
+			properties.getProperty("jdbc.default.driverClassName"));
+		Assert.assertEquals(
+			StringBundler.concat(
+				"jdbc:mysql://localhost/lportal?characterEncoding=UTF-8",
+				"&dontTrackOpenResources=true",
+				"&holdResultsOpenOverStatementClose=true",
+				"&serverTimezone=GMT&useFastDateParsing=false",
+				"&useUnicode=true"),
+			properties.getProperty("jdbc.default.url"));
+		Assert.assertEquals(
+			StringPool.BLANK, properties.getProperty("jdbc.default.username"));
+		Assert.assertEquals(
+			StringPool.BLANK, properties.getProperty("jdbc.default.password"));
+	}
+
+	@Test
+	public void testVerifyPortalUpgradeExtPropertiesWithEmptyAnswers()
+		throws Exception {
+
 		String[] answers = {
 			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
 			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
-			StringPool.BLANK, StringPool.BLANK
+			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK
 		};
 
 		_dbUpgradeClient = _createDBUpgradeClient(answers);
@@ -356,7 +450,7 @@ public class DBUpgradeClientTest {
 			_dbUpgradeClient, "_appServer", _appServer);
 
 		ReflectionTestUtil.invoke(
-			_dbUpgradeClient, "_verifyPortalUpgradeDatabaseProperties",
+			_dbUpgradeClient, "_verifyPortalUpgradeExtProperties",
 			new Class<?>[0]);
 
 		String consoleString = _consoleByteArrayOutputStream.toString();
@@ -364,9 +458,20 @@ public class DBUpgradeClientTest {
 		Assert.assertTrue(consoleString.contains("mariadb mysql postgresql"));
 
 		Properties properties = ReflectionTestUtil.getFieldValue(
-			_dbUpgradeClient, "_portalUpgradeDatabaseProperties");
+			_dbUpgradeClient, "_portalUpgradeExtProperties");
 
 		Assert.assertNotNull(properties);
+
+		File liferayHomeDir = new File(_rootDir, "../../");
+
+		String liferayHomeDirName = properties.getProperty("liferay.home");
+
+		Assert.assertEquals(
+			liferayHomeDir.getCanonicalPath(),
+			new File(
+				liferayHomeDirName
+			).getCanonicalPath());
+
 		Assert.assertEquals(
 			"com.mysql.cj.jdbc.Driver",
 			properties.getProperty("jdbc.default.driverClassName"));
@@ -385,15 +490,13 @@ public class DBUpgradeClientTest {
 	}
 
 	@Test
-	public void testVerifyPortalUpgradeDatabasePropertiesWithEmptyAnswersOnDXP()
+	public void testVerifyPortalUpgradeExtPropertiesWithEmptyAnswersOnDXP()
 		throws Exception {
-
-		_createPortalUpgradeExtPropertiesFile();
 
 		String[] answers = {
 			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
 			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
-			StringPool.BLANK, StringPool.BLANK
+			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK
 		};
 
 		_dbUpgradeClient = _createDBUpgradeClient(answers);
@@ -411,7 +514,7 @@ public class DBUpgradeClientTest {
 			Files.createFile(path);
 
 			ReflectionTestUtil.invoke(
-				_dbUpgradeClient, "_verifyPortalUpgradeDatabaseProperties",
+				_dbUpgradeClient, "_verifyPortalUpgradeExtProperties",
 				new Class<?>[0]);
 
 			String consoleString = _consoleByteArrayOutputStream.toString();
@@ -421,9 +524,20 @@ public class DBUpgradeClientTest {
 					"db2 mariadb mysql oracle postgresql sqlserver"));
 
 			Properties properties = ReflectionTestUtil.getFieldValue(
-				_dbUpgradeClient, "_portalUpgradeDatabaseProperties");
+				_dbUpgradeClient, "_portalUpgradeExtProperties");
 
 			Assert.assertNotNull(properties);
+
+			File liferayHomeDir = new File(_rootDir, "../../");
+
+			String liferayHomeDirName = properties.getProperty("liferay.home");
+
+			Assert.assertEquals(
+				liferayHomeDir.getCanonicalPath(),
+				new File(
+					liferayHomeDirName
+				).getCanonicalPath());
+
 			Assert.assertEquals(
 				"com.mysql.cj.jdbc.Driver",
 				properties.getProperty("jdbc.default.driverClassName"));
@@ -448,69 +562,6 @@ public class DBUpgradeClientTest {
 	}
 
 	@Test
-	public void testVerifyPortalUpgradeExtProperties() throws Exception {
-		File liferayHomeDir = new File(_rootDir, "custom-liferay-home");
-
-		liferayHomeDir.mkdirs();
-
-		String[] answers = {
-			RandomTestUtil.randomString(), liferayHomeDir.getAbsolutePath()
-		};
-
-		_dbUpgradeClient = _createDBUpgradeClient(answers);
-
-		ReflectionTestUtil.invoke(
-			_dbUpgradeClient, "_verifyPortalUpgradeExtProperties",
-			new Class<?>[0]);
-
-		String errorOutput = _errorByteArrayOutputStream.toString();
-
-		Assert.assertTrue(
-			errorOutput.contains("does not exist or is not a directory"));
-
-		Properties properties = ReflectionTestUtil.getFieldValue(
-			_dbUpgradeClient, "_portalUpgradeExtProperties");
-
-		Assert.assertNotNull(properties);
-
-		String liferayHomeDirName = properties.getProperty("liferay.home");
-
-		Assert.assertEquals(
-			liferayHomeDir.getCanonicalPath(),
-			new File(
-				liferayHomeDirName
-			).getCanonicalPath());
-	}
-
-	@Test
-	public void testVerifyPortalUpgradeExtPropertiesWithEmptyAnswers()
-		throws Exception {
-
-		String[] answers = {StringPool.BLANK};
-
-		_dbUpgradeClient = _createDBUpgradeClient(answers);
-
-		ReflectionTestUtil.invoke(
-			_dbUpgradeClient, "_verifyPortalUpgradeExtProperties",
-			new Class<?>[0]);
-
-		Properties properties = ReflectionTestUtil.getFieldValue(
-			_dbUpgradeClient, "_portalUpgradeExtProperties");
-
-		Assert.assertNotNull(properties);
-
-		File liferayHomeDir = new File(_rootDir, "../../");
-
-		String liferayHomeDirName = properties.getProperty("liferay.home");
-
-		Assert.assertEquals(
-			liferayHomeDir.getCanonicalPath(),
-			new File(
-				liferayHomeDirName
-			).getCanonicalPath());
-	}
-
-	@Test
 	public void testVerifyPortalUpgradeExtPropertiesWithInvalidPropertiesFile()
 		throws Exception {
 
@@ -520,6 +571,20 @@ public class DBUpgradeClientTest {
 		Properties portalUpgradeExtProperties = new Properties();
 
 		portalUpgradeExtProperties.setProperty("liferay.home", "invalidDir");
+		portalUpgradeExtProperties.setProperty(
+			"jdbc.default.driverClassName", "com.mysql.cj.jdbc.Driver");
+		portalUpgradeExtProperties.setProperty(
+			"jdbc.default.url",
+			StringBundler.concat(
+				"jdbc:mysql://localhost/lportal?characterEncoding=UTF-8",
+				"&dontTrackOpenResources=true",
+				"&holdResultsOpenOverStatementClose=true",
+				"&serverTimezone=GMT&useFastDateParsing=false",
+				"&useUnicode=true"));
+		portalUpgradeExtProperties.setProperty(
+			"jdbc.default.username", StringPool.BLANK);
+		portalUpgradeExtProperties.setProperty(
+			"jdbc.default.password", StringPool.BLANK);
 
 		portalUpgradeExtProperties.store(portalUpgradeExtPropertiesFile);
 
@@ -552,6 +617,9 @@ public class DBUpgradeClientTest {
 
 		_dbUpgradeClient = _createDBUpgradeClient(new String[0]);
 
+		ReflectionTestUtil.setFieldValue(
+			_dbUpgradeClient, "_appServer", _appServer);
+
 		ReflectionTestUtil.invoke(
 			_dbUpgradeClient, "_verifyPortalUpgradeExtProperties",
 			new Class<?>[0]);
@@ -568,6 +636,22 @@ public class DBUpgradeClientTest {
 			new File(
 				liferayHomeDirName
 			).getCanonicalPath());
+
+		Assert.assertEquals(
+			"com.mysql.cj.jdbc.Driver",
+			properties.getProperty("jdbc.default.driverClassName"));
+		Assert.assertEquals(
+			StringBundler.concat(
+				"jdbc:mysql://localhost/lportal?characterEncoding=UTF-8",
+				"&dontTrackOpenResources=true",
+				"&holdResultsOpenOverStatementClose=true",
+				"&serverTimezone=GMT&useFastDateParsing=false",
+				"&useUnicode=true"),
+			properties.getProperty("jdbc.default.url"));
+		Assert.assertEquals(
+			StringPool.BLANK, properties.getProperty("jdbc.default.username"));
+		Assert.assertEquals(
+			StringPool.BLANK, properties.getProperty("jdbc.default.password"));
 	}
 
 	private void _createAppServerPropertiesFile() throws Exception {
@@ -618,6 +702,21 @@ public class DBUpgradeClientTest {
 
 		portalUpgradeExtProperties.setProperty(
 			"liferay.home", _liferayHomeDir.getCanonicalPath());
+
+		portalUpgradeExtProperties.setProperty(
+			"jdbc.default.driverClassName", "com.mysql.cj.jdbc.Driver");
+		portalUpgradeExtProperties.setProperty(
+			"jdbc.default.url",
+			StringBundler.concat(
+				"jdbc:mysql://localhost/lportal?characterEncoding=UTF-8",
+				"&dontTrackOpenResources=true",
+				"&holdResultsOpenOverStatementClose=true",
+				"&serverTimezone=GMT&useFastDateParsing=false",
+				"&useUnicode=true"));
+		portalUpgradeExtProperties.setProperty(
+			"jdbc.default.username", StringPool.BLANK);
+		portalUpgradeExtProperties.setProperty(
+			"jdbc.default.password", StringPool.BLANK);
 
 		portalUpgradeExtProperties.store(portalUpgradeExtPropertiesFile);
 	}
