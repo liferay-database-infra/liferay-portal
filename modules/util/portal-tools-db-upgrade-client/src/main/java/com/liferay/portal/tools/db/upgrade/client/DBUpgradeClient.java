@@ -156,12 +156,6 @@ public class DBUpgradeClient {
 
 		_fileOutputStream = new FileOutputStream(_logFile);
 
-		_portalUpgradeDatabasePropertiesFile = new File(
-			_jarDir, "portal-upgrade-database.properties");
-
-		_portalUpgradeDatabaseProperties = _readProperties(
-			_portalUpgradeDatabasePropertiesFile);
-
 		_portalUpgradeExtPropertiesFile = new File(
 			_jarDir, "portal-upgrade-ext.properties");
 
@@ -309,8 +303,6 @@ public class DBUpgradeClient {
 			_verifyPortalUpgradeExtProperties();
 
 			_verifyAppServerProperties();
-
-			_verifyPortalUpgradeDatabaseProperties();
 
 			_saveProperties();
 		}
@@ -712,8 +704,6 @@ public class DBUpgradeClient {
 
 	private void _saveProperties() throws IOException {
 		_appServerProperties.store(_appServerPropertiesFile);
-		_portalUpgradeDatabaseProperties.store(
-			_portalUpgradeDatabasePropertiesFile);
 		_portalUpgradeExtProperties.store(_portalUpgradeExtPropertiesFile);
 	}
 
@@ -942,11 +932,63 @@ public class DBUpgradeClient {
 		return !hasErrors;
 	}
 
-	private void _verifyPortalUpgradeDatabaseProperties() throws IOException {
-		String value = _portalUpgradeDatabaseProperties.getProperty(
+	private void _verifyPortalUpgradeExtProperties() throws IOException {
+		File portalUpgradeDatabasePropertiesFile = new File(
+			_jarDir, "portal-upgrade-database.properties");
+
+		if (portalUpgradeDatabasePropertiesFile.exists()) {
+			System.err.println(
+				"The portal-upgrade-database.properties file is deprecated " +
+					"and will be ignored. Please move all database " +
+						"configuration properties to " +
+							"portal-upgrade-ext.properties.");
+		}
+
+		String value = _portalUpgradeExtProperties.getProperty("liferay.home");
+
+		File baseDir = new File(".");
+
+		if ((value == null) || value.isEmpty()) {
+			File defaultLiferayHomeDir = new File(_jarDir, "../../");
+
+			String liferayHomeDirName = _requestDirName(
+				true, baseDir, defaultLiferayHomeDir.getCanonicalPath(),
+				"Please enter your Liferay home");
+
+			if (liferayHomeDirName != null) {
+				value = liferayHomeDirName;
+			}
+			else {
+				value = defaultLiferayHomeDir.getCanonicalPath();
+			}
+		}
+		else {
+			baseDir = _jarDir;
+
+			if (!_verifyDirName(
+					true, baseDir, value,
+					_portalUpgradeExtPropertiesFile.getName(),
+					"liferay.home")) {
+
+				throw new IOException(
+					"Invalid configuration in " +
+						_portalUpgradeExtPropertiesFile.getName());
+			}
+		}
+
+		File liferayHome = new File(value);
+
+		if (!liferayHome.isAbsolute()) {
+			liferayHome = new File(baseDir, value);
+		}
+
+		_portalUpgradeExtProperties.setProperty(
+			"liferay.home", liferayHome.getCanonicalPath());
+
+		String driverClassName = _portalUpgradeExtProperties.getProperty(
 			"jdbc.default.driverClassName");
 
-		if ((value != null) && !value.isEmpty()) {
+		if ((driverClassName != null) && !driverClassName.isEmpty()) {
 			return;
 		}
 
@@ -1030,57 +1072,14 @@ public class DBUpgradeClient {
 
 		String password = _consoleReader.readLine('*');
 
-		_portalUpgradeDatabaseProperties.setProperty(
-			"jdbc.default.driverClassName", dataSource.getClassName());
-		_portalUpgradeDatabaseProperties.setProperty(
-			"jdbc.default.password", password);
-		_portalUpgradeDatabaseProperties.setProperty(
-			"jdbc.default.url", dataSource.getURL());
-		_portalUpgradeDatabaseProperties.setProperty(
-			"jdbc.default.username", userName);
-	}
-
-	private void _verifyPortalUpgradeExtProperties() throws IOException {
-		String value = _portalUpgradeExtProperties.getProperty("liferay.home");
-
-		File baseDir = new File(".");
-
-		if ((value == null) || value.isEmpty()) {
-			File defaultLiferayHomeDir = new File(_jarDir, "../../");
-
-			String liferayHomeDirName = _requestDirName(
-				true, baseDir, defaultLiferayHomeDir.getCanonicalPath(),
-				"Please enter your Liferay home");
-
-			if (liferayHomeDirName != null) {
-				value = liferayHomeDirName;
-			}
-			else {
-				value = defaultLiferayHomeDir.getCanonicalPath();
-			}
-		}
-		else {
-			baseDir = _jarDir;
-
-			if (!_verifyDirName(
-					true, baseDir, value,
-					_portalUpgradeExtPropertiesFile.getName(),
-					"liferay.home")) {
-
-				throw new IOException(
-					"Invalid configuration in " +
-						_portalUpgradeExtPropertiesFile.getName());
-			}
-		}
-
-		File liferayHome = new File(value);
-
-		if (!liferayHome.isAbsolute()) {
-			liferayHome = new File(baseDir, value);
-		}
-
 		_portalUpgradeExtProperties.setProperty(
-			"liferay.home", liferayHome.getCanonicalPath());
+			"jdbc.default.driverClassName", dataSource.getClassName());
+		_portalUpgradeExtProperties.setProperty(
+			"jdbc.default.password", password);
+		_portalUpgradeExtProperties.setProperty(
+			"jdbc.default.url", dataSource.getURL());
+		_portalUpgradeExtProperties.setProperty(
+			"jdbc.default.username", userName);
 	}
 
 	private static final String[] _APP_SERVER_NAMES = {
@@ -1140,8 +1139,6 @@ public class DBUpgradeClient {
 	private final FileOutputStream _fileOutputStream;
 	private List<String> _jvmOpts = new ArrayList<>();
 	private final File _logFile;
-	private final Properties _portalUpgradeDatabaseProperties;
-	private final File _portalUpgradeDatabasePropertiesFile;
 	private final Properties _portalUpgradeExtProperties;
 	private final File _portalUpgradeExtPropertiesFile;
 	private final boolean _shell;
