@@ -80,24 +80,17 @@ public class DBUpgradeClient {
 					Collections.addAll(jvmOpts, optionValue.split(" "));
 				}
 
-				if (!_containsPrefix(jvmOpts, "-Dfile.encoding=")) {
-					jvmOpts.add("-Dfile.encoding=UTF8");
-				}
+				Map<String, String> defaultOpts = new LinkedHashMap<>();
+				defaultOpts.put("-Dfile.encoding=", "-Dfile.encoding=UTF8");
+				defaultOpts.put("-Duser.country=", "-Duser.country=US");
+				defaultOpts.put("-Duser.language=", "-Duser.language=en");
+				defaultOpts.put("-Duser.timezone=", "-Duser.timezone=GMT");
+				defaultOpts.put("-Xmx", "-Xmx4096m");
 
-				if (!_containsPrefix(jvmOpts, "-Duser.country=")) {
-					jvmOpts.add("-Duser.country=US");
-				}
-
-				if (!_containsPrefix(jvmOpts, "-Duser.language=")) {
-					jvmOpts.add("-Duser.language=en");
-				}
-
-				if (!_containsPrefix(jvmOpts, "-Duser.timezone=")) {
-					jvmOpts.add("-Duser.timezone=GMT");
-				}
-
-				if (!_containsPrefix(jvmOpts, "-Xmx")) {
-					jvmOpts.add("-Xmx4096m");
+				for (Map.Entry<String, String> entry : defaultOpts.entrySet()) {
+					if (!_containsPrefix(jvmOpts, entry.getKey())) {
+						jvmOpts.add(entry.getValue());
+					}
 				}
 			}
 			else {
