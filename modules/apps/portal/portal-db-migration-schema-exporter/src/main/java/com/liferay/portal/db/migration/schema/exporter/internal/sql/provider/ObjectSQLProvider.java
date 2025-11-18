@@ -105,7 +105,7 @@ public class ObjectSQLProvider implements SQLProvider {
 						objectRelationship.getObjectDefinitionId1()),
 					ObjectDefinitionLocalServiceUtil.getObjectDefinition(
 						objectRelationship.getObjectDefinitionId2()),
-					false);
+					objectRelationship.isReverse());
 
 			String pkObjectFieldDBColumnName1 = pkObjectFieldDBColumnNames.get(
 				"pkObjectFieldDBColumnName1");
