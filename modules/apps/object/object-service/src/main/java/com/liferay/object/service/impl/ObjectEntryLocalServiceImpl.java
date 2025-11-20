@@ -101,6 +101,7 @@ import com.liferay.object.petra.sql.dsl.DynamicObjectDefinitionLocalizationTable
 import com.liferay.object.petra.sql.dsl.DynamicObjectDefinitionTable;
 import com.liferay.object.petra.sql.dsl.DynamicObjectDefinitionTableUtil;
 import com.liferay.object.petra.sql.dsl.DynamicObjectRelationshipMappingTable;
+import com.liferay.object.petra.sql.dsl.DynamicObjectRelationshipMappingTableFactory;
 import com.liferay.object.related.models.ObjectRelatedModelsProvider;
 import com.liferay.object.related.models.ObjectRelatedModelsProviderRegistry;
 import com.liferay.object.relationship.util.ObjectRelationshipUtil;
@@ -110,6 +111,7 @@ import com.liferay.object.scope.ObjectDefinitionScoped;
 import com.liferay.object.scope.ObjectScopeProvider;
 import com.liferay.object.scope.ObjectScopeProviderRegistry;
 import com.liferay.object.search.StrictObjectReindexThreadLocal;
+import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryVersionLocalService;
 import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.object.service.ObjectFieldSettingLocalService;
@@ -3553,14 +3555,10 @@ public class ObjectEntryLocalServiceImpl
 				objectRelationship.getType(),
 				ObjectRelationshipConstants.TYPE_MANY_TO_MANY)) {
 
-			ObjectRelationshipLocalService objectRelationshipLocalService =
-				_objectRelationshipLocalServiceSnapshot.get();
-
 			DynamicObjectRelationshipMappingTable
 				dynamicObjectRelationshipMappingTable =
-					objectRelationshipLocalService.
-						getDynamicObjectRelationshipMappingTable(
-							objectRelationship);
+					DynamicObjectRelationshipMappingTableFactory.create(
+						_objectDefinitionLocalService, objectRelationship);
 
 			joinStep = joinStep.innerJoinON(
 				dynamicObjectRelationshipMappingTable,
@@ -4001,14 +3999,10 @@ public class ObjectEntryLocalServiceImpl
 		ObjectDefinition objectDefinition2 =
 			_objectDefinitionPersistence.fetchByPrimaryKey(objectDefinitionId2);
 
-		ObjectRelationshipLocalService objectRelationshipLocalService =
-			_objectRelationshipLocalServiceSnapshot.get();
-
 		DynamicObjectRelationshipMappingTable
 			dynamicObjectRelationshipMappingTable =
-				objectRelationshipLocalService.
-					getDynamicObjectRelationshipMappingTable(
-						objectRelationship, reverse);
+				DynamicObjectRelationshipMappingTableFactory.create(
+					_objectDefinitionLocalService, objectRelationship, reverse);
 
 		Column<DynamicObjectRelationshipMappingTable, Long> primaryKeyColumn1 =
 			dynamicObjectRelationshipMappingTable.getPrimaryKeyColumn1();
@@ -7650,6 +7644,9 @@ public class ObjectEntryLocalServiceImpl
 	private Localization _localization;
 
 	private volatile ObjectConfiguration _objectConfiguration;
+
+	@Reference
+	private ObjectDefinitionLocalService _objectDefinitionLocalService;
 
 	@Reference
 	private ObjectDefinitionPersistence _objectDefinitionPersistence;
