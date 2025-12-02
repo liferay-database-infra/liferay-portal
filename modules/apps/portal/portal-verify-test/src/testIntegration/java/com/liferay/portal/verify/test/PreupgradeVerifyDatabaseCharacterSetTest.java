@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
@@ -156,6 +157,99 @@ public class PreupgradeVerifyDatabaseCharacterSetTest
 				serviceComponent);
 
 			_db.runSQL("drop table " + tableName);
+		}
+	}
+
+	@Test
+	public void testVerifyMixedCharacterSetObjectTables() throws Exception {
+		Assume.assumeTrue(
+			(_db.getDBType() == DBType.MARIADB) ||
+			(_db.getDBType() == DBType.MYSQL));
+
+		long companyId = RandomTestUtil.nextLong();
+		long objectDefinitionId = RandomTestUtil.nextLong();
+		long objectRelationshipId = RandomTestUtil.nextLong();
+
+		DBInspector dbInspector = new DBInspector(_connection);
+
+		String objectDefinitionDBTableName = dbInspector.normalizeName(
+			"C_TestObject");
+		String objectDefinitionExtensionDBTableName = dbInspector.normalizeName(
+			"C_TestObject_x_" + companyId);
+		String objectDefinitionLocalizationDBTableName =
+			dbInspector.normalizeName("C_TestObject_l");
+		String objectRelationshipDBTableName = dbInspector.normalizeName(
+			"R_TestObject");
+
+		_db.runSQL(
+			StringBundler.concat(
+				"insert into ObjectDefinition (objectDefinitionId, companyId, ",
+				"dbTableName, enableLocalization, modifiable, status, ",
+				"system_) values (", objectDefinitionId, ", ", companyId, ", '",
+				objectDefinitionDBTableName, "', 1, 0, ",
+				WorkflowConstants.STATUS_APPROVED, ", 1)"));
+
+		_db.runSQL(
+			StringBundler.concat(
+				"insert into ObjectRelationship (objectRelationshipId, ",
+				"dbTableName, type_) values (", objectRelationshipId, ", '",
+				objectRelationshipDBTableName, "', 'manyToMany')"));
+
+		String createTableSQL =
+			" (testColumn VARCHAR(75) primary key) collate utf8_bin";
+
+		_db.runSQL(
+			"create table " + objectDefinitionDBTableName + createTableSQL);
+		_db.runSQL(
+			"create table " + objectDefinitionExtensionDBTableName +
+				createTableSQL);
+		_db.runSQL(
+			"create table " + objectDefinitionLocalizationDBTableName +
+				createTableSQL);
+		_db.runSQL(
+			"create table " + objectRelationshipDBTableName + createTableSQL);
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				PreupgradeVerifyDatabaseCharacterSet.class.getName(),
+				LoggerTestUtil.WARN)) {
+
+			testVerify();
+
+			List<LogEntry> logEntries = logCapture.getLogEntries();
+
+			Assert.assertEquals(logEntries.toString(), 4, logEntries.size());
+
+			String messages = logEntries.toString();
+
+			Assert.assertTrue(
+				messages.contains(
+					"Mixed character set and collation: " +
+						objectDefinitionDBTableName));
+			Assert.assertTrue(
+				messages.contains(
+					"Mixed character set and collation: " +
+						objectDefinitionExtensionDBTableName));
+			Assert.assertTrue(
+				messages.contains(
+					"Mixed character set and collation: " +
+						objectDefinitionLocalizationDBTableName));
+			Assert.assertTrue(
+				messages.contains(
+					"Mixed character set and collation: " +
+						objectRelationshipDBTableName));
+		}
+		finally {
+			_db.runSQL(
+				"delete from ObjectDefinition where objectDefinitionId = " +
+					objectDefinitionId);
+			_db.runSQL(
+				"delete from ObjectRelationship where objectRelationshipId = " +
+					objectRelationshipId);
+
+			_db.runSQL("drop table " + objectDefinitionDBTableName);
+			_db.runSQL("drop table " + objectDefinitionExtensionDBTableName);
+			_db.runSQL("drop table " + objectDefinitionLocalizationDBTableName);
+			_db.runSQL("drop table " + objectRelationshipDBTableName);
 		}
 	}
 
