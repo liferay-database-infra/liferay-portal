@@ -36,6 +36,7 @@ import com.liferay.portal.verify.test.util.BaseVerifyProcessTestCase;
 
 import java.sql.Connection;
 
+import java.util.Arrays;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -221,22 +222,19 @@ public class PreupgradeVerifyDatabaseCharacterSetTest
 
 			String messages = logEntries.toString();
 
-			Assert.assertTrue(
-				messages.contains(
-					"Mixed character set and collation: " +
-						objectDefinitionDBTableName));
-			Assert.assertTrue(
-				messages.contains(
-					"Mixed character set and collation: " +
-						objectDefinitionExtensionDBTableName));
-			Assert.assertTrue(
-				messages.contains(
-					"Mixed character set and collation: " +
-						objectDefinitionLocalizationDBTableName));
-			Assert.assertTrue(
-				messages.contains(
-					"Mixed character set and collation: " +
-						objectRelationshipDBTableName));
+			List<String> objectDBTableNames = Arrays.asList(
+				objectDefinitionDBTableName,
+				objectDefinitionExtensionDBTableName,
+				objectDefinitionLocalizationDBTableName,
+				objectRelationshipDBTableName);
+
+			for (String objectDBTableName : objectDBTableNames) {
+				Assert.assertTrue(
+					"Expected warning for table " + objectDBTableName,
+					messages.contains(
+						"Mixed character set and collation: " +
+							objectDBTableName));
+			}
 		}
 		finally {
 			_db.runSQL(
