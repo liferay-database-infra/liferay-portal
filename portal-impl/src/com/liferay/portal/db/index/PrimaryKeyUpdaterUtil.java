@@ -15,6 +15,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.module.util.BundleUtil;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -60,6 +61,17 @@ public class PrimaryKeyUpdaterUtil {
 						_log.error(exception);
 					}
 				}
+			}
+
+			try {
+				CompanyLocalServiceUtil.forEachCompanyId(
+					companyId -> _addUpdatePrimaryKeysFutures(
+						DBResourceUtil.
+							getNonserviceBuilderPrimaryKeyColumnNames(
+								companyId)));
+			}
+			catch (Exception exception) {
+				_log.error(exception);
 			}
 
 			_awaitFuturesTermination();

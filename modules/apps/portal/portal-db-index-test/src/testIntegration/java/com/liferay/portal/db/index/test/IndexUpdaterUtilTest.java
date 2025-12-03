@@ -16,6 +16,7 @@ import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DuplicateUniqueFinderRowsCleaner;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -23,6 +24,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
+import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
 import java.sql.Connection;
@@ -191,11 +193,12 @@ public class IndexUpdaterUtilTest {
 
 	@Test
 	public void testUpdateIndexRetry() throws Exception {
-		_db.runSQL(
-			StringBundler.concat(
-				"create table TestTable (id1 INTEGER, id2 INTEGER, column1 ",
-				"INTEGER, column2 INTEGER, column3 VARCHAR(255), column4 ",
-				"VARCHAR(255), primary key (id1, id2))"));
+		_companyLocalService.forEachCompany(
+			companyId -> _db.runSQL(
+				StringBundler.concat(
+					"create table TestTable (id1 INTEGER, id2 INTEGER, ",
+					"column1 INTEGER, column2 INTEGER, column3 VARCHAR(255), ",
+					"column4 VARCHAR(255), primary key (id1, id2))")));
 
 		try {
 			_db.runSQL("insert into TestTable values(1, 2, 3, 4, '5', '6')");
@@ -250,7 +253,8 @@ public class IndexUpdaterUtilTest {
 			}
 		}
 		finally {
-			_db.runSQL("DROP_TABLE_IF_EXISTS(TestTable)");
+			_companyLocalService.forEachCompany(
+				companyId -> _db.runSQL("DROP_TABLE_IF_EXISTS(TestTable)"));
 		}
 	}
 
@@ -302,5 +306,8 @@ public class IndexUpdaterUtilTest {
 	private static String _moduleTableIndexName;
 	private static String _portalIndexName;
 	private static String _portalTableIndexName;
+
+	@Inject
+	private CompanyLocalService _companyLocalService;
 
 }
