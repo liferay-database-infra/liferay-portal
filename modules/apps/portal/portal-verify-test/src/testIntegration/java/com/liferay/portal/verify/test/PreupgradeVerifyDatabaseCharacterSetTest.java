@@ -36,7 +36,7 @@ import com.liferay.portal.verify.test.util.BaseVerifyProcessTestCase;
 
 import java.sql.Connection;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -173,10 +173,24 @@ public class PreupgradeVerifyDatabaseCharacterSetTest
 
 		DBInspector dbInspector = new DBInspector(_connection);
 
+		boolean hasEnableLocalizationColumn = dbInspector.hasColumn(
+			"ObjectDefinition", "enableLocalization");
+		boolean hasModifiableColumn = dbInspector.hasColumn(
+			"ObjectDefinition", "modifiable");
+		boolean hasSystemColumn = dbInspector.hasColumn(
+			"ObjectDefinition", "system_");
+
 		String objectDefinitionDBTableName = dbInspector.normalizeName(
 			"C_TestObject");
+
 		String objectDefinitionExtensionDBTableName = dbInspector.normalizeName(
-			"C_TestObject_x_" + companyId);
+			"C_TestObject_x");
+
+		if (hasSystemColumn) {
+			objectDefinitionExtensionDBTableName = dbInspector.normalizeName(
+				"C_TestObject_x_" + companyId);
+		}
+
 		String objectDefinitionLocalizationDBTableName =
 			dbInspector.normalizeName("C_TestObject_l");
 		String objectRelationshipDBTableName = dbInspector.normalizeName(
@@ -184,17 +198,23 @@ public class PreupgradeVerifyDatabaseCharacterSetTest
 
 		_db.runSQL(
 			StringBundler.concat(
-				"insert into ObjectDefinition (objectDefinitionId, companyId, ",
-				"dbTableName, enableLocalization, modifiable, status, ",
-				"system_) values (", objectDefinitionId, ", ", companyId, ", '",
-				objectDefinitionDBTableName, "', 1, 0, ",
-				WorkflowConstants.STATUS_APPROVED, ", 1)"));
+				"insert into ObjectDefinition (companyId, dbTableName, ",
+				hasEnableLocalizationColumn ? "enableLocalization, " : "",
+				hasModifiableColumn ? "modifiable, " : "",
+				"objectDefinitionId, status",
+				hasSystemColumn ? ", system_" : "", ") values (", companyId,
+				", '", objectDefinitionDBTableName, "', ",
+				hasEnableLocalizationColumn ? "1, " : "",
+				hasModifiableColumn ? "0, " : "", objectDefinitionId, ", ",
+				WorkflowConstants.STATUS_APPROVED, hasSystemColumn ? ", 1" : "",
+				")"));
 
 		_db.runSQL(
 			StringBundler.concat(
-				"insert into ObjectRelationship (objectRelationshipId, ",
-				"dbTableName, type_) values (", objectRelationshipId, ", '",
-				objectRelationshipDBTableName, "', 'manyToMany')"));
+				"insert into ObjectRelationship (dbTableName, ",
+				"objectRelationshipId, type_) values ('",
+				objectRelationshipDBTableName, "', ", objectRelationshipId,
+				", 'manyToMany')"));
 
 		String createTableSQL =
 			" (testColumn VARCHAR(75) primary key) collate utf8_bin";
@@ -204,9 +224,13 @@ public class PreupgradeVerifyDatabaseCharacterSetTest
 		_db.runSQL(
 			"create table " + objectDefinitionExtensionDBTableName +
 				createTableSQL);
-		_db.runSQL(
-			"create table " + objectDefinitionLocalizationDBTableName +
-				createTableSQL);
+
+		if (hasEnableLocalizationColumn) {
+			_db.runSQL(
+				"create table " + objectDefinitionLocalizationDBTableName +
+					createTableSQL);
+		}
+
 		_db.runSQL(
 			"create table " + objectRelationshipDBTableName + createTableSQL);
 
@@ -218,15 +242,22 @@ public class PreupgradeVerifyDatabaseCharacterSetTest
 
 			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logEntries.toString(), 4, logEntries.size());
+			Assert.assertEquals(
+				logEntries.toString(), hasEnableLocalizationColumn ? 4 : 3,
+				logEntries.size());
 
 			String messages = logEntries.toString();
 
-			List<String> objectDBTableNames = Arrays.asList(
-				objectDefinitionDBTableName,
-				objectDefinitionExtensionDBTableName,
-				objectDefinitionLocalizationDBTableName,
-				objectRelationshipDBTableName);
+			List<String> objectDBTableNames = new ArrayList<>();
+
+			objectDBTableNames.add(objectDefinitionDBTableName);
+			objectDBTableNames.add(objectDefinitionExtensionDBTableName);
+
+			if (hasEnableLocalizationColumn) {
+				objectDBTableNames.add(objectDefinitionLocalizationDBTableName);
+			}
+
+			objectDBTableNames.add(objectRelationshipDBTableName);
 
 			for (String objectDBTableName : objectDBTableNames) {
 				Assert.assertTrue(
@@ -246,7 +277,12 @@ public class PreupgradeVerifyDatabaseCharacterSetTest
 
 			_db.runSQL("drop table " + objectDefinitionDBTableName);
 			_db.runSQL("drop table " + objectDefinitionExtensionDBTableName);
-			_db.runSQL("drop table " + objectDefinitionLocalizationDBTableName);
+
+			if (hasEnableLocalizationColumn) {
+				_db.runSQL(
+					"drop table " + objectDefinitionLocalizationDBTableName);
+			}
+
 			_db.runSQL("drop table " + objectRelationshipDBTableName);
 		}
 	}

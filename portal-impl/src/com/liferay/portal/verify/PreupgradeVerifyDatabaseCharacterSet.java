@@ -134,10 +134,22 @@ public class PreupgradeVerifyDatabaseCharacterSet
 			return objectDefinitionDBTableNames;
 		}
 
+		boolean hasEnableLocalizationColumn = dbInspector.hasColumn(
+			"ObjectDefinition", "enableLocalization");
+		boolean hasModifiableColumn = dbInspector.hasColumn(
+			"ObjectDefinition", "modifiable");
+		boolean hasSystemColumn = dbInspector.hasColumn(
+			"ObjectDefinition", "system_");
+
+		String sql = StringBundler.concat(
+			"select companyId, dbTableName",
+			hasEnableLocalizationColumn ? ", enableLocalization" : "",
+			hasModifiableColumn ? ", modifiable" : "",
+			hasSystemColumn ? ", system_" : "",
+			" from ObjectDefinition where status = ?");
+
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
-				"select companyId, dbTableName, enableLocalization, " +
-					"modifiable, system_ from ObjectDefinition where status " +
-						"= ?")) {
+				sql)) {
 
 			preparedStatement.setInt(1, WorkflowConstants.STATUS_APPROVED);
 
@@ -148,30 +160,28 @@ public class PreupgradeVerifyDatabaseCharacterSet
 					_addDBTableName(
 						dbInspector, dbTableName, objectDefinitionDBTableNames);
 
-					if (resultSet.getBoolean("enableLocalization")) {
+					if (hasEnableLocalizationColumn &&
+						resultSet.getBoolean("enableLocalization")) {
+
 						_addDBTableName(
 							dbInspector, dbTableName + "_l",
 							objectDefinitionDBTableNames);
 					}
 
-					String extensionDBTableName = null;
+					String extensionDBTableName = dbTableName + "_x";
 
-					if (!resultSet.getBoolean("modifiable") &&
-						resultSet.getBoolean("system_")) {
+					if ((!hasModifiableColumn ||
+						 !resultSet.getBoolean("modifiable")) &&
+						hasSystemColumn && resultSet.getBoolean("system_")) {
 
-						extensionDBTableName = dbTableName;
-
-						if (extensionDBTableName.endsWith("_")) {
-							extensionDBTableName += "x_";
+						if (dbTableName.endsWith("_")) {
+							extensionDBTableName = dbTableName + "x_";
 						}
 						else {
-							extensionDBTableName += "_x_";
+							extensionDBTableName = dbTableName + "_x_";
 						}
 
 						extensionDBTableName += resultSet.getLong("companyId");
-					}
-					else {
-						extensionDBTableName = dbTableName + "_x";
 					}
 
 					_addDBTableName(
