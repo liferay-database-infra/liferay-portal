@@ -15,6 +15,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.module.util.BundleUtil;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -51,15 +52,21 @@ public class PrimaryKeyUpdaterUtil {
 				if (BundleUtil.isLiferayRequireSchemaVersionBundle(bundle) ||
 					BundleUtil.isLiferayServiceBundle(bundle)) {
 
-					try {
-						_addUpdatePrimaryKeysFutures(
-							DBResourceUtil.getModuleTablesPrimaryKeyColumnNames(
-								bundle));
-					}
-					catch (Exception exception) {
-						_log.error(exception);
-					}
+					_addUpdatePrimaryKeysFutures(
+						DBResourceUtil.getModuleTablesPrimaryKeyColumnNames(
+							bundle));
 				}
+			}
+
+			try {
+				CompanyLocalServiceUtil.forEachCompanyId(
+					companyId -> _addUpdatePrimaryKeysFutures(
+						DBResourceUtil.
+							getNonserviceBuilderPrimaryKeyColumnNames(
+								companyId)));
+			}
+			catch (Exception exception) {
+				_throwableCollector.collect(exception);
 			}
 
 			_awaitFuturesTermination();
