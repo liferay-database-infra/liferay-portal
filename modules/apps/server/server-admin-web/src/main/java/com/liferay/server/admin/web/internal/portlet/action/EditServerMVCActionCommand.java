@@ -10,6 +10,8 @@ import com.liferay.change.tracking.constants.CTConstants;
 import com.liferay.change.tracking.model.CTCollectionModel;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
 import com.liferay.configuration.admin.constants.ConfigurationAdminPortletKeys;
+import com.liferay.data.cleanup.DataCleanup;
+import com.liferay.data.cleanup.util.DataCleanupUtil;
 import com.liferay.document.library.kernel.document.conversion.DocumentConversion;
 import com.liferay.document.library.kernel.model.DLProcessorConstants;
 import com.liferay.document.library.kernel.processor.AudioProcessor;
@@ -282,6 +284,45 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 		}
 		else if (cmd.equals("verifyMembershipPolicies")) {
 			_verifyMembershipPolicies();
+		}
+		else {
+			List<DataCleanup> systemDataCleanups =
+				DataCleanupUtil.getSystemDataCleanups();
+
+			if (cmd.equals("executeAllSystemDataCleanups")) {
+				for (DataCleanup systemDataCleanup : systemDataCleanups) {
+					systemDataCleanup.cleanup();
+				}
+
+				_cleanUpAddToPagePermissions(actionRequest);
+				_cleanUpLayoutRevisionPortletPreferences();
+				_cleanUpOrphanedPortletPreferences();
+			}
+
+			List<DataCleanup> moduleDataCleanups =
+				DataCleanupUtil.getModuleDataCleanups();
+
+			if (cmd.equals("executeAllModuleDataCleanups")) {
+				for (DataCleanup moduleDataCleanup : moduleDataCleanups) {
+					moduleDataCleanup.cleanup();
+				}
+			}
+
+			Map<String, DataCleanup> dataCleanupsMap = new HashMap<>();
+
+			for (DataCleanup dataCleanup : systemDataCleanups) {
+				dataCleanupsMap.put(dataCleanup.getLabel(), dataCleanup);
+			}
+
+			moduleDataCleanups.forEach(
+				moduleDataCleanup -> dataCleanupsMap.put(
+					moduleDataCleanup.getLabel(), moduleDataCleanup));
+
+			DataCleanup dataCleanup = dataCleanupsMap.get(cmd);
+
+			if (dataCleanup != null) {
+				dataCleanup.cleanup();
+			}
 		}
 
 		sendRedirect(actionRequest, actionResponse, redirect);
