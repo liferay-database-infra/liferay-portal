@@ -6,6 +6,8 @@
 package com.liferay.data.cleanup.util;
 
 import com.liferay.data.cleanup.DataCleanup;
+import com.liferay.data.cleanup.ExecuteAllModulesDataCleanup;
+import com.liferay.data.cleanup.ExecuteAllSystemDataCleanup;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.Collections;
@@ -16,6 +18,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Maríano Álvaro Sáiz
  */
 public class DataCleanupUtil {
+
+	public static DataCleanup getExecuteAllModuleDataCleanups() {
+		return _executeAllModulesDataCleanup;
+	}
+
+	public static DataCleanup getExecuteAllSystemDataCleanups() {
+		return _executeAllSystemDataCleanup;
+	}
 
 	public static List<DataCleanup> getModuleDataCleanups() {
 		return Collections.unmodifiableList(_moduleDataCleanups);
@@ -46,7 +56,9 @@ public class DataCleanupUtil {
 			return _moduleDataCleanups;
 		}
 		else if (StringUtil.equalsIgnoreCase(
-					type, DataCleanup.SYSTEM_DATA_CLEANUP)) {
+					type, DataCleanup.SYSTEM_DATA_CLEANUP) ||
+				 StringUtil.equalsIgnoreCase(
+					 type, DataCleanup.SYSTEM_PREUPGRADE_DATA_CLEANUP)) {
 
 			return _systemDataCleanups;
 		}
@@ -54,6 +66,10 @@ public class DataCleanupUtil {
 		throw new IllegalArgumentException("Invalid type: " + type);
 	}
 
+	private static final DataCleanup _executeAllModulesDataCleanup =
+		new ExecuteAllModulesDataCleanup();
+	private static final DataCleanup _executeAllSystemDataCleanup =
+		new ExecuteAllSystemDataCleanup();
 	private static final List<DataCleanup> _moduleDataCleanups =
 		new CopyOnWriteArrayList<>();
 	private static final List<DataCleanup> _systemDataCleanups =

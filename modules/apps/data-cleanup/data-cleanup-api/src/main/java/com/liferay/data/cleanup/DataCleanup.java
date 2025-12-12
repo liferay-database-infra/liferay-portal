@@ -16,6 +16,9 @@ public abstract class DataCleanup {
 
 	public static final String SYSTEM_DATA_CLEANUP = "system";
 
+	public static final String SYSTEM_PREUPGRADE_DATA_CLEANUP =
+		"system-preupgrade";
+
 	public void cleanup() throws Exception {
 		doCleanup();
 
