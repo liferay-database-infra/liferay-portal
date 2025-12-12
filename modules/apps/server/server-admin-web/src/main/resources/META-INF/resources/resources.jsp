@@ -203,6 +203,23 @@ long usedMemory = totalMemory - runtime.freeMemory();
 
 		<aui:fieldset collapsed="<%= false %>" collapsible="<%= true %>" label="system-cleanup-actions">
 			<ul class="list-group system-action-group">
+
+				<%
+				DataCleanup executeAllSystemDataCleanups = DataCleanupUtil.getExecuteAllSystemDataCleanups();
+				%>
+
+				<li class="list-group-item list-group-item-flex">
+					<div class="autofit-col autofit-col-expand">
+						<p class="list-group-title text-truncate">
+							<liferay-ui:message key="<%= executeAllSystemDataCleanups.getLabel() %>" />
+						</p>
+					</div>
+
+					<div class="autofit-col">
+						<aui:button cssClass="save-server-button" data-cmd="<%= executeAllSystemDataCleanups.getLabel() %>" value="execute" />
+					</div>
+				</li>
+
 				<c:forEach items="<%= DataCleanupUtil.getSystemDataCleanups() %>" var="systemDataCleanup">
 					<li class="list-group-item list-group-item-flex">
 						<div class="autofit-col autofit-col-expand">
@@ -295,6 +312,23 @@ long usedMemory = totalMemory - runtime.freeMemory();
 		<c:if test="<%= ListUtil.isNotEmpty(moduleDataCleanups) %>">
 			<aui:fieldset collapsed="<%= false %>" collapsible="<%= true %>" label="module-cleanup-actions">
 				<ul class="list-group system-action-group">
+
+					<%
+					DataCleanup executeAllModulesDataCleanup = DataCleanupUtil.getExecuteAllModuleDataCleanups();
+					%>
+
+					<li class="list-group-item list-group-item-flex">
+						<div class="autofit-col autofit-col-expand">
+							<p class="list-group-title text-truncate">
+								<liferay-ui:message key="<%= executeAllModulesDataCleanup.getLabel() %>" />
+							</p>
+						</div>
+
+						<div class="autofit-col">
+							<aui:button cssClass="save-server-button" data-cmd="<%= executeAllModulesDataCleanup.getLabel() %>" value="execute" />
+						</div>
+					</li>
+
 					<c:forEach items="<%= moduleDataCleanups %>" var="moduleDataCleanup">
 						<li class="list-group-item list-group-item-flex">
 							<div class="autofit-col autofit-col-expand">
