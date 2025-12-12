@@ -285,6 +285,14 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 		else if (cmd.equals("verifyMembershipPolicies")) {
 			_verifyMembershipPolicies();
 		}
+		else if (cmd.equals("clean-up-all-module-data")) {
+			DataCleanupUtil.getExecuteAllModuleDataCleanups(
+			).cleanup();
+		}
+		else if (cmd.equals("clean-up-all-system-data")) {
+			DataCleanupUtil.getExecuteAllSystemDataCleanups(
+			).cleanup();
+		}
 		else {
 			_executeCleanup(cmd, DataCleanupUtil.getModuleDataCleanups());
 			_executeCleanup(cmd, DataCleanupUtil.getSystemDataCleanups());
