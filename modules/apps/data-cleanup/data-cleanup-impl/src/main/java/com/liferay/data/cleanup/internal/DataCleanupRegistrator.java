@@ -482,7 +482,8 @@ public class DataCleanupRegistrator {
 
 			_registerDataCleanup(
 				DataCleanupAdapter.create(
-					dataCleanupLabel, DataCleanup.SYSTEM_DATA_CLEANUP,
+					dataCleanupLabel,
+					DataCleanup.SYSTEM_PREUPGRADE_DATA_CLEANUP,
 					dataCleanupPreupgradeProcess));
 		}
 	}
