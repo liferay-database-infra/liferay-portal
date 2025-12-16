@@ -5,8 +5,6 @@
 
 package com.liferay.data.cleanup;
 
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
-
 /**
  * @author Maríano Álvaro Sáiz
  */
@@ -18,8 +16,6 @@ public abstract class DataCleanup {
 
 	public void cleanup() throws Exception {
 		doCleanup();
-
-		CacheRegistryUtil.clear();
 	}
 
 	public abstract String getLabel();
