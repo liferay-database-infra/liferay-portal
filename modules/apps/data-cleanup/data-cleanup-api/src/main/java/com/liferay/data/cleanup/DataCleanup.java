@@ -24,6 +24,8 @@ public abstract class DataCleanup {
 
 	public abstract String getType();
 
+	public abstract boolean isEnabled();
+
 	protected abstract void doCleanup() throws Exception;
 
 }
