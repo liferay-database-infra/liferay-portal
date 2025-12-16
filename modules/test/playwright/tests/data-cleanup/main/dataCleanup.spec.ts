@@ -16,6 +16,8 @@ export const test = mergeTests(
 	);
 
 test('execute all system cleanup actions', async ({ page, applicationsMenuPage }) => {
+	test.setTimeout(90000);
+
 	//Go to Server Admin Page
 
 	await applicationsMenuPage.goToServerAdministration();
@@ -45,15 +47,15 @@ test('execute all module cleanup actions', async ({ page, applicationsMenuPage,s
 
        def servletContextNames = ${JSON.stringify(SERVLET_CONTEXT_NAMES)}
 
-       for(String servletContextName : servletContextNames) {
-       Release release = ReleaseLocalServiceUtil.fetchRelease(servletContextName);
+       for (String servletContextName : servletContextNames) {
+		   Release release = ReleaseLocalServiceUtil.fetchRelease(servletContextName);
 
-       if (release == null) {
-       ReleaseLocalServiceUtil.addRelease(servletContextName,"1.0.0");
-       }
-       }
-    `;
+		   if (release == null) {
+			   ReleaseLocalServiceUtil.addRelease(servletContextName,"1.0.0");
+			   }
+		   }`;
 
+    try {
 		await serverAdministrationPage.executeScript(addReleasesScript);
 
 		//Reset Data Cleanup Registrator Component
@@ -91,12 +93,12 @@ test('execute all module cleanup actions', async ({ page, applicationsMenuPage,s
 						componentDescriptionDTO);
 
 				promise.getValue();
-
-			} finally {
-				if (serviceReference != null) {
-					bundleContext.ungetService(serviceReference)
 				}
-			}
+				finally {
+					if (serviceReference != null) {
+						bundleContext.ungetService(serviceReference)
+					}
+				}
 		`;
 
 		await serverAdministrationPage.executeScript(resetDataCleanupRegistratorScript);
@@ -106,7 +108,24 @@ test('execute all module cleanup actions', async ({ page, applicationsMenuPage,s
 		//Find Module Cleanup Actions Panel
 
 		await executeCleanupActions(page, 'Module Cleanup Actions');
+		}
+		finally {
+			const deleteReleasesScript = `
+				import com.liferay.portal.kernel.service.ReleaseLocalServiceUtil
+				import com.liferay.portal.kernel.model.Release
 
+				def servletContextNames = ${JSON.stringify(SERVLET_CONTEXT_NAMES)}
+
+				for (String servletContextName : servletContextNames) {
+					Release release = ReleaseLocalServiceUtil.fetchRelease(servletContextName);
+
+					if (release != null) {
+						ReleaseLocalServiceUtil.deleteRelease(release);
+					}
+				}
+			`;
+		await serverAdministrationPage.executeScript(deleteReleasesScript);
+		}
 });
 
 
