@@ -205,6 +205,26 @@ long usedMemory = totalMemory - runtime.freeMemory();
 			<ul class="list-group system-action-group">
 
 				<%
+				String[][] cleanupActions = {{"clean-up-all-module-data", "cleanUpAllModuleData"}, {"clean-up-all-system-data", "cleanUpAllSystemData"}};
+
+				for (String[] cleanupAction : cleanupActions) {
+				%>
+
+					<li class="list-group-item list-group-item-flex">
+						<div class="autofit-col autofit-col-expand">
+							<p class="list-group-title text-truncate">
+								<liferay-ui:message key="<%= cleanupAction[0] %>" />
+							</p>
+						</div>
+
+						<div class="autofit-col">
+							<aui:button cssClass="save-server-button" data-cmd="<%= cleanupAction[1] %>" value="execute" />
+						</div>
+					</li>
+
+				<%
+				}
+
 				for (DataCleanup systemDataCleanup : DataCleanupUtil.getSystemDataCleanups()) {
 					if (systemDataCleanup.isEnabled() && (ReleaseLocalServiceUtil.fetchRelease(systemDataCleanup.getServletContextName()) == null)) {
 						continue;
