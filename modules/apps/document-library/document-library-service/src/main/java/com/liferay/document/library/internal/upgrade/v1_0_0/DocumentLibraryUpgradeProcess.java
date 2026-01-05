@@ -38,14 +38,14 @@ public class DocumentLibraryUpgradeProcess extends UpgradeProcess {
 			while (resultSet.next()) {
 				long companyId = resultSet.getLong("companyId");
 
-				_store.deleteDirectory(companyId, 0, "checksum");
+				_store.deleteDirectory(companyId, 0L, "checksum");
 			}
 		}
 	}
 
 	private void _deleteTempDirectory() {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			_store.deleteDirectory(0, 0, "liferay_temp/");
+			_store.deleteDirectory(0, 0L, "liferay_temp/");
 		}
 	}
 
