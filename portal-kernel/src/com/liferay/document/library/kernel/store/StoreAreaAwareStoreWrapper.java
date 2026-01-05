@@ -51,7 +51,7 @@ public class StoreAreaAwareStoreWrapper implements Store {
 
 	@Override
 	public void deleteDirectory(
-		long companyId, long repositoryId, String dirName) {
+		long companyId, Long repositoryId, String dirName) {
 
 		Store store = _storeSupplier.get();
 

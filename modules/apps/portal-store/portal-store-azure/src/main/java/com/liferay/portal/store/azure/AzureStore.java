@@ -101,7 +101,7 @@ public class AzureStore implements Store {
 
 	@Override
 	public void deleteDirectory(
-		long companyId, long repositoryId, String dirName) {
+		long companyId, Long repositoryId, String dirName) {
 
 		BlobBatchClient blobBatchClient = new BlobBatchClientBuilder(
 			_blobContainerClient.getServiceClient()

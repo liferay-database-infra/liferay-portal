@@ -66,7 +66,7 @@ public class CTStore implements Store {
 
 	@Override
 	public void deleteDirectory(
-		long companyId, long repositoryId, String dirName) {
+		long companyId, Long repositoryId, String dirName) {
 
 		if (CTCollectionThreadLocal.isProductionMode()) {
 			_store.deleteDirectory(companyId, repositoryId, dirName);
