@@ -88,8 +88,13 @@ public class FileSystemStore implements Store {
 	}
 
 	@Override
+	public void deleteCompany(long companyId) {
+		deleteDirectory(companyId, null, null);
+	}
+
+	@Override
 	public void deleteDirectory(
-		long companyId, long repositoryId, String dirName) {
+		long companyId, Long repositoryId, String dirName) {
 
 		File dirNameDir = null;
 
@@ -308,9 +313,16 @@ public class FileSystemStore implements Store {
 		return headVersionLabel;
 	}
 
-	protected File getRepositoryDir(long companyId, long repositoryId) {
-		File repositoryDir = new File(
-			_rootDir, companyId + StringPool.SLASH + repositoryId);
+	protected File getRepositoryDir(long companyId, Long repositoryId) {
+		File repositoryDir = null;
+
+		if (Validator.isNull(repositoryId)) {
+			repositoryDir = new File(_rootDir, String.valueOf(companyId));
+		}
+		else {
+			repositoryDir = new File(
+				_rootDir, companyId + StringPool.SLASH + repositoryId);
+		}
 
 		if (!repositoryDir.exists()) {
 			repositoryDir.mkdirs();
