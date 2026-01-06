@@ -40,6 +40,14 @@ public interface Store {
 		throws PortalException;
 
 	/**
+	 * Deletes a company's directory.
+	 *
+	 * @param companyId the primary key of the company
+	 */
+	public default void deleteCompanyDirectory(long companyId) {
+	}
+
+	/**
 	 * Deletes a directory.
 	 *
 	 * @param companyId the primary key of the company
