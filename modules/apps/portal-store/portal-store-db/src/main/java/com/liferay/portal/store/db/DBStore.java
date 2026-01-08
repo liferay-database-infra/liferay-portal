@@ -13,6 +13,10 @@ import com.liferay.document.library.kernel.store.Store;
 import com.liferay.document.library.kernel.util.DLUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
+import com.liferay.portal.kernel.dao.orm.Property;
+import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
+import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 
 import java.io.InputStream;
@@ -23,6 +27,7 @@ import java.sql.PreparedStatement;
 import java.util.Arrays;
 import java.util.List;
 
+import com.liferay.portal.kernel.model.TypedModel;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -49,17 +54,20 @@ public class DBStore implements Store {
 
 	@Override
 	public void deleteCompany(long companyId) throws PortalException {
-		try (Connection connection = DataAccess.getConnection();
-			PreparedStatement preparedStatement = connection.prepareStatement(
-				"delete from DLContent where companyId = ?")) {
+		ActionableDynamicQuery actionableDynamicQuery =
+			_dlContentLocalService.getActionableDynamicQuery();
 
-			preparedStatement.setLong(1, companyId);
+		actionableDynamicQuery.setAddCriteriaMethod(
+			dynamicQuery -> dynamicQuery.add(
+				RestrictionsFactoryUtil.eq(
+					"companyId",
+					companyId)));
 
-			preparedStatement.executeUpdate();
-		}
-		catch (Exception exception) {
-			throw new PortalException(exception);
-		}
+		actionableDynamicQuery.setPerformActionMethod(
+			(DLContent dlContent) ->
+				_dlContentLocalService.deleteDLContent(dlContent));
+
+		actionableDynamicQuery.performActions();
 	}
 
 	@Override
