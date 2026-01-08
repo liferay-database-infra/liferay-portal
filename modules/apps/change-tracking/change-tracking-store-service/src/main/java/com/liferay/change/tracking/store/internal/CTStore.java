@@ -14,11 +14,15 @@ import com.liferay.document.library.kernel.store.Store;
 import com.liferay.document.library.kernel.util.DLUtil;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
+import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.InputStream;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,6 +65,23 @@ public class CTStore implements Store {
 			_ctsContentLocalService.addCTSContent(
 				companyId, repositoryId, fileName, versionLabel, _storeType,
 				inputStream);
+		}
+	}
+
+	@Override
+	public void deleteCompany(long companyId) throws PortalException {
+		_store.deleteCompany(companyId);
+
+		try (Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				"delete from CTSContent where companyId = ?")) {
+
+			preparedStatement.setLong(1, companyId);
+
+			preparedStatement.executeUpdate();
+		}
+		catch (Exception exception) {
+			throw new PortalException(exception);
 		}
 	}
 
