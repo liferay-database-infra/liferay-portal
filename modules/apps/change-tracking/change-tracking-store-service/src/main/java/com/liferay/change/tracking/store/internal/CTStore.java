@@ -14,7 +14,6 @@ import com.liferay.document.library.kernel.store.Store;
 import com.liferay.document.library.kernel.util.DLUtil;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
-import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -22,9 +21,6 @@ import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.InputStream;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -79,13 +75,11 @@ public class CTStore implements Store {
 
 		actionableDynamicQuery.setAddCriteriaMethod(
 			dynamicQuery -> dynamicQuery.add(
-				RestrictionsFactoryUtil.eq(
-					"companyId",
-					companyId)));
+				RestrictionsFactoryUtil.eq("companyId", companyId)));
 
 		actionableDynamicQuery.setPerformActionMethod(
-			(CTSContent ctsContent) ->
-				_ctsContentLocalService.deleteCTSContent(ctsContent));
+			(CTSContent ctsContent) -> _ctsContentLocalService.deleteCTSContent(
+				ctsContent));
 
 		actionableDynamicQuery.performActions();
 	}

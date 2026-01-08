@@ -12,22 +12,15 @@ import com.liferay.document.library.kernel.exception.NoSuchFileException;
 import com.liferay.document.library.kernel.store.Store;
 import com.liferay.document.library.kernel.util.DLUtil;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
-import com.liferay.portal.kernel.dao.orm.Property;
-import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 
 import java.io.InputStream;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-
 import java.util.Arrays;
 import java.util.List;
 
-import com.liferay.portal.kernel.model.TypedModel;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -59,13 +52,11 @@ public class DBStore implements Store {
 
 		actionableDynamicQuery.setAddCriteriaMethod(
 			dynamicQuery -> dynamicQuery.add(
-				RestrictionsFactoryUtil.eq(
-					"companyId",
-					companyId)));
+				RestrictionsFactoryUtil.eq("companyId", companyId)));
 
 		actionableDynamicQuery.setPerformActionMethod(
-			(DLContent dlContent) ->
-				_dlContentLocalService.deleteDLContent(dlContent));
+			(DLContent dlContent) -> _dlContentLocalService.deleteDLContent(
+				dlContent));
 
 		actionableDynamicQuery.performActions();
 	}
