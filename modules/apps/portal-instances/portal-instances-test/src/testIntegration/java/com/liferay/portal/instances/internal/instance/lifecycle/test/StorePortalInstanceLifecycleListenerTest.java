@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
+import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -32,7 +33,9 @@ public class StorePortalInstanceLifecycleListenerTest {
 	@ClassRule
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
-		new AggregateTestRule(new LiferayIntegrationTestRule());
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(),
+			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Test
 	public void testPortalInstanceUnregistered() throws Exception {
