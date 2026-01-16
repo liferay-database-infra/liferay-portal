@@ -29,15 +29,11 @@ public class SearchIndexPostUpgradeDataCleanupProcess
 
 		_pattern = Pattern.compile(
 			"^" + Pattern.quote(indexNameBuilder.getIndexNamePrefix()) +
-				"(\\d+)");
+				"(\\d+).*");
 	}
 
 	@Override
 	public void cleanUp() throws Exception {
-		if ((_indexInformation == null) || (_pattern == null)) {
-			return;
-		}
-
 		long[] companyIds = PortalInstancePool.getCompanyIds();
 
 		Arrays.sort(companyIds);
