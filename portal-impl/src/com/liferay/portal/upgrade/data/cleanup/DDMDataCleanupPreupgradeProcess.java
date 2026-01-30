@@ -171,7 +171,15 @@ public class DDMDataCleanupPreupgradeProcess
 
 		return new DataCleanupPreupgradeProcess(
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
-				null, null, "DDMStructureKey", "JournalArticle", "structureKey",
+				StringBundler.concat(
+					"[$SOURCE_TABLE_ALIAS$].DDMStructureKey AND (",
+					"[$TARGET_TABLE_ALIAS$].groupId = ",
+					"[$SOURCE_TABLE_ALIAS$].groupId OR ",
+					"[$TARGET_TABLE_ALIAS$].groupId = (SELECT groupId FROM ",
+					"Group_ WHERE companyId = ",
+					"[$SOURCE_TABLE_ALIAS$].companyId AND friendlyURL = ",
+					"'/global'))"),
+				null, "DDMStructureKey", "JournalArticle", "structureKey",
 				"DDMStructure"),
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
 				null, null, "DDMStructureKey", "JournalFeed", "structureKey",
