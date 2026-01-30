@@ -24,6 +24,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.ClassName;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.ResourcePermission;
@@ -38,6 +39,7 @@ import com.liferay.portal.kernel.upgrade.data.cleanup.util.OrphanReferencesDataC
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
@@ -48,6 +50,7 @@ import java.sql.Connection;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -202,49 +205,84 @@ public class DDMDataCleanupPreupgradeProcessTest
 	public void testUpgradeFrom70to73() throws Exception {
 		connection = _connection;
 
+		long companyId = _getNonexistentCompanyId();
+
+		String mismatchStructureKey = RandomTestUtil.randomString();
+		String missingStructureKey = RandomTestUtil.randomString();
+
+		long otherGroupId = RandomTestUtil.nextLong();
+		long siteGroupId = RandomTestUtil.nextLong();
+
+		String siteStructureKey = RandomTestUtil.randomString();
+
 		try {
 			alterTableAddColumn(
 				"JournalArticle", "DDMStructureKey", "VARCHAR(75) null");
 			alterTableAddColumn(
 				"JournalFeed", "DDMStructureKey", "VARCHAR(75) null");
 
-			String structureId = RandomTestUtil.randomString();
+			runSQL(
+				StringBundler.concat(
+					"insert into DDMStructure (mvccVersion, ctCollectionId, ",
+					"uuid_, structureId, groupId, companyId, structureKey) ",
+					"values (0, 0, '", RandomTestUtil.randomString(), "', ",
+					RandomTestUtil.nextLong(), ", ", otherGroupId, ", ",
+					companyId, ", '", mismatchStructureKey, "'), (0, 0, '",
+					RandomTestUtil.randomString(), "', ",
+					RandomTestUtil.nextLong(), ", ", siteGroupId, ", ",
+					companyId, ", '", siteStructureKey, "')"));
 
 			_test(
 				() -> {
 					runSQL(
 						StringBundler.concat(
-							"insert into JournalArticle (",
-							"mvccVersion, ctCollectionId, id_, groupId, ",
+							"insert into JournalArticle (mvccVersion, ",
+							"ctCollectionId, id_, groupId, companyId, ",
 							"DDMStructureKey) values (0, 0, ",
-							RandomTestUtil.nextLong(), ", ",
-							RandomTestUtil.nextLong(), ", '", structureId,
-							"')"));
+							RandomTestUtil.nextLong(), ", ", siteGroupId, ", ",
+							companyId, ", '", mismatchStructureKey,
+							"'), (0, 0, ", RandomTestUtil.nextLong(), ", ",
+							siteGroupId, ", ", companyId, ", '",
+							siteStructureKey, "')"));
+
 					runSQL(
 						StringBundler.concat(
-							"insert into JournalFeed (",
-							"mvccVersion, ctCollectionId, id_, groupId, ",
+							"insert into JournalFeed (mvccVersion, ",
+							"ctCollectionId, id_, groupId, companyId, ",
 							"DDMStructureKey) values (0, 0, ",
-							RandomTestUtil.nextLong(), ", ",
-							RandomTestUtil.nextLong(), ", '", structureId,
-							"')"));
+							RandomTestUtil.nextLong(), ", ", siteGroupId, ", ",
+							companyId, ", '", missingStructureKey, "')"));
 				},
 				messages -> {
 					Assert.assertTrue(
 						messages.contains(
 							_getExpectedMessage(
 								1, "DDMStructureKey", "JournalArticle",
-								"structureKey", "DDMStructure", structureId)));
+								"structureKey", "DDMStructure",
+								mismatchStructureKey)));
+
 					Assert.assertTrue(
 						messages.contains(
 							_getExpectedMessage(
 								1, "DDMStructureKey", "JournalFeed",
-								"structureKey", "DDMStructure", structureId)));
+								"structureKey", "DDMStructure",
+								missingStructureKey)));
+
+					Assert.assertFalse(
+						messages.toString(),
+						messages.toString(
+						).contains(
+							siteStructureKey
+						));
 				});
 		}
 		finally {
-			alterTableDropColumn("JournalArticle", "structureId");
-			alterTableDropColumn("JournalFeed", "structureId");
+			alterTableDropColumn("JournalArticle", "DDMStructureKey");
+			alterTableDropColumn("JournalFeed", "DDMStructureKey");
+
+			runSQL("delete from DDMStructure where companyId = " + companyId);
+			runSQL("delete from JournalArticle where companyId = " + companyId);
+			runSQL("delete from JournalFeed where companyId = " + companyId);
 		}
 	}
 
@@ -315,6 +353,19 @@ public class DDMDataCleanupPreupgradeProcessTest
 			targetValue, " was not found in column ",
 			_dbInspector.normalizeName(targetColumnName), " from table ",
 			_dbInspector.normalizeName(targetTableName));
+	}
+
+	private long _getNonexistentCompanyId() throws Exception {
+		Set<Long> companyIds = SetUtil.fromArray(
+			PortalInstancePool.getCompanyIds());
+
+		while (true) {
+			long nonexistentCompanyId = RandomTestUtil.randomLong();
+
+			if (!companyIds.contains(nonexistentCompanyId)) {
+				return nonexistentCompanyId;
+			}
+		}
 	}
 
 	private void _test(
