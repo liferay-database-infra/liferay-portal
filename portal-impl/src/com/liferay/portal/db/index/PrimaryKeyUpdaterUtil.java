@@ -24,6 +24,7 @@ import java.sql.Connection;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,6 +43,9 @@ public class PrimaryKeyUpdaterUtil {
 				"Updating database primary keys")) {
 
 			_throwableCollector = new ThrowableCollector();
+
+			_futuresMap.put(
+				Thread.currentThread(), new CopyOnWriteArrayList<>());
 
 			_addUpdatePrimaryKeysFutures(
 				DBResourceUtil.getPortalTablesPrimaryKeyColumnNames());
@@ -91,10 +95,12 @@ public class PrimaryKeyUpdaterUtil {
 
 		ExecutorService executorService = _getExecutorService();
 
+		List<Future<?>> futures = _futuresMap.get(Thread.currentThread());
+
 		for (Map.Entry<String, String[]> entry :
 				tablesPrimaryKeysColumnNames.entrySet()) {
 
-			_futures.add(
+			futures.add(
 				executorService.submit(
 					() -> {
 						try {
@@ -110,7 +116,9 @@ public class PrimaryKeyUpdaterUtil {
 	}
 
 	private static void _awaitFuturesTermination() {
-		for (Future<?> future : _futures) {
+		List<Future<?>> futures = _futuresMap.remove(Thread.currentThread());
+
+		for (Future<?> future : futures) {
 			try {
 				future.get();
 			}
@@ -119,7 +127,7 @@ public class PrimaryKeyUpdaterUtil {
 			}
 		}
 
-		_futures.clear();
+		futures.clear();
 	}
 
 	private static ExecutorService _getExecutorService() {
@@ -165,8 +173,8 @@ public class PrimaryKeyUpdaterUtil {
 
 	private static final DCLSingleton<ExecutorService>
 		_executorServiceDCLSingleton = new DCLSingleton<>();
-	private static final List<Future<?>> _futures =
-		new CopyOnWriteArrayList<>();
+	private static final Map<Thread, List<Future<?>>> _futuresMap =
+		new ConcurrentHashMap<>();
 	private static ThrowableCollector _throwableCollector;
 
 }
