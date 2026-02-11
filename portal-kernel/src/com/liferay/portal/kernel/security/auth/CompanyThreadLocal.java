@@ -227,6 +227,15 @@ public class CompanyThreadLocal {
 
 				companyCentralizedThreadLocal.remove();
 			}
+
+			if ((companyId != CompanyConstants.SYSTEM) &&
+				(companyId != PortalInstancePool.getDefaultCompanyId()) &&
+				!isLocked()) {
+
+				_locked.set(true);
+
+				safeCloseables.add(() -> _locked.set(false));
+			}
 		}
 
 		safeCloseables.add(
@@ -238,8 +247,14 @@ public class CompanyThreadLocal {
 				_syncLastDBPartitionSessionState();
 			}
 
-			for (SafeCloseable safeCloseable : safeCloseables) {
-				safeCloseable.close();
+			for (int i = safeCloseables.size() - 1; i >= 0; i--) {
+				try {
+					safeCloseables.get(
+						i
+					).close();
+				}
+				catch (Throwable throwable) {
+				}
 			}
 		};
 	}
