@@ -12,7 +12,6 @@ import com.liferay.portal.kernel.security.access.control.AccessControlThreadLoca
 import com.liferay.portal.kernel.security.access.control.AccessControlUtil;
 import com.liferay.portal.kernel.security.auth.AccessControlContext;
 import com.liferay.portal.kernel.security.auth.AuthException;
-import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierResult;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
@@ -60,8 +59,6 @@ public class AccessControlImpl implements AccessControl {
 	public void initContextUser(long userId) throws AuthException {
 		try {
 			User user = UserLocalServiceUtil.getUser(userId);
-
-			CompanyThreadLocal.setCompanyId(user.getCompanyId());
 
 			PrincipalThreadLocal.setName(userId);
 
