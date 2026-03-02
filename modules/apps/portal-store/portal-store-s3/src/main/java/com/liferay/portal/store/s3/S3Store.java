@@ -273,7 +273,7 @@ public class S3Store implements Store {
 
 				continuationToken = response.nextContinuationToken();
 			}
-			while ((continuationToken != null) && !continuationToken.isEmpty());
+			while (continuationToken != null);
 		}
 		catch (CompletionException completionException) {
 			throw _toSystemException(completionException.getCause());
