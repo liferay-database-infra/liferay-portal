@@ -10,6 +10,7 @@ import com.liferay.document.library.kernel.store.Store;
 import com.liferay.petra.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.SetUtil;
@@ -170,8 +171,8 @@ public abstract class BaseStoreTestCase {
 		_store.deleteFile(
 			_companyId, _repositoryId, fileName, Store.VERSION_DEFAULT);
 
-		Assert.assertFalse(
-			ArrayUtil.contains(_store.getCompanyIds(), _companyId));
+		Assert.assertArrayEquals(
+			PortalInstancePool.getCompanyIds(), _store.getCompanyIds());
 	}
 
 	@Test

@@ -130,7 +130,7 @@ public class GCSStore implements Store {
 		long companyId, long repositoryId, String fileName,
 		String versionLabel) {
 
-		_gcsStore.delete(
+	_gcsStore.delete(
 			BlobId.of(
 				_gcsStoreConfiguration.bucketName(),
 				_getHeadVersionLabel(
@@ -151,7 +151,9 @@ public class GCSStore implements Store {
 				if (name.endsWith("/")) {
 					String folderName = name.substring(0, name.length() - 1);
 
-					companyIdsSet.add(GetterUtil.getLong(folderName));
+					if (Validator.isNumber(folderName)) {
+						companyIdsSet.add(GetterUtil.getLong(folderName));
+					}
 				}
 			}
 		}

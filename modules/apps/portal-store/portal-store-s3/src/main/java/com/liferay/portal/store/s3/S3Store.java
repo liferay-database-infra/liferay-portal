@@ -266,7 +266,9 @@ public class S3Store implements Store {
 							0, folderName.length() - 1);
 					}
 
-					companyIdsSet.add(GetterUtil.getLong(folderName));
+					if (Validator.isNumber(folderName)) {
+						companyIdsSet.add(GetterUtil.getLong(folderName));
+					}
 				}
 
 				continuationToken = response.nextContinuationToken();

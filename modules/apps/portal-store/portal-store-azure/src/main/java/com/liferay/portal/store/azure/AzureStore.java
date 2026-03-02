@@ -132,7 +132,7 @@ public class AzureStore implements Store {
 
 		try {
 			PagedIterable<BlobItem> blobs =
-				_blobContainerClient.listBlobsByHierarchy("/");
+				_blobContainerClient.listBlobsByHierarchy("");
 
 			for (BlobItem blobItem : blobs) {
 				if (Boolean.TRUE.equals(blobItem.isPrefix())) {
@@ -143,7 +143,9 @@ public class AzureStore implements Store {
 							0, folderName.length() - 1);
 					}
 
-					companyIdsSet.add(GetterUtil.getLong(folderName));
+					if (Validator.isNumber(folderName)) {
+						companyIdsSet.add(GetterUtil.getLong(folderName));
+					}
 				}
 			}
 		}
