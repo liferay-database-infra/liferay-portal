@@ -85,17 +85,19 @@ public abstract class BaseDBPartitionTestCase {
 				CurrentConnectionUtil.class, "_currentConnection",
 				currentConnection);
 
-			for (long companyId : COMPANY_IDS) {
-				DBPartitionUtil.addDBPartition(companyId);
+			companyLocalService.forEachCompanyId(
+				companyId -> {
+					DBPartitionUtil.addDBPartition(companyId);
 
-				PortalInstancePool.add(
-					new CompanyImpl() {
-						{
-							setCompanyId(companyId);
-							setWebId("Test" + companyId);
-						}
-					});
-			}
+					PortalInstancePool.add(
+						new CompanyImpl() {
+							{
+								setCompanyId(companyId);
+								setWebId("Test" + companyId);
+							}
+						});
+				},
+				COMPANY_IDS);
 
 			_clearCaches(COMPANY_IDS);
 		}
@@ -139,24 +141,27 @@ public abstract class BaseDBPartitionTestCase {
 
 	protected static void deletePartitionRequiredData() throws Exception {
 		try (Statement statement = connection.createStatement()) {
-			for (long companyId : COMPANY_IDS) {
-				try (SafeCloseable safeCloseable =
-						CompanyThreadLocal.setCompanyIdWithSafeCloseable(
-							companyId)) {
+			companyLocalService.forEachCompanyId(
+				companyId -> {
+					try (SafeCloseable safeCloseable =
+							CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+								companyId)) {
 
-					statement.execute(
-						"delete from Company where companyId = " + companyId);
+						statement.execute(
+							"delete from Company where companyId = " +
+								companyId);
 
-					statement.execute(
-						"delete from User_ where companyId = " + companyId);
+						statement.execute(
+							"delete from User_ where companyId = " + companyId);
 
-					statement.execute(
-						"delete from VirtualHost where companyId = " +
-							companyId);
-				}
+						statement.execute(
+							"delete from VirtualHost where companyId = " +
+								companyId);
+					}
 
-				PortalInstancePool.remove(companyId);
-			}
+					PortalInstancePool.remove(companyId);
+				},
+				COMPANY_IDS);
 		}
 	}
 
@@ -180,10 +185,10 @@ public abstract class BaseDBPartitionTestCase {
 	}
 
 	protected static void dropSchemas() throws Exception {
-		for (long companyId : COMPANY_IDS) {
-			db.runSQL(
-				dbPartitionDB.getDropPartitionSQL(getPartitionName(companyId)));
-		}
+		companyLocalService.forEachCompanyId(
+			companyId -> db.runSQL(
+				dbPartitionDB.getDropPartitionSQL(getPartitionName(companyId))),
+			COMPANY_IDS);
 	}
 
 	protected static void dropTable(String tableName) throws Exception {
@@ -244,9 +249,9 @@ public abstract class BaseDBPartitionTestCase {
 				CurrentConnectionUtil.class, "_currentConnection",
 				currentConnection);
 
-			for (long companyId : COMPANY_IDS) {
-				DBPartitionUtil.importDBPartition(companyId);
-			}
+			companyLocalService.forEachCompanyId(
+				companyId -> DBPartitionUtil.importDBPartition(companyId),
+				COMPANY_IDS);
 		}
 		finally {
 			ReflectionTestUtil.setFieldValue(
@@ -256,109 +261,123 @@ public abstract class BaseDBPartitionTestCase {
 	}
 
 	protected static void insertPartitionData() throws Exception {
-		for (long companyId : COMPANY_IDS) {
-			try (SafeCloseable safeCloseable =
-					CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId);
-				PreparedStatement preparedStatement1 =
-					connection.prepareStatement(
-						"insert into Group_ (mvccVersion, ctCollectionId, " +
-							"companyId, groupId, classNameId, classPK) " +
-								"values (?, ?, ?, ?, ?, ?)");
-				PreparedStatement preparedStatement2 =
-					connection.prepareStatement(
-						"insert into PasswordPolicy (mvccVersion, " +
-							"passwordPolicyId, companyId, defaultPolicy) " +
-								"values (?, ?, ?, ?)");
-				PreparedStatement preparedStatement3 =
-					connection.prepareStatement(
-						"insert into Role_ (mvccVersion, ctCollectionId, " +
-							"roleId, companyId, name, type_) values (?, ?, " +
-								"?, ?, ?, ?)");
-				PreparedStatement preparedStatement4 =
-					connection.prepareStatement(
-						"insert into User_ (userId, companyId, screenName, " +
-							"emailAddress, languageId, timeZoneId, type_) " +
-								"values (?, ?, ?, ?, ?, ?, ?)")) {
+		companyLocalService.forEachCompanyId(
+			companyId -> {
+				try (SafeCloseable safeCloseable =
+						CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+							companyId);
+					PreparedStatement preparedStatement1 =
+						connection.prepareStatement(
+							StringBundler.concat(
+								"insert into Group_ (mvccVersion, ",
+								"ctCollectionId, companyId, groupId, ",
+								"classNameId, classPK) values (?, ?, ?, ?, ?, ",
+								"?)"));
+					PreparedStatement preparedStatement2 =
+						connection.prepareStatement(
+							"insert into PasswordPolicy (mvccVersion, " +
+								"passwordPolicyId, companyId, defaultPolicy) " +
+									"values (?, ?, ?, ?)");
+					PreparedStatement preparedStatement3 =
+						connection.prepareStatement(
+							StringBundler.concat(
+								"insert into Role_ (mvccVersion, ",
+								"ctCollectionId, roleId, companyId, name, ",
+								"type_) values (?, ?, ?, ?, ?, ?)"));
+					PreparedStatement preparedStatement4 =
+						connection.prepareStatement(
+							StringBundler.concat(
+								"insert into User_ (userId, companyId, ",
+								"screenName, emailAddress, languageId, ",
+								"timeZoneId, type_) values (?, ?, ?, ?, ?, ?, ",
+								"?)"))) {
 
-				preparedStatement1.setLong(1, 0);
-				preparedStatement1.setLong(2, 0);
-				preparedStatement1.setLong(3, companyId);
-				preparedStatement1.setInt(4, 1);
-				preparedStatement1.setLong(
-					5, ClassNameLocalServiceUtil.getClassNameId(Company.class));
-				preparedStatement1.setLong(6, companyId);
+					preparedStatement1.setLong(1, 0);
+					preparedStatement1.setLong(2, 0);
+					preparedStatement1.setLong(3, companyId);
+					preparedStatement1.setInt(4, 1);
+					preparedStatement1.setLong(
+						5,
+						ClassNameLocalServiceUtil.getClassNameId(
+							Company.class));
+					preparedStatement1.setLong(6, companyId);
 
-				preparedStatement1.executeUpdate();
+					preparedStatement1.executeUpdate();
 
-				preparedStatement2.setLong(1, 0);
-				preparedStatement2.setLong(2, 1);
-				preparedStatement2.setLong(3, companyId);
-				preparedStatement2.setBoolean(4, true);
+					preparedStatement2.setLong(1, 0);
+					preparedStatement2.setLong(2, 1);
+					preparedStatement2.setLong(3, companyId);
+					preparedStatement2.setBoolean(4, true);
 
-				preparedStatement2.executeUpdate();
+					preparedStatement2.executeUpdate();
 
-				for (int i = 0; i < ROLE_NAMES.length; i++) {
-					preparedStatement3.setLong(1, 0);
-					preparedStatement3.setLong(2, 0);
-					preparedStatement3.setLong(3, i + 1);
-					preparedStatement3.setLong(4, companyId);
-					preparedStatement3.setString(5, ROLE_NAMES[i]);
-					preparedStatement3.setLong(6, 1);
+					for (int i = 0; i < ROLE_NAMES.length; i++) {
+						preparedStatement3.setLong(1, 0);
+						preparedStatement3.setLong(2, 0);
+						preparedStatement3.setLong(3, i + 1);
+						preparedStatement3.setLong(4, companyId);
+						preparedStatement3.setString(5, ROLE_NAMES[i]);
+						preparedStatement3.setLong(6, 1);
 
-					preparedStatement3.executeUpdate();
+						preparedStatement3.executeUpdate();
+					}
+
+					preparedStatement4.setLong(1, 1);
+					preparedStatement4.setLong(2, companyId);
+					preparedStatement4.setString(3, "Test");
+					preparedStatement4.setString(4, "test@test.com");
+					preparedStatement4.setString(5, "en_US");
+					preparedStatement4.setString(6, "UTC");
+					preparedStatement4.setInt(7, UserConstants.TYPE_GUEST);
+
+					preparedStatement4.executeUpdate();
 				}
-
-				preparedStatement4.setLong(1, 1);
-				preparedStatement4.setLong(2, companyId);
-				preparedStatement4.setString(3, "Test");
-				preparedStatement4.setString(4, "test@test.com");
-				preparedStatement4.setString(5, "en_US");
-				preparedStatement4.setString(6, "UTC");
-				preparedStatement4.setInt(7, UserConstants.TYPE_GUEST);
-
-				preparedStatement4.executeUpdate();
-			}
-		}
+			},
+			COMPANY_IDS);
 	}
 
 	protected static void insertPartitionRequiredData() throws Exception {
-		for (long companyId : COMPANY_IDS) {
-			try (SafeCloseable safeCloseable =
-					CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId);
-				PreparedStatement preparedStatement1 =
-					connection.prepareStatement(
-						"insert into Company (companyId, mx, webId) values " +
-							"(?, ?, ?)");
-				PreparedStatement preparedStatement2 =
-					connection.prepareStatement(
-						StringBundler.concat(
-							"insert into VirtualHost (ctCollectionId, ",
-							"virtualHostId, companyId, layoutSetId, hostname, ",
-							"defaultVirtualHost) values (?, ?, ?, ?, ?, ?)"))) {
+		companyLocalService.forEachCompanyId(
+			companyId -> {
+				try (SafeCloseable safeCloseable =
+						CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+							companyId);
+					PreparedStatement preparedStatement1 =
+						connection.prepareStatement(
+							"insert into Company (companyId, mx, webId) " +
+								"values (?, ?, ?)");
+					PreparedStatement preparedStatement2 =
+						connection.prepareStatement(
+							StringBundler.concat(
+								"insert into VirtualHost (ctCollectionId, ",
+								"virtualHostId, companyId, layoutSetId, ",
+								"hostname, defaultVirtualHost) values (?, ?, ",
+								"?, ?, ?, ?)"))) {
 
-				preparedStatement1.setLong(1, companyId);
-				preparedStatement1.setString(2, "liferay.com");
-				preparedStatement1.setString(3, "Test" + companyId);
+					preparedStatement1.setLong(1, companyId);
+					preparedStatement1.setString(2, "liferay.com");
+					preparedStatement1.setString(3, "Test" + companyId);
 
-				preparedStatement1.executeUpdate();
+					preparedStatement1.executeUpdate();
 
-				preparedStatement2.setLong(1, 0L);
-				preparedStatement2.setLong(2, RandomTestUtil.randomLong());
-				preparedStatement2.setLong(3, companyId);
-				preparedStatement2.setLong(4, 0L);
-				preparedStatement2.setString(5, "test" + companyId);
-				preparedStatement2.setBoolean(6, true);
+					preparedStatement2.setLong(1, 0L);
+					preparedStatement2.setLong(2, RandomTestUtil.randomLong());
+					preparedStatement2.setLong(3, companyId);
+					preparedStatement2.setLong(4, 0L);
+					preparedStatement2.setString(5, "test" + companyId);
+					preparedStatement2.setBoolean(6, true);
 
-				preparedStatement2.executeUpdate();
-			}
+					preparedStatement2.executeUpdate();
+				}
 
-			Company company = new CompanyImpl();
+				Company company = new CompanyImpl();
 
-			company.setCompanyId(companyId);
-			company.setWebId("Test" + companyId);
+				company.setCompanyId(companyId);
+				company.setWebId("Test" + companyId);
 
-			PortalInstancePool.add(company);
-		}
+				PortalInstancePool.add(company);
+			},
+			COMPANY_IDS);
 	}
 
 	protected static boolean isCopyableQuartzTable(String tableName) {
@@ -376,9 +395,8 @@ public abstract class BaseDBPartitionTestCase {
 
 		_executeOnDBPartitions(companyIds, DBPartitionUtil::removeDBPartition);
 
-		for (long companyId : companyIds) {
-			PortalInstancePool.remove(companyId);
-		}
+		companyLocalService.forEachCompanyId(
+			companyId -> PortalInstancePool.remove(companyId), companyIds);
 
 		_clearCaches(companyIds);
 	}
@@ -468,10 +486,10 @@ public abstract class BaseDBPartitionTestCase {
 		EntityCacheUtil.clearCache(CompanyImpl.class);
 		EntityCacheUtil.clearCache(VirtualHostImpl.class);
 
-		for (long companyId : companyIds) {
-			PortalCacheHelperUtil.removePortalCaches(
-				PortalCacheManagerNames.MULTI_VM, companyId);
-		}
+		companyLocalService.forEachCompanyId(
+			companyId -> PortalCacheHelperUtil.removePortalCaches(
+				PortalCacheManagerNames.MULTI_VM, companyId),
+			companyIds);
 	}
 
 	private static void _executeOnDBPartitions(
@@ -489,9 +507,8 @@ public abstract class BaseDBPartitionTestCase {
 				CurrentConnectionUtil.class, "_currentConnection",
 				currentConnection);
 
-			for (long companyId : companyIds) {
-				unsafeFunction.apply(companyId);
-			}
+			companyLocalService.forEachCompanyId(
+				companyId -> unsafeFunction.apply(companyId), companyIds);
 		}
 		finally {
 			ReflectionTestUtil.setFieldValue(
