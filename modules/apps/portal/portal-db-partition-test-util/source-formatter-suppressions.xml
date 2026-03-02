@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-
-<suppressions>
-	<checkstyle>
-		<suppress checks="CompanyIterationCheck" files="src/main/java/com/liferay/portal/db/partition/test/util/BaseDBPartitionTestCase\.java" />
-	</checkstyle>
-</suppressions>
