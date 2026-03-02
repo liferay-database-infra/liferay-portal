@@ -208,7 +208,7 @@ public class IBMS3Store implements Store {
 
 				continuationToken = result.getNextContinuationToken();
 			}
-			while ((continuationToken != null) && !continuationToken.isEmpty());
+			while (continuationToken != null);
 		}
 		catch (Exception exception) {
 			throw new PortalException(exception);
