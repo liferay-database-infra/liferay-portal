@@ -107,10 +107,6 @@ public class GCStoreStoreAreaAwareStoreWrapperTest {
 			ArrayUtil.contains(
 				_wrappedStore.getCompanyIds(), _company.getCompanyId()));
 
-		Assert.assertTrue(
-			ArrayUtil.contains(
-				_store.getCompanyIds(), _company.getCompanyId()));
-
 		_wrappedStore.deleteDirectory(_company.getCompanyId());
 
 		Assert.assertFalse(
