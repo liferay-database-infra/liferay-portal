@@ -45,6 +45,7 @@ import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.concurrent.ThreadPoolExecutor;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -174,51 +175,6 @@ public class IBMS3Store implements Store {
 		catch (AmazonClientException amazonClientException) {
 			throw _transform(amazonClientException);
 		}
-	}
-
-	public long[] getCompanyIds() throws PortalException {
-		Set<Long> companyIdsSet = new HashSet<>();
-		String continuationToken = null;
-
-		try {
-			do {
-				ListObjectsV2Request request = new ListObjectsV2Request(
-				).withBucketName(
-					_s3StoreConfiguration.bucketName()
-				).withDelimiter(
-					"/"
-				).withContinuationToken(
-					continuationToken
-				);
-
-				ListObjectsV2Result result = _amazonS3.listObjectsV2(request);
-
-				List<String> prefixes = result.getCommonPrefixes();
-
-				for (String folderName : prefixes) {
-					if (folderName.endsWith("/")) {
-						folderName = folderName.substring(
-							0, folderName.length() - 1);
-					}
-
-					if (Validator.isNumber(folderName)) {
-						companyIdsSet.add(GetterUtil.getLong(folderName));
-					}
-				}
-
-				continuationToken = result.getNextContinuationToken();
-			}
-			while (continuationToken != null);
-		}
-		catch (Exception exception) {
-			throw new PortalException(exception);
-		}
-
-		long[] companyIds = ArrayUtil.toLongArray(companyIdsSet);
-
-		Arrays.sort(companyIds);
-
-		return companyIds;
 	}
 
 	@Override
@@ -388,6 +344,25 @@ public class IBMS3Store implements Store {
 			}
 
 			return false;
+		}
+	}
+
+	@Override
+	public void verifyCompanyStores() throws PortalException {
+		long[] companyIds = PortalInstancePool.getCompanyIds();
+
+		Arrays.sort(companyIds);
+
+		for (long storeCompanyId : _getCompanyIds()) {
+			if (Arrays.binarySearch(companyIds, storeCompanyId) < 0) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"Store ", storeCompanyId,
+							" belongs to deleted company ", storeCompanyId,
+							". Remove it if it is not used anywhere else."));
+				}
+			}
 		}
 	}
 
@@ -593,6 +568,51 @@ public class IBMS3Store implements Store {
 		catch (AmazonClientException amazonClientException) {
 			throw _transform(amazonClientException);
 		}
+	}
+
+	private long[] _getCompanyIds() throws PortalException {
+		Set<Long> companyIdsSet = new HashSet<>();
+		String continuationToken = null;
+
+		try {
+			do {
+				ListObjectsV2Request request = new ListObjectsV2Request(
+				).withBucketName(
+					_s3StoreConfiguration.bucketName()
+				).withDelimiter(
+					"/"
+				).withContinuationToken(
+					continuationToken
+				);
+
+				ListObjectsV2Result result = _amazonS3.listObjectsV2(request);
+
+				List<String> prefixes = result.getCommonPrefixes();
+
+				for (String folderName : prefixes) {
+					if (folderName.endsWith("/")) {
+						folderName = folderName.substring(
+							0, folderName.length() - 1);
+					}
+
+					if (Validator.isNumber(folderName)) {
+						companyIdsSet.add(GetterUtil.getLong(folderName));
+					}
+				}
+
+				continuationToken = result.getNextContinuationToken();
+			}
+			while (continuationToken != null);
+		}
+		catch (Exception exception) {
+			throw new PortalException(exception);
+		}
+
+		long[] companyIds = ArrayUtil.toLongArray(companyIdsSet);
+
+		Arrays.sort(companyIds);
+
+		return companyIds;
 	}
 
 	private String _getHeadVersionLabel(

@@ -36,6 +36,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
@@ -137,44 +138,6 @@ public class GCSStore implements Store {
 					companyId, repositoryId, fileName, versionLabel)));
 	}
 
-	public long[] getCompanyIds() throws PortalException {
-		Set<Long> companyIdsSet = new HashSet<>();
-
-		String prefix = StoreArea.getCurrentStoreAreaPath();
-
-		try {
-			Page<Blob> blobPage = _gcsStore.list(
-				_gcsStoreConfiguration.bucketName(),
-				Storage.BlobListOption.prefix(prefix),
-				Storage.BlobListOption.currentDirectory());
-
-			for (Blob blob : blobPage.iterateAll()) {
-				String name = blob.getName();
-
-				if (!prefix.isEmpty() && StringUtil.startsWith(name, prefix)) {
-					name = StringUtil.removeSubstring(name, prefix);
-				}
-
-				if (name.endsWith("/")) {
-					String folderName = name.substring(0, name.length() - 1);
-
-					if (Validator.isNumber(folderName)) {
-						companyIdsSet.add(GetterUtil.getLong(folderName));
-					}
-				}
-			}
-		}
-		catch (Exception exception) {
-			throw new PortalException(exception);
-		}
-
-		long[] companyIds = ArrayUtil.toLongArray(companyIdsSet);
-
-		Arrays.sort(companyIds);
-
-		return companyIds;
-	}
-
 	@Override
 	public InputStream getFileAsStream(
 			long companyId, long repositoryId, String fileName,
@@ -263,6 +226,24 @@ public class GCSStore implements Store {
 		Iterator<Blob> filesFoundIterator = filesFoundIterable.iterator();
 
 		return filesFoundIterator.hasNext();
+	}
+
+	public void verifyCompanyStores() throws PortalException {
+		long[] companyIds = PortalInstancePool.getCompanyIds();
+
+		Arrays.sort(companyIds);
+
+		for (long storeCompanyId : _getCompanyIds()) {
+			if (Arrays.binarySearch(companyIds, storeCompanyId) < 0) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"Store ", storeCompanyId,
+							" belongs to deleted company ", storeCompanyId,
+							". Remove it if it is not used anywhere else."));
+				}
+			}
+		}
 	}
 
 	@Activate
@@ -357,6 +338,44 @@ public class GCSStore implements Store {
 		}
 
 		return _bucketInfo;
+	}
+
+	private long[] _getCompanyIds() throws PortalException {
+		Set<Long> companyIdsSet = new HashSet<>();
+
+		String prefix = StoreArea.getCurrentStoreAreaPath();
+
+		try {
+			Page<Blob> blobPage = _gcsStore.list(
+				_gcsStoreConfiguration.bucketName(),
+				Storage.BlobListOption.prefix(prefix),
+				Storage.BlobListOption.currentDirectory());
+
+			for (Blob blob : blobPage.iterateAll()) {
+				String name = blob.getName();
+
+				if (!prefix.isEmpty() && StringUtil.startsWith(name, prefix)) {
+					name = StringUtil.removeSubstring(name, prefix);
+				}
+
+				if (name.endsWith("/")) {
+					String folderName = name.substring(0, name.length() - 1);
+
+					if (Validator.isNumber(folderName)) {
+						companyIdsSet.add(GetterUtil.getLong(folderName));
+					}
+				}
+			}
+		}
+		catch (Exception exception) {
+			throw new PortalException(exception);
+		}
+
+		long[] companyIds = ArrayUtil.toLongArray(companyIdsSet);
+
+		Arrays.sort(companyIds);
+
+		return companyIds;
 	}
 
 	private String _getDirectoryKey(

@@ -61,14 +61,18 @@ public class IBMS3StoreTest extends BaseStoreTestCase {
 			new AssumeTestRule("assume"), new LiferayIntegrationTestRule());
 
 	public static void assume() {
-		String s3StoreClassName = "com.liferay.portal.store.s3.IBMS3Store";
 		String dlStoreImpl = PropsUtil.get(PropsKeys.DL_STORE_IMPL);
 
 		Assume.assumeTrue(
 			StringBundler.concat(
 				"Property \"", PropsKeys.DL_STORE_IMPL, "\" is not set to \"",
-				s3StoreClassName, "\""),
-			dlStoreImpl.equals(s3StoreClassName));
+				_CLASS_NAME, "\""),
+			dlStoreImpl.equals(_CLASS_NAME));
+	}
+
+	@Override
+	public String getStoreClassName() {
+		return _CLASS_NAME;
 	}
 
 	@Test
@@ -152,6 +156,9 @@ public class IBMS3StoreTest extends BaseStoreTestCase {
 	protected Store getStore() {
 		return _store;
 	}
+
+	private static final String _CLASS_NAME =
+		"com.liferay.portal.store.s3.IBMS3Store";
 
 	@Inject
 	private ConfigurationAdmin _configurationAdmin;

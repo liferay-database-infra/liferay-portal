@@ -11,6 +11,7 @@ import com.liferay.document.library.content.service.DLContentLocalService;
 import com.liferay.document.library.kernel.exception.NoSuchFileException;
 import com.liferay.document.library.kernel.store.Store;
 import com.liferay.document.library.kernel.util.DLUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
@@ -18,6 +19,8 @@ import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.PropsValues;
@@ -90,32 +93,6 @@ public class DBStore implements Store {
 
 		_dlContentLocalService.deleteContent(
 			companyId, repositoryId, fileName, versionLabel);
-	}
-
-	@Override
-	public long[] getCompanyIds() {
-		Set<Long> companyIdsSet = new HashSet<>();
-
-		_companyLocalService.forEachCompany(
-			company -> {
-				DynamicQuery dynamicQuery =
-					_dlContentLocalService.dynamicQuery();
-
-				dynamicQuery.setProjection(
-					ProjectionFactoryUtil.distinct(
-						ProjectionFactoryUtil.property("companyId")));
-
-				dynamicQuery.add(RestrictionsFactoryUtil.gt("companyId", 0L));
-
-				companyIdsSet.addAll(
-					_dlContentLocalService.dynamicQuery(dynamicQuery));
-			});
-
-		long[] companyIdsArray = ArrayUtil.toLongArray(companyIdsSet);
-
-		Arrays.sort(companyIdsArray);
-
-		return companyIdsArray;
 	}
 
 	@Override
@@ -209,6 +186,52 @@ public class DBStore implements Store {
 		return _dlContentLocalService.hasContent(
 			companyId, repositoryId, fileName, versionLabel);
 	}
+
+	@Override
+	public void verifyCompanyStores() {
+		long[] companyIds = PortalInstancePool.getCompanyIds();
+
+		Arrays.sort(companyIds);
+
+		for (long storeCompanyId : _getCompanyIds()) {
+			if (Arrays.binarySearch(companyIds, storeCompanyId) < 0) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"Store ", storeCompanyId,
+							" belongs to deleted company ", storeCompanyId,
+							". Remove it if it is not used anywhere else."));
+				}
+			}
+		}
+	}
+
+	private long[] _getCompanyIds() {
+		Set<Long> companyIdsSet = new HashSet<>();
+
+		_companyLocalService.forEachCompany(
+			company -> {
+				DynamicQuery dynamicQuery =
+					_dlContentLocalService.dynamicQuery();
+
+				dynamicQuery.setProjection(
+					ProjectionFactoryUtil.distinct(
+						ProjectionFactoryUtil.property("companyId")));
+
+				dynamicQuery.add(RestrictionsFactoryUtil.gt("companyId", 0L));
+
+				companyIdsSet.addAll(
+					_dlContentLocalService.dynamicQuery(dynamicQuery));
+			});
+
+		long[] companyIdsArray = ArrayUtil.toLongArray(companyIdsSet);
+
+		Arrays.sort(companyIdsArray);
+
+		return companyIdsArray;
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(DBStore.class);
 
 	@Reference
 	private CompanyLocalService _companyLocalService;

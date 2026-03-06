@@ -75,11 +75,6 @@ public class SafeFileNameStore implements Store {
 	}
 
 	@Override
-	public long[] getCompanyIds() throws PortalException {
-		return _store.getCompanyIds();
-	}
-
-	@Override
 	public InputStream getFileAsStream(
 			long companyId, long repositoryId, String fileName,
 			String versionLabel)
@@ -191,6 +186,11 @@ public class SafeFileNameStore implements Store {
 		}
 
 		return _store.hasFile(companyId, repositoryId, fileName, versionLabel);
+	}
+
+	@Override
+	public void verifyCompanyStores() throws PortalException {
+		_store.verifyCompanyStores();
 	}
 
 	private final Store _store;
