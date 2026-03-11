@@ -71,7 +71,8 @@ public class PortalInstances {
 		}
 	}
 
-	public static long getCompanyId(HttpServletRequest httpServletRequest) {
+	public static long getCompanyId(HttpServletRequest httpServletRequest)
+		throws Exception {
 		try {
 			return getCompanyId(httpServletRequest, false);
 		}
@@ -80,11 +81,14 @@ public class PortalInstances {
 
 			return 0;
 		}
+		catch (Exception exception) {
+			throw new Exception(exception);
+		}
 	}
 
 	public static long getCompanyId(
 			HttpServletRequest httpServletRequest, boolean strict)
-		throws NoSuchVirtualHostException {
+		throws Exception {
 
 		if (_log.isDebugEnabled()) {
 			_log.debug("Get company ID");
@@ -102,6 +106,10 @@ public class PortalInstances {
 
 			if (CompanyThreadLocal.getCompanyId() == CompanyConstants.SYSTEM) {
 				CompanyThreadLocal.setCompanyId(companyId);
+			}
+
+			if (CompanyThreadLocal.getCompanyId() != companyId) {
+				throw new Exception("CompanyId conflict");
 			}
 
 			return companyId;
@@ -453,10 +461,11 @@ public class PortalInstances {
 				return 0;
 			}
 
-			CompanyThreadLocal.setCompanyId(virtualHost.getCompanyId());
-
-			if (virtualHost.getLayoutSetId() != 0) {
-				_setAttributes(virtualHost, httpServletRequest);
+			try (SafeCloseable safeCloseable =
+					 CompanyThreadLocal.setCompanyIdWithSafeCloseable(virtualHost.getCompanyId())) {
+				if (virtualHost.getLayoutSetId() != 0) {
+					_setAttributes(virtualHost, httpServletRequest);
+				}
 			}
 
 			return virtualHost.getCompanyId();
