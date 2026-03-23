@@ -219,6 +219,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		validateWebId(webId);
 		validateVirtualHost(webId, lowerCaseVirtualHostname);
 		validateMx(-1, mx);
+		validateMaxUsers(maxUsers);
 
 		if ((companyId == null) || (companyId == 0)) {
 			companyId = _getNextCompanyId();
@@ -1986,6 +1987,15 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		if (!emailAddressValidator.validate(companyId, emailAddress)) {
 			throw new CompanyMxException(
 				"Invalid email address " + emailAddress);
+		}
+	}
+
+	protected void validateMaxUsers(int maxUsers)
+		throws CompanyMaxUsersException {
+
+		if (maxUsers < 0) {
+			throw new CompanyMaxUsersException(
+				"Max users should be equal or greater than 0");
 		}
 	}
 
