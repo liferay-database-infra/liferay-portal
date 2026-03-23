@@ -1176,6 +1176,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		validateVirtualHost(company.getWebId(), virtualHostname);
 
+		validateMaxUsers(maxUsers);
+
 		if (PropsValues.COMPANY_MX_UPDATE) {
 			validateMx(companyId, mx);
 
