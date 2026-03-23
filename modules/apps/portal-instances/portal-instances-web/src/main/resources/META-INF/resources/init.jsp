@@ -22,6 +22,7 @@ page import="com.liferay.portal.instances.web.internal.taglib.util.CompanyAction
 page import="com.liferay.portal.kernel.bean.BeanParamUtil" %><%@
 page import="com.liferay.portal.kernel.dao.search.SearchContainer" %><%@
 page import="com.liferay.portal.kernel.exception.CompanyMxException" %><%@
+page import="com.liferay.portal.kernel.exception.CompanyMaxUsersException" %><%@
 page import="com.liferay.portal.kernel.exception.CompanyVirtualHostException" %><%@
 page import="com.liferay.portal.kernel.exception.CompanyWebIdException" %><%@
 page import="com.liferay.portal.kernel.exception.RequiredCompanyException" %><%@
