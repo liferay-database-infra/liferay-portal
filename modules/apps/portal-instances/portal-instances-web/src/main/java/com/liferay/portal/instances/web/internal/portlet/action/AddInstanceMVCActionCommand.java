@@ -6,8 +6,8 @@
 package com.liferay.portal.instances.web.internal.portlet.action;
 
 import com.liferay.portal.instances.web.internal.constants.PortalInstancesPortletKeys;
-import com.liferay.portal.kernel.exception.CompanyMxException;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
+import com.liferay.portal.kernel.exception.CompanyMxException;
 import com.liferay.portal.kernel.exception.CompanyVirtualHostException;
 import com.liferay.portal.kernel.exception.CompanyWebIdException;
 import com.liferay.portal.kernel.exception.ContactNameException;
@@ -64,6 +64,7 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 			if (exception instanceof CompanyMaxUsersException) {
 				errorMessage = "please-enter-a-valid-max-users";
 			}
+
 			if (exception instanceof CompanyMxException) {
 				errorMessage = "please-enter-a-valid-mail-domain";
 			}
