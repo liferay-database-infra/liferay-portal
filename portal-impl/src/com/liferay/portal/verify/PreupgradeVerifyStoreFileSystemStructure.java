@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -29,8 +30,10 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.osgi.framework.BundleContext;
@@ -79,8 +82,9 @@ public class PreupgradeVerifyStoreFileSystemStructure
 				}
 
 				if (!Files.isDirectory(companyIdPath)) {
-					throw new VerifyException(
-						companyIdPath + " is not a directory");
+					_verifyMessages.add(companyIdPath + " is not a directory");
+
+					continue;
 				}
 
 				if (advancedFileSystemStore &&
@@ -113,10 +117,15 @@ public class PreupgradeVerifyStoreFileSystemStructure
 		}
 
 		if (!companyIds.isEmpty()) {
-			throw new VerifyException(
+			_verifyMessages.add(
 				StringBundler.concat(
 					"Missing directories in ", rootDirPath, " for companies: ",
 					companyIds));
+		}
+
+		if (ListUtil.isNotEmpty(_verifyMessages)) {
+			throw new VerifyException(
+				StringUtil.merge(_verifyMessages, StringPool.COMMA_AND_SPACE));
 		}
 	}
 
@@ -356,5 +365,7 @@ public class PreupgradeVerifyStoreFileSystemStructure
 
 	private static final Set<String> _excludedFileNames = new HashSet<>(
 		Arrays.asList(".DS_Store"));
+
+	private final List<String> _verifyMessages = new ArrayList<>();
 
 }
