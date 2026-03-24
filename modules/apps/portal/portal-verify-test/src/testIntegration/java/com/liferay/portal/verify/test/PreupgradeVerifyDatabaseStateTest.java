@@ -300,7 +300,7 @@ public class PreupgradeVerifyDatabaseStateTest
 		String originalData = serviceComponent.getData();
 
 		try {
-			serviceComponent.setData(RandomTestUtil.randomString());
+			serviceComponent.setData(StringPool.BLANK);
 
 			serviceComponent =
 				_serviceComponentLocalService.updateServiceComponent(
