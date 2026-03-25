@@ -127,11 +127,13 @@ public class PreupgradeVerifyDatabaseState extends PreupgradeVerifyProcess {
 
 			if (!missingTableNames.isEmpty()) {
 				_verifyMessages.add(
-					"Missing tables detected: " +
+					StringBundler.concat(
+						"Missing tables detected: ",
 						new TreeSet<>(
 							TransformUtil.transform(
-								missingTableNames,
-								dbInspector::normalizeName)));
+								missingTableNames, dbInspector::normalizeName)),
+						" in company ",
+						CompanyThreadLocal.getNonsystemCompanyId()));
 			}
 
 			Set<String> databaseViewNames = new TreeSet<>(
@@ -222,26 +224,33 @@ public class PreupgradeVerifyDatabaseState extends PreupgradeVerifyProcess {
 			columnDefinitionsMap,
 			entry -> {
 				for (String columnDefinition : entry.getValue()) {
-					int index = columnDefinition.indexOf(StringPool.SPACE);
+					if (dbInspector.hasTable(entry.getKey())) {
+						int index = columnDefinition.indexOf(StringPool.SPACE);
 
-					String columnName = columnDefinition.substring(0, index);
-					String columnType = columnDefinition.substring(index + 1);
+						String columnName = columnDefinition.substring(
+							0, index);
 
-					if (!dbInspector.hasColumn(entry.getKey(), columnName)) {
-						missingColumnNames.computeIfAbsent(
-							entry.getKey(), tableName -> new ArrayList<>()
-						).add(
-							columnName
-						);
-					}
-					else if (!dbInspector.hasColumnType(
-								entry.getKey(), columnName, columnType)) {
+						String columnType = columnDefinition.substring(
+							index + 1);
 
-						mismatchedColumnDefinitionsMap.computeIfAbsent(
-							entry.getKey(), tableName -> new ArrayList<>()
-						).add(
-							columnDefinition
-						);
+						if (!dbInspector.hasColumn(
+								entry.getKey(), columnName)) {
+
+							missingColumnNames.computeIfAbsent(
+								entry.getKey(), tableName -> new ArrayList<>()
+							).add(
+								columnName
+							);
+						}
+						else if (!dbInspector.hasColumnType(
+									entry.getKey(), columnName, columnType)) {
+
+							mismatchedColumnDefinitionsMap.computeIfAbsent(
+								entry.getKey(), tableName -> new ArrayList<>()
+							).add(
+								columnDefinition
+							);
+						}
 					}
 				}
 			},
