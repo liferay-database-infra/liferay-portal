@@ -54,15 +54,15 @@ function _bump_bootstrap_version {
 
 	new_version=$(echo "${current_version}" | awk -F"." -v OFS="." '{$NF += 1; print}')
 
-	local git_blame_line
-
-	git_blame_line=$(_git_blame_line '"liferay-'"${bootstrap_name}"'-bootstrap": "[0-9]+\.[0-9]+\.[0-9]+"' "${_VERSIONS_JSON_FILE}")
-
 	sed \
 		--in-place \
 		--regexp-extended \
 		"s/\"version\": \".*\"/\"version\": \"${new_version}\"/" \
 		"${_ROOT_CLOUD_DIR}/scripts/config.json.example_${bootstrap_name}"
+
+	local git_blame_line
+
+	git_blame_line=$(_git_blame_line '"liferay-'"${bootstrap_name}"'-bootstrap": "[0-9]+\.[0-9]+\.[0-9]+"' "${_VERSIONS_JSON_FILE}")
 
 	sed \
 		--in-place \
