@@ -575,6 +575,7 @@ const ExperiencesSelectorHeader = ({canCreateExperiences, onNewExperience}) => {
 						)} `}
 
 						<a
+							className="text-decoration-underline"
 							href={config.contentPagePersonalizationLearnURL}
 							target="_blank"
 						>
