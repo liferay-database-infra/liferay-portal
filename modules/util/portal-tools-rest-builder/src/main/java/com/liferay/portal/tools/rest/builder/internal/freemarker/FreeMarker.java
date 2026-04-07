@@ -5,6 +5,7 @@
 
 package com.liferay.portal.tools.rest.builder.internal.freemarker;
 
+import com.liferay.petra.io.StreamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.rest.builder.internal.util.FileUtil;
 
@@ -83,7 +84,8 @@ public class FreeMarker {
 		try (InputStream inputStream = FreeMarker.class.getResourceAsStream(
 				"dependencies/copyright.txt")) {
 
-			_DEFAULT_COPYRIGHT = new String(inputStream.readAllBytes());
+			_DEFAULT_COPYRIGHT = new String(
+				StreamUtil.toByteArray(inputStream));
 		}
 		catch (Exception exception) {
 			throw new ExceptionInInitializerError(exception);
