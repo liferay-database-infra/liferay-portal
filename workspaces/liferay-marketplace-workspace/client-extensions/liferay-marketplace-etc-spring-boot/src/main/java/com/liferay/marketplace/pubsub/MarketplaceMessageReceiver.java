@@ -307,8 +307,7 @@ public class MarketplaceMessageReceiver implements MessageReceiver {
 
 		if (opportunityId == null) {
 			if (_log.isInfoEnabled()) {
-				_log.info(
-					"Opportunity ID not found to process product purchase");
+				_log.info("Opportunity ID is null");
 			}
 
 			return;
@@ -422,8 +421,8 @@ public class MarketplaceMessageReceiver implements MessageReceiver {
 
 		throw new Exception(
 			StringBundler.concat(
-				"Failed to process account for ", koroneikiAccount.getKey(),
-				"with HTTP status code ", statusCode, " - ",
+				"Synchronizing account ", koroneikiAccount.getKey(),
+				" failed with HTTP status code ", statusCode, ": ",
 				httpResponse.getContent()));
 	}
 
@@ -500,8 +499,8 @@ public class MarketplaceMessageReceiver implements MessageReceiver {
 				else {
 					throw new Exception(
 						StringBundler.concat(
-							"Failed to process user account for ", emailAddress,
-							". HTTP ", statusCode, " - ",
+							"Synchronizing user account ", emailAddress,
+							" failed with HTTP status code ", statusCode, ": ",
 							httpResponse.getContent()));
 				}
 			}
