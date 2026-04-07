@@ -309,9 +309,9 @@ public class WikiPageIndexer extends BaseIndexer<WikiPage> {
 
 		indexableActionableDynamicQuery.setAddCriteriaMethod(
 			dynamicQuery -> {
-				Property headProperty = PropertyFactoryUtil.forName("head");
+				Property property = PropertyFactoryUtil.forName("head");
 
-				dynamicQuery.add(headProperty.eq(true));
+				dynamicQuery.add(property.eq(true));
 			});
 
 		return indexableActionableDynamicQuery;
