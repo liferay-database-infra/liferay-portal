@@ -175,7 +175,7 @@ ClickToChatConfiguration clickToChatConfiguration = (ClickToChatConfiguration)re
 		}
 		else {
 			clickToChatChatProvidersElement.classList.remove('hide');
-			zendeskWebWidgetFieldsElement.classList.remove('hide');
+			<portlet:namespace />toggleClickToChatZendeskWebWidgetFields();
 		}
 	}
 
