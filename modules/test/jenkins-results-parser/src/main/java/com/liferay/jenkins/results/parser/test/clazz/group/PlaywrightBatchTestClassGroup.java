@@ -781,7 +781,7 @@ public class PlaywrightBatchTestClassGroup extends BatchTestClassGroup {
 
 				if (index == -1) {
 					throw new RuntimeException(
-						"Invalid NPM Command Output: " + result);
+						"Invalid NPM command output: " + result);
 				}
 
 				result = result.substring(index);
