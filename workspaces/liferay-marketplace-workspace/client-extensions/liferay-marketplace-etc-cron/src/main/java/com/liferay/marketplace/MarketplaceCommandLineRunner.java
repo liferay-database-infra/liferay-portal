@@ -697,10 +697,12 @@ public class MarketplaceCommandLineRunner
 	}
 
 	private void _processPendingOrders() throws Exception {
-		Page<Order> page = _getOrdersPage(
-			"orderStatus/any(x:(x eq " + _ORDER_STATUS_PENDING +
-				")) and orderTypeExternalReferenceCode ne 'SOLUTIONS7'",
-			-1, -1);
+		String filterString = StringBundler.concat(
+			"orderStatus/any(x:(x eq ", _ORDER_STATUS_PENDING,
+			")) and not (orderTypeExternalReferenceCode in (",
+			"'AI_HUB', 'DXP', 'SOLUTIONS7'))");
+
+		Page<Order> page = _getOrdersPage(filterString, -1, -1);
 
 		if (page.getTotalCount() == 0) {
 			return;
@@ -907,7 +909,7 @@ public class MarketplaceCommandLineRunner
 		DateTimeFormatter dateTimeFormatter =
 			DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-		String filter = StringBundler.concat(
+		String filterString = StringBundler.concat(
 			"createDate ge ",
 			dateTimeFormatter.format(
 				windowStartZonedDateTime.minusDays(
@@ -919,7 +921,7 @@ public class MarketplaceCommandLineRunner
 			dateTimeFormatter.format(windowStartZonedDateTime.minusDays(7)),
 			" and orderTypeExternalReferenceCode eq 'CMP_BETA'");
 
-		Page<Order> page = _getOrdersPage(filter, -1, -1);
+		Page<Order> page = _getOrdersPage(filterString, -1, -1);
 
 		if (page.getTotalCount() == 0) {
 			if (_log.isInfoEnabled()) {
