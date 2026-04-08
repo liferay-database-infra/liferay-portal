@@ -964,7 +964,7 @@ public class FreeMarkerTool {
 		Components components = openAPIYAML.getComponents();
 
 		if (components == null) {
-			return Collections.emptyMap();
+			return new TreeMap<>();
 		}
 
 		return new TreeMap<>(components.getSchemas());
