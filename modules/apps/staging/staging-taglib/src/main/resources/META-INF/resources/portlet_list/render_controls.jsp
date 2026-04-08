@@ -33,13 +33,13 @@ for (int i = 0; i < portletDataHandlerControls.length; i++) {
 		<c:when test="<%= portletDataHandlerControls[i] instanceof PortletDataHandlerBoolean %>">
 
 			<%
+			long modelAdditionCount = 0;
+			long modelDeletionCount = 0;
+
 			PortletDataHandlerBoolean portletDataHandlerBoolean = (PortletDataHandlerBoolean)portletDataHandlerControls[i];
 
 			String className = portletDataHandlerBoolean.getClassName();
 			String label = LanguageUtil.get(request, resourceBundle, portletDataHandlerBoolean.getLabel());
-
-			long modelAdditionCount = 0;
-			long modelDeletionCount = 0;
 
 			if (Validator.isNotNull(className) && (manifestSummary != null)) {
 				StagedModelType stagedModelType = new StagedModelType(className, portletDataHandlerBoolean.getReferrerClassName());
