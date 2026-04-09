@@ -78,7 +78,7 @@ public class UserModelListenerTest {
 	}
 
 	@Test
-	public void testOnBeforeUpdateAgreedToTermsOfUse() throws Exception {
+	public void testOnBeforeUpdate() throws Exception {
 		_user = UserTestUtil.addUser();
 
 		Assert.assertFalse(_user.isAgreedToTermsOfUse());
@@ -113,13 +113,6 @@ public class UserModelListenerTest {
 		Assert.assertEquals(
 			String.valueOf(_user.getUserId()),
 			agreedToTermsOfUseAuditMessage.getClassPK());
-	}
-
-	@Test
-	public void testOnBeforeUpdateAgreedToTermsOfUseDoesNotFireOnOtherUpdates()
-		throws Exception {
-
-		_user = UserTestUtil.addUser();
 
 		_auditMessages.clear();
 
