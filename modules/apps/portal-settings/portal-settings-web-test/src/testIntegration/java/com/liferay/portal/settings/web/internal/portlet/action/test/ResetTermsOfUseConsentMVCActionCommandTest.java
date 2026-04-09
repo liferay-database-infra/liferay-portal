@@ -150,7 +150,6 @@ public class ResetTermsOfUseConsentMVCActionCommandTest {
 
 		mockLiferayPortletActionRequest.setAttribute(
 			WebKeys.THEME_DISPLAY, _getThemeDisplay());
-
 		mockLiferayPortletActionRequest.setPortletSession(
 			new MockPortletSession());
 
