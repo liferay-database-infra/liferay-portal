@@ -64,7 +64,7 @@ public class AddDepotEntryMVCActionCommandTest {
 	}
 
 	@Test
-	public void testRedirectURLGenerated() throws Exception {
+	public void testProcessAction() throws Exception {
 		_mvcActionCommand.processAction(
 			_mockLiferayPortletActionRequest,
 			_mockLiferayPortletActionResponse);
