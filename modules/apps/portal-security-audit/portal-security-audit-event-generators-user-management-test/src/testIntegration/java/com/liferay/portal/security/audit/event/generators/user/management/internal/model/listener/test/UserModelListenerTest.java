@@ -11,6 +11,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.security.audit.AuditMessageProcessor;
 import com.liferay.portal.security.audit.event.generators.constants.EventTypes;
@@ -98,16 +99,6 @@ public class UserModelListenerTest {
 			}
 		}
 
-		Assert.assertNotNull(
-			"Expected an AGGREED_TO_TERMS_OF_USE audit message",
-			agreedToTermsOfUseAuditMessage);
-		Assert.assertEquals(
-			User.class.getName(),
-			agreedToTermsOfUseAuditMessage.getClassName());
-		Assert.assertEquals(
-			String.valueOf(_user.getUserId()),
-			agreedToTermsOfUseAuditMessage.getClassPK());
-
 		JSONObject additionalInfoJSONObject =
 			agreedToTermsOfUseAuditMessage.getAdditionalInfo();
 
@@ -115,6 +106,13 @@ public class UserModelListenerTest {
 			additionalInfoJSONObject.has("termsOfUseJournalArticleGroupId"));
 		Assert.assertTrue(
 			additionalInfoJSONObject.has("termsOfUseJournalArticleId"));
+
+		Assert.assertEquals(
+			User.class.getName(),
+			agreedToTermsOfUseAuditMessage.getClassName());
+		Assert.assertEquals(
+			String.valueOf(_user.getUserId()),
+			agreedToTermsOfUseAuditMessage.getClassPK());
 	}
 
 	@Test
@@ -125,13 +123,12 @@ public class UserModelListenerTest {
 
 		_auditMessages.clear();
 
-		_user.setComments("Updated comments");
+		_user.setComments(RandomTestUtil.randomString());
 
 		UserLocalServiceUtil.updateUser(_user);
 
 		for (AuditMessage auditMessage : _auditMessages) {
 			Assert.assertNotEquals(
-				"Should not fire AGGREED_TO_TERMS_OF_USE for non-ToU updates",
 				EventTypes.AGGREED_TO_TERMS_OF_USE,
 				auditMessage.getEventType());
 		}
