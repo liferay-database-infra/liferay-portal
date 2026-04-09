@@ -230,7 +230,6 @@ public class OpenAPIParserUtil {
 		Map<String, Schema> externalReferencesMap = new TreeMap<>();
 
 		String baseDir = configYAML.getBaseDir();
-
 		String externalReference = null;
 		Set<String> visitedPaths = new HashSet<>();
 
@@ -320,7 +319,6 @@ public class OpenAPIParserUtil {
 		Map<String, String> javaDataTypeMap = new TreeMap<>();
 
 		String baseDir = configYAML.getBaseDir();
-
 		Set<String> visitedPaths = new HashSet<>();
 
 		try {
