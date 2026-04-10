@@ -291,7 +291,7 @@ public class DuplicateUniqueFinderRowsCleaner {
 				if (resultSet.getLong("count_" + columnName) == 0) {
 					_log.error(
 						StringBundler.concat(
-							"Cannot delete duplicate records in table ",
+							"Unable to delete duplicate records in table ",
 							_tableName, " because all values in column ",
 							columnName, " are null or empty"));
 
