@@ -97,15 +97,14 @@ public class YAMLUtil {
 		OpenAPIValidator.validate(fileName, yamlString, _YAML_OPEN_API);
 	}
 
-	private static final Map<String, ConfigYAML> _configYAMLs =
-		new ConcurrentHashMap<>();
-
-	private static final Map<String, OpenAPIYAML> _openAPIYAMLs =
-		new ConcurrentHashMap<>();
-
 	private static final Yaml _YAML_CONFIG;
 
 	private static final Yaml _YAML_OPEN_API;
+
+	private static final Map<String, ConfigYAML> _configYAMLs =
+		new ConcurrentHashMap<>();
+	private static final Map<String, OpenAPIYAML> _openAPIYAMLs =
+		new ConcurrentHashMap<>();
 
 	static {
 		Representer representer = new Representer(new DumperOptions());
