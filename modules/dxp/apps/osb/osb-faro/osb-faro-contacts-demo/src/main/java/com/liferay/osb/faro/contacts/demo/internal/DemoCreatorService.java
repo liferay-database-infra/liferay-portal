@@ -262,7 +262,6 @@ public abstract class DemoCreatorService {
 			addMixIn(PageVisited.class, PageVisitMixin.class);
 			addMixIn(TokenCredentials.class, TokenCredentialsMixin.class);
 			configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
 			setPropertyNamingStrategy(
 				new PropertyNamingStrategy() {
 
@@ -282,7 +281,6 @@ public abstract class DemoCreatorService {
 					}
 
 				});
-
 			setVisibility(
 				PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
 		}
