@@ -767,14 +767,13 @@ public class PlaywrightBatchTestClassGroup extends BatchTestClassGroup {
 			return false;
 		}
 
-		String packageJSONFileContent = JenkinsResultsParserUtil.read(
-			packageJSONFile);
+		String packageJSON = JenkinsResultsParserUtil.read(packageJSONFile);
 
-		if (JenkinsResultsParserUtil.isNullOrEmpty(packageJSONFileContent)) {
+		if (JenkinsResultsParserUtil.isNullOrEmpty(packageJSON)) {
 			return false;
 		}
 
-		JSONObject packageJSONObject = new JSONObject(packageJSONFileContent);
+		JSONObject packageJSONObject = new JSONObject(packageJSON);
 
 		JSONObject workspacesJSONObject = packageJSONObject.optJSONObject(
 			"workspaces");
