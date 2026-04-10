@@ -43,14 +43,14 @@ public class YAMLUtil {
 
 		String filePath = file.getPath();
 
-		ConfigYAML configYAML = _configYAMLMap.get(filePath);
+		ConfigYAML configYAML = _configYAMLs.get(filePath);
 
 		if (configYAML == null) {
 			try {
 				configYAML = _YAML_CONFIG.loadAs(
 					FileUtil.read(file), ConfigYAML.class);
 
-				_configYAMLMap.put(filePath, configYAML);
+				_configYAMLs.put(filePath, configYAML);
 			}
 			catch (MarkedYAMLException markedYAMLException) {
 				throw new InvalidYAMLException(markedYAMLException);
@@ -67,7 +67,7 @@ public class YAMLUtil {
 	public static OpenAPIYAML loadOpenAPIYAML(File file) throws IOException {
 		String filePath = file.getPath();
 
-		OpenAPIYAML openAPIYAML = _openAPIYAMLMap.get(filePath);
+		OpenAPIYAML openAPIYAML = _openAPIYAMLs.get(filePath);
 
 		if (openAPIYAML != null) {
 			return openAPIYAML;
@@ -76,7 +76,7 @@ public class YAMLUtil {
 		openAPIYAML = loadOpenAPIYAML(FileUtil.read(file));
 
 		if (openAPIYAML != null) {
-			_openAPIYAMLMap.put(filePath, openAPIYAML);
+			_openAPIYAMLs.put(filePath, openAPIYAML);
 		}
 
 		return openAPIYAML;
@@ -97,10 +97,10 @@ public class YAMLUtil {
 		OpenAPIValidator.validate(fileName, yamlString, _YAML_OPEN_API);
 	}
 
-	private static final Map<String, ConfigYAML> _configYAMLMap =
+	private static final Map<String, ConfigYAML> _configYAMLs =
 		new ConcurrentHashMap<>();
 
-	private static final Map<String, OpenAPIYAML> _openAPIYAMLMap =
+	private static final Map<String, OpenAPIYAML> _openAPIYAMLs =
 		new ConcurrentHashMap<>();
 
 	private static final Yaml _YAML_CONFIG;
