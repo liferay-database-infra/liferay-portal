@@ -33,6 +33,7 @@ import com.liferay.headless.commerce.delivery.order.client.pagination.Pagination
 import com.liferay.headless.commerce.delivery.order.client.resource.v1_0.PlacedOrderResource;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.Country;
 import com.liferay.portal.kernel.model.Region;
@@ -126,7 +127,8 @@ public class PlacedOrderResourceTest extends BasePlacedOrderResourceTestCase {
 		for (CommerceOrder commerceOrder :
 				_commerceOrderLocalService.getCommerceOrders(
 					_commerceChannel.getGroupId(),
-					_accountEntry.getAccountEntryId(), -1, -1, null)) {
+					_accountEntry.getAccountEntryId(), QueryUtil.ALL_POS,
+					QueryUtil.ALL_POS, null)) {
 
 			_commerceOrderLocalService.deleteCommerceOrder(
 				commerceOrder.getCommerceOrderId());
