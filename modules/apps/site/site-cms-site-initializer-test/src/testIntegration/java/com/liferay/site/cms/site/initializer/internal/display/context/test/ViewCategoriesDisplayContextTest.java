@@ -94,8 +94,8 @@ public class ViewCategoriesDisplayContextTest
 	@Test
 	@TestInfo("LPD-83779")
 	public void testGetBreadcrumbProps() throws Exception {
-		_testGetBreadcrumbPropsUsesCategoryTitle();
-		_testGetBreadcrumbPropsUsesVocabularyTitle();
+		_testGetBreadcrumbPropsUsesAssetCategoryTitle();
+		_testGetBreadcrumbPropsUsesAssetVocabularyTitle();
 	}
 
 	private MockHttpServletRequest _getMockHttpServletRequest(
@@ -105,6 +105,12 @@ public class ViewCategoriesDisplayContextTest
 		MockHttpServletRequest mockHttpServletRequest =
 			getMockHttpServletRequest();
 
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)mockHttpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		themeDisplay.setLocale(locale);
+
 		mockHttpServletRequest.setParameter(
 			"categoryId", String.valueOf(categoryId));
 
@@ -112,12 +118,6 @@ public class ViewCategoriesDisplayContextTest
 			mockHttpServletRequest.setParameter(
 				"vocabularyId", String.valueOf(vocabularyId));
 		}
-
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)mockHttpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
-		themeDisplay.setLocale(locale);
 
 		return mockHttpServletRequest;
 	}
@@ -134,7 +134,9 @@ public class ViewCategoriesDisplayContextTest
 				"ViewCategoriesDisplayContext");
 	}
 
-	private void _testGetBreadcrumbPropsUsesCategoryTitle() throws Exception {
+	private void _testGetBreadcrumbPropsUsesAssetCategoryTitle()
+		throws Exception {
+
 		HttpServletRequest httpServletRequest = _getMockHttpServletRequest(
 			_assetCategory.getCategoryId(), LocaleUtil.FRANCE,
 			_assetVocabulary.getVocabularyId());
@@ -152,7 +154,9 @@ public class ViewCategoriesDisplayContextTest
 			jsonObject.getString("label"));
 	}
 
-	private void _testGetBreadcrumbPropsUsesVocabularyTitle() throws Exception {
+	private void _testGetBreadcrumbPropsUsesAssetVocabularyTitle()
+		throws Exception {
+
 		HttpServletRequest httpServletRequest = _getMockHttpServletRequest(
 			0, LocaleUtil.getDefault(), _assetVocabulary.getVocabularyId());
 
