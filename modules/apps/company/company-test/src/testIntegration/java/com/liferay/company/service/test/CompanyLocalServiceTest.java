@@ -1077,28 +1077,24 @@ public class CompanyLocalServiceTest {
 
 	@Test
 	public void testUpdateCompany() throws Exception {
-		_testUpdateCompanyMaxUsers(-100);
 		_testUpdateCompanyMaxUsers(-1);
+		_testUpdateCompanyMaxUsers(-100);
 		_testUpdateCompanyMaxUsers(0);
-		_testUpdateCompanyMaxUsers(20);
 		_testUpdateCompanyMaxUsers(10000);
-
+		_testUpdateCompanyMaxUsers(20);
 		_testUpdateCompanyMx("abc", false, true);
 		_testUpdateCompanyMx("abc.com", true, false);
 		_testUpdateCompanyMx("abc.com", true, true);
 		_testUpdateCompanyMx(StringPool.BLANK, false, false);
 		_testUpdateCompanyMx(StringPool.BLANK, false, true);
-
 		_testUpdateCompanyNames(false);
 		_testUpdateCompanyNames(true);
-
 		_testUpdateCompanyVirtualHostnames(
 			new String[] {
 				"abc.com", "255.0.0.0", "0:0:0:0:0:0:0:1", "::1",
 				"0000:0000:0000:0000:0000:0000:0000:0001"
 			},
 			false);
-
 		_testUpdateCompanyVirtualHostnames(
 			new String[] {StringPool.BLANK, "localhost", ".abc"}, true);
 	}
@@ -1616,7 +1612,7 @@ public class CompanyLocalServiceTest {
 	private void _testUpdateCompanyNames(boolean expectFailure)
 		throws Exception {
 
-		String companyName = _company.getName();
+		String name = _company.getName();
 
 		try (SafeCloseable safeCloseable =
 				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
@@ -1625,7 +1621,7 @@ public class CompanyLocalServiceTest {
 			Group group = null;
 
 			try {
-				String[] names;
+				String[] names = null;
 
 				if (expectFailure) {
 					group = GroupTestUtil.addGroup(
@@ -1647,8 +1643,8 @@ public class CompanyLocalServiceTest {
 			finally {
 				_company = _companyLocalService.updateCompany(
 					_company.getCompanyId(), _company.getVirtualHostname(),
-					_company.getMx(), _company.getHomeURL(), true, null,
-					companyName, _company.getLegalName(), _company.getLegalId(),
+					_company.getMx(), _company.getHomeURL(), true, null, name,
+					_company.getLegalName(), _company.getLegalId(),
 					_company.getLegalType(), _company.getSicCode(),
 					_company.getTickerSymbol(), _company.getIndustry(),
 					_company.getType(), _company.getSize());
@@ -1661,18 +1657,18 @@ public class CompanyLocalServiceTest {
 	}
 
 	private void _testUpdateCompanyNames(
-			Company company, String[] companyNames, boolean expectFailure)
+			Company company, String[] names, boolean expectFailure)
 		throws Exception {
 
-		for (String companyName : companyNames) {
+		for (String name : names) {
 			try (SafeCloseable safeCloseable =
 					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
 						company.getCompanyId())) {
 
 				company = _companyLocalService.updateCompany(
 					company.getCompanyId(), company.getVirtualHostname(),
-					company.getMx(), company.getHomeURL(), true, null,
-					companyName, company.getLegalName(), company.getLegalId(),
+					company.getMx(), company.getHomeURL(), true, null, name,
+					company.getLegalName(), company.getLegalId(),
 					company.getLegalType(), company.getSicCode(),
 					company.getTickerSymbol(), company.getIndustry(),
 					company.getType(), company.getSize());
