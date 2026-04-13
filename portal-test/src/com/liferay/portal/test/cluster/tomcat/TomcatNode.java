@@ -516,8 +516,8 @@ public class TomcatNode {
 					RPCUtil._osgiify(clusterExecutable)))) {
 
 			@Override
-			protected V convert(byte[] data) throws Exception {
-				return RPCUtil._deserialize(data);
+			protected V convert(byte[] bytes) throws Exception {
+				return RPCUtil._deserialize(bytes);
 			}
 
 		};
@@ -641,7 +641,7 @@ public class TomcatNode {
 		@Override
 		public T call() throws ProcessException {
 			try (InputStream inputStream = new UnsyncByteArrayInputStream(
-					_data);
+					_bytes);
 
 				ObjectInputStream objectInputStream =
 					new ClassLoaderObjectInputStream(
@@ -674,12 +674,12 @@ public class TomcatNode {
 				throw new RuntimeException(ioException);
 			}
 
-			_data = unsyncByteArrayOutputStream.toByteArray();
+			_bytes = unsyncByteArrayOutputStream.toByteArray();
 		}
 
 		private static final long serialVersionUID = 1L;
 
-		private final byte[] _data;
+		private final byte[] _bytes;
 
 		private static class BridgeClassLoaderHolder {
 
@@ -750,10 +750,10 @@ public class TomcatNode {
 	 */
 	private static class RPCUtil {
 
-		private static <T> T _deserialize(byte[] data)
+		private static <T> T _deserialize(byte[] bytes)
 			throws ClassNotFoundException {
 
-			Deserializer deserializer = new Deserializer(ByteBuffer.wrap(data));
+			Deserializer deserializer = new Deserializer(ByteBuffer.wrap(bytes));
 
 			return deserializer.readObject();
 		}
@@ -773,10 +773,10 @@ public class TomcatNode {
 		private static ClusterExecutable<byte[]> _osgiify(
 			ClusterExecutable<?> clusterExecutable) {
 
-			byte[] data = _serialize(clusterExecutable);
+			byte[] bytes = _serialize(clusterExecutable);
 
 			return () -> _serialize(
-				RPCUtil._invokeClusterExecutable(_deserialize(data)));
+				RPCUtil._invokeClusterExecutable(_deserialize(bytes)));
 		}
 
 		private static byte[] _serialize(Serializable serializable) {
