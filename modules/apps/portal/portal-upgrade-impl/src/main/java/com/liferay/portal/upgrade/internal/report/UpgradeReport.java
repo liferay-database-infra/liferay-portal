@@ -353,6 +353,12 @@ public class UpgradeReport {
 						_dlSizeThread.join(
 							PropsValues.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT *
 								Time.SECOND);
+						if (((DLSizeThread)_dlSizeThread).getError() != null) {
+							_log.error(
+									"Unable to determine the document library size");
+
+							return "Unable to determine";
+						}
 					}
 					catch (Exception exception) {
 						_log.error(
@@ -1017,10 +1023,19 @@ public class UpgradeReport {
 	private String _rootDir;
 
 	private class DLSizeThread extends Thread {
+		private Exception _error;
 
 		@Override
 		public void run() {
-			_dlSize = FileUtils.sizeOfDirectory(new File(_rootDir));
+			try {
+				_dlSize = FileUtils.sizeOfDirectory(new File(_rootDir));
+			} catch (Exception e) {
+				_error = e;
+			}
+		}
+
+		public Exception getError() {
+			return _error;
 		}
 
 	}
