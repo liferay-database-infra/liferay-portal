@@ -73,6 +73,10 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.cm.PersistenceManager;
@@ -96,7 +100,7 @@ public class UpgradeReport {
 			if (_log.isInfoEnabled()) {
 				_log.info(
 					"Upgrade report was not generated because no upgrade " +
-						"processes were executed");
+					"processes were executed");
 			}
 
 			return;
@@ -330,35 +334,50 @@ public class UpgradeReport {
 				"storage.size",
 				() -> {
 					if (PropsValues.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT ==
-							0) {
+						0) {
 
 						return "Disabled";
 					}
 
 					if (!StringUtil.endsWith(
-							PropsValues.DL_STORE_IMPL, "FileSystemStore")) {
+						PropsValues.DL_STORE_IMPL, "FileSystemStore")) {
 
 						return "Check externally";
 					}
 
 					if (_rootDir == null) {
 						return "Unable to determine. Document library " +
-							"\"rootDir\" was not set";
+							   "\"rootDir\" was not set";
 					}
 
-					_dlSize = 0;
+					long dlSize = 0;
+
+					FutureTask<Long> dlSizeFutureTask = new FutureTask<>(
+						() -> FileUtils.sizeOfDirectory(new File(_rootDir)));
 
 					try {
-						_dlSizeThread.start();
-						_dlSizeThread.join(
-							PropsValues.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT *
-								Time.SECOND);
-						if (((DLSizeThread)_dlSizeThread).getError() != null) {
-							_log.error(
-									"Unable to determine the document library size");
+						Thread dlSizeThread = new Thread(dlSizeFutureTask);
 
-							return "Unable to determine";
-						}
+						dlSizeThread.start();
+
+						dlSize = dlSizeFutureTask.get(
+							PropsValues.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT,
+							TimeUnit.SECONDS);
+					}
+					catch (TimeoutException timeoutException) {
+						_log.error(
+							"Unable to determine the document library size. " +
+							"Increase the timeout or check it manually.",
+							timeoutException.getCause());
+
+						return "Unable to determine";
+					}
+					catch (ExecutionException executionException) {
+						_log.error(
+							"Unable to determine the document library size",
+							executionException.getCause());
+
+						return "Unable to determine";
 					}
 					catch (Exception exception) {
 						_log.error(
@@ -368,19 +387,8 @@ public class UpgradeReport {
 						return "Unable to determine";
 					}
 
-					if (_dlSizeThread.isAlive()) {
-						if (_log.isInfoEnabled()) {
-							_log.info(
-								"Unable to determine the document library " +
-									"size. Increase the timeout or check it " +
-										"manually.");
-						}
-
-						return "Unable to determine";
-					}
-
 					return LanguageUtil.formatStorageSize(
-						_dlSize, LocaleUtil.US);
+						dlSize, LocaleUtil.US);
 				}
 			).build()
 		).put(
@@ -416,7 +424,7 @@ public class UpgradeReport {
 
 					for (String keyword : keywords) {
 						if (StringUtil.containsIgnoreCase(
-								key, keyword, StringPool.BLANK)) {
+							key, keyword, StringPool.BLANK)) {
 
 							value = StringPool.EIGHT_STARS;
 
@@ -437,12 +445,12 @@ public class UpgradeReport {
 				Map<String, String> propertiesMap = new TreeMap<>();
 
 				for (String propertiesFilePathString :
-						propertiesFilePathStrings) {
+					propertiesFilePathStrings) {
 
 					Properties properties = new Properties();
 
 					try (InputStream inputStream = new FileInputStream(
-							propertiesFilePathString)) {
+						propertiesFilePathString)) {
 
 						properties.load(inputStream);
 					}
@@ -450,7 +458,7 @@ public class UpgradeReport {
 						if (_log.isWarnEnabled()) {
 							_log.warn(
 								"Unable to load properties file from: " +
-									propertiesFilePathString,
+								propertiesFilePathString,
 								ioException);
 						}
 
@@ -483,7 +491,7 @@ public class UpgradeReport {
 				List<PropertyPrinter> propertyPrinters = new ArrayList<>();
 
 				for (Map.Entry<String, String> entry :
-						propertiesMap.entrySet()) {
+					propertiesMap.entrySet()) {
 
 					propertyPrinters.add(
 						new PropertyPrinter(entry.getKey(), entry.getValue()));
@@ -542,10 +550,10 @@ public class UpgradeReport {
 						return new TablePrinter(
 							(finalTableCount >= 0) ?
 								String.valueOf(finalTableCount) :
-									StringPool.DASH,
+								StringPool.DASH,
 							(initialTableCount >= 0) ?
 								String.valueOf(initialTableCount) :
-									StringPool.DASH,
+								StringPool.DASH,
 							tableName);
 					});
 			}
@@ -560,13 +568,14 @@ public class UpgradeReport {
 		).put(
 			"execution.time", _executionTimeString
 		).put(
+			"data.clean.up",
+			_getMessagesPrinters(
+				false, upgradeRecorder.getDataCleanUpMessages())
+		).put(
 			"errors",
 			_getMessagesPrinters(true, upgradeRecorder.getErrorMessages())
 		).put(
 			"failed.sqls", UpgradeSQLRecorder.getFailedSQLs()
-		).put(
-			"warnings",
-			_getMessagesPrinters(true, upgradeRecorder.getWarningMessages())
 		).put(
 			"longest.upgrade.processes",
 			() -> {
@@ -589,7 +598,7 @@ public class UpgradeReport {
 					String upgradeProcessClassName = parts[3];
 
 					if (upgradeProcessClassName.equals(
-							PortalUpgradeProcess.class.getName())) {
+						PortalUpgradeProcess.class.getName())) {
 
 						continue;
 					}
@@ -597,8 +606,8 @@ public class UpgradeReport {
 					long duration = GetterUtil.getLong(parts[parts.length - 2]);
 
 					if (duration >=
-							PropsValues.
-								UPGRADE_REPORT_UPGRADE_PROCESS_THRESHOLD) {
+						PropsValues.
+							UPGRADE_REPORT_UPGRADE_PROCESS_THRESHOLD) {
 
 						upgradeProcessDurations.put(
 							upgradeProcessClassName, duration);
@@ -611,10 +620,10 @@ public class UpgradeReport {
 				int count = 0;
 
 				for (Map.Entry<String, Long> entry :
-						ListUtil.sort(
-							new ArrayList<>(upgradeProcessDurations.entrySet()),
-							Collections.reverseOrder(
-								Map.Entry.comparingByValue(Long::compare)))) {
+					ListUtil.sort(
+						new ArrayList<>(upgradeProcessDurations.entrySet()),
+						Collections.reverseOrder(
+							Map.Entry.comparingByValue(Long::compare)))) {
 
 					longestRunningUpgradeProcesses.add(
 						new RunningUpgradeProcess(
@@ -644,9 +653,8 @@ public class UpgradeReport {
 					Math.min(_LONGEST_RUNNING_SQLS_COUNT, runningSQLs.size()));
 			}
 		).put(
-			"data.clean.up",
-			_getMessagesPrinters(
-				false, upgradeRecorder.getDataCleanUpMessages())
+			"warnings",
+			_getMessagesPrinters(true, upgradeRecorder.getWarningMessages())
 		).build();
 	}
 
@@ -664,7 +672,7 @@ public class UpgradeReport {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"Unable to generate the upgrade report at " +
-							PropsValues.UPGRADE_REPORT_DIR);
+						PropsValues.UPGRADE_REPORT_DIR);
 				}
 			}
 		}
@@ -736,17 +744,17 @@ public class UpgradeReport {
 			String dlStoreConfigurationPid = StringPool.BLANK;
 
 			if (StringUtil.equals(
-					PropsValues.DL_STORE_IMPL,
-					"com.liferay.portal.store.file.system." +
-						"AdvancedFileSystemStore")) {
+				PropsValues.DL_STORE_IMPL,
+				"com.liferay.portal.store.file.system." +
+				"AdvancedFileSystemStore")) {
 
 				dlStoreConfigurationPid =
 					_CONFIGURATION_PID_ADVANCED_FILE_SYSTEM_STORE;
 			}
 			else if (StringUtil.equals(
-						PropsValues.DL_STORE_IMPL,
-						"com.liferay.portal.store.file.system." +
-							"FileSystemStore")) {
+				PropsValues.DL_STORE_IMPL,
+				"com.liferay.portal.store.file.system." +
+				"FileSystemStore")) {
 
 				dlStoreConfigurationPid = _CONFIGURATION_PID_FILE_SYSTEM_STORE;
 			}
@@ -782,8 +790,8 @@ public class UpgradeReport {
 			DBInspector dbInspector = new DBInspector(connection);
 
 			try (ResultSet resultSet1 = databaseMetaData.getTables(
-					dbInspector.getCatalog(), dbInspector.getSchema(), null,
-					new String[] {"TABLE"})) {
+				dbInspector.getCatalog(), dbInspector.getSchema(), null,
+				new String[] {"TABLE"})) {
 
 				Map<String, Long> tableCounts = new HashMap<>();
 
@@ -791,15 +799,15 @@ public class UpgradeReport {
 					String tableName = resultSet1.getString("TABLE_NAME");
 
 					try (PreparedStatement preparedStatement =
-							connection.prepareStatement(
-								"select count(*) as count from " + tableName);
+							 connection.prepareStatement(
+								 "select count(*) as count from " + tableName);
 
-						ResultSet resultSet2 =
-							preparedStatement.executeQuery()) {
+						 ResultSet resultSet2 =
+							 preparedStatement.executeQuery()) {
 
 						if (resultSet2.next()) {
 							tableCounts.put(
-								tableName, resultSet2.getLong("count"));
+								tableName, (long)resultSet2.getInt("count"));
 						}
 					}
 					catch (SQLException sqlException) {
@@ -977,13 +985,13 @@ public class UpgradeReport {
 			if (_log.isInfoEnabled()) {
 				_log.info(
 					"Upgrade report generated in " +
-						reportFile.getAbsolutePath());
+					reportFile.getAbsolutePath());
 			}
 		}
 		catch (IOException ioException) {
 			_log.error(
 				"Unable to generate the upgrade report in " +
-					reportFile.getAbsolutePath(),
+				reportFile.getAbsolutePath(),
 				ioException);
 		}
 		finally {
@@ -995,11 +1003,11 @@ public class UpgradeReport {
 
 	private static final String _CONFIGURATION_PID_ADVANCED_FILE_SYSTEM_STORE =
 		"com.liferay.portal.store.file.system.configuration." +
-			"AdvancedFileSystemStoreConfiguration";
+		"AdvancedFileSystemStoreConfiguration";
 
 	private static final String _CONFIGURATION_PID_FILE_SYSTEM_STORE =
 		"com.liferay.portal.store.file.system.configuration." +
-			"FileSystemStoreConfiguration";
+		"FileSystemStoreConfiguration";
 
 	private static final int _LONGEST_RUNNING_SQLS_COUNT = 20;
 
@@ -1010,35 +1018,15 @@ public class UpgradeReport {
 	private static boolean _logContext;
 	private static final Snapshot<PersistenceManager>
 		_persistenceManagerSnapshot = new Snapshot<>(
-			UpgradeReport.class, PersistenceManager.class);
+		UpgradeReport.class, PersistenceManager.class);
 	private static final Snapshot<ReleaseManager> _releaseManagerSnapshot =
 		new Snapshot<>(UpgradeReport.class, ReleaseManager.class);
 
-	private double _dlSize;
-	private final Thread _dlSizeThread = new DLSizeThread();
 	private String _executionDateString;
 	private String _executionTimeString;
 	private final int _initialBuildNumber;
 	private Map<String, Long> _initialTableCounts;
 	private String _rootDir;
-
-	private class DLSizeThread extends Thread {
-		private Exception _error;
-
-		@Override
-		public void run() {
-			try {
-				_dlSize = FileUtils.sizeOfDirectory(new File(_rootDir));
-			} catch (Exception e) {
-				_error = e;
-			}
-		}
-
-		public Exception getError() {
-			return _error;
-		}
-
-	}
 
 	private class MessagesPrinter {
 
@@ -1054,7 +1042,7 @@ public class UpgradeReport {
 		public String toString() {
 			if (_logContext) {
 				return _className + StringPool.COLON +
-					_messagePrinters.toString();
+					   _messagePrinters.toString();
 			}
 
 			StringBundler sb = new StringBundler();
@@ -1110,7 +1098,7 @@ public class UpgradeReport {
 			_key = key;
 
 			if (ArrayUtil.contains(
-					PropsValues.ADMIN_OBFUSCATED_PROPERTIES, key)) {
+				PropsValues.ADMIN_OBFUSCATED_PROPERTIES, key)) {
 
 				_value = StringPool.EIGHT_STARS;
 			}
