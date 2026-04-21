@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.test.rule.AssumeTestRule;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ObjectValuePair;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -27,11 +28,16 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -637,6 +643,136 @@ public class DBTest {
 			Assert.assertEquals(
 				dbInspector.normalizeName(INDEX_NAME),
 				indexMetadata.getIndexName());
+		}
+	}
+
+	@Test
+	public void testGetLockedQueries() throws Exception {
+		long originalThreshold =
+			PropsValues.UPGRADE_QUERY_MONITOR_LOCK_THRESHOLD;
+
+		try {
+			ReflectionTestUtil.setFieldValue(
+				PropsValues.class, "UPGRADE_QUERY_MONITOR_LOCK_THRESHOLD", 0L);
+
+			CountDownLatch latchStarted = new CountDownLatch(1);
+
+			try (Connection connection2 = DataAccess.getConnection()) {
+				AtomicReference<Throwable> threadError =
+					new AtomicReference<>();
+
+				try (Statement statement = connection2.createStatement()) {
+					statement.execute("drop table if exists testTable");
+					statement.execute(
+						"create table testTable (id int primary key, data " +
+							"VARCHAR(50))");
+					statement.execute(
+						"insert into testTable (id, data) values (1, " +
+							"'initial')");
+				}
+
+				connection2.setAutoCommit(false);
+
+				try (Statement statement1 = connection2.createStatement()) {
+					statement1.executeUpdate(
+						"update testTable set data='locked_by_main' where " +
+							"id=1");
+
+					Thread blockerThread = new Thread(
+						() -> {
+							try (Connection connection3 =
+									DataAccess.getConnection();
+								Statement statement2 =
+									connection3.createStatement()) {
+
+								latchStarted.countDown();
+								statement2.executeUpdate(
+									"update testTable set " +
+										"data='waiting_query' where id=1");
+							}
+							catch (Throwable throwable) {
+								threadError.set(throwable);
+							}
+						});
+
+					blockerThread.start();
+
+					Assert.assertTrue(
+						"Thread failed to start in time",
+						latchStarted.await(5, TimeUnit.SECONDS));
+
+					Thread.sleep(1000);
+
+					if (threadError.get() != null) {
+						throw new Exception(
+							"Background thread failed!", threadError.get());
+					}
+
+					List<DB.RunningQuery> lockedQueries = db.getLockedQueries(
+						connection2);
+
+					boolean foundOurBlockedQuery = false;
+
+					if (lockedQueries != null) {
+						for (DB.RunningQuery lockedQuery : lockedQueries) {
+							if ((lockedQuery.getQuery() != null) &&
+								lockedQuery.getQuery(
+								).contains(
+									"waiting_query"
+								)) {
+
+								foundOurBlockedQuery = true;
+
+								Assert.assertNotNull(
+									"ID should be populated",
+									lockedQuery.getId());
+								Assert.assertNotNull(
+									"Schema should be populated",
+									lockedQuery.getSchema());
+								Assert.assertTrue(
+									"Duration should be converted to millis",
+									lockedQuery.getDuration() >= 0);
+
+								String actualState = lockedQuery.getState();
+
+								Assert.assertNotNull(
+									"State should not be null", actualState);
+								Assert.assertTrue(
+									"State should indicate a lock, but was: '" +
+										actualState + "'",
+									actualState.toUpperCase(
+									).contains(
+										"LOCK"
+									));
+							}
+						}
+					}
+
+					Assert.assertTrue(
+						"Should have detected the query waiting for a lock",
+						foundOurBlockedQuery);
+				}
+				finally {
+					if (!connection2.isClosed()) {
+						try {
+							connection2.rollback();
+						}
+						catch (SQLException sqlException) {
+						}
+					}
+
+					try (Connection connection = DataAccess.getConnection();
+						Statement statement = connection.createStatement()) {
+
+						statement.execute("drop table if exists testTable");
+					}
+				}
+			}
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(
+				PropsValues.class, "UPGRADE_QUERY_MONITOR_LOCK_THRESHOLD",
+				originalThreshold);
 		}
 	}
 

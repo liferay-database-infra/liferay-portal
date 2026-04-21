@@ -250,12 +250,11 @@ public interface DB {
 	public class RunningQuery {
 
 		public RunningQuery(
-			long duration, String id, boolean locked, String query,
-			String schema, String state) {
+			long duration, String id, String query, String schema,
+			String state) {
 
 			_duration = duration;
 			_id = id;
-			_locked = locked;
 			_query = query;
 			_schema = schema;
 			_state = state;
@@ -281,13 +280,8 @@ public interface DB {
 			return _state;
 		}
 
-		public boolean isLocked() {
-			return _locked;
-		}
-
 		private final long _duration;
 		private final String _id;
-		private final boolean _locked;
 		private final String _query;
 		private final String _schema;
 		private final String _state;
