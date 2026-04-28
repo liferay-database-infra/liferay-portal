@@ -683,7 +683,7 @@ public class DB2DB extends BaseDB {
 			"coalesce(a.db_name, '') as schemaName, cast(timestampdiff(2, ",
 			"char(current timestamp - u.uow_start_time)) as bigint) as ",
 			"duration, a.appl_status as state, cast(act.stmt_text as ",
-			"varchar(1000)) as query from sysibmadm.applications a join ",
+			"varchar(4000)) as query from sysibmadm.applications a join ",
 			"table(sysproc.mon_get_unit_of_work(null, -2)) as u on a.agent_id ",
 			"= u.application_handle left join table(",
 			"sysproc.mon_get_activity(null, -2)) as act on a.agent_id = ",

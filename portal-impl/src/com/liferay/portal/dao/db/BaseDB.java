@@ -1789,7 +1789,7 @@ public abstract class BaseDB implements DB {
 
 			try (ResultSet resultSet = preparedStatement.executeQuery()) {
 				while (resultSet.next()) {
-					String id = String.valueOf(resultSet.getLong("id"));
+					String id = resultSet.getString("id");
 					String query = resultSet.getString("query");
 					String schema = resultSet.getString("schemaName");
 
