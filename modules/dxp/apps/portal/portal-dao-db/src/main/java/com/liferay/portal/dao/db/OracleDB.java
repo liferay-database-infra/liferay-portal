@@ -19,7 +19,6 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -36,7 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -195,46 +193,6 @@ public class OracleDB extends BaseDB {
 		return databaseMetaData.getIndexInfo(
 			dbInspector.getCatalog(), dbInspector.getSchema(), tableName,
 			onlyUnique, true);
-	}
-
-	@Override
-	public List<QueryInfo> getLockedQueryInfos(Connection connection)
-		throws SQLException {
-
-		List<QueryInfo> lockedQueryInfos = new ArrayList<>();
-
-		String sql = StringBundler.concat(
-			"select v$session.last_call_et as duration, v$session.sid as id, ",
-			"cast(v$sql.sql_fulltext as varchar2(1000)) as query, ",
-			"v$session.schemaname as schema_, v$session.event as state from ",
-			"v$session left join v$sql on v$session.sql_id = v$sql.sql_id ",
-			"where v$session.audsid != sys_context('USERENV', 'SESSIONID') ",
-			"and v$session.last_call_et >= ? and v$session.status = 'ACTIVE' ",
-			"and v$session.type = 'USER' and (v$session.event like 'enq:%' or ",
-			"v$session.event like '%library cache%')");
-
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
-				sql)) {
-
-			preparedStatement.setLong(
-				1, PropsValues.UPGRADE_QUERY_MONITOR_LOCK_THRESHOLD / 1000);
-
-			try (ResultSet resultSet = preparedStatement.executeQuery()) {
-				while (resultSet.next()) {
-					long duration = TimeUnit.SECONDS.toMillis(
-						resultSet.getLong("duration"));
-					String id = resultSet.getString("id");
-					String query = resultSet.getString("query");
-					String schema = resultSet.getString("schema_");
-					String state = resultSet.getString("state");
-
-					lockedQueryInfos.add(
-						new QueryInfo(duration, id, query, schema, state));
-				}
-			}
-		}
-
-		return lockedQueryInfos;
 	}
 
 	@Override
@@ -416,6 +374,19 @@ public class OracleDB extends BaseDB {
 		}
 
 		runSQL(connection, sb.toString());
+	}
+
+	@Override
+	protected String getLockedQueryInfosSQL() {
+		return StringBundler.concat(
+			"select v$session.last_call_et * 1000 as duration, v$session.sid ",
+			"as id, cast(v$sql.sql_fulltext as varchar2(4000)) as query, ",
+			"v$session.schemaname as schema_, v$session.event as state from ",
+			"v$session left join v$sql on v$session.sql_id = v$sql.sql_id ",
+			"where v$session.audsid != sys_context('USERENV', 'SESSIONID') ",
+			"and v$session.last_call_et * 1000 >= ? and v$session.status = ",
+			"'ACTIVE' and v$session.type = 'USER' and (v$session.event like ",
+			"'enq:%' or v$session.event like '%library cache%')");
 	}
 
 	@Override

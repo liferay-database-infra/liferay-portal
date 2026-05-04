@@ -701,23 +701,24 @@ public class DBTest {
 						Assert.assertNotNull(lockedQueryInfo.getId());
 						Assert.assertNotNull(lockedQueryInfo.getSchema());
 
-						String upperCaseState = StringUtil.toUpperCase(
-							lockedQueryInfo.getState());
+						String state = lockedQueryInfo.getState();
 
 						if (dbType == DBType.DB2) {
 							Assert.assertTrue(
-								upperCaseState.equals("LOCKWAIT") ||
-								upperCaseState.equals("UOWEXEC"));
+								StringUtil.equalsIgnoreCase(state, "LOCKWAIT"));
 						}
 						else if ((dbType == DBType.MARIADB) ||
 								 (dbType == DBType.MYSQL)) {
+
+							String upperCaseState = StringUtil.toUpperCase(
+								state);
 
 							Assert.assertTrue(
 								upperCaseState.contains("LOCK WAIT"));
 						}
 						else if (dbType == DBType.SQLSERVER) {
 							Assert.assertTrue(
-								upperCaseState.startsWith("LCK_"));
+								StringUtil.startsWith(state, "LCK_"));
 						}
 
 						return;

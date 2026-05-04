@@ -12,7 +12,6 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.db.Index;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -28,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -129,50 +127,6 @@ public class PostgreSQLDB extends BaseDB {
 		}
 
 		return indexes;
-	}
-
-	@Override
-	public List<QueryInfo> getLockedQueryInfos(Connection connection)
-		throws SQLException {
-
-		List<QueryInfo> lockedQueryInfos = new ArrayList<>();
-
-		String sql = StringBundler.concat(
-			"select extract(epoch from (now() - ",
-			"pg_catalog.pg_stat_activity.query_start)) as duration, ",
-			"pg_catalog.pg_stat_activity.pid as id, ",
-			"pg_catalog.pg_stat_activity.query as query, ",
-			"pg_catalog.pg_stat_activity.datname as schema_, ",
-			"pg_catalog.pg_stat_activity.wait_event_type as state from ",
-			"pg_catalog.pg_stat_activity where ",
-			"pg_catalog.pg_stat_activity.pid != pg_backend_pid() and ",
-			"extract(epoch from (now() - ",
-			"pg_catalog.pg_stat_activity.query_start)) >= ? and ",
-			"pg_catalog.pg_stat_activity.state != 'idle' and ",
-			"pg_catalog.pg_stat_activity.wait_event_type = 'Lock'");
-
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
-				sql)) {
-
-			preparedStatement.setLong(
-				1, PropsValues.UPGRADE_QUERY_MONITOR_LOCK_THRESHOLD / 1000);
-
-			try (ResultSet resultSet = preparedStatement.executeQuery()) {
-				while (resultSet.next()) {
-					long duration = TimeUnit.SECONDS.toMillis(
-						resultSet.getLong("duration"));
-					String id = resultSet.getString("id");
-					String query = resultSet.getString("query");
-					String schema = resultSet.getString("schema_");
-					String state = resultSet.getString("state");
-
-					lockedQueryInfos.add(
-						new QueryInfo(duration, id, query, schema, state));
-				}
-			}
-		}
-
-		return lockedQueryInfos;
 	}
 
 	@Override
@@ -374,6 +328,23 @@ public class PostgreSQLDB extends BaseDB {
 	@Override
 	protected String getIndexColumnName(String indexColumnName) {
 		return StringUtil.replaceFirst(indexColumnName, "left\"(", "left(");
+	}
+
+	@Override
+	protected String getLockedQueryInfosSQL() {
+		return StringBundler.concat(
+			"select extract(epoch from (now() - ",
+			"pg_catalog.pg_stat_activity.query_start)) * 1000 as duration, ",
+			"pg_catalog.pg_stat_activity.pid as id, ",
+			"pg_catalog.pg_stat_activity.query as query, ",
+			"pg_catalog.pg_stat_activity.datname as schema_, ",
+			"pg_catalog.pg_stat_activity.wait_event_type as state from ",
+			"pg_catalog.pg_stat_activity where ",
+			"pg_catalog.pg_stat_activity.pid != pg_backend_pid() and ",
+			"extract(epoch from (now() - ",
+			"pg_catalog.pg_stat_activity.query_start)) * 1000 >= ? and ",
+			"pg_catalog.pg_stat_activity.state != 'idle' and ",
+			"pg_catalog.pg_stat_activity.wait_event_type = 'Lock'");
 	}
 
 	@Override
