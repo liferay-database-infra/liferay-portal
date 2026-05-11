@@ -1,0 +1,303 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2026 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+package com.liferay.portal.upgrade.monitor;
+
+import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.dao.db.DB;
+import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.util.PropsValuesTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.InfrastructureUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+/**
+ * @author Jorge Avalos
+ */
+public class UpgradeQueryMonitorTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
+	@After
+	public void tearDown() {
+		UpgradeQueryMonitor.stop();
+	}
+
+	@Test
+	public void testPoll() throws Exception {
+		try (MockedStatic<DBManagerUtil> dbManagerUtilMockedStatic =
+				Mockito.mockStatic(DBManagerUtil.class);
+			LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				UpgradeQueryMonitor.class.getName(), LoggerTestUtil.WARN)) {
+
+			Connection connection = Mockito.mock(Connection.class);
+
+			DataSource dataSource = Mockito.mock(DataSource.class);
+
+			Mockito.when(
+				dataSource.getConnection()
+			).thenReturn(
+				connection
+			);
+
+			DB db = Mockito.mock(DB.class);
+
+			dbManagerUtilMockedStatic.when(
+				DBManagerUtil::getDB
+			).thenReturn(
+				db
+			);
+
+			DataSource originalDataSource = InfrastructureUtil.getDataSource();
+
+			InfrastructureUtil.setDataSource(dataSource);
+
+			try {
+				_testPollWithNoLockedQueries(connection, db, logCapture);
+				_testPollWithOneLockedQuery(connection, db, logCapture);
+				_testPollWithMultipleLockedQueries(connection, db, logCapture);
+				_testPollWithSQLException(connection, db, logCapture);
+			}
+			finally {
+				InfrastructureUtil.setDataSource(originalDataSource);
+			}
+		}
+	}
+
+	@Test
+	public void testStart() throws Exception {
+
+		// disabled
+
+		try (SafeCloseable safeCloseable =
+				PropsValuesTestUtil.swapWithSafeCloseable(
+					"UPGRADE_QUERY_MONITOR_ENABLED", false)) {
+
+			UpgradeQueryMonitor.start();
+
+			Assert.assertNull(
+				ReflectionTestUtil.getFieldValue(
+					UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE));
+		}
+
+		// enabled
+
+		try (SafeCloseable safeCloseable =
+				PropsValuesTestUtil.swapWithSafeCloseable(
+					"UPGRADE_QUERY_MONITOR_ENABLED", true)) {
+
+			UpgradeQueryMonitor.start();
+
+			ScheduledExecutorService scheduledExecutorService =
+				ReflectionTestUtil.getFieldValue(
+					UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE);
+
+			Assert.assertNotNull(scheduledExecutorService);
+
+			UpgradeQueryMonitor.start();
+
+			Assert.assertSame(
+				scheduledExecutorService,
+				ReflectionTestUtil.getFieldValue(
+					UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE));
+		}
+	}
+
+	@Test
+	public void testStop() throws Exception {
+
+		// not started
+
+		UpgradeQueryMonitor.stop();
+
+		Assert.assertNull(
+			ReflectionTestUtil.getFieldValue(
+				UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE));
+
+		// started
+
+		try (SafeCloseable safeCloseable =
+				PropsValuesTestUtil.swapWithSafeCloseable(
+					"UPGRADE_QUERY_MONITOR_ENABLED", true)) {
+
+			UpgradeQueryMonitor.start();
+
+			Assert.assertNotNull(
+				ReflectionTestUtil.getFieldValue(
+					UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE));
+
+			UpgradeQueryMonitor.stop();
+
+			Assert.assertNull(
+				ReflectionTestUtil.getFieldValue(
+					UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE));
+		}
+	}
+
+	private void _testPollWithMultipleLockedQueries(
+			Connection connection, DB db, LogCapture logCapture)
+		throws Exception {
+
+		String id2 = RandomTestUtil.randomString();
+		String id3 = RandomTestUtil.randomString();
+		String id4 = RandomTestUtil.randomString();
+		String query2 = RandomTestUtil.randomString();
+		String query3 = RandomTestUtil.randomString();
+		String query4 = RandomTestUtil.randomString();
+
+		Mockito.when(
+			db.getLockedQueryInfos(connection)
+		).thenReturn(
+			Arrays.asList(
+				new DB.QueryInfo(
+					300000, id2, query2, RandomTestUtil.randomString(),
+					RandomTestUtil.randomString()),
+				new DB.QueryInfo(
+					600000, id3, query3, RandomTestUtil.randomString(),
+					RandomTestUtil.randomString()),
+				new DB.QueryInfo(
+					900000, id4, query4, RandomTestUtil.randomString(),
+					RandomTestUtil.randomString()))
+		);
+
+		ReflectionTestUtil.invoke(
+			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
+
+		List<LogEntry> logEntries = logCapture.getLogEntries();
+
+		Assert.assertEquals(logEntries.toString(), 4, logEntries.size());
+
+		LogEntry logEntry2 = logEntries.get(1);
+
+		Assert.assertEquals(
+			StringBundler.concat(
+				"Locked query \"", query2, "\" (id ", id2,
+				") running for 300 seconds"),
+			logEntry2.getMessage());
+
+		LogEntry logEntry3 = logEntries.get(2);
+
+		Assert.assertEquals(
+			StringBundler.concat(
+				"Locked query \"", query3, "\" (id ", id3,
+				") running for 600 seconds"),
+			logEntry3.getMessage());
+
+		LogEntry logEntry4 = logEntries.get(3);
+
+		Assert.assertEquals(
+			StringBundler.concat(
+				"Locked query \"", query4, "\" (id ", id4,
+				") running for 900 seconds"),
+			logEntry4.getMessage());
+	}
+
+	private void _testPollWithNoLockedQueries(
+			Connection connection, DB db, LogCapture logCapture)
+		throws Exception {
+
+		Mockito.when(
+			db.getLockedQueryInfos(connection)
+		).thenReturn(
+			Collections.emptyList()
+		);
+
+		ReflectionTestUtil.invoke(
+			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
+
+		Assert.assertTrue(
+			logCapture.getLogEntries(
+			).isEmpty());
+	}
+
+	private void _testPollWithOneLockedQuery(
+			Connection connection, DB db, LogCapture logCapture)
+		throws Exception {
+
+		String id1 = RandomTestUtil.randomString();
+		String query1 = RandomTestUtil.randomString();
+
+		Mockito.when(
+			db.getLockedQueryInfos(connection)
+		).thenReturn(
+			Collections.singletonList(
+				new DB.QueryInfo(
+					30000, id1, query1, RandomTestUtil.randomString(),
+					RandomTestUtil.randomString()))
+		);
+
+		ReflectionTestUtil.invoke(
+			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
+
+		List<LogEntry> logEntries = logCapture.getLogEntries();
+
+		Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
+
+		LogEntry logEntry = logEntries.get(0);
+
+		Assert.assertEquals(
+			StringBundler.concat(
+				"Locked query \"", query1, "\" (id ", id1,
+				") running for 30 seconds"),
+			logEntry.getMessage());
+		Assert.assertEquals("WARN", logEntry.getPriority());
+	}
+
+	private void _testPollWithSQLException(
+			Connection connection, DB db, LogCapture logCapture)
+		throws Exception {
+
+		Mockito.when(
+			db.getLockedQueryInfos(connection)
+		).thenThrow(
+			new SQLException()
+		);
+
+		Assert.assertThrows(
+			SQLException.class,
+			() -> ReflectionTestUtil.invoke(
+				UpgradeQueryMonitor.class, "_poll", new Class<?>[0]));
+
+		List<LogEntry> logEntries = logCapture.getLogEntries();
+
+		Assert.assertEquals(logEntries.toString(), 5, logEntries.size());
+
+		LogEntry logEntry = logEntries.get(4);
+
+		Assert.assertEquals(
+			"Unable to detect locked queries", logEntry.getMessage());
+	}
+
+	private static final String _SCHEDULED_EXECUTOR_SERVICE =
+		"_scheduledExecutorService";
+
+}
