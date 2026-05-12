@@ -69,8 +69,9 @@ public final class UpgradeQueryMonitor {
 				_log.debug(interruptedException);
 			}
 
-			Thread.currentThread(
-			).interrupt();
+			Thread currentThread = Thread.currentThread();
+
+			currentThread.interrupt();
 		}
 
 		_scheduledExecutorService = null;
@@ -103,9 +104,9 @@ public final class UpgradeQueryMonitor {
 			}
 		}
 		catch (Exception exception) {
-			if (Thread.currentThread(
-				).isInterrupted()) {
+			Thread currentThread = Thread.currentThread();
 
+			if (currentThread.isInterrupted()) {
 				return;
 			}
 

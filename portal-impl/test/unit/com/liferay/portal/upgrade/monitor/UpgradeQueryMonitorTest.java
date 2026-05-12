@@ -224,9 +224,9 @@ public class UpgradeQueryMonitorTest {
 		ReflectionTestUtil.invoke(
 			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
 
-		Assert.assertTrue(
-			logCapture.getLogEntries(
-			).isEmpty());
+		List<LogEntry> logEntries = logCapture.getLogEntries();
+
+		Assert.assertTrue(logEntries.isEmpty());
 	}
 
 	private void _testPollWithOneLockedQuery(
