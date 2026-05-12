@@ -640,10 +640,10 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			longestUpgradeProcessesValue.contains(
 				belowThresholdUpgradeProcessName));
 
-		int slowerIndex = longestUpgradeProcessesValue.indexOf(
-			slowerUpgradeProcessClassName);
 		int fasterIndex = longestUpgradeProcessesValue.indexOf(
 			fasterUpgradeProcessClassName);
+		int slowerIndex = longestUpgradeProcessesValue.indexOf(
+			slowerUpgradeProcessClassName);
 
 		Assert.assertTrue(slowerIndex < fasterIndex);
 	}
