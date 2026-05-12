@@ -393,11 +393,10 @@ public class UpgradeReport {
 					File rootDirFile = new File(_rootDir);
 
 					if (!rootDirFile.isDirectory()) {
-						if (_log.isInfoEnabled()) {
-							_log.info(
+						if (_log.isWarnEnabled()) {
+							_log.warn(
 								"Unable to determine the document library " +
-									"size. Directory does not exist: " +
-										_rootDir);
+									"size in " + _rootDir);
 						}
 
 						return "Unable to determine. Directory does not exist";
