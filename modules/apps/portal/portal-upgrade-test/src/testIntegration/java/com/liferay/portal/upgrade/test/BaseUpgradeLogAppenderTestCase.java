@@ -383,7 +383,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 			ReflectionTestUtil.setFieldValue(
 				upgradeReport, "_dlSizeFunction",
-				(Function<File, Long>)f -> {
+				(Function<File, Long>)file -> {
 					try {
 						Thread.sleep(5 * Time.SECOND);
 					}
@@ -431,7 +431,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		ReflectionTestUtil.setFieldValue(
 			upgradeReport, "_dlSizeFunction",
-			(Function<File, Long>)f -> 1073742000L);
+			(Function<File, Long>)file -> 1073742000L);
 
 		_appender.stop();
 
@@ -450,7 +450,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		ReflectionTestUtil.setFieldValue(
 			upgradeReport, "_dlSizeFunction",
-			(Function<File, Long>)f -> 1048576L);
+			(Function<File, Long>)file -> 1048576L);
 
 		_appender.stop();
 
