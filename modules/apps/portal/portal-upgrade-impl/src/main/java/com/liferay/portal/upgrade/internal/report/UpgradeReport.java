@@ -395,8 +395,9 @@ public class UpgradeReport {
 					if (!rootDirFile.isDirectory()) {
 						if (_log.isWarnEnabled()) {
 							_log.warn(
-								"Unable to determine the document library " +
-									"size in \"" + _rootDir + "\"");
+								StringBundler.concat(
+									"Unable to get document library size in \"",
+									_rootDir, "\""));
 						}
 
 						return "Unable to determine. Directory does not exist";
