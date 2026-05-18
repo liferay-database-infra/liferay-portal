@@ -1262,7 +1262,7 @@ public class DBTest {
 		}
 		else if (dbType == DBType.ORACLE) {
 			return "select count(*) from (select level from dual connect by " +
-				"level <= 100000000)";
+				"level <= 2000000)";
 		}
 		else if (dbType == DBType.POSTGRESQL) {
 			return "select pg_sleep(2)";
