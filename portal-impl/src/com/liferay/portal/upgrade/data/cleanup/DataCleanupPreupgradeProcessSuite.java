@@ -136,7 +136,7 @@ public class DataCleanupPreupgradeProcessSuite {
 							Thread.currentThread(
 							).interrupt();
 
-							throw new RuntimeException(interruptedException);
+							throw interruptedException;
 						}
 					}
 				}
