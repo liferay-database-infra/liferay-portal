@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -86,11 +88,14 @@ public class DataCleanupPreupgradeProcessSuite {
 						continue;
 					}
 
+					CompletionService<Void> completionService =
+						new ExecutorCompletionService<>(executorService);
+
 					List<Future<Void>> futures = new ArrayList<>();
 
 					for (DataCleanupPreupgradeProcess process : wave) {
 						futures.add(
-							executorService.submit(
+							completionService.submit(
 								(Callable<Void>)() -> {
 									_runProcess(process);
 
@@ -98,9 +103,10 @@ public class DataCleanupPreupgradeProcessSuite {
 								}));
 					}
 
-					for (Future<Void> future : futures) {
+					for (int i = 0; i < wave.size(); i++) {
 						try {
-							future.get();
+							completionService.take(
+							).get();
 						}
 						catch (ExecutionException executionException) {
 							for (Future<Void> f : futures) {
