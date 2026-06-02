@@ -146,7 +146,15 @@ public class DataCleanupPreupgradeProcessSuite {
 					executorService.shutdownNow();
 
 					try {
-						executorService.awaitTermination(10, TimeUnit.SECONDS);
+						if (!executorService.awaitTermination(
+								10, TimeUnit.SECONDS)) {
+
+							if (_log.isWarnEnabled()) {
+								_log.warn(
+									"Some data cleanup threads did not " +
+										"terminate gracefully");
+							}
+						}
 					}
 					catch (InterruptedException interruptedException) {
 						Thread.currentThread(
