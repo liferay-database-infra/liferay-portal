@@ -69,6 +69,7 @@ public class DataCleanupPreupgradeProcessSuite {
 					runnable -> {
 						Thread thread = new Thread(runnable);
 
+						thread.setDaemon(true);
 						thread.setName(
 							"data-cleanup-preupgrade-process-wave-thread-" +
 								threadCount.incrementAndGet());
@@ -97,13 +98,15 @@ public class DataCleanupPreupgradeProcessSuite {
 								}));
 					}
 
-					List<Exception> exceptions = new ArrayList<>();
-
 					for (Future<Void> future : futures) {
 						try {
 							future.get();
 						}
 						catch (ExecutionException executionException) {
+							for (Future<Void> f : futures) {
+								f.cancel(true);
+							}
+
 							Throwable throwable = executionException.getCause();
 
 							if (throwable instanceof Error) {
@@ -115,28 +118,20 @@ public class DataCleanupPreupgradeProcessSuite {
 								).interrupt();
 							}
 
-							exceptions.add(
-								throwable instanceof Exception ?
-									(Exception)throwable :
-										new RuntimeException(throwable));
+							throw throwable instanceof Exception ?
+								(Exception)throwable :
+									new RuntimeException(throwable);
 						}
 						catch (InterruptedException interruptedException) {
+							for (Future<Void> f : futures) {
+								f.cancel(true);
+							}
+
 							Thread.currentThread(
 							).interrupt();
 
-							exceptions.add(
-								new RuntimeException(interruptedException));
+							throw new RuntimeException(interruptedException);
 						}
-					}
-
-					if (!exceptions.isEmpty()) {
-						Exception exception = exceptions.get(0);
-
-						for (int i = 1; i < exceptions.size(); i++) {
-							exception.addSuppressed(exceptions.get(i));
-						}
-
-						throw exception;
 					}
 				}
 			}

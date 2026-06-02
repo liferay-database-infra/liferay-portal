@@ -36,7 +36,7 @@ public class OrphanReferencesDeadlockRetryTest {
 					throw new SQLException("Deadlock", "40001");
 				}
 
-				return null;
+				return 0;
 			}
 		).when(
 			preparedStatement
