@@ -28,6 +28,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Luis Ortiz
@@ -46,19 +48,43 @@ public class DataCleanupPreupgradeProcessSuite {
 		}
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			for (List<DataCleanupPreupgradeProcess> wave :
-					getWavedDataCleanupPreupgradeProcesses()) {
+			List<List<DataCleanupPreupgradeProcess>> waves =
+				getWavedDataCleanupPreupgradeProcesses();
 
-				if (wave.size() == 1) {
-					_runProcess(wave.get(0));
+			int maxWaveSize = 0;
 
-					continue;
+			for (List<DataCleanupPreupgradeProcess> wave : waves) {
+				if (wave.size() > maxWaveSize) {
+					maxWaveSize = wave.size();
 				}
+			}
 
-				ExecutorService executorService = Executors.newFixedThreadPool(
-					wave.size());
+			ExecutorService executorService = null;
 
-				try {
+			if (maxWaveSize > 1) {
+				AtomicInteger threadCount = new AtomicInteger();
+
+				executorService = Executors.newFixedThreadPool(
+					maxWaveSize,
+					runnable -> {
+						Thread thread = new Thread(runnable);
+
+						thread.setName(
+							"data-cleanup-preupgrade-process-wave-thread-" +
+								threadCount.incrementAndGet());
+
+						return thread;
+					});
+			}
+
+			try {
+				for (List<DataCleanupPreupgradeProcess> wave : waves) {
+					if (wave.size() == 1) {
+						_runProcess(wave.get(0));
+
+						continue;
+					}
+
 					List<Future<Void>> futures = new ArrayList<>();
 
 					for (DataCleanupPreupgradeProcess process : wave) {
@@ -79,6 +105,15 @@ public class DataCleanupPreupgradeProcessSuite {
 						}
 						catch (ExecutionException executionException) {
 							Throwable throwable = executionException.getCause();
+
+							if (throwable instanceof Error) {
+								throw (Error)throwable;
+							}
+
+							if (throwable instanceof InterruptedException) {
+								Thread.currentThread(
+								).interrupt();
+							}
 
 							exceptions.add(
 								throwable instanceof Exception ?
@@ -104,8 +139,18 @@ public class DataCleanupPreupgradeProcessSuite {
 						throw exception;
 					}
 				}
-				finally {
+			}
+			finally {
+				if (executorService != null) {
 					executorService.shutdownNow();
+
+					try {
+						executorService.awaitTermination(10, TimeUnit.SECONDS);
+					}
+					catch (InterruptedException interruptedException) {
+						Thread.currentThread(
+						).interrupt();
+					}
 				}
 			}
 		}
