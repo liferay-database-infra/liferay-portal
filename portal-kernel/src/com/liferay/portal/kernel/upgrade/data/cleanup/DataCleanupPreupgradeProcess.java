@@ -11,8 +11,10 @@ import com.liferay.portal.kernel.util.ListUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Luis Ortiz
@@ -66,6 +68,47 @@ public class DataCleanupPreupgradeProcess extends UpgradeProcess {
 		}
 
 		return sortedDataCleanupPreupgradeProcesses;
+	}
+
+	public static List<List<DataCleanupPreupgradeProcess>>
+		getWavedDataCleanupPreupgradeProcesses(
+			Map
+				<DataCleanupPreupgradeProcess,
+				 List<DataCleanupPreupgradeProcess>>
+					dataCleanupPreupgradeProcessesMap) {
+
+		Set<DataCleanupPreupgradeProcess> completed = new HashSet<>();
+		List<List<DataCleanupPreupgradeProcess>> waves = new ArrayList<>();
+
+		while (completed.size() != dataCleanupPreupgradeProcessesMap.size()) {
+			List<DataCleanupPreupgradeProcess> wave = new ArrayList<>();
+
+			for (Map.Entry
+					<DataCleanupPreupgradeProcess,
+					 List<DataCleanupPreupgradeProcess>> entry :
+						dataCleanupPreupgradeProcessesMap.entrySet()) {
+
+				DataCleanupPreupgradeProcess dataCleanupPreupgradeProcess =
+					entry.getKey();
+
+				if (completed.contains(dataCleanupPreupgradeProcess) ||
+					!completed.containsAll(entry.getValue())) {
+
+					continue;
+				}
+
+				wave.add(dataCleanupPreupgradeProcess);
+			}
+
+			if (wave.isEmpty()) {
+				throw new RuntimeException("Circular dependency");
+			}
+
+			completed.addAll(wave);
+			waves.add(wave);
+		}
+
+		return waves;
 	}
 
 	public DataCleanupPreupgradeProcess() {

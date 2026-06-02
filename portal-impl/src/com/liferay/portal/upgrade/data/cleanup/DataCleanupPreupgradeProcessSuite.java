@@ -20,8 +20,14 @@ import com.liferay.portal.upgrade.PortalUpgradeProcess;
 
 import java.sql.Connection;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * @author Luis Ortiz
@@ -40,29 +46,67 @@ public class DataCleanupPreupgradeProcessSuite {
 		}
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			List<DataCleanupPreupgradeProcess> dataCleanupPreupgradeProcesses =
-				getSortedDataCleanupPreupgradeProcesses();
+			for (List<DataCleanupPreupgradeProcess> wave :
+					getWavedDataCleanupPreupgradeProcesses()) {
 
-			for (DataCleanupPreupgradeProcess dataCleanupPreupgradeProcess :
-					dataCleanupPreupgradeProcesses) {
-
-				Class<?> clazz = dataCleanupPreupgradeProcess.getClass();
-
-				if (ArrayUtil.contains(
-						PropsValues.
-							UPGRADE_DATABASE_PREUPGRADE_DATA_CLEANUP_BLACKLIST,
-						clazz.getName())) {
-
-					if (_log.isInfoEnabled()) {
-						_log.info(
-							"Skipping blacklisted data cleanup process: " +
-								clazz.getName());
-					}
+				if (wave.size() == 1) {
+					_runProcess(wave.get(0));
 
 					continue;
 				}
 
-				dataCleanupPreupgradeProcess.upgrade();
+				ExecutorService executorService = Executors.newFixedThreadPool(
+					wave.size());
+
+				try {
+					List<Future<Void>> futures = new ArrayList<>();
+
+					for (DataCleanupPreupgradeProcess process : wave) {
+						futures.add(
+							executorService.submit(
+								(Callable<Void>)() -> {
+									_runProcess(process);
+
+									return null;
+								}));
+					}
+
+					List<Exception> exceptions = new ArrayList<>();
+
+					for (Future<Void> future : futures) {
+						try {
+							future.get();
+						}
+						catch (ExecutionException executionException) {
+							Throwable throwable = executionException.getCause();
+
+							exceptions.add(
+								throwable instanceof Exception ?
+									(Exception)throwable :
+										new RuntimeException(throwable));
+						}
+						catch (InterruptedException interruptedException) {
+							Thread.currentThread(
+							).interrupt();
+
+							exceptions.add(
+								new RuntimeException(interruptedException));
+						}
+					}
+
+					if (!exceptions.isEmpty()) {
+						Exception exception = exceptions.get(0);
+
+						for (int i = 1; i < exceptions.size(); i++) {
+							exception.addSuppressed(exceptions.get(i));
+						}
+
+						throw exception;
+					}
+				}
+				finally {
+					executorService.shutdownNow();
+				}
 			}
 		}
 	}
@@ -72,6 +116,14 @@ public class DataCleanupPreupgradeProcessSuite {
 
 		return DataCleanupPreupgradeProcess.
 			getSortedDataCleanupPreupgradeProcesses(
+				_dataCleanupPreupgradeProcessesMap);
+	}
+
+	public List<List<DataCleanupPreupgradeProcess>>
+		getWavedDataCleanupPreupgradeProcesses() {
+
+		return DataCleanupPreupgradeProcess.
+			getWavedDataCleanupPreupgradeProcesses(
 				_dataCleanupPreupgradeProcessesMap);
 	}
 
@@ -269,6 +321,36 @@ public class DataCleanupPreupgradeProcessSuite {
 					companyDataCleanupPreupgradeProcess,
 					databaseTableAndColumnCaseDataCleanupPreupgradeProcess)
 			).build();
+	}
+
+	private void _runProcess(
+			DataCleanupPreupgradeProcess dataCleanupPreupgradeProcess)
+		throws Exception {
+
+		Class<?> clazz = dataCleanupPreupgradeProcess.getClass();
+
+		if (ArrayUtil.contains(
+				PropsValues.UPGRADE_DATABASE_PREUPGRADE_DATA_CLEANUP_BLACKLIST,
+				clazz.getName())) {
+
+			if (_log.isInfoEnabled()) {
+				_log.info(
+					"Skipping blacklisted data cleanup process: " +
+						clazz.getName());
+			}
+
+			return;
+		}
+
+		String processName = clazz.getSimpleName();
+
+		if (processName.isEmpty()) {
+			processName = clazz.getName();
+		}
+
+		try (LoggingTimer loggingTimer = new LoggingTimer(processName)) {
+			dataCleanupPreupgradeProcess.upgrade();
+		}
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
