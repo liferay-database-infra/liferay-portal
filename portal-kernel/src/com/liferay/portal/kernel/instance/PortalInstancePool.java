@@ -6,9 +6,11 @@
 package com.liferay.portal.kernel.instance;
 
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
@@ -63,11 +65,12 @@ public class PortalInstancePool {
 
 	public static long[] getCompanyIds() {
 		if (_cacheEnabled) {
-			return ArrayUtil.toLongArray(_portalInstances.keySet());
+			return _filterCompanyIds(
+				ArrayUtil.toLongArray(_portalInstances.keySet()));
 		}
 
 		try {
-			return _getCompanyIdsBySQL();
+			return _filterCompanyIds(_getCompanyIdsBySQL());
 		}
 		catch (SQLException sqlException) {
 			_log.error("Unable to get the company IDs by SQL", sqlException);
@@ -159,6 +162,14 @@ public class PortalInstancePool {
 
 	public static void remove(long companyId) {
 		_portalInstances.remove(companyId);
+	}
+
+	private static long[] _filterCompanyIds(long[] companyIds) {
+		if (!DBPartition.isCurrentCompanyRestricted()) {
+			return companyIds;
+		}
+
+		return new long[] {CompanyThreadLocal.getNonsystemCompanyId()};
 	}
 
 	private static long _getCompanyIdBySQL(String webId) throws SQLException {
