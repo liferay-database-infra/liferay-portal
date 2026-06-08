@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.encryptor.EncryptorException;
 import com.liferay.portal.kernel.encryptor.EncryptorUtil;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
@@ -150,6 +151,7 @@ import java.net.UnknownHostException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -950,7 +952,18 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 	 */
 	@Override
 	public List<Company> getCompanies() {
-		return companyPersistence.findAll();
+		if (!DBPartition.isCurrentCompanyRestricted()) {
+			return companyPersistence.findAll();
+		}
+
+		Company company = companyPersistence.fetchByPrimaryKey(
+			CompanyThreadLocal.getCompanyId());
+
+		if (company == null) {
+			return Collections.emptyList();
+		}
+
+		return Collections.singletonList(company);
 	}
 
 	/**
@@ -2430,15 +2443,22 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 	}
 
 	private void _clearCache(long companyId) {
-		Company company = companyPersistence.fetchByPrimaryKey(companyId);
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId)) {
 
-		if (company != null) {
-			companyPersistence.clearCache(company);
+			Company company = companyPersistence.fetchByPrimaryKey(companyId);
 
-			VirtualHost virtualHost = _virtualHostPersistence.fetchByHostname(
-				company.getVirtualHostname());
+			if (company != null) {
+				companyPersistence.clearCache(company);
 
-			_virtualHostPersistence.clearCache(virtualHost);
+				VirtualHost virtualHost =
+					_virtualHostPersistence.fetchByHostname(
+						company.getVirtualHostname());
+
+				if (virtualHost != null) {
+					_virtualHostPersistence.clearCache(virtualHost);
+				}
+			}
 		}
 	}
 
