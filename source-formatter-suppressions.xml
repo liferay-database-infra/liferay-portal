@@ -118,6 +118,7 @@
 		<suppress checks="JavaUpgradeIndexCheck" files="portal-impl/src/com/liferay/portal/upgrade/v6_2_0/UpgradeDocumentLibrary\.java" />
 		<suppress checks="JavaUpgradeIndexCheck" files="portal-impl/src/com/liferay/portal/upgrade/v6_2_0/UpgradeJournal.java" />
 		<suppress checks="JavaUpgradeIndexCheck" files="portal-impl/src/com/liferay/portal/upgrade/v6_2_0/UpgradeSchema\.java" />
+		<suppress checks="JavaUpgradeMissingTestCheck" files="portal-impl/src/com/liferay/portal/upgrade/util/UpgradePartitionedControlTableView\.java" />
 		<suppress checks="JavaVariableTypeCheck" files="portal-impl/test/unit/com/liferay/portal/json/One\.java" />
 		<suppress checks="JavaVariableTypeCheck" files="portal-impl/test/unit/com/liferay/portal/json/Two\.java" />
 		<suppress checks="JavaVerifyUpgradeConnectionCheck" files="portal-impl/src/com/liferay/portal/upgrade/util/BaseUpgradeTableImpl.java" />

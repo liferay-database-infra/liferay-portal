@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.version.Version;
 import com.liferay.portal.upgrade.util.PortalUpgradeProcessRegistry;
 import com.liferay.portal.upgrade.util.UpgradePartitionedControlTable;
+import com.liferay.portal.upgrade.util.UpgradePartitionedControlTableView;
 import com.liferay.portal.upgrade.v7_4_x.util.AssetTagGroupRelTable;
 import com.liferay.portal.upgrade.v7_4_x.util.AssetVocabularyGroupRelTable;
 import com.liferay.portal.upgrade.v7_4_x.util.RememberMeTokenTable;
@@ -771,6 +772,10 @@ public class PortalUpgradeProcessRegistryImpl
 			new Version(38, 4, 2),
 			UpgradeProcessFactory.addColumns(
 				"Ticket", "emailAddress VARCHAR(254) null"));
+
+		upgradeVersionTreeMap.put(
+			new Version(38, 4, 3),
+			new UpgradePartitionedControlTableView("Company", "VirtualHost"));
 	}
 
 }
