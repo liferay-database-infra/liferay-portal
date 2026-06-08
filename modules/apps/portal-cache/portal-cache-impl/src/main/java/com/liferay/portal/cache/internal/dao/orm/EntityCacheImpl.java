@@ -447,9 +447,26 @@ public class EntityCacheImpl
 		if (quiet) {
 			PortalCacheHelperUtil.putWithoutReplicator(
 				portalCache, primaryKey, result);
+
+			return;
 		}
-		else {
+
+		long[] companyIds = DBPartition.getSharedPartitionedModelCompanyIds(
+			baseModel);
+
+		if (companyIds == null) {
 			portalCache.put(primaryKey, result);
+
+			return;
+		}
+
+		for (long companyId : companyIds) {
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+						companyId)) {
+
+				portalCache.put(primaryKey, result);
+			}
 		}
 	}
 
@@ -476,7 +493,23 @@ public class EntityCacheImpl
 		PortalCache<Serializable, Serializable> portalCache = getPortalCache(
 			clazz);
 
-		portalCache.remove(primaryKey);
+		long[] companyIds = DBPartition.getSharedPartitionedModelCompanyIds(
+			baseModel);
+
+		if (companyIds == null) {
+			portalCache.remove(primaryKey);
+
+			return;
+		}
+
+		for (long companyId : companyIds) {
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+						companyId)) {
+
+				portalCache.remove(primaryKey);
+			}
+		}
 	}
 
 	private Serializable _toEntityModel(Serializable result) {

@@ -10,6 +10,7 @@ import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory
 import com.liferay.petra.concurrent.DCLSingleton;
 import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.cache.CacheRegistryItem;
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
@@ -33,6 +34,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.change.tracking.CTModel;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LRUMap;
@@ -336,34 +338,22 @@ public class FinderCacheImpl
 	}
 
 	public void removeByEntityCache(String className, BaseModel<?> baseModel) {
-		ArgumentsResolverHolder argumentsResolverHolder =
-			_serviceTrackerMap.getService(className);
+		long[] companyIds = DBPartition.getSharedPartitionedModelCompanyIds(
+			baseModel);
 
-		if (argumentsResolverHolder == null) {
-			clearByEntityCache(className);
+		if (companyIds == null) {
+			_removeByEntityCache(className, baseModel);
 
 			return;
 		}
 
-		clearLocalCache();
+		for (long companyId : companyIds) {
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+						companyId)) {
 
-		_clearCache(_getCacheNameWithPagination(className));
-		_clearCache(_getCacheNameWithoutPagination(className));
-
-		_clearDSLQueryCache(className);
-
-		ArgumentsResolver argumentsResolver =
-			argumentsResolverHolder.getArgumentsResolver();
-
-		for (FinderPath finderPath : _getFinderPaths(className)) {
-			removeResult(
-				finderPath,
-				argumentsResolver.getArguments(
-					finderPath, baseModel, false, false));
-			removeResult(
-				finderPath,
-				argumentsResolver.getArguments(
-					finderPath, baseModel, true, true));
+				_removeByEntityCache(className, baseModel);
+			}
 		}
 	}
 
@@ -428,46 +418,21 @@ public class FinderCacheImpl
 			return;
 		}
 
-		ArgumentsResolverHolder argumentsResolverHolder =
-			_serviceTrackerMap.getService(className);
+		long[] companyIds = DBPartition.getSharedPartitionedModelCompanyIds(
+			baseModel);
 
-		if (argumentsResolverHolder == null) {
-			clearByEntityCache(className);
+		if (companyIds == null) {
+			_updateByEntityCache(className, baseModel);
 
 			return;
 		}
 
-		clearLocalCache();
+		for (long companyId : companyIds) {
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+						companyId)) {
 
-		_clearCache(_getCacheNameWithPagination(className));
-
-		_clearDSLQueryCache(className);
-
-		Set<FinderPath> finderPaths = new HashSet<>();
-
-		finderPaths.addAll(
-			_getFinderPaths(_getCacheNameWithoutPagination(className)));
-		finderPaths.addAll(_getFinderPaths(className));
-
-		ArgumentsResolver argumentsResolver =
-			argumentsResolverHolder.getArgumentsResolver();
-
-		for (FinderPath finderPath : finderPaths) {
-			if (baseModel.isNew()) {
-				_removeResult(
-					finderPath,
-					argumentsResolver.getArguments(
-						finderPath, baseModel, false, false));
-			}
-			else {
-				_removeResult(
-					finderPath,
-					argumentsResolver.getArguments(
-						finderPath, baseModel, true, false));
-				_removeResult(
-					finderPath,
-					argumentsResolver.getArguments(
-						finderPath, baseModel, true, true));
+				_updateByEntityCache(className, baseModel);
 			}
 		}
 	}
@@ -779,6 +744,40 @@ public class FinderCacheImpl
 		return ThreadLocalFilterThreadLocal.isFilterInvoked();
 	}
 
+	private void _removeByEntityCache(
+		String className, BaseModel<?> baseModel) {
+
+		ArgumentsResolverHolder argumentsResolverHolder =
+			_serviceTrackerMap.getService(className);
+
+		if (argumentsResolverHolder == null) {
+			clearByEntityCache(className);
+
+			return;
+		}
+
+		clearLocalCache();
+
+		_clearCache(_getCacheNameWithPagination(className));
+		_clearCache(_getCacheNameWithoutPagination(className));
+
+		_clearDSLQueryCache(className);
+
+		ArgumentsResolver argumentsResolver =
+			argumentsResolverHolder.getArgumentsResolver();
+
+		for (FinderPath finderPath : _getFinderPaths(className)) {
+			removeResult(
+				finderPath,
+				argumentsResolver.getArguments(
+					finderPath, baseModel, false, false));
+			removeResult(
+				finderPath,
+				argumentsResolver.getArguments(
+					finderPath, baseModel, true, true));
+		}
+	}
+
 	private void _removeResult(FinderPath finderPath, Object[] args) {
 		if (args == null) {
 			return;
@@ -797,6 +796,53 @@ public class FinderCacheImpl
 			finderPath.getCacheName());
 
 		portalCache.remove(cacheKey);
+	}
+
+	private void _updateByEntityCache(
+		String className, BaseModel<?> baseModel) {
+
+		ArgumentsResolverHolder argumentsResolverHolder =
+			_serviceTrackerMap.getService(className);
+
+		if (argumentsResolverHolder == null) {
+			clearByEntityCache(className);
+
+			return;
+		}
+
+		clearLocalCache();
+
+		_clearCache(_getCacheNameWithPagination(className));
+
+		_clearDSLQueryCache(className);
+
+		Set<FinderPath> finderPaths = new HashSet<>();
+
+		finderPaths.addAll(
+			_getFinderPaths(_getCacheNameWithoutPagination(className)));
+		finderPaths.addAll(_getFinderPaths(className));
+
+		ArgumentsResolver argumentsResolver =
+			argumentsResolverHolder.getArgumentsResolver();
+
+		for (FinderPath finderPath : finderPaths) {
+			if (baseModel.isNew()) {
+				_removeResult(
+					finderPath,
+					argumentsResolver.getArguments(
+						finderPath, baseModel, false, false));
+			}
+			else {
+				_removeResult(
+					finderPath,
+					argumentsResolver.getArguments(
+						finderPath, baseModel, true, false));
+				_removeResult(
+					finderPath,
+					argumentsResolver.getArguments(
+						finderPath, baseModel, true, true));
+			}
+		}
 	}
 
 	private static final String _GROUP_KEY_PREFIX =
