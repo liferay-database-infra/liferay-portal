@@ -102,7 +102,7 @@ public class DBInspector {
 
 			_tableNamesCache.putIfAbsent(cacheKey, tableNamesSnapshot);
 
-			return names;
+			return new ArrayList<>(tableNamesSnapshot);
 		}
 
 		return _getNames(tableNamePattern, "TABLE");
