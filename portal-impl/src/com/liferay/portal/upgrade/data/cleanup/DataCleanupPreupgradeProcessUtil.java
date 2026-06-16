@@ -184,10 +184,10 @@ public class DataCleanupPreupgradeProcessUtil {
 		return null;
 	}
 
-	private static final String _NOT_FOUND = "";
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		DataCleanupPreupgradeProcessUtil.class);
+
+	private static final String _NOT_FOUND = "";
 
 	private static volatile boolean _cacheEnabled;
 	private static final Map<String, String> _primaryKeyColumnNameCache =

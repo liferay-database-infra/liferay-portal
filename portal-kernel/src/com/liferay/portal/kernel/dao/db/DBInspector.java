@@ -588,9 +588,9 @@ public class DBInspector {
 		return false;
 	}
 
-	private static final int _NO_COLUMN = Integer.MIN_VALUE;
-
 	private static final Log _log = LogFactoryUtil.getLog(DBInspector.class);
+
+	private static final int _NO_COLUMN = Integer.MIN_VALUE;
 
 	private static volatile boolean _cacheEnabled;
 	private static final Pattern _columnDefaultClausePattern = Pattern.compile(

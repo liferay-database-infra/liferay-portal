@@ -58,7 +58,7 @@ public class DBInspectorUnitTest {
 
 	@Test
 	public void testDisableCache() throws Exception {
-		_mockTableWithColumn(_TABLE_NAME, _COLUMN_NAME);
+		_mockTable(_TABLE_NAME, _COLUMN_NAME, true);
 
 		Mockito.when(
 			_connection.getCatalog()
@@ -69,6 +69,7 @@ public class DBInspectorUnitTest {
 		DBInspector dbInspector = new DBInspector(_connection);
 
 		DBInspector.enableCache();
+
 		DBInspector.disableCache();
 
 		dbInspector.hasColumn(_TABLE_NAME, _COLUMN_NAME);
@@ -84,7 +85,7 @@ public class DBInspectorUnitTest {
 
 	@Test
 	public void testEnableCache() throws Exception {
-		_mockTableWithColumn(_TABLE_NAME, _COLUMN_NAME);
+		_mockTable(_TABLE_NAME, _COLUMN_NAME, true);
 
 		Mockito.when(
 			_connection.getCatalog()
@@ -109,7 +110,7 @@ public class DBInspectorUnitTest {
 
 	@Test
 	public void testHasColumnIsCaseInsensitive() throws Exception {
-		_mockTableWithColumn(_TABLE_NAME, StringUtil.toLowerCase(_COLUMN_NAME));
+		_mockTable(_TABLE_NAME, StringUtil.toLowerCase(_COLUMN_NAME), true);
 
 		DBInspector dbInspector = new DBInspector(_connection);
 
@@ -122,7 +123,7 @@ public class DBInspectorUnitTest {
 	public void testHasColumnReturnsFalseWithoutExistingColumn()
 		throws Exception {
 
-		_mockTableWithoutColumn(_TABLE_NAME, _COLUMN_NAME);
+		_mockTable(_TABLE_NAME, _COLUMN_NAME, false);
 
 		DBInspector dbInspector = new DBInspector(_connection);
 
@@ -131,7 +132,7 @@ public class DBInspectorUnitTest {
 
 	@Test
 	public void testHasColumnReturnsTrueWithExistingColumn() throws Exception {
-		_mockTableWithColumn(_TABLE_NAME, _COLUMN_NAME);
+		_mockTable(_TABLE_NAME, _COLUMN_NAME, true);
 
 		DBInspector dbInspector = new DBInspector(_connection);
 
@@ -140,7 +141,7 @@ public class DBInspectorUnitTest {
 
 	@Test
 	public void testHasColumnSkipsQueryWithExistingColumn() throws Exception {
-		_mockTableWithColumn(_TABLE_NAME, _COLUMN_NAME);
+		_mockTable(_TABLE_NAME, _COLUMN_NAME, true);
 
 		DBInspector dbInspector = new DBInspector(_connection);
 
@@ -153,8 +154,6 @@ public class DBInspectorUnitTest {
 
 	@Test
 	public void testHasIndexIsCaseInsensitive() throws Exception {
-		String indexName = "IX_40A51197";
-
 		try (MockedStatic<DBManagerUtil> dbManagerUtilMockedStatic =
 				Mockito.mockStatic(DBManagerUtil.class)) {
 
@@ -191,6 +190,8 @@ public class DBInspectorUnitTest {
 			).thenReturn(
 				true, false
 			);
+
+			String indexName = "IX_40A51197";
 
 			Mockito.when(
 				_resultSet.getString("index_name")
@@ -266,8 +267,6 @@ public class DBInspectorUnitTest {
 
 	@Test
 	public void testIsObjectTable() {
-		DBInspector dbInspector = new DBInspector(_connection);
-
 		try (MockedStatic<PortalInstancePool> portalInstancePoolMockedStatic =
 				Mockito.mockStatic(PortalInstancePool.class)) {
 
@@ -276,6 +275,8 @@ public class DBInspectorUnitTest {
 			).thenReturn(
 				new long[] {1L}
 			);
+
+			DBInspector dbInspector = new DBInspector(_connection);
 
 			Assert.assertTrue(dbInspector.isObjectTable("L_1_tableName"));
 			Assert.assertTrue(dbInspector.isObjectTable("l_1_tableName"));
@@ -300,13 +301,7 @@ public class DBInspectorUnitTest {
 		Assert.assertTrue(dbInspector.isObjectTable(companyIds, "r_tableName"));
 	}
 
-	private void _mockTableWithColumn(String tableName, String columnName)
-		throws Exception {
-
-		_mockTableWithOrWithoutColumn(tableName, columnName, true);
-	}
-
-	private void _mockTableWithOrWithoutColumn(
+	private void _mockTable(
 			String tableName, String columnName, boolean hasColumn)
 		throws Exception {
 
@@ -348,12 +343,6 @@ public class DBInspectorUnitTest {
 		).thenReturn(
 			hasColumn
 		);
-	}
-
-	private void _mockTableWithoutColumn(String tableName, String columnName)
-		throws Exception {
-
-		_mockTableWithOrWithoutColumn(tableName, columnName, false);
 	}
 
 	private static final String _CATALOG_NAME = "test_catalog";
