@@ -39,6 +39,10 @@ import java.util.regex.Pattern;
  */
 public class DBInspector {
 
+	public DBInspector(Connection connection) {
+		_connection = connection;
+	}
+
 	public static void disableCache() {
 		_cacheEnabled = false;
 
@@ -48,10 +52,6 @@ public class DBInspector {
 
 	public static void enableCache() {
 		_cacheEnabled = true;
-	}
-
-	public DBInspector(Connection connection) {
-		_connection = connection;
 	}
 
 	public String getCatalog() throws SQLException {
