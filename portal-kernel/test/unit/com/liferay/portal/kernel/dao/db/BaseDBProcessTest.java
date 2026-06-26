@@ -24,21 +24,41 @@ public class BaseDBProcessTest {
 
 	@Test
 	public void testGetFixedThreadPoolSize() throws Exception {
-		_testGetFixedThreadPoolSize(DBType.MYSQL, 1, 1);
+		_testGetFixedThreadPoolSize(DBType.HYPERSONIC, 1, 1, 1000);
 
 		Runtime runtime = Runtime.getRuntime();
 
-		_testGetFixedThreadPoolSize(
-			DBType.MYSQL, runtime.availableProcessors(), 1000);
+		int availableProcessors = runtime.availableProcessors();
 
-		_testGetFixedThreadPoolSize(DBType.HYPERSONIC, 1, 1000);
+		int amplePoolSize =
+			(int)(availableProcessors * availableProcessors / 0.9) + 1;
+
+		_testGetFixedThreadPoolSize(
+			DBType.MYSQL, availableProcessors, 1, amplePoolSize);
+
+		int smallPoolSize = 10;
+
+		_testGetFixedThreadPoolSize(
+			DBType.MYSQL,
+			Math.min(
+				availableProcessors,
+				Math.max(1, (int)Math.sqrt(0.9 * smallPoolSize))),
+			1, smallPoolSize);
+
+		_testGetFixedThreadPoolSize(DBType.MYSQL, 1, 5, smallPoolSize);
+
+		_testGetFixedThreadPoolSize(
+			DBType.MYSQL,
+			Math.min(
+				availableProcessors,
+				Math.max(1, (int)Math.sqrt(0.9 * smallPoolSize))),
+			0, smallPoolSize);
 	}
 
 	private void _testGetFixedThreadPoolSize(
-			DBType dbType, int expectedFixedThreadPoolSize, int maximumPoolSize)
+			DBType dbType, int expectedFixedThreadPoolSize, int companyCount,
+			int maximumPoolSize)
 		throws Exception {
-
-		Runtime runtime = Runtime.getRuntime();
 
 		try (MockedStatic<DBManagerUtil> dbManagerUtilMockedStatic =
 				Mockito.mockStatic(DBManagerUtil.class);
@@ -64,7 +84,7 @@ public class BaseDBProcessTest {
 			portalInstancePoolMockedStatic.when(
 				PortalInstancePool::getCompanyIds
 			).thenReturn(
-				new long[runtime.availableProcessors() + 2]
+				new long[companyCount]
 			);
 
 			propsUtilMockedStatic.when(

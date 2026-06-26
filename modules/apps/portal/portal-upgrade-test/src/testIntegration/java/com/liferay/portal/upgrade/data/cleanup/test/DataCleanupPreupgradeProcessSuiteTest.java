@@ -9,6 +9,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.concurrent.DCLSingleton;
 import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.portal.kernel.dao.db.BaseDBProcess;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.CompanyConstants;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -103,6 +105,11 @@ public class DataCleanupPreupgradeProcessSuiteTest
 		_originalDataCleanupPreupgradeProcessesMap =
 			ReflectionTestUtil.getFieldValue(
 				this, "_dataCleanupPreupgradeProcessesMap");
+
+		_fixedThreadPoolSize = ReflectionTestUtil.getFieldValue(
+			BaseDBProcess.class, "_fixedThreadPoolSize");
+
+		_originalFixedThreadPoolSizeValue = _fixedThreadPoolSize.getAndSet(0);
 	}
 
 	@After
@@ -110,6 +117,7 @@ public class DataCleanupPreupgradeProcessSuiteTest
 		ReflectionTestUtil.setFieldValue(
 			this, "_dataCleanupPreupgradeProcessesMap",
 			_originalDataCleanupPreupgradeProcessesMap);
+		_fixedThreadPoolSize.set(_originalFixedThreadPoolSizeValue);
 	}
 
 	@Test
@@ -296,9 +304,11 @@ public class DataCleanupPreupgradeProcessSuiteTest
 	private static SafeCloseable _safeCloseable;
 
 	private final List<String> _cleanupMessages = new CopyOnWriteArrayList<>();
+	private AtomicInteger _fixedThreadPoolSize;
 	private Map
 		<DataCleanupPreupgradeProcess, List<DataCleanupPreupgradeProcess>>
 			_originalDataCleanupPreupgradeProcessesMap;
+	private int _originalFixedThreadPoolSizeValue;
 
 	private static class BlacklistedDataCleanupPreupgradeTestProcess
 		extends DataCleanupPreupgradeTestProcess {
