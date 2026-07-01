@@ -3656,7 +3656,6 @@ ${poshi.runner.testsuite.testcase.name}</echo>
 										</or>
 										<then>
 											<ant dir="portal-kernel" inheritAll="false" target="test-class">
-												<env key="JENKINS_HOME" value="true" />
 												<property name="test.class" value="PortalLogAssertorTest" />
 											</ant>
 										</then>
