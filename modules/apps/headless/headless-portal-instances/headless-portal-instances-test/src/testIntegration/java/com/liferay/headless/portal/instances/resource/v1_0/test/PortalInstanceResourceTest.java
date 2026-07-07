@@ -8,6 +8,7 @@ package com.liferay.headless.portal.instances.resource.v1_0.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.headless.portal.instances.client.dto.v1_0.Admin;
 import com.liferay.headless.portal.instances.client.dto.v1_0.PortalInstance;
+import com.liferay.headless.portal.instances.client.dto.v1_0.PortalInstanceCopy;
 import com.liferay.headless.portal.instances.client.dto.v1_0.PortalInstanceExport;
 import com.liferay.headless.portal.instances.client.pagination.Page;
 import com.liferay.headless.portal.instances.client.problem.Problem;
@@ -122,6 +123,18 @@ public class PortalInstanceResourceTest
 		_testPostPortalInstanceWithoutAdmin();
 		_testPostPortalInstanceWithAdmin();
 		_testPostPortalInstanceWithAdminAndCompanyStrangers();
+	}
+
+	@FeatureFlag("LPD-11342")
+	@Override
+	@Test
+	public void testPostPortalInstanceCopy() throws Exception {
+		_testPostPortalInstanceCopyExisting();
+		_testPostPortalInstanceCopyForbidden(null);
+		_testPostPortalInstanceCopyForbidden(RandomTestUtil.randomString());
+		_testPostPortalInstanceCopyForbiddenOnReplay();
+		_testPostPortalInstanceCopyIdempotent();
+		_testPostPortalInstanceCopyNonexistent();
 	}
 
 	@FeatureFlag("LPD-11342")
@@ -469,6 +482,222 @@ public class PortalInstanceResourceTest
 		_testPatchPortalInstace(portalInstance, false, false, false);
 	}
 
+	private void _testPostPortalInstanceCopyExisting() throws Exception {
+		Assume.assumeTrue(_db.isSupportsDBPartition());
+
+		String randomId = StringUtil.toLowerCase(RandomTestUtil.randomString());
+
+		String virtualHost =
+			randomId + "." +
+				StringUtil.toLowerCase(RandomTestUtil.randomString(3));
+
+		PortalInstanceCopy portalInstanceCopy = new PortalInstanceCopy();
+
+		portalInstanceCopy.setName(randomId);
+		portalInstanceCopy.setVirtualHost(virtualHost);
+		portalInstanceCopy.setWebId(randomId);
+
+		PortalInstance copiedPortalInstance =
+			portalInstanceResource.postPortalInstanceCopy(
+				_portalInstance.getPortalInstanceId(), null,
+				portalInstanceCopy);
+
+		try {
+			assertValid(copiedPortalInstance);
+
+			Assert.assertNotEquals(
+				_portalInstance.getCompanyId(),
+				copiedPortalInstance.getCompanyId());
+			Assert.assertEquals(
+				randomId, copiedPortalInstance.getPortalInstanceId());
+			Assert.assertEquals(
+				virtualHost, copiedPortalInstance.getVirtualHost());
+		}
+		finally {
+			_deletePortalInstance(copiedPortalInstance);
+		}
+	}
+
+	private void _testPostPortalInstanceCopyForbidden(String idempotencyKey)
+		throws Exception {
+
+		User user = UserTestUtil.addUser(false);
+
+		try {
+			user = _userLocalService.updatePassword(
+				user.getUserId(), PropsValues.DEFAULT_ADMIN_PASSWORD,
+				PropsValues.DEFAULT_ADMIN_PASSWORD, false, true);
+
+			Company company = _companyLocalService.fetchCompany(
+				TestPropsValues.getCompanyId());
+
+			PortalInstanceResource userPortalInstanceResource =
+				PortalInstanceResource.builder(
+				).authentication(
+					user.getEmailAddress(), PropsValues.DEFAULT_ADMIN_PASSWORD
+				).endpoint(
+					company.getVirtualHostname(),
+					PortalUtil.getPortalServerPort(false), "http"
+				).locale(
+					LocaleUtil.getDefault()
+				).build();
+
+			PortalInstanceCopy portalInstanceCopy = new PortalInstanceCopy();
+
+			portalInstanceCopy.setName(RandomTestUtil.randomString());
+			portalInstanceCopy.setVirtualHost(RandomTestUtil.randomString());
+			portalInstanceCopy.setWebId(RandomTestUtil.randomString());
+
+			try {
+				userPortalInstanceResource.postPortalInstanceCopy(
+					_portalInstance.getPortalInstanceId(), idempotencyKey,
+					portalInstanceCopy);
+
+				Assert.fail();
+			}
+			catch (Problem.ProblemException problemException) {
+				Problem problem = problemException.getProblem();
+
+				Assert.assertEquals("FORBIDDEN", problem.getStatus());
+			}
+		}
+		finally {
+			_userLocalService.deleteUser(user.getUserId());
+		}
+	}
+
+	private void _testPostPortalInstanceCopyForbiddenOnReplay()
+		throws Exception {
+
+		Assume.assumeTrue(_db.isSupportsDBPartition());
+
+		String idempotencyKey = RandomTestUtil.randomString();
+
+		String randomId = StringUtil.toLowerCase(RandomTestUtil.randomString());
+
+		String virtualHost =
+			randomId + "." +
+				StringUtil.toLowerCase(RandomTestUtil.randomString(3));
+
+		PortalInstanceCopy portalInstanceCopy = new PortalInstanceCopy();
+
+		portalInstanceCopy.setName(randomId);
+		portalInstanceCopy.setVirtualHost(virtualHost);
+		portalInstanceCopy.setWebId(randomId);
+
+		PortalInstance portalInstance =
+			portalInstanceResource.postPortalInstanceCopy(
+				_portalInstance.getPortalInstanceId(), idempotencyKey,
+				portalInstanceCopy);
+
+		try {
+			User user = UserTestUtil.addUser(false);
+
+			try {
+				user = _userLocalService.updatePassword(
+					user.getUserId(), PropsValues.DEFAULT_ADMIN_PASSWORD,
+					PropsValues.DEFAULT_ADMIN_PASSWORD, false, true);
+
+				Company company = _companyLocalService.fetchCompany(
+					TestPropsValues.getCompanyId());
+
+				PortalInstanceResource userPortalInstanceResource =
+					PortalInstanceResource.builder(
+					).authentication(
+						user.getEmailAddress(),
+						PropsValues.DEFAULT_ADMIN_PASSWORD
+					).endpoint(
+						company.getVirtualHostname(),
+						PortalUtil.getPortalServerPort(false), "http"
+					).locale(
+						LocaleUtil.getDefault()
+					).build();
+
+				try {
+					userPortalInstanceResource.postPortalInstanceCopy(
+						_portalInstance.getPortalInstanceId(), idempotencyKey,
+						portalInstanceCopy);
+
+					Assert.fail();
+				}
+				catch (Problem.ProblemException problemException) {
+					Problem problem = problemException.getProblem();
+
+					Assert.assertEquals("FORBIDDEN", problem.getStatus());
+				}
+			}
+			finally {
+				_userLocalService.deleteUser(user.getUserId());
+			}
+		}
+		finally {
+			_deletePortalInstance(portalInstance);
+		}
+	}
+
+	private void _testPostPortalInstanceCopyIdempotent() throws Exception {
+		Assume.assumeTrue(_db.isSupportsDBPartition());
+
+		String randomId = StringUtil.toLowerCase(RandomTestUtil.randomString());
+
+		String virtualHost =
+			randomId + "." +
+				StringUtil.toLowerCase(RandomTestUtil.randomString(3));
+
+		int companyCount = _companyLocalService.getCompaniesCount();
+
+		String idempotencyKey = RandomTestUtil.randomString();
+
+		PortalInstanceCopy portalInstanceCopy = new PortalInstanceCopy();
+
+		portalInstanceCopy.setName(randomId);
+		portalInstanceCopy.setVirtualHost(virtualHost);
+		portalInstanceCopy.setWebId(randomId);
+
+		PortalInstance firstPortalInstance =
+			portalInstanceResource.postPortalInstanceCopy(
+				_portalInstance.getPortalInstanceId(), idempotencyKey,
+				portalInstanceCopy);
+
+		try {
+			PortalInstance secondPortalInstance =
+				portalInstanceResource.postPortalInstanceCopy(
+					_portalInstance.getPortalInstanceId(), idempotencyKey,
+					portalInstanceCopy);
+
+			Assert.assertEquals(
+				firstPortalInstance.getCompanyId(),
+				secondPortalInstance.getCompanyId());
+
+			Assert.assertEquals(
+				companyCount + 1, _companyLocalService.getCompaniesCount());
+		}
+		finally {
+			_deletePortalInstance(firstPortalInstance);
+		}
+	}
+
+	private void _testPostPortalInstanceCopyNonexistent() throws Exception {
+		PortalInstanceCopy portalInstanceCopy = new PortalInstanceCopy();
+
+		portalInstanceCopy.setName(RandomTestUtil.randomString());
+		portalInstanceCopy.setVirtualHost(RandomTestUtil.randomString());
+		portalInstanceCopy.setWebId(RandomTestUtil.randomString());
+
+		try {
+			portalInstanceResource.postPortalInstanceCopy(
+				RandomTestUtil.randomString(), null, portalInstanceCopy);
+
+			Assert.fail();
+		}
+		catch (Problem.ProblemException problemException) {
+			Problem problem = problemException.getProblem();
+
+			Assert.assertEquals("NOT_FOUND", problem.getStatus());
+			Assert.assertNull(problem.getTitle());
+		}
+	}
+
 	private void _testPostPortalInstanceExport() throws Exception {
 		long companyId = _portalInstance.getCompanyId();
 
@@ -587,6 +816,7 @@ public class PortalInstanceResourceTest
 		}
 	}
 
+
 	private void _testPostPortalInstanceWithAdmin() throws Exception {
 		PortalInstance randomPortalInstance = randomPortalInstance();
 
@@ -662,6 +892,9 @@ public class PortalInstanceResourceTest
 
 	@Inject
 	private ConfigurationAdmin _configurationAdmin;
+
+	@Inject
+	private DB _db;
 
 	@Inject
 	private GroupLocalService _groupLocalService;

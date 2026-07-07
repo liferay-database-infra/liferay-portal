@@ -331,6 +331,25 @@ public abstract class BasePortalInstanceResourceTestCase {
 	}
 
 	@Test
+	public void testPostPortalInstanceCopy() throws Exception {
+		PortalInstance randomPortalInstance = randomPortalInstance();
+
+		PortalInstance postPortalInstance =
+			testPostPortalInstanceCopy_addPortalInstance(randomPortalInstance);
+
+		assertEquals(randomPortalInstance, postPortalInstance);
+		assertValid(postPortalInstance);
+	}
+
+	protected PortalInstance testPostPortalInstanceCopy_addPortalInstance(
+			PortalInstance portalInstance)
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
 	public void testPutPortalInstanceActivate() throws Exception {
 		@SuppressWarnings("PMD.UnusedLocalVariable")
 		PortalInstance portalInstance =
