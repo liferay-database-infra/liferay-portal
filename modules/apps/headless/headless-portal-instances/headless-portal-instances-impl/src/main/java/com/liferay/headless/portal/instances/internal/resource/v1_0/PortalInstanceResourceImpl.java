@@ -157,33 +157,33 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 			String portalInstanceId, PortalInstanceCopy portalInstanceCopy)
 		throws Exception {
 
-		if (!FeatureFlagManagerUtil.isEnabled(
-				contextCompany.getCompanyId(), "LPD-11342")) {
-
-			throw new UnsupportedOperationException();
-		}
+		_checkFeatureFlag();
 
 		if (portalInstanceCopy == null) {
 			throw new BadRequestException("Copy configuration is required");
 		}
 
-		PermissionChecker permissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
-
-		if (!permissionChecker.isOmniadmin()) {
-			throw new PrincipalException.MustBeOmniadmin(permissionChecker);
-		}
+		_checkPermission();
 
 		Company sourceCompany = _companyService.getCompanyByWebId(
 			portalInstanceId);
 
-		return _toPortalInstance(
-			_companyService.copyDBPartitionCompany(
-				sourceCompany.getCompanyId(),
-				portalInstanceCopy.getDestinationCompanyId(),
-				portalInstanceCopy.getName(),
-				portalInstanceCopy.getVirtualHost(),
-				portalInstanceCopy.getWebId()));
+		try {
+			return _toPortalInstance(
+				_companyService.copyDBPartitionCompany(
+					sourceCompany.getCompanyId(),
+					portalInstanceCopy.getDestinationCompanyId(),
+					portalInstanceCopy.getName(),
+					portalInstanceCopy.getVirtualHost(),
+					portalInstanceCopy.getWebId()));
+		}
+		catch (Exception exception) {
+			_log.error(
+				"Unable to copy portal instance " + portalInstanceId,
+				exception);
+
+			throw exception;
+		}
 	}
 
 	@Override
@@ -423,7 +423,6 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		PortalInstanceResourceImpl.class);
-
 
 	@Reference
 	private CompanyLocalService _companyLocalService;
