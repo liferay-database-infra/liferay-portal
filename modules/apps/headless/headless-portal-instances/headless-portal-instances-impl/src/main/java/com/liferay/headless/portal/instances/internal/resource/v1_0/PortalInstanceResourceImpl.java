@@ -179,7 +179,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 		}
 		catch (Exception exception) {
 			_log.error(
-				"Unable to copy portal instance " + portalInstanceId,
+				"Unable to copy portal instance \"" + portalInstanceId + "\"",
 				exception);
 
 			throw exception;

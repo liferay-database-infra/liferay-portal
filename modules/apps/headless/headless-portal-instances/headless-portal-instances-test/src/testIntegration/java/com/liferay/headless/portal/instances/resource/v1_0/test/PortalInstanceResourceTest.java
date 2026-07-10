@@ -501,13 +501,13 @@ public class PortalInstanceResourceTest
 		try {
 			assertValid(copiedPortalInstance);
 
-			Assert.assertNotEquals(
-				_portalInstance.getCompanyId(),
-				copiedPortalInstance.getCompanyId());
 			Assert.assertEquals(
 				randomId, copiedPortalInstance.getPortalInstanceId());
 			Assert.assertEquals(
 				virtualHost, copiedPortalInstance.getVirtualHost());
+			Assert.assertNotEquals(
+				_portalInstance.getCompanyId(),
+				copiedPortalInstance.getCompanyId());
 		}
 		finally {
 			_deletePortalInstance(copiedPortalInstance);
@@ -566,7 +566,11 @@ public class PortalInstanceResourceTest
 		portalInstanceCopy.setVirtualHost(RandomTestUtil.randomString());
 		portalInstanceCopy.setWebId(RandomTestUtil.randomString());
 
-		try {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.vulcan.internal.jaxrs.exception.mapper." +
+					"WebApplicationExceptionMapper",
+				LoggerTestUtil.ERROR)) {
+
 			portalInstanceResource.postPortalInstanceCopy(
 				RandomTestUtil.randomString(), portalInstanceCopy);
 
