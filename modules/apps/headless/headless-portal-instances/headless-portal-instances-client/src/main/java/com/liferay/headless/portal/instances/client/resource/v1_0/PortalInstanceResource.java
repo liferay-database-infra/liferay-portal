@@ -72,13 +72,11 @@ public interface PortalInstanceResource {
 		throws Exception;
 
 	public PortalInstance postPortalInstanceCopy(
-			String portalInstanceId, String idempotencyKey,
-			PortalInstanceCopy portalInstanceCopy)
+			String portalInstanceId, PortalInstanceCopy portalInstanceCopy)
 		throws Exception;
 
 	public HttpInvoker.HttpResponse postPortalInstanceCopyHttpResponse(
-			String portalInstanceId, String idempotencyKey,
-			PortalInstanceCopy portalInstanceCopy)
+			String portalInstanceId, PortalInstanceCopy portalInstanceCopy)
 		throws Exception;
 
 	public PortalInstanceExport postPortalInstanceExport(
@@ -745,13 +743,12 @@ public interface PortalInstanceResource {
 		}
 
 		public PortalInstance postPortalInstanceCopy(
-				String portalInstanceId, String idempotencyKey,
-				PortalInstanceCopy portalInstanceCopy)
+				String portalInstanceId, PortalInstanceCopy portalInstanceCopy)
 			throws Exception {
 
 			HttpInvoker.HttpResponse httpResponse =
 				postPortalInstanceCopyHttpResponse(
-					portalInstanceId, idempotencyKey, portalInstanceCopy);
+					portalInstanceId, portalInstanceCopy);
 
 			String content = httpResponse.getContent();
 
@@ -813,8 +810,7 @@ public interface PortalInstanceResource {
 		}
 
 		public HttpInvoker.HttpResponse postPortalInstanceCopyHttpResponse(
-				String portalInstanceId, String idempotencyKey,
-				PortalInstanceCopy portalInstanceCopy)
+				String portalInstanceId, PortalInstanceCopy portalInstanceCopy)
 			throws Exception {
 
 			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
@@ -1189,4 +1185,4 @@ public interface PortalInstanceResource {
 	}
 
 }
-// LIFERAY-REST-BUILDER-HASH:-505100657
+// LIFERAY-REST-BUILDER-HASH:919553357
