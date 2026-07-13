@@ -702,7 +702,6 @@ public class PortalInstanceResourceTest
 		}
 	}
 
-
 	private void _testPostPortalInstanceWithAdmin() throws Exception {
 		PortalInstance randomPortalInstance = randomPortalInstance();
 

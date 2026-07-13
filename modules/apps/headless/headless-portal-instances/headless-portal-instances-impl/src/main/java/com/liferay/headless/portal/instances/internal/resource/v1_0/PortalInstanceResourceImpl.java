@@ -468,5 +468,4 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 	}
 
-
 }
