@@ -159,11 +159,11 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		_checkFeatureFlag();
 
+		_checkPermission();
+
 		if (portalInstanceCopy == null) {
 			throw new BadRequestException("Copy configuration is required");
 		}
-
-		_checkPermission();
 
 		Company sourceCompany = _companyService.getCompanyByWebId(
 			portalInstanceId);
@@ -179,7 +179,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 		}
 		catch (Exception exception) {
 			_log.error(
-				"Unable to copy portal instance \"" + portalInstanceId + "\"",
+				"Unable to copy portal instance " + portalInstanceId,
 				exception);
 
 			throw exception;

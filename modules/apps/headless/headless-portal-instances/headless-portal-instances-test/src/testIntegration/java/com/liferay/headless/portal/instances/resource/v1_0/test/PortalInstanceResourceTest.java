@@ -501,13 +501,13 @@ public class PortalInstanceResourceTest
 		try {
 			assertValid(copiedPortalInstance);
 
+			Assert.assertNotEquals(
+				_portalInstance.getCompanyId(),
+				copiedPortalInstance.getCompanyId());
 			Assert.assertEquals(
 				randomId, copiedPortalInstance.getPortalInstanceId());
 			Assert.assertEquals(
 				virtualHost, copiedPortalInstance.getVirtualHost());
-			Assert.assertNotEquals(
-				_portalInstance.getCompanyId(),
-				copiedPortalInstance.getCompanyId());
 		}
 		finally {
 			_deletePortalInstance(copiedPortalInstance);
