@@ -1,0 +1,118 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit configuration for the Liferay review fork (jorgeaavalos/liferay-portal).
+#
+# This file must live as `.coderabbit.yaml` at the ROOT of this fork's master
+# (default) branch: CodeRabbit loads config from the BASE branch of a PR, and our
+# review PRs target jorgeaavalos/liferay-portal:master. It must NOT be committed to
+# any LPD_*_draft branch — those become PRs against upstream liferay/liferay-portal
+# and must not carry our private review config. When re-syncing this fork's master
+# to upstream, keep this one-file commit on top.
+
+language: "en-US"
+early_access: false
+
+# Style, imports, whitespace, and formatting are owned by Liferay's source
+# formatter and Brian Chan's review rules. CodeRabbit's value here is real defects.
+tone_instructions: "Focus on correctness, security, concurrency, and resource-leak defects. Liferay's source formatter and Brian Chan's review rules own all style; do not raise style, import-order, or whitespace nits."
+
+reviews:
+  # 'chill' = balanced. 'assertive' floods Minor/style nits the formatter governs.
+  profile: "chill"
+
+  # Advisory only — a CodeRabbit review never blocks the PR.
+  request_changes_workflow: false
+
+  # Noise reduction.
+  poem: false
+  sequence_diagrams: false
+  collapse_walkthrough: true
+
+  auto_review:
+    enabled: true
+    # Our review PRs are opened non-draft on purpose (CodeRabbit reviews reliably
+    # on open, less so on later pushes).
+    drafts: false
+    # Matches the push-per-round loop the rabbit-review skill drives.
+    auto_incremental_review: true
+
+  # Exclude Liferay generated output from review — Service Builder / REST Builder /
+  # buildLang rewrite these on every run, so any comment on them is noise. Patterns
+  # starting with '!' are exclusions; everything else is reviewed. Cross-ref
+  # commit-structure.md and the generated-file dismissal in SKILL.md Step 4.
+  path_filters:
+    - "!**/Language_*.properties"      # buildLang output (source Language.properties stays reviewed)
+    - "!**/*ServiceHttp.java"          # Service Builder
+    - "!**/*ServiceUtil.java"          # Service Builder
+    - "!**/*ServiceWrapper.java"       # Service Builder
+    - "!**/*ModelImpl.java"            # Service Builder model base
+    - "!**/*SerDes.java"               # REST Builder
+    - "!**/Base*ResourceImpl.java"     # REST Builder
+    - "!**/Base*ResourceTestCase.java" # REST Builder
+    - "!**/packageinfo"                # builder-written package version
+    - "!**/build/**"                   # build output
+    - "!**/OSGI-INF/**"                # bnd/builder-generated component metadata
+
+  # Two jobs per file type: (1) suppress the SF-owned conventions CodeRabbit keeps
+  # getting wrong (the standing-dismissal list in SKILL.md Notes), and (2) point it
+  # at the semantic defect classes the source formatter is blind to — the distilled,
+  # concrete instances of defect-catalog.md and engineering-principles.md (P0-P8).
+  path_instructions:
+    - path: "**/*.java"
+      instructions: |-
+        Do NOT flag these — they are correct Liferay conventions the source formatter enforces:
+        - underscore-prefixed private fields and methods (e.g. _fooBar)
+        - `private static` fields placed at the BOTTOM of the class, not the top
+        - utility classes with no private constructor and not declared `final`
+        - `Thread.currentThread().interrupt();` split across two lines
+        - files ending without a trailing newline
+        Do not raise import-ordering, whitespace, line-wrapping, or other pure formatting nits; the source formatter owns them.
+
+        DO flag these semantic defects (the source formatter cannot see them):
+        - A ResultSet/PreparedStatement/InputStream/ServiceTracker/ExecutorService opened but not closed on every path including exceptions; a JDBC ResultSet must be in try-with-resources.
+        - Anything registered or opened in @Activate or a constructor (ServiceTracker.open, addServiceListener, ExecutorService.submit) with no matching close/remove/shutdown/unregister in @Deactivate.
+        - A *LocalService @Reference used in a REST resource impl or any user-facing @Component: user-facing code must call the remote *Service (which enforces permissions); *LocalService skips them.
+        - A field read from a deserialized request body and used without a null guard: OpenAPI `required` is not enforced server-side, so guard with Validator.isNull(...) and throw BadRequestException rather than letting a null cause a 500.
+        - A PATCH or partial update that defaults an absent (null) field to a constant (true/false/0) instead of the entity's current persisted value.
+        - A database or service call inside a for/while/stream loop (N+1): collect the IDs first and make one batched call.
+        - A catch block that neither logs, rethrows, nor restores the interrupt flag; a background or poll loop whose body can throw and kill the thread; any retry/skip/fallback that logs nothing.
+        - A new cache (static Map, ConcurrentHashMap, PortalCache, MultiVMPool) missing any of: a thread-safe type, a negative-result sentinel (never null for "checked, found nothing"), a named eviction owner, and a caller-scoped key namespace.
+        - A new Thread not fully configured (name and setDaemon) before start().
+        - A new public method or field with no caller outside its own module that could be private (keep the exposed surface minimal).
+
+        Judgment CodeRabbit should apply (the formatter cannot):
+        - Method names start with a verb and their plurality matches the return type; variable names describe the value, not its type (reject userMap, groupIdsList, queryString-style names); acronyms are fully uppercase (getGitHubAPIURL) and a URL-holding String is named *URL.
+        - New code matches its closest sibling in the same class or package (same idiom, same ordering); if the same operation appears more than once in the diff, it is written the same way each time.
+        - Only suggest Javadoc when the closest sibling method in the same class or interface already has it; do not demand Javadoc where siblings have none.
+    - path: "**/*Test*.java"
+      instructions: |-
+        Test-quality checks:
+        - Every test asserts a specific expected value, not just non-null or existence. If changing the production code to return a wrong value would not fail this test, the test proves nothing — say so.
+        - A test exercises the success path (not only permission-denied / bad-request helpers) and cleans up everything it creates in a finally block.
+        - A success-path test that needs LogCapture or LoggerTestUtil to swallow ERROR output means the implementation emits real errors on the happy path — flag the implementation; do not accept hiding the log.
+        - Prefer randomized inputs (RandomTestUtil) over fixed literals for values that are not asserted.
+    - path: "**/rest-openapi.yaml"
+      instructions: |-
+        - Every operation's success (200) response needs a concrete description: a noun phrase naming the returned entity, ending with a period (e.g. "The imported portal instance."), never the builder default "default response".
+        - Paired operations (export/import, add/update, copy) must read as one family: same description shape, same trailing punctuation, same "(e.g., <value>)" notation for value-format hints.
+        - Field descriptions are prose, not code: write conditions in words ("a non-positive value", not "a value <= 0"); name the concrete entity ("the new portal instance", not "the copy"); use natural verbs.
+        - A field marked `required` is only a client contract — confirm the server actually rejects its absence; `required` enforces nothing on its own.
+        - A path segment must not duplicate its path-variable name (avoid project/{projectId}/{projectId}).
+    - path: "**/*.sql"
+      instructions: |-
+        - Fully qualify every table and column; no single-letter aliases.
+        - SELECT columns and AND clauses sorted, OR groups parenthesized; casing and format consistent with every sibling row in the file.
+        - Avoid LIKE/ilike against a JSON-encoded column (brittle and slow); name the index that serves any new query.
+        - All vendor variants of a query must agree on safety slots (casts, length caps, parameter units).
+    - path: "**/Language.properties"
+      instructions: |-
+        - Each value is a complete sentence or a complete title, never a fragment, and grammatical for a native speaker (number and verb agreement).
+        - A group of keys must not mix title-case-without-period and sentence-case-with-period entries; match the surrounding style.
+        - A new key must be read by code somewhere, and the key name must still match the value after any reword.
+    - path: "**/*.properties"
+      instructions: |-
+        Do NOT suggest adding or updating translations: localized Language_<locale>.properties files are generated by Liferay's Crowdin pipeline, never hand-authored in a PR. In portal.properties, the `_PERIOD_` token in environment-variable comments is intentional Liferay encoding — do not suggest LIFERAY_..._ENABLED-style replacements.
+
+# NOTE: knowledge_base defaults are kept. The skill's dismissal replies
+# ("...please skip this in future reviews") depend on CodeRabbit learnings staying
+# on, which is the default — do not opt out.
