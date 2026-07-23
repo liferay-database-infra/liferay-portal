@@ -21,6 +21,8 @@ export class VirtualInstancesPage {
 	readonly addInstanceVirtualHost: Locator;
 	readonly addInstanceVirtualInstanceInitializer: Locator;
 	readonly addInstanceWebIdField: Locator;
+	readonly exportInstanceErrorMessage: Locator;
+	readonly exportInstanceSuccessMessage: Locator;
 	readonly globalMenuPage: GlobalMenuPage;
 	readonly errorMessage: Locator;
 	readonly errorMessageScreenName: Locator;
@@ -52,6 +54,8 @@ export class VirtualInstancesPage {
 		this.addInstanceVirtualInstanceInitializer =
 			this.addInstanceFrame.getByLabel('Virtual Instance Initializer');
 		this.addInstanceWebIdField = this.addInstanceFrame.getByLabel('Web ID');
+		this.exportInstanceErrorMessage = page.locator('.alert-danger');
+		this.exportInstanceSuccessMessage = page.locator('.alert-success');
 		this.globalMenuPage = new GlobalMenuPage(page);
 		this.errorMessage = this.addInstanceFrame.getByText(
 			'Error:Please enter a valid'
@@ -179,6 +183,22 @@ export class VirtualInstancesPage {
 		await this.page.getByRole('button', {name: 'Delete'}).waitFor();
 
 		await this.page.getByRole('button', {name: 'Delete'}).click();
+	}
+
+	async exportVirtualInstance(name: string) {
+		await this.globalMenuPage.goToControlPanel('Virtual Instances');
+
+		const row = await this.page.getByRole('row').filter({hasText: name});
+
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: this.page.getByRole('menuitem', {name: 'Export'}),
+			trigger: row.getByRole('button', {name: 'Show Actions'}),
+		});
+
+		await this.page.getByRole('button', {name: 'Export'}).waitFor();
+
+		await this.page.getByRole('button', {name: 'Export'}).click();
 	}
 
 	async goto() {
