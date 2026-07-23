@@ -10,6 +10,7 @@ import {getBrowserName} from './attributes/browser_name';
 import {getBrowserVersion} from './attributes/browser_version';
 import {getCookies} from './attributes/cookies';
 import {getCustom} from './attributes/custom';
+import {getDeviceType} from './attributes/device_type';
 import {getHostname} from './attributes/hostname';
 import {getLanguage} from './attributes/language';
 import {getLocalDate} from './attributes/local_date';
@@ -17,7 +18,7 @@ import {getLocalHour} from './attributes/local_hour';
 import {getPathname} from './attributes/pathname';
 import {getReferrer} from './attributes/referrer';
 import {getRequestParameters} from './attributes/request_parameters';
-import {getSegments} from './attributes/segments';
+import {getSegment} from './attributes/segment';
 import {getTimezone} from './attributes/timezone';
 import {getUrl} from './attributes/url';
 import {getUserAgent} from './attributes/user_agent';
@@ -117,6 +118,9 @@ export class Detection {
 		else if (attr.startsWith('custom:')) {
 			return getCustom(attr.slice(7));
 		}
+		else if (attr === 'device_type') {
+			return getDeviceType(this._uaParser);
+		}
 		else if (attr === 'hostname') {
 			return getHostname();
 		}
@@ -138,8 +142,8 @@ export class Detection {
 		else if (attr === 'request_parameters') {
 			return getRequestParameters();
 		}
-		else if (attr === 'segments') {
-			return getSegments(await this._getAcSegments());
+		else if (attr === 'segment') {
+			return getSegment(await this._getAcSegments());
 		}
 		else if (attr === 'timezone') {
 			return getTimezone();

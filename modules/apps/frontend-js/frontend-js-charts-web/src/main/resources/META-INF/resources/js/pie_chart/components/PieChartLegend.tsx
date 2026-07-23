@@ -21,10 +21,12 @@ interface PieChartLegendProps {
 	colors: string[];
 	data: PieDatum[];
 	legend: ChartLegendLayout;
+	legendTableDividers?: boolean;
 	legendValue: PieChartLegendValue;
 	onFocus: (index: number) => void;
 	onHover: (index: number) => void;
 	onHoverEnd: () => void;
+	position?: 'bottom' | 'end';
 	titleId: string;
 	total: number;
 }
@@ -50,10 +52,12 @@ export default function PieChartLegend({
 	colors,
 	data,
 	legend,
+	legendTableDividers,
 	legendValue,
 	onFocus,
 	onHover,
 	onHoverEnd,
+	position,
 	titleId,
 	total,
 }: PieChartLegendProps) {
@@ -97,6 +101,8 @@ export default function PieChartLegend({
 			onActivate={onHover}
 			onDeactivate={() => onHoverEnd()}
 			onSelect={onFocus}
+			position={position}
+			tableDividers={legendTableDividers}
 			titleId={titleId}
 		/>
 	);

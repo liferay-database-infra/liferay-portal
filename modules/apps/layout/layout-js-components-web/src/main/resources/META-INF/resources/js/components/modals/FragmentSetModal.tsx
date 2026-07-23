@@ -22,16 +22,7 @@ type Errors = {
 	name?: string | null;
 };
 
-export default function FragmentSetModal({
-	addFragmentCollectionURL,
-	allowCustomName = false,
-	contributedEntryKeys = [],
-	copyFragmentEntriesURL,
-	fragmentCollections = [],
-	fragmentEntryIds = [],
-	onSubmitFragmentCollection,
-	portletNamespace,
-}: {
+type FragmentSetModalProps = {
 	addFragmentCollectionURL?: string;
 	allowCustomName?: boolean;
 	contributedEntryKeys?: string[];
@@ -43,9 +34,36 @@ export default function FragmentSetModal({
 		fragmentName?: string
 	) => Promise<void> | void;
 	portletNamespace: string;
-}) {
+};
+
+export default function FragmentSetModal(props: FragmentSetModalProps) {
 	const {observer, onOpenChange, open} = useModal({defaultOpen: true});
 
+	if (!open) {
+		return null;
+	}
+
+	return (
+		<ClayModal className="modal-dialog-centered" observer={observer}>
+			<FragmentSetModalContent
+				{...props}
+				closeModal={() => onOpenChange(false)}
+			/>
+		</ClayModal>
+	);
+}
+
+export function FragmentSetModalContent({
+	addFragmentCollectionURL,
+	allowCustomName = false,
+	closeModal,
+	contributedEntryKeys = [],
+	copyFragmentEntriesURL,
+	fragmentCollections = [],
+	fragmentEntryIds = [],
+	onSubmitFragmentCollection,
+	portletNamespace,
+}: FragmentSetModalProps & {closeModal: () => void}) {
 	const [errors, setErrors] = useState<Errors>({});
 	const [fragmentName, setFragmentName] = useState('');
 	const [showFragmentSetForm, setShowFragmentSetForm] = useState(
@@ -56,7 +74,7 @@ export default function FragmentSetModal({
 
 	const submitFragmentCollection = (fragmentCollectionId: number) => {
 		if (onSubmitFragmentCollection) {
-			onOpenChange(false);
+			closeModal();
 
 			onSubmitFragmentCollection(fragmentCollectionId, fragmentName);
 
@@ -98,7 +116,7 @@ export default function FragmentSetModal({
 			method: 'POST',
 		})
 			.then((response) => {
-				onOpenChange(false);
+				closeModal();
 
 				if (response.redirected) {
 					navigate(response.url);
@@ -130,12 +148,8 @@ export default function FragmentSetModal({
 		title = Liferay.Language.get('add-fragment-set');
 	}
 
-	if (!open) {
-		return null;
-	}
-
 	return (
-		<ClayModal className="modal-dialog-centered" observer={observer}>
+		<>
 			<ClayModal.Header
 				closeButtonAriaLabel={Liferay.Language.get('close')}
 			>
@@ -197,7 +211,7 @@ export default function FragmentSetModal({
 					<ClayButton.Group spaced>
 						<ClayButton
 							displayType="secondary"
-							onClick={() => onOpenChange(false)}
+							onClick={closeModal}
 						>
 							{Liferay.Language.get('cancel')}
 						</ClayButton>
@@ -212,7 +226,7 @@ export default function FragmentSetModal({
 					</ClayButton.Group>
 				}
 			/>
-		</ClayModal>
+		</>
 	);
 }
 
@@ -233,7 +247,7 @@ function FragmentNameField({
 		<FormField
 			error={errors.fragmentName}
 			id={`${portletNamespace}fragmentName`}
-			name={Liferay.Language.get('name')}
+			name={Liferay.Language.get('fragment-name')}
 			required
 		>
 			<ClayInput
@@ -296,7 +310,7 @@ function FragmentSetSelector({
 		if (allowCustomName && !fragmentName) {
 			nextErrors.fragmentName = sub(
 				Liferay.Language.get('x-field-is-required'),
-				Liferay.Language.get('name')
+				Liferay.Language.get('fragment-name')
 			);
 		}
 
@@ -343,12 +357,12 @@ function FragmentSetSelector({
 
 			<FormField
 				error={errors.fragmentSets}
-				id={`${portletNamespace}fragment-sets`}
-				name={Liferay.Language.get('fragment-sets')}
+				id={`${portletNamespace}fragment-set`}
+				name={Liferay.Language.get('fragment-set')}
 				required
 			>
 				<ClaySelectWithOption
-					id={`${portletNamespace}fragment-sets`}
+					id={`${portletNamespace}fragment-set`}
 					onChange={(event) => {
 						setErrors({...errors, fragmentSets: null});
 						setSelectedFragmentCollection(event.target.value);
@@ -389,6 +403,10 @@ function FragmentSetForm({
 	);
 	const [description, setDescription] = useState('');
 
+	const nameLabel = allowCustomName
+		? Liferay.Language.get('fragment-set-name')
+		: Liferay.Language.get('name');
+
 	const handleSubmit = (event: FormEvent) => {
 		event.preventDefault();
 
@@ -397,14 +415,14 @@ function FragmentSetForm({
 		if (allowCustomName && !fragmentName) {
 			nextErrors.fragmentName = sub(
 				Liferay.Language.get('x-field-is-required'),
-				Liferay.Language.get('name')
+				Liferay.Language.get('fragment-name')
 			);
 		}
 
 		if (!name) {
 			nextErrors.name = sub(
 				Liferay.Language.get('x-field-is-required'),
-				Liferay.Language.get('name')
+				nameLabel
 			);
 		}
 
@@ -470,7 +488,7 @@ function FragmentSetForm({
 			<FormField
 				error={errors.name}
 				id={`${portletNamespace}name`}
-				name={Liferay.Language.get('name')}
+				name={nameLabel}
 				required
 			>
 				<ClayInput

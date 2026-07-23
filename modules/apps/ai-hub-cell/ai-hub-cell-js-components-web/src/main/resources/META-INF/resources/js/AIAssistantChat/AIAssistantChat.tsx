@@ -28,9 +28,15 @@ import {
 import AIAssistantFooterDisclaimer from './components/AIAssistantFooterDisclaimer';
 import AIAssistantMessageBalloon from './components/AIAssistantMessageBalloon';
 import CategorizationMessageBalloon from './components/CategorizationMessageBalloon';
+import ContentTypeSelectorMessageBalloon, {
+	ContentType,
+} from './components/ContentTypeSelectorMessageBalloon';
+import ContentsMessageBalloon from './components/ContentsMessageBalloon';
+import ImageMessageBalloon from './components/ImageMessageBalloon';
 import UserMessageBalloon from './components/UserMessageBalloon';
 import {ChatMessageSentData, Message} from './types';
 import buildAssistantMessage from './utils/buildAssistantMessage';
+import parseContentDraftsMessage from './utils/parseContentDraftsMessage';
 
 import './chat.scss';
 
@@ -99,6 +105,7 @@ const AIAssistantChat: React.FC<AIAssistantChatProps> = ({
 	const eventSourceReference = useRef<string | null>(null);
 	const contextRef = useRef<ChatContext | undefined>(context);
 	const getContextRef = useRef<(() => ChatContext) | undefined>(getContext);
+	const runtimeContextRef = useRef<ChatContext>({});
 	const initialMessageRef = useRef<string | undefined>(initialMessage);
 	const initialMessageSentRef = useRef<boolean>(false);
 	const instructionDefinitionScopeRef = useRef<string>(
@@ -107,12 +114,25 @@ const AIAssistantChat: React.FC<AIAssistantChatProps> = ({
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 	const triggerRef = useRef<HTMLButtonElement | null>(null);
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+	const fileUploadSelectorRef = useRef<string | undefined>(undefined);
 
 	useEffect(() => {
 		contextRef.current = context;
 		getContextRef.current = getContext;
 		instructionDefinitionScopeRef.current = instructionDefinitionScope;
 	}, [context, getContext, instructionDefinitionScope]);
+
+	useEffect(() => {
+		const fieldElement = triggerRef.current?.closest(
+			'[data-ai-assistant-field-id]'
+		);
+
+		if (fieldElement) {
+			fileUploadSelectorRef.current = `[data-ai-assistant-field-id="${fieldElement.getAttribute(
+				'data-ai-assistant-field-id'
+			)}"]`;
+		}
+	}, []);
 
 	useEffect(() => {
 		setTimeout(() => {
@@ -144,6 +164,7 @@ const AIAssistantChat: React.FC<AIAssistantChatProps> = ({
 				chatContext: {
 					...contextRef.current,
 					...getContextRef.current?.(),
+					...runtimeContextRef.current,
 				},
 				eventSourceReference: eventSourceReference.current,
 				instructionDefinitionScope:
@@ -231,10 +252,31 @@ const AIAssistantChat: React.FC<AIAssistantChatProps> = ({
 							event.data
 						);
 
-						setMessages((previousMessages) => [
-							...previousMessages,
-							buildAssistantMessage(dataJSON),
-						]);
+						const assistantMessage =
+							buildAssistantMessage(dataJSON);
+
+						setMessages((previousMessages) => {
+							const lastMessage = previousMessages.at(-1);
+							const messages = previousMessages.slice(0, -1);
+
+							if (
+								lastMessage?.images?.length &&
+								assistantMessage?.images?.length
+							) {
+								return [
+									...messages,
+									{
+										...assistantMessage,
+										images: [
+											...lastMessage.images,
+											...assistantMessage.images,
+										],
+									},
+								];
+							}
+
+							return [...previousMessages, assistantMessage];
+						});
 
 						setMessage('');
 					}
@@ -243,9 +285,12 @@ const AIAssistantChat: React.FC<AIAssistantChatProps> = ({
 							...previousMessages,
 							{error: true, sender: 'assistant', text: ''},
 						]);
-					}
 
-					setIsGenerating(false);
+						return;
+					}
+					finally {
+						setIsGenerating(false);
+					}
 				}
 			);
 
@@ -304,6 +349,44 @@ const AIAssistantChat: React.FC<AIAssistantChatProps> = ({
 	}, [closeAIAssistantChatConnection, openAIAssistantChatConnection]);
 
 	useEffect(() => {
+		const handleOpen = (payload: {
+			contentTypes?: ContentType[];
+			context?: ChatContext;
+			message?: string;
+		}) => {
+			setActive(true);
+
+			runtimeContextRef.current = payload?.context ?? {};
+
+			if (payload?.contentTypes?.length) {
+				setMessages((previousMessages) => [
+					...previousMessages,
+					{
+						sender: 'user',
+						text: Liferay.Language.get('generate-content'),
+					},
+					{
+						contentTypes: payload.contentTypes,
+						sender: 'assistant',
+						text: Liferay.Language.get(
+							'what-type-of-content-do-you-want-to-generate'
+						),
+					},
+				]);
+			}
+			else if (payload?.message) {
+				sendMessage(payload.message);
+			}
+		};
+
+		Liferay.on('openAIAssistantChat', handleOpen);
+
+		return () => {
+			Liferay.detach('openAIAssistantChat', handleOpen);
+		};
+	}, [sendMessage]);
+
+	useEffect(() => {
 		const handleCategorize = (payload: CategorizeEventPayload) => {
 			setActive(true);
 
@@ -326,6 +409,32 @@ const AIAssistantChat: React.FC<AIAssistantChatProps> = ({
 			Liferay.detach(CATEGORIZE_EVENT, handleCategorize);
 		};
 	}, []);
+
+	useEffect(() => {
+		const handleOpen = (payload: {
+			context?: ChatContext;
+			message?: string;
+		}) => {
+			setActive(true);
+
+			if (payload?.context) {
+				contextRef.current = {
+					...contextRef.current,
+					...payload.context,
+				};
+			}
+
+			if (payload?.message) {
+				sendMessage(payload.message);
+			}
+		};
+
+		Liferay.on('openAIAssistantChat', handleOpen);
+
+		return () => {
+			Liferay.detach('openAIAssistantChat', handleOpen);
+		};
+	}, [sendMessage]);
 
 	const chatSurface = (
 		<>
@@ -356,6 +465,49 @@ const AIAssistantChat: React.FC<AIAssistantChatProps> = ({
 							<CategorizationMessageBalloon
 								key={index}
 								{...item.categorization}
+							/>
+						);
+					}
+
+					if (item.contentTypes) {
+						return (
+							<ContentTypeSelectorMessageBalloon
+								contentTypes={item.contentTypes}
+								contextRef={runtimeContextRef}
+								key={index}
+								message={item.text}
+								sendMessage={sendMessage}
+							/>
+						);
+					}
+
+					if (parseContentDraftsMessage(item.text).drafts.length) {
+						return (
+							<ContentsMessageBalloon
+								key={index}
+								message={item.text}
+							/>
+						);
+					}
+
+					if (item.images?.length) {
+						const context = {
+							...contextRef.current,
+							...getContextRef.current?.(),
+						};
+
+						return (
+							<ImageMessageBalloon
+								images={item.images}
+								key={index}
+								saveProps={{
+									fileUploadSelector:
+										context.fileUploadSelector ??
+										fileUploadSelectorRef.current,
+									groupId: context.groupId,
+									objectEntryFolderExternalReferenceCode:
+										context.objectEntryFolderExternalReferenceCode,
+								}}
 							/>
 						);
 					}

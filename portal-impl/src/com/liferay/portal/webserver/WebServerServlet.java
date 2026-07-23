@@ -71,7 +71,6 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.ImageLocalServiceUtil;
-import com.liferay.portal.kernel.service.ImageServiceUtil;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
@@ -514,7 +513,7 @@ public class WebServerServlet extends HttpServlet {
 		long imageId = getImageId(httpServletRequest);
 
 		if (imageId > 0) {
-			image = ImageServiceUtil.getImage(imageId);
+			image = ImageLocalServiceUtil.fetchImage(imageId);
 
 			String path = GetterUtil.getString(
 				httpServletRequest.getPathInfo());
@@ -818,7 +817,7 @@ public class WebServerServlet extends HttpServlet {
 			UserLocalServiceUtil.updatePortrait(
 				user.getUserId(), image.getTextObj());
 
-			return ImageLocalServiceUtil.getImage(imageId);
+			return ImageLocalServiceUtil.fetchImage(imageId);
 		}
 
 		return image;
@@ -1481,15 +1480,11 @@ public class WebServerServlet extends HttpServlet {
 			String fileName = HttpComponentsUtil.decodeURL(pathArray[2]);
 
 			try {
-				try {
-					DLAppLocalServiceUtil.getFileEntryByFileName(
+				FileEntry fileEntry =
+					DLAppLocalServiceUtil.fetchFileEntryByFileName(
 						groupId, folderId, fileName);
-				}
-				catch (NoSuchFileEntryException noSuchFileEntryException) {
-					if (_log.isDebugEnabled()) {
-						_log.debug(noSuchFileEntryException);
-					}
 
+				if (fileEntry == null) {
 					DLAppLocalServiceUtil.getFileEntry(
 						groupId, folderId, fileName);
 				}
@@ -1921,41 +1916,30 @@ public class WebServerServlet extends HttpServlet {
 					0, fileName.indexOf(StringPool.QUESTION));
 			}
 
-			try {
-				FileEntry fileEntry =
-					DLAppLocalServiceUtil.getFileEntryByFileName(
-						groupId, folderId, fileName);
-
-				_checkFileEntry(fileEntry, httpServletRequest);
-
-				return fileEntry;
-			}
-			catch (NoSuchFileEntryException noSuchFileEntryException) {
-				if (_log.isDebugEnabled()) {
-					_log.debug(noSuchFileEntryException);
-				}
-
-				FileEntry fileEntry = DLAppLocalServiceUtil.getFileEntry(
+			FileEntry fileEntry =
+				DLAppLocalServiceUtil.fetchFileEntryByFileName(
 					groupId, folderId, fileName);
 
-				_checkFileEntry(fileEntry, httpServletRequest);
-
-				return fileEntry;
+			if (fileEntry == null) {
+				fileEntry = DLAppLocalServiceUtil.getFileEntry(
+					groupId, folderId, fileName);
 			}
-		}
-		else {
-			long groupId = GetterUtil.getLong(pathArray[0]);
-
-			String uuid = pathArray[3];
-
-			FileEntry fileEntry =
-				DLAppLocalServiceUtil.getFileEntryByUuidAndGroupId(
-					uuid, groupId);
 
 			_checkFileEntry(fileEntry, httpServletRequest);
 
 			return fileEntry;
 		}
+
+		long groupId = GetterUtil.getLong(pathArray[0]);
+
+		String uuid = pathArray[3];
+
+		FileEntry fileEntry =
+			DLAppLocalServiceUtil.getFileEntryByUuidAndGroupId(uuid, groupId);
+
+		_checkFileEntry(fileEntry, httpServletRequest);
+
+		return fileEntry;
 	}
 
 	private PermissionChecker _getPermissionChecker(

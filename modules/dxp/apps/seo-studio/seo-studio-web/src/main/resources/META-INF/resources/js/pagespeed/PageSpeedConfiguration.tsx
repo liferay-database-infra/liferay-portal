@@ -12,23 +12,34 @@ import {openToast} from 'frontend-js-components-web';
 import React, {useEffect, useState} from 'react';
 
 import RequiredMark from '../components/RequiredMark';
+import {validateAPIKey} from './validation';
 
 import './PageSpeedConfiguration.scss';
+
+const INSTANCE_FIELD =
+	'r_seoStudioInstanceToSEOStudioIntegrations_seoStudioInstanceId';
+
+const TYPE_PAGESPEED = 'pageSpeed';
 
 interface Props {
 	backURL: string;
 	domainsURL: string;
 	instancesURL: string;
+	integrationsURL: string;
 }
 
 export default function PageSpeedConfiguration({
 	backURL,
 	domainsURL,
 	instancesURL,
+	integrationsURL,
 }: Props) {
 	const [apiKey, setAPIKey] = useState('');
 	const [domainExists, setDomainExists] = useState(false);
 	const [instanceIds, setInstanceIds] = useState<number[]>([]);
+	const [integrationIdsMap, setIntegrationIdsMap] = useState<
+		Map<number, number>
+	>(new Map());
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [validationError, setValidationError] = useState('');
@@ -54,8 +65,20 @@ export default function PageSpeedConfiguration({
 
 				return response.json();
 			}),
+			Liferay.Util.fetch(
+				`${integrationsURL}?filter=${encodeURIComponent(
+					`type eq '${TYPE_PAGESPEED}'`
+				)}&pageSize=100`,
+				{headers: {Accept: 'application/json'}}
+			).then((response) => {
+				if (!response.ok) {
+					throw new Error(`HTTP ${response.status}`);
+				}
+
+				return response.json();
+			}),
 		])
-			.then(([domainsData, instancesData]) => {
+			.then(([domainsData, instancesData, integrationsData]) => {
 				setDomainExists(!!(domainsData.items || []).length);
 
 				const instances = instancesData.items || [];
@@ -72,6 +95,17 @@ export default function PageSpeedConfiguration({
 				if (firstInstance) {
 					setAPIKey(firstInstance.googlePageSpeedAPIKey);
 				}
+
+				const nextIntegrationIdsMap = new Map<number, number>();
+
+				for (const integration of integrationsData.items || []) {
+					nextIntegrationIdsMap.set(
+						integration[INSTANCE_FIELD],
+						integration.id
+					);
+				}
+
+				setIntegrationIdsMap(nextIntegrationIdsMap);
 			})
 			.catch(() => {
 				openToast({
@@ -82,40 +116,56 @@ export default function PageSpeedConfiguration({
 				});
 			})
 			.finally(() => setLoading(false));
-	}, [domainsURL, instancesURL]);
-
-	const validateAPIKey = (key: string): Promise<boolean> =>
-		Liferay.Util.fetch(
-			`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=invalid_url&key=${encodeURIComponent(
-				key
-			)}`
-		)
-			.then((response) => response.json())
-			.then((data) => {
-				const errorDetails = data.error?.details || [];
-
-				const errorDetail = errorDetails.find(
-					(detail: {reason?: string}) => detail.reason
-				);
-
-				const reason = errorDetail?.reason || '';
-				const status = data.error?.status || '';
-
-				return !(reason || status === 'PERMISSION_DENIED');
-			})
-			.catch(() => false);
+	}, [domainsURL, instancesURL, integrationsURL]);
 
 	const saveAPIKey = (): Promise<boolean> => {
-		const requests = instanceIds.map((instanceId) =>
-			Liferay.Util.fetch(`${instancesURL}/${instanceId}`, {
-				body: JSON.stringify({googlePageSpeedAPIKey: apiKey}),
+		const requests = instanceIds.flatMap((instanceId) => {
+			const instanceRequest = Liferay.Util.fetch(
+				`${instancesURL}/${instanceId}`,
+				{
+					body: JSON.stringify({googlePageSpeedAPIKey: apiKey}),
+					headers: {
+						'Accept': 'application/json',
+						'Content-Type': 'application/json',
+					},
+					method: 'PATCH',
+				}
+			).then((response) => response.ok);
+
+			const integrationId = integrationIdsMap.get(instanceId);
+
+			if (integrationId) {
+				const integrationRequest = Liferay.Util.fetch(
+					`${integrationsURL}/${integrationId}`,
+					{
+						body: JSON.stringify({state: 'active'}),
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						method: 'PATCH',
+					}
+				).then((response) => response.ok);
+
+				return [instanceRequest, integrationRequest];
+			}
+
+			const integrationRequest = Liferay.Util.fetch(integrationsURL, {
+				body: JSON.stringify({
+					[INSTANCE_FIELD]: instanceId,
+					scope: 'instance',
+					state: 'active',
+					type: TYPE_PAGESPEED,
+				}),
 				headers: {
 					'Accept': 'application/json',
 					'Content-Type': 'application/json',
 				},
-				method: 'PATCH',
-			}).then((response) => response.ok)
-		);
+				method: 'POST',
+			}).then((response) => response.ok);
+
+			return [instanceRequest, integrationRequest];
+		});
 
 		return Promise.all(requests)
 			.then((results) => results.every(Boolean))

@@ -39,6 +39,9 @@ export default function MapChart({
 	data,
 	fit = 'world',
 	legend = 'none',
+	legendPosition = 'end',
+	legendSwatchBorder = true,
+	legendTableDividers = true,
 	scheme = 'blue',
 	steps = 5,
 	title,
@@ -130,7 +133,9 @@ export default function MapChart({
 			onFocus={focusItem}
 			onHover={setHoverIndex}
 			onHoverEnd={clearHover}
+			position={legendPosition}
 			scheme={scheme}
+			tableDividers={legendTableDividers}
 			titleId={titleId}
 			total={total}
 		/>
@@ -140,7 +145,13 @@ export default function MapChart({
 		<figure
 			aria-describedby={summaryId}
 			aria-labelledby={titleId}
-			className={classNames('chart-map', className)}
+			className={classNames(
+				'chart-map',
+				{
+					'chart-map-no-swatch-border': !legendSwatchBorder,
+				},
+				className
+			)}
 		>
 			<figcaption className="chart-map-caption" id={titleId}>
 				{title}
@@ -175,10 +186,14 @@ export default function MapChart({
 					/>
 				) : null}
 
-				{legend === 'list' && legendElement}
+				{legend === 'list' && legendPosition === 'end'
+					? legendElement
+					: null}
 			</div>
 
-			{legend !== 'list' && legendElement}
+			{legend !== 'list' || legendPosition === 'bottom'
+				? legendElement
+				: null}
 		</figure>
 	);
 }

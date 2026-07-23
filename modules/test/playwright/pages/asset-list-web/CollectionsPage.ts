@@ -5,6 +5,7 @@
 
 import {Page} from '@playwright/test';
 
+import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
 import {PORTLET_URLS} from '../../utils/portletUrls';
 import {waitForAlert} from '../../utils/waitForAlert';
 
@@ -26,15 +27,13 @@ export class CollectionsPage {
 	/**
 	 * Creates a dynamic collection with the given name.
 	 */
-
-	async createWebContentDynamicCollection(name, siteUrl) {
+	async createWebContentDynamicCollection(name: string, siteUrl: string) {
 		await this.addNewDynamicCollection(name);
 
-		await this.configureCollectionWithWebContents();
-
-		await this.page.getByRole('button', {name: 'Save'}).click();
-
-		await waitForAlert(this.page);
+		await this.configureSourceItemType({
+			itemSubtype: 'Basic Web Content',
+			itemType: 'Web Content Article',
+		});
 
 		return {
 			classPK: await this.getCollectionClassPK(name, siteUrl),
@@ -67,8 +66,7 @@ export class CollectionsPage {
 	/**
 	 * Add a dynamic collection with the given name.
 	 */
-
-	async addNewDynamicCollection(name) {
+	async addNewDynamicCollection(name: string) {
 		await this.addNewCollection(name, true);
 	}
 
@@ -77,6 +75,53 @@ export class CollectionsPage {
 	 */
 	async addNewManualCollection(name: string) {
 		await this.addNewCollection(name, false);
+	}
+
+	/**
+	 * Opens a collection from the Collections list for editing.
+	 */
+	async openCollection(name: string) {
+		await this.page.getByRole('link', {name}).click();
+
+		await this.page.waitForLoadState('networkidle');
+	}
+
+	/**
+	 * On a collection's edit page, adds a personalized variation for the given
+	 * segment. The segment picker renders inside a modal iframe.
+	 */
+	async addPersonalizedVariation(segmentName: string) {
+		const newPersonalizedVariationDialog = this.page
+			.getByRole('dialog')
+			.filter({hasText: 'New Personalized Variation'});
+
+		await clickAndExpectToBeVisible({
+			target: newPersonalizedVariationDialog,
+			trigger: this.page.getByRole('button', {
+				name: 'Add Personalized Variation',
+			}),
+		});
+
+		await newPersonalizedVariationDialog
+			.frameLocator('iframe')
+			.getByText(segmentName)
+			.click();
+
+		await waitForAlert(this.page);
+	}
+
+	/**
+	 * On a collection's edit page, deprioritizes the given variation through its
+	 * actions menu in the personalized variations panel.
+	 */
+	async deprioritizeVariation(variationTitle: string) {
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: this.page.getByRole('button', {name: 'Deprioritize'}),
+			trigger: this.page.getByRole('button', {
+				name: `Actions for ${variationTitle}`,
+			}),
+		});
 	}
 
 	async deleteCollection(name: string) {
@@ -123,28 +168,99 @@ export class CollectionsPage {
 	}
 
 	/**
-	 * Configure a dynamic collection for Web Contents.
+	 * Restricts the collection to multiple item types by choosing "Select
+	 * Types" and moving the given types out of the "In Use" list, then saves.
 	 */
-
-	async configureCollectionWithWebContents() {
+	async restrictSourceItemTypes(excludedTypes: string[]) {
 		await this.page
-			.getByLabel('Item Type')
-			.selectOption({label: 'Web Content Article'});
+			.getByRole('combobox', {name: 'Item Type'})
+			.selectOption({label: 'Select Types'});
 
-		const select = await this.page
-			.locator('.asset-subtype:not(.hide)')
-			.getByLabel('Item Subtype');
+		const itemTypesBox = this.page.locator('[id$="classNamesBoxes"]');
 
-		await select.waitFor();
+		const inUseList = itemTypesBox.getByLabel('In Use', {exact: true});
 
-		await select.selectOption({label: 'Basic Web Content'});
+		for (const excludedType of excludedTypes) {
+			await inUseList.selectOption({label: excludedType});
+
+			await itemTypesBox
+				.getByRole('button', {
+					name: /move selected items from in use to available/i,
+				})
+				.click();
+		}
+
+		await this.page.getByRole('button', {name: 'Save'}).click();
+
+		await waitForAlert(this.page);
+	}
+
+	/**
+	 * Configures the collection to a single item type (and optional subtype),
+	 * then saves.
+	 */
+	async configureSourceItemType({
+		itemSubtype,
+		itemType,
+	}: {
+		itemSubtype?: string;
+		itemType: string;
+	}) {
+		await this.page
+			.getByRole('combobox', {name: 'Item Type'})
+			.selectOption({label: itemType});
+
+		if (itemSubtype) {
+			const subtypeSelect = this.page
+				.locator('.asset-subtype:not(.hide)')
+				.getByLabel('Item Subtype');
+
+			await subtypeSelect.waitFor();
+
+			await subtypeSelect.selectOption({label: itemSubtype});
+		}
+
+		await this.page.getByRole('button', {name: 'Save'}).click();
+
+		await waitForAlert(this.page);
+	}
+
+	/**
+	 * On a manual collection's edit page, clicks "Select" to open the asset
+	 * entries item selector modal and returns the modal dialog locator.
+	 */
+	async openSelectItemsModal() {
+		await this.page.getByRole('button', {name: 'Select Items'}).click();
+
+		const modal = this.page.getByRole('dialog');
+
+		await modal.waitFor();
+
+		return modal;
+	}
+
+	/**
+	 * On a manual collection's edit page, opens the asset entries item selector
+	 * modal, checks the given assets, and confirms the selection.
+	 */
+	async selectAssets(assetTitles: string[]) {
+		const selectItemsModal = await this.openSelectItemsModal();
+
+		for (const assetTitle of assetTitles) {
+			await selectItemsModal
+				.getByRole('checkbox', {name: `Select ${assetTitle}`})
+				.check();
+		}
+		await selectItemsModal
+			.locator('.modal-footer')
+			.getByRole('button', {exact: true, name: 'Select'})
+			.click();
 	}
 
 	/**
 	 * Gets the collection classPK.
 	 */
-
-	async getCollectionClassPK(name, siteUrl) {
+	async getCollectionClassPK(name: string, siteUrl: string) {
 		await this.goto(siteUrl);
 
 		const classPK = await this.page

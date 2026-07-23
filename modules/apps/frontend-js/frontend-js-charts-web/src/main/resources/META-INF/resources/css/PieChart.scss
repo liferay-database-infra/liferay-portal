@@ -39,6 +39,14 @@
 		}
 	}
 
+	// Neutral ring shown when the total is 0, so the chart keeps its shape
+	// instead of disappearing.
+
+	.chart-pie-track {
+		fill: none;
+		stroke: $light-d1;
+	}
+
 	.chart-pie-center-label {
 		align-items: center;
 		display: flex;
@@ -56,6 +64,11 @@
 
 	.chart-pie-center-label-percent {
 		font-size: 1.5rem;
+		font-weight: 700;
+	}
+
+	.chart-pie-center-label-total {
+		font-size: 2rem;
 		font-weight: 700;
 	}
 

@@ -13,6 +13,7 @@ import {isolatedSiteTest} from '../../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {clickAndExpectToBeVisible} from '../../../utils/clickAndExpectToBeVisible';
 import getRandomString from '../../../utils/getRandomString';
+import {performLoginViaApi, userData} from '../../../utils/performLogin';
 import {PORTLET_URLS} from '../../../utils/portletUrls';
 import {waitForAlert} from '../../../utils/waitForAlert';
 
@@ -172,7 +173,9 @@ test(
 			page.getByText('of these criteria are met.')
 		).toBeVisible();
 
-		const conjunction = page.getByLabel('Conjunction');
+		const conjunction = page.getByRole('combobox', {
+			name: 'of these criteria are met.',
+		});
 
 		await expect(conjunction).toContainText('All');
 
@@ -423,23 +426,29 @@ test(
 		await page.keyboard.press('Tab');
 
 		await expect(
-			page.getByRole('menu', {name: 'Conditions'}).locator(':focus')
+			page.getByRole('list', {name: 'Conditions'}).locator(':focus')
 		).toHaveCount(0);
 
 		// The new group defaults to All
 
-		await expect(groups.getByLabel('Conjunction')).toContainText('All');
+		await expect(
+			groups.getByRole('combobox', {name: 'of these criteria are met.'})
+		).toContainText('All');
 
 		// Switching the root to Any leaves the nested group on All
 
-		const rootConjunction = page.getByLabel('Conjunction').first();
+		const rootConjunction = page
+			.getByRole('combobox', {name: 'of these criteria are met.'})
+			.first();
 
 		await rootConjunction.click();
 
 		await page.getByRole('option', {exact: true, name: 'Any'}).click();
 
 		await expect(rootConjunction).toContainText('Any');
-		await expect(groups.getByLabel('Conjunction')).toContainText('All');
+		await expect(
+			groups.getByRole('combobox', {name: 'of these criteria are met.'})
+		).toContainText('All');
 
 		// Dropping onto a rule inside the group nests a third level
 
@@ -482,5 +491,77 @@ test(
 
 		await expect(groups).toHaveCount(0);
 		await expect(rules).toHaveCount(2);
+	}
+);
+
+test(
+	'Lists audiences with the name, modified date and last modified by columns',
+	{
+		tag: '@LPD-94450',
+	},
+	async ({apiHelpers, audiencesPage, page}) => {
+		await audiencesPage.goto();
+
+		// Create an audience as the default user
+
+		const audienceName = getRandomString();
+
+		await audiencesPage.createAudience({
+			attributeName: 'Browser Name',
+			name: audienceName,
+			value: 'Chrome',
+		});
+
+		// The columns show the audience name, a date and the creator
+
+		await expect(
+			page.getByRole('columnheader', {name: 'Last Modified By'})
+		).toBeVisible();
+
+		const row = page.locator('tr').filter({hasText: audienceName});
+
+		await expect(row.getByRole('link', {name: audienceName})).toBeVisible();
+		await expect(row).toContainText(/\w{3} \d{1,2}, \d{4}/);
+		await expect(row).toContainText('Test Test');
+
+		// A second user with permission edits the audience
+
+		const editor = await apiHelpers.headlessAdminUser.postUserAccount();
+
+		const administratorRole =
+			await apiHelpers.headlessAdminUser.getRoleByName('Administrator');
+
+		await apiHelpers.headlessAdminUser.assignUserToRole(
+			administratorRole.externalReferenceCode,
+			editor.id
+		);
+
+		userData[editor.alternateName] = {
+			name: editor.givenName,
+			password: 'test',
+			surname: editor.familyName,
+		};
+
+		await performLoginViaApi({page, screenName: editor.alternateName});
+
+		await audiencesPage.goto();
+
+		await audiencesPage.updateAudience({
+			name: audienceName,
+			value: 'Firefox',
+		});
+
+		// Last Modified By now reflects the editing user, not the creator
+
+		await expect(row).toContainText(editor.familyName);
+		await expect(row).not.toContainText('Test Test');
+
+		// Clean up
+
+		await audiencesPage.deleteAudience(audienceName);
+
+		await expect(
+			page.locator('tr').filter({hasText: audienceName})
+		).toHaveCount(0);
 	}
 );

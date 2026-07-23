@@ -25,6 +25,7 @@
 		<column name="commerceCurrencyCode" type="String" />
 		<column name="catalogDefaultLanguageId" type="String" />
 		<column db-name="system_" name="system" type="boolean" />
+		<column name="status" type="int" />
 
 		<!-- Order -->
 
@@ -69,6 +70,7 @@
 		<column name="commerceCurrencyCode" type="String" />
 		<column name="priceDisplayType" type="String" />
 		<column name="discountsTargetNetPrice" type="boolean" />
+		<column name="status" type="int" />
 
 		<!-- Order -->
 
@@ -1227,6 +1229,7 @@
 		<column name="priority" type="double" />
 		<column name="type" type="int" />
 		<column name="lastPublishDate" type="Date" />
+		<column name="status" type="int" />
 
 		<!-- Order -->
 
@@ -1277,6 +1280,7 @@
 		<column name="skuContributor" type="boolean" />
 		<column name="key" type="String" />
 		<column name="lastPublishDate" type="Date" />
+		<column name="status" type="int" />
 
 		<!-- Order -->
 
@@ -1315,6 +1319,7 @@
 		<column name="priority" type="double" />
 		<column name="key" type="String" />
 		<column name="lastPublishDate" type="Date" />
+		<column name="status" type="int" />
 
 		<!-- Order -->
 
@@ -1354,6 +1359,7 @@
 		<column name="priority" type="double" />
 		<column name="key" type="String" />
 		<column name="lastPublishDate" type="Date" />
+		<column name="status" type="int" />
 
 		<!-- Order -->
 
@@ -1434,6 +1440,7 @@
 		<column name="priority" type="double" />
 		<column name="visible" type="boolean" />
 		<column name="lastPublishDate" type="Date" />
+		<column name="status" type="int" />
 
 		<!-- Order -->
 
@@ -1500,6 +1507,7 @@
 
 		<column localized="true" name="name" type="String" />
 		<column localized="true" name="description" type="String" />
+		<column name="status" type="int" />
 
 		<!-- Order -->
 

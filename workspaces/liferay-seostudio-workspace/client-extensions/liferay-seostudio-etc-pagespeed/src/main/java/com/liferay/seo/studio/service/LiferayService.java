@@ -49,18 +49,61 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Component
 public class LiferayService extends BaseService {
 
+	public JSONObject fetchSEOStudioDomainJSONObject(
+		JSONObject seoStudioScanJSONObject) {
+
+		long seoStudioScanRunId = seoStudioScanJSONObject.optLong(
+			"r_seoStudioScanRunToSEOStudioScans_seoStudioScanRunId");
+
+		if (seoStudioScanRunId <= 0) {
+			return null;
+		}
+
+		JSONObject seoStudioScanRunJSONObject = _fetchJSONObject(
+			"/o/seo-studio/scan-runs/" + seoStudioScanRunId);
+
+		if (seoStudioScanRunJSONObject == null) {
+			return null;
+		}
+
+		long seoStudioDomainId = seoStudioScanRunJSONObject.optLong(
+			"r_seoStudioDomainToSEOStudioScanRuns_seoStudioDomainId");
+
+		if (seoStudioDomainId <= 0) {
+			return null;
+		}
+
+		JSONObject seoStudioDomainJSONObject = _fetchJSONObject(
+			"/o/seo-studio/domains/" + seoStudioDomainId);
+
+		if (seoStudioDomainJSONObject == null) {
+			return null;
+		}
+
+		long seoStudioInstanceId = seoStudioDomainJSONObject.optLong(
+			"r_seoStudioInstanceToSEOStudioDomains_seoStudioInstanceId");
+
+		if (seoStudioInstanceId > 0) {
+			JSONObject seoStudioInstanceJSONObject = _fetchJSONObject(
+				"/o/seo-studio/instances/" + seoStudioInstanceId);
+
+			if (seoStudioInstanceJSONObject != null) {
+				seoStudioDomainJSONObject.put(
+					"seoStudioInstance", seoStudioInstanceJSONObject);
+			}
+		}
+
+		return seoStudioDomainJSONObject;
+	}
+
 	public JSONArray getQueuedSEOStudioScansJSONArray() {
 		UriComponents uriComponents = UriComponentsBuilder.fromPath(
-			"/o/c/seostudioscans"
+			"/o/seo-studio/scans"
 		).queryParam(
 			"filter",
 			StringBundler.concat(
 				"scanType eq '", PageSpeedConstants.SCAN_TYPE_PAGESPEED,
 				"' and state eq '", PageSpeedConstants.STATE_QUEUED, "'")
-		).queryParam(
-			"nestedFields", "seoStudioScanRun,seoStudioDomain,seoStudioInstance"
-		).queryParam(
-			"nestedFieldsDepth", 3
 		).queryParam(
 			"pageSize", 20
 		).build();
@@ -128,7 +171,7 @@ public class LiferayService extends BaseService {
 		jsonObject.put("state", state);
 
 		UriComponents uriComponents = UriComponentsBuilder.fromPath(
-			"/o/c/seostudioscans/" + seoStudioScanId
+			"/o/seo-studio/scans/" + seoStudioScanId
 		).build();
 
 		return patch(
@@ -172,11 +215,35 @@ public class LiferayService extends BaseService {
 		);
 
 		UriComponents uriComponents = UriComponentsBuilder.fromPath(
-			"/o/c/seostudiopagespeedresults"
+			"/o/seo-studio/pagespeed-results"
 		).build();
 
 		return post(
 			_getAuthorization(), jsonObject.toString(), uriComponents.toUri());
+	}
+
+	private JSONObject _fetchJSONObject(String path) {
+		UriComponents uriComponents = UriComponentsBuilder.fromPath(
+			path
+		).build();
+
+		String responseJSON = get(_getAuthorization(), uriComponents.toUri());
+
+		if (Validator.isNull(responseJSON)) {
+			return null;
+		}
+
+		try {
+			return new JSONObject(responseJSON);
+		}
+		catch (JSONException jsonException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Unable to parse response for " + path, jsonException);
+			}
+
+			return null;
+		}
 	}
 
 	private String _getAuthorization() {

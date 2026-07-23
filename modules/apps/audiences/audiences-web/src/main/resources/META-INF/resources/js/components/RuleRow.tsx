@@ -23,7 +23,9 @@ import {
 	useSetMovementSource,
 } from '../keyboard_movement/KeyboardMovementContext';
 import {AudiencesCriteria, Rule} from '../types';
+import {getConditionLabel} from '../util/getConditionLabel';
 import {DropZone, getDropPosition} from '../util/getDropPosition';
+import {getValueOptions} from '../util/getValueOptions';
 
 interface IProps {
 	audiencesCriteria?: AudiencesCriteria;
@@ -91,21 +93,6 @@ export default function RuleRow({
 		dragPreviewRef(getEmptyImage(), {captureDraggingState: true});
 	}, [dragPreviewRef]);
 
-	// Clay's Picker forces tabindex="0" on its combobox trigger and ignores the
-	// tabindex prop, so mirror the roving value onto it to keep inactive rows
-	// out of the tab order.
-
-	useEffect(() => {
-		dropItemRef.current
-			?.querySelectorAll<HTMLElement>('[role="combobox"]')
-			.forEach((element) =>
-				element.setAttribute(
-					'tabindex',
-					String(navigationProps?.tabIndex ?? 0)
-				)
-			);
-	}, [navigationProps?.tabIndex]);
-
 	const [{isOver}, dropRef] = useDrop<RowDragItem, void, {isOver: boolean}>({
 		accept: [DRAG_TYPES.ATTRIBUTE, DRAG_TYPES.RULE],
 		canDrop: (item) => !('id' in item) || item.id !== rule.id,
@@ -169,13 +156,17 @@ export default function RuleRow({
 		);
 	}
 
-	const {inputType, label, options, type} = audiencesCriteria;
+	const {inputType, label, type} = audiencesCriteria;
 
 	const operators = getOperators(inputType, type);
 
+	const valueOptions = getValueOptions(audiencesCriteria);
+
+	const conditionLabel = getConditionLabel(rule, audiencesCriteria);
+
 	return (
 		<div
-			aria-label={label}
+			aria-label={conditionLabel}
 			className={classNames(
 				'align-items-center audience-builder-rule d-flex justify-content-between p-3',
 				`audience-builder-rule--${iconColor}`,
@@ -197,7 +188,7 @@ export default function RuleRow({
 			onFocus={navigationProps?.onFocus}
 			onKeyDown={navigationProps?.onKeyDown}
 			ref={setRowRef}
-			role="menuitem"
+			role="listitem"
 			tabIndex={navigationProps?.tabIndex ?? 0}
 		>
 			<div className="align-items-center c-gap-3 d-flex">
@@ -210,7 +201,7 @@ export default function RuleRow({
 						if (event.detail === 0) {
 							setMovementSource({
 								icon: audiencesCriteria.icon,
-								name: label,
+								name: conditionLabel,
 								ruleId: rule.id,
 							});
 						}
@@ -239,6 +230,7 @@ export default function RuleRow({
 						onChange({...rule, operator: key as string})
 					}
 					selectedKey={rule.operator}
+					tabIndex={navigationProps?.tabIndex ?? 0}
 				>
 					{(item) => <Option key={item.value}>{item.label}</Option>}
 				</Picker>
@@ -246,7 +238,7 @@ export default function RuleRow({
 				<RuleValueField
 					inputType={inputType}
 					onChange={(value) => onChange({...rule, value})}
-					options={options}
+					options={valueOptions}
 					tabIndex={navigationProps?.tabIndex ?? 0}
 					type={type}
 					value={rule.value}
@@ -305,6 +297,7 @@ function RuleValueField({
 				items={options}
 				onSelectionChange={(key) => onChange(key as string)}
 				selectedKey={value}
+				tabIndex={tabIndex}
 			>
 				{(item) => <Option key={item.value}>{item.label}</Option>}
 			</Picker>
@@ -357,7 +350,7 @@ function ErrorRuleRow({
 			onFocus={navigationProps?.onFocus}
 			onKeyDown={navigationProps?.onKeyDown}
 			ref={rowRef}
-			role="menuitem"
+			role="listitem"
 			tabIndex={navigationProps?.tabIndex ?? 0}
 		>
 			<div className="align-items-center c-gap-3 d-flex">

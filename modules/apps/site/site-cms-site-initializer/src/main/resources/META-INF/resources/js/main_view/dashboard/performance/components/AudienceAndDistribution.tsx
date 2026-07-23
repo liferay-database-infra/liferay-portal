@@ -20,12 +20,10 @@ export function AudienceAndDistribution() {
 			<ClayLayout.Row className="mb-3">
 				<ClayLayout.Col size={12}>
 					<SectionHeader
-						ariaLevel={2}
 						description={Liferay.Language.get(
 							'identify-where-your-audience-is-coming-from-and-what-content-theyre-engaging-with'
 						)}
 						icon="globe-pin"
-						role="heading"
 						title={Liferay.Language.get(
 							'audience-and-distribution'
 						)}
@@ -99,6 +97,11 @@ function Card({
 
 	const metrics = metric?.metrics ?? [];
 
+	// With no data the charts still render, hollow: the pie draws its
+	// neutral track and the map plain land, both without a legend.
+
+	const legend = metrics.length ? 'list' : 'none';
+
 	return (
 		<BaseCard
 			Preferences={
@@ -117,19 +120,17 @@ function Card({
 			title={title}
 			uppercaseTitle={false}
 		>
-			<ChartState
-				empty={!loading && !error && !metrics.length}
-				error={error}
-				loading={loading}
-			>
+			<ChartState error={error} loading={loading}>
 				{groupBy === 'categories' ? (
 					<PieChart
-						className="cms-dashboard__pie-chart w-100"
+						className="w-100"
 						data={metrics.map(({value, valueKey}) => ({
 							label: valueKey,
 							value,
 						}))}
-						legend="table"
+						legend={legend}
+						legendPosition="bottom"
+						legendSwatchBorder={false}
 						title=""
 					/>
 				) : (
@@ -138,7 +139,9 @@ function Card({
 							country: valueKey,
 							value,
 						}))}
-						legend="table"
+						legend={legend}
+						legendPosition="bottom"
+						legendSwatchBorder={false}
 						title=""
 						variant="choropleth"
 					/>

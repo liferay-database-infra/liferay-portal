@@ -193,6 +193,7 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 
 		_testPostRoomUserAccount();
 		_testPostRoomUserAccountSiteMember();
+		_testPostRoomUserAccountWithArchivedRoom();
 		_testPostRoomUserAccountWithMembershipExpirationDate();
 	}
 
@@ -425,6 +426,41 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 			String message = problemException.getMessage();
 
 			Assert.assertTrue(message, message.contains("Forbidden"));
+		}
+	}
+
+	private void _testPostRoomUserAccountWithArchivedRoom() throws Exception {
+		_objectEntry = _objectEntryLocalService.updateObjectEntry(
+			TestPropsValues.getUserId(), _objectEntry.getObjectEntryId(), 0,
+			HashMapBuilder.putAll(
+				_objectEntry.getValues()
+			).put(
+				"roomStatus", WorkflowConstants.STATUS_INACTIVE
+			).build(),
+			ServiceContextTestUtil.getServiceContext());
+
+		try {
+			userAccountResource.postRoomUserAccount(
+				_objectEntry.getObjectEntryId(), randomUserAccount());
+
+			Assert.fail();
+		}
+		catch (Problem.ProblemException problemException) {
+			Problem problem = problemException.getProblem();
+
+			Assert.assertEquals(
+				UnsupportedOperationException.class.getSimpleName(),
+				problem.getType());
+		}
+		finally {
+			_objectEntry = _objectEntryLocalService.updateObjectEntry(
+				TestPropsValues.getUserId(), _objectEntry.getObjectEntryId(), 0,
+				HashMapBuilder.putAll(
+					_objectEntry.getValues()
+				).put(
+					"roomStatus", WorkflowConstants.STATUS_APPROVED
+				).build(),
+				ServiceContextTestUtil.getServiceContext());
 		}
 	}
 

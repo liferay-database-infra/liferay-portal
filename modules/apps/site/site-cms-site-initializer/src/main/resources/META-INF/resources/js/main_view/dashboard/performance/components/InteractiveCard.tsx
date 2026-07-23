@@ -21,6 +21,8 @@ export type MetricColor = 'green' | 'info' | 'orange' | 'purple';
 type Props = {
 	active?: boolean;
 	color: MetricColor;
+	description?: string;
+	hoverContent?: React.ReactNode;
 	icon: string;
 	loading?: boolean;
 	onClick?: () => void;
@@ -35,6 +37,8 @@ type Props = {
 export default function InteractiveCard({
 	active = false,
 	color,
+	description,
+	hoverContent,
 	icon,
 	loading = false,
 	onClick,
@@ -70,23 +74,33 @@ export default function InteractiveCard({
 				</ClaySticker>
 			</div>
 
-			<div className="d-flex flex-column justify-content-center mt-3">
-				{loading ? (
-					<ClayLoadingIndicator
-						displayType="secondary"
-						shape="squares"
-						size="sm"
-					/>
-				) : (
-					trend && (
-						<MetricValue
-							textWeight="bold"
-							trend={trend}
-							value={value}
-							valueClassName="text-lowercase"
-						/>
-					)
-				)}
+			{description ? (
+				<Text color="secondary" size={3}>
+					{description}
+				</Text>
+			) : null}
+
+			<div className="mt-2 position-relative">
+				<div className="cms-dashboard__interactive-card__metric d-flex flex-column justify-content-center">
+					{loading ? (
+						<ClayLoadingIndicator size="sm" />
+					) : (
+						trend && (
+							<MetricValue
+								textWeight="bold"
+								trend={trend}
+								value={value}
+								valueClassName="text-lowercase"
+							/>
+						)
+					)}
+				</div>
+
+				{hoverContent ? (
+					<div className="cms-dashboard__interactive-card__hover-content position-absolute">
+						{hoverContent}
+					</div>
+				) : null}
 			</div>
 		</ClayButton>
 	);

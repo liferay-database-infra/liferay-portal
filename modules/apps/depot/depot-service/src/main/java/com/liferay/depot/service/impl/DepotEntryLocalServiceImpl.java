@@ -10,6 +10,7 @@ import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.exception.DepotEntryGroupException;
 import com.liferay.depot.exception.DepotEntryNameException;
 import com.liferay.depot.exception.DepotEntryStagedException;
+import com.liferay.depot.internal.util.DepotRoleNameUtil;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.model.DepotEntryGroupRel;
 import com.liferay.depot.model.DepotEntryTable;
@@ -144,7 +145,9 @@ public class DepotEntryLocalServiceImpl extends DepotEntryLocalServiceBaseImpl {
 
 		if (!user.isGuestUser()) {
 			Role role = _roleLocalService.getRole(
-				group.getCompanyId(), DepotRolesConstants.ASSET_LIBRARY_OWNER);
+				group.getCompanyId(),
+				DepotRoleNameUtil.getOwnerRoleName(
+					DepotRolesConstants.getSubtype(type)));
 
 			_userGroupRoleLocalService.addUserGroupRoles(
 				user.getUserId(), group.getGroupId(),

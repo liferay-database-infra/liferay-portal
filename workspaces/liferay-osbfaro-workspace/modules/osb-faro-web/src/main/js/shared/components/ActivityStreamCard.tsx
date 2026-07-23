@@ -14,7 +14,7 @@ import {isNil} from 'lodash';
 import {mapListResultsToProps} from 'shared/util/mappers';
 import {sub} from 'shared/util/lang';
 import {Text} from '@clayui/core';
-import {toRounded} from 'shared/util/numbers';
+import {toRounded, toThousands} from 'shared/util/numbers';
 import {TrendClassification} from 'segment/types';
 import {withEmpty} from 'cerebro-shared/hocs/utils';
 import {withError, withLoading, WrapSafeResults} from 'shared/hoc/util';
@@ -100,6 +100,15 @@ const ActivityStreamCard: React.FC<IActivityStreamCardProps> = ({
 		!activityHistory.length ||
 		activityHistory.every(({totalEvents}) => !totalEvents);
 
+	// The mapped total counts events, which stays positive even when a search
+	// or filter leaves no sessions to show. Treat the session list as empty
+	// whenever there are no session items so the timeline renders its empty
+	// state (and hides pagination) instead of a blank list.
+
+	const sessionsTotal = sessionsMappedResults.items?.length
+		? sessionsMappedResults.total
+		: 0;
+
 	return (
 		<>
 			<Card.Body className="pb-0">
@@ -137,7 +146,11 @@ const ActivityStreamCard: React.FC<IActivityStreamCardProps> = ({
 												Liferay.Language.get(
 													'x-activities'
 												),
-												[trendSummary.value]
+												[
+													toThousands(
+														trendSummary.value
+													),
+												]
 											)}
 										</Text>
 									</div>
@@ -179,7 +192,7 @@ const ActivityStreamCard: React.FC<IActivityStreamCardProps> = ({
 														Math.abs(
 															trendSummary.percentage
 														),
-														2
+														1
 													)}%`}
 												</span>,
 											],
@@ -241,6 +254,7 @@ const ActivityStreamCard: React.FC<IActivityStreamCardProps> = ({
 							onPageChange={onPageChange}
 							page={page}
 							timeZoneId={timeZoneId}
+							total={sessionsTotal}
 						/>
 					</Card.Body>
 				</WrapSafeResults>

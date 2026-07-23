@@ -9,6 +9,7 @@ import {getBrowserName} from '../src/main/resources/META-INF/resources/main/dete
 import {getBrowserVersion} from '../src/main/resources/META-INF/resources/main/detection/attributes/browser_version';
 import {getCookies} from '../src/main/resources/META-INF/resources/main/detection/attributes/cookies';
 import {getCustom} from '../src/main/resources/META-INF/resources/main/detection/attributes/custom';
+import {getDeviceType} from '../src/main/resources/META-INF/resources/main/detection/attributes/device_type';
 import {getHostname} from '../src/main/resources/META-INF/resources/main/detection/attributes/hostname';
 import {getLanguage} from '../src/main/resources/META-INF/resources/main/detection/attributes/language';
 import {getLocalDate} from '../src/main/resources/META-INF/resources/main/detection/attributes/local_date';
@@ -16,7 +17,7 @@ import {getLocalHour} from '../src/main/resources/META-INF/resources/main/detect
 import {getPathname} from '../src/main/resources/META-INF/resources/main/detection/attributes/pathname';
 import {getReferrer} from '../src/main/resources/META-INF/resources/main/detection/attributes/referrer';
 import {getRequestParameters} from '../src/main/resources/META-INF/resources/main/detection/attributes/request_parameters';
-import {getSegments} from '../src/main/resources/META-INF/resources/main/detection/attributes/segments';
+import {getSegment} from '../src/main/resources/META-INF/resources/main/detection/attributes/segment';
 import {getTimezone} from '../src/main/resources/META-INF/resources/main/detection/attributes/timezone';
 import {getUrl} from '../src/main/resources/META-INF/resources/main/detection/attributes/url';
 import {getUserAgent} from '../src/main/resources/META-INF/resources/main/detection/attributes/user_agent';
@@ -166,6 +167,27 @@ describe('attributes', () => {
 		});
 	});
 
+	describe('attribute device_type', () => {
+		it('works and returns a string', async () => {
+			const value = getDeviceType(
+				new UAParser(
+					'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) ' +
+						'AppleWebKit/605.1.15 (KHTML, like Gecko) ' +
+						'Version/17.0 Mobile/15E148 Safari/604.1'
+				)
+			);
+
+			expect(typeof value).toBe('string');
+			expect(value).toBe('mobile');
+		});
+
+		it('falls back to desktop when the user agent has no device type', async () => {
+			const value = getDeviceType(new UAParser(navigator.userAgent));
+
+			expect(value).toBe('desktop');
+		});
+	});
+
 	describe('attribute hostname', () => {
 		it('works and returns a string', async () => {
 			const value = getHostname();
@@ -231,9 +253,9 @@ describe('attributes', () => {
 		});
 	});
 
-	describe('attribute segments', () => {
+	describe('attribute segment', () => {
 		it('works and returns a Set<string>', async () => {
-			const value = getSegments(
+			const value = getSegment(
 				new Set(['SEGMENT_BATCH', 'SEGMENT_REAL_TIME'])
 			);
 

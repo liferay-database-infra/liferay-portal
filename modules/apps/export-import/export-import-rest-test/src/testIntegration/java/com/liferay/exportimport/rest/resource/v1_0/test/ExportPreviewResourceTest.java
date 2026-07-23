@@ -10,10 +10,19 @@ import com.liferay.exportimport.constants.ExportImportConstants;
 import com.liferay.exportimport.rest.client.dto.v1_0.Choice;
 import com.liferay.exportimport.rest.client.dto.v1_0.ExportPreview;
 import com.liferay.exportimport.rest.client.dto.v1_0.PreviewPortletDataHandler;
+import com.liferay.exportimport.rest.client.dto.v1_0.PreviewPortletDataHandlerBoolean;
 import com.liferay.exportimport.rest.client.dto.v1_0.PreviewPortletDataHandlerChoice;
 import com.liferay.exportimport.rest.client.dto.v1_0.PreviewPortletDataHandlerControl;
 import com.liferay.exportimport.rest.client.dto.v1_0.PreviewPortletDataHandlerSection;
 import com.liferay.exportimport.rest.client.resource.v1_0.ExportPreviewResource;
+import com.liferay.layout.page.template.admin.constants.LayoutPageTemplateAdminPortletKeys;
+import com.liferay.layout.page.template.constants.LayoutPageTemplateCollectionTypeConstants;
+import com.liferay.layout.page.template.constants.LayoutPageTemplateConstants;
+import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
+import com.liferay.layout.page.template.model.LayoutPageTemplateCollection;
+import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
+import com.liferay.layout.page.template.service.LayoutPageTemplateCollectionLocalService;
+import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
 import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectDefinitionSettingConstants;
@@ -27,6 +36,8 @@ import com.liferay.object.service.ObjectDefinitionSettingLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.petra.function.UnsafeBiFunction;
+import com.liferay.petra.function.UnsafeSupplier;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -48,6 +59,7 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Time;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -188,10 +200,13 @@ public class ExportPreviewResourceTest
 			_companyObjectDefinition,
 			(startDate, endDate) -> exportPreviewResource.getExportPreview(
 				endDate, startDate));
+		_testGetExportPreviewWithDeletions(
+			GroupConstants.DEFAULT_PARENT_GROUP_ID,
+			ObjectDefinitionConstants.SCOPE_COMPANY,
+			() -> exportPreviewResource.getExportPreview(null, null));
 		_testGetExportPreviewWithDifferentScope(
 			exportPreviewResource.getExportPreview(null, null),
 			_depotObjectDefinition, _siteObjectDefinition);
-		_testGetExportPreviewWithDeletions();
 	}
 
 	@FeatureFlag("LPD-38869")
@@ -207,6 +222,10 @@ public class ExportPreviewResourceTest
 			_siteObjectDefinition,
 			(startDate, endDate) -> exportPreviewResource.getSiteExportPreview(
 				testGroup.getExternalReferenceCode(), endDate, startDate));
+		_testGetExportPreviewWithDeletions(
+			testGroup.getGroupId(), ObjectDefinitionConstants.SCOPE_SITE,
+			() -> exportPreviewResource.getSiteExportPreview(
+				testGroup.getExternalReferenceCode(), null, null));
 		_testGetExportPreviewWithDifferentScope(
 			exportPreviewResource.getSiteExportPreview(
 				testGroup.getExternalReferenceCode(), null, null),
@@ -214,6 +233,7 @@ public class ExportPreviewResourceTest
 		_testGetExportPreviewWithLayoutSet(
 			(startDate, endDate) -> exportPreviewResource.getSiteExportPreview(
 				testGroup.getExternalReferenceCode(), endDate, startDate));
+		_testGetSiteExportPreviewWithLayoutPageTemplateEntries();
 	}
 
 	@Override
@@ -241,6 +261,33 @@ public class ExportPreviewResourceTest
 				testGroup.getExternalReferenceCode(), portletId, null, plid,
 				null),
 			portletId);
+	}
+
+	private LayoutPageTemplateCollection _addBasicLayoutPageTemplateCollection()
+		throws Exception {
+
+		return _layoutPageTemplateCollectionLocalService.
+			addLayoutPageTemplateCollection(
+				null, TestPropsValues.getUserId(), testGroup.getGroupId(),
+				LayoutPageTemplateConstants.
+					PARENT_LAYOUT_PAGE_TEMPLATE_COLLECTION_ID_DEFAULT,
+				null, RandomTestUtil.randomString(), null,
+				LayoutPageTemplateCollectionTypeConstants.BASIC,
+				ServiceContextTestUtil.getServiceContext(
+					testGroup.getGroupId(), TestPropsValues.getUserId()));
+	}
+
+	private LayoutPageTemplateEntry _addLayoutPageTemplateEntry(
+			long layoutPageTemplateCollectionId, int type)
+		throws Exception {
+
+		return _layoutPageTemplateEntryLocalService.addLayoutPageTemplateEntry(
+			RandomTestUtil.randomString(), TestPropsValues.getUserId(),
+			testGroup.getGroupId(), layoutPageTemplateCollectionId, null, 0,
+			null, RandomTestUtil.randomString(), type, 0, false, 0, 0, 0,
+			WorkflowConstants.STATUS_APPROVED,
+			ServiceContextTestUtil.getServiceContext(
+				testGroup.getGroupId(), TestPropsValues.getUserId()));
 	}
 
 	private long _addLayoutWithPortlet(Group group, String portletId)
@@ -332,6 +379,23 @@ public class ExportPreviewResourceTest
 				if (name.equals(previewPortletDataHandler.getName())) {
 					return previewPortletDataHandler;
 				}
+			}
+		}
+
+		return null;
+	}
+
+	private PreviewPortletDataHandlerBoolean
+		_getPreviewPortletDataHandlerBoolean(
+			PreviewPortletDataHandler previewPortletDataHandler, String name) {
+
+		for (PreviewPortletDataHandlerControl previewPortletDataHandlerControl :
+				previewPortletDataHandler.
+					getPreviewPortletDataHandlerControls()) {
+
+			if (name.equals(previewPortletDataHandlerControl.getName())) {
+				return (PreviewPortletDataHandlerBoolean)
+					previewPortletDataHandlerControl;
 			}
 		}
 
@@ -435,16 +499,18 @@ public class ExportPreviewResourceTest
 	}
 
 	@TestInfo({"LPD-37317", "LPD-90359"})
-	private void _testGetExportPreviewWithDeletions() throws Exception {
+	private void _testGetExportPreviewWithDeletions(
+			long groupId, String scope,
+			UnsafeSupplier<ExportPreview, Exception> unsafeSupplier)
+		throws Exception {
+
 		ObjectDefinition objectDefinition = _publishObjectDefinitionWithEntries(
-			GroupConstants.DEFAULT_PARENT_GROUP_ID,
-			ObjectDefinitionConstants.SCOPE_COMPANY);
+			groupId, scope);
 
 		List<ObjectEntry> objectEntries =
 			_objectEntryLocalService.getObjectEntries(
-				GroupConstants.DEFAULT_PARENT_GROUP_ID,
-				objectDefinition.getObjectDefinitionId(), QueryUtil.ALL_POS,
-				QueryUtil.ALL_POS);
+				groupId, objectDefinition.getObjectDefinitionId(),
+				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 		Assert.assertEquals(objectEntries.toString(), 2, objectEntries.size());
 
@@ -452,7 +518,7 @@ public class ExportPreviewResourceTest
 
 		PreviewPortletDataHandler previewPortletDataHandler =
 			_getPreviewPortletDataHandler(
-				exportPreviewResource.getExportPreview(null, null),
+				unsafeSupplier.get(),
 				"PORTLET_DATA_" + objectDefinition.getPortletId());
 
 		Assert.assertEquals(
@@ -542,12 +608,107 @@ public class ExportPreviewResourceTest
 					getPreviewPortletDataHandlerControls()));
 	}
 
+	@TestInfo({"LPD-67433", "LPD-90359"})
+	private void _testGetSiteExportPreviewWithLayoutPageTemplateEntries()
+		throws Exception {
+
+		LayoutPageTemplateCollection basicLayoutPageTemplateCollection =
+			_addBasicLayoutPageTemplateCollection();
+
+		long basicLayoutPageTemplateCollectionId =
+			basicLayoutPageTemplateCollection.
+				getLayoutPageTemplateCollectionId();
+
+		LayoutPageTemplateEntry basicLayoutPageTemplateEntry =
+			_addLayoutPageTemplateEntry(
+				basicLayoutPageTemplateCollectionId,
+				LayoutPageTemplateEntryTypeConstants.BASIC);
+
+		LayoutPageTemplateEntry masterLayoutPageTemplateEntry =
+			_addLayoutPageTemplateEntry(
+				LayoutPageTemplateConstants.
+					PARENT_LAYOUT_PAGE_TEMPLATE_COLLECTION_ID_DEFAULT,
+				LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT);
+
+		_layoutPageTemplateEntryLocalService.deleteLayoutPageTemplateEntry(
+			_addLayoutPageTemplateEntry(
+				basicLayoutPageTemplateCollectionId,
+				LayoutPageTemplateEntryTypeConstants.BASIC));
+		_layoutPageTemplateEntryLocalService.deleteLayoutPageTemplateEntry(
+			_addLayoutPageTemplateEntry(
+				LayoutPageTemplateConstants.
+					PARENT_LAYOUT_PAGE_TEMPLATE_COLLECTION_ID_DEFAULT,
+				LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT));
+
+		PreviewPortletDataHandler previewPortletDataHandler =
+			_getPreviewPortletDataHandler(
+				exportPreviewResource.getSiteExportPreview(
+					testGroup.getExternalReferenceCode(), null, null),
+				"PORTLET_DATA_" +
+					LayoutPageTemplateAdminPortletKeys.LAYOUT_PAGE_TEMPLATES);
+
+		Assert.assertEquals(
+			Long.valueOf(3), previewPortletDataHandler.getAdditionCount());
+		Assert.assertEquals(
+			Long.valueOf(2), previewPortletDataHandler.getDeletionCount());
+
+		PreviewPortletDataHandlerBoolean basicPreviewPortletDataHandlerBoolean =
+			_getPreviewPortletDataHandlerBoolean(
+				previewPortletDataHandler,
+				StringBundler.concat(
+					"_",
+					LayoutPageTemplateAdminPortletKeys.LAYOUT_PAGE_TEMPLATES,
+					"_", LayoutPageTemplateEntry.class.getName(), "-",
+					LayoutPageTemplateEntryTypeConstants.BASIC));
+
+		Assert.assertEquals(
+			Long.valueOf(1),
+			basicPreviewPortletDataHandlerBoolean.getAdditionCount());
+		Assert.assertEquals(
+			Long.valueOf(1),
+			basicPreviewPortletDataHandlerBoolean.getDeletionCount());
+
+		PreviewPortletDataHandlerBoolean
+			masterLayoutPreviewPortletDataHandlerBoolean =
+				_getPreviewPortletDataHandlerBoolean(
+					previewPortletDataHandler,
+					StringBundler.concat(
+						"_",
+						LayoutPageTemplateAdminPortletKeys.
+							LAYOUT_PAGE_TEMPLATES,
+						"_", LayoutPageTemplateEntry.class.getName(), "-",
+						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT));
+
+		Assert.assertEquals(
+			Long.valueOf(1),
+			masterLayoutPreviewPortletDataHandlerBoolean.getAdditionCount());
+		Assert.assertEquals(
+			Long.valueOf(1),
+			masterLayoutPreviewPortletDataHandlerBoolean.getDeletionCount());
+
+		_layoutPageTemplateEntryLocalService.deleteLayoutPageTemplateEntry(
+			basicLayoutPageTemplateEntry);
+		_layoutPageTemplateEntryLocalService.deleteLayoutPageTemplateEntry(
+			masterLayoutPageTemplateEntry);
+		_layoutPageTemplateCollectionLocalService.
+			deleteLayoutPageTemplateCollection(
+				basicLayoutPageTemplateCollection);
+	}
+
 	private ObjectDefinition _companyObjectDefinition;
 	private ObjectDefinition _depotObjectDefinition;
 	private ExportPreviewResource _exportPreviewResource;
 
 	@Inject
 	private LayoutLocalService _layoutLocalService;
+
+	@Inject
+	private LayoutPageTemplateCollectionLocalService
+		_layoutPageTemplateCollectionLocalService;
+
+	@Inject
+	private LayoutPageTemplateEntryLocalService
+		_layoutPageTemplateEntryLocalService;
 
 	@Inject
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;

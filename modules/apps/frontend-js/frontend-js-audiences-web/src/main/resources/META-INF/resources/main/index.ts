@@ -48,6 +48,7 @@ export type Attribute =
 	| 'browser_version'
 	| 'cookies'
 	| `custom:${string}`
+	| 'device_type'
 	| 'hostname'
 	| 'language'
 	| 'local_date'
@@ -55,7 +56,7 @@ export type Attribute =
 	| 'pathname'
 	| 'referrer'
 	| `request_parameters`
-	| 'segments'
+	| 'segment'
 	| 'timezone'
 	| 'url'
 	| 'user_agent';

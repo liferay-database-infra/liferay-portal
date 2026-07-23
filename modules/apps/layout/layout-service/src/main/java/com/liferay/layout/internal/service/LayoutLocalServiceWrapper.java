@@ -871,7 +871,7 @@ public class LayoutLocalServiceWrapper
 
 			if (fragmentEntryLink.isDeleted()) {
 				FragmentEntryLink targetLayoutFragmentEntryLink =
-					_fragmentEntryLinkLocalService.getFragmentEntryLink(
+					_fragmentEntryLinkLocalService.fetchFragmentEntryLink(
 						targetLayout.getGroupId(),
 						fragmentEntryLink.getExternalReferenceCode(),
 						targetLayout.getPlid());
@@ -1227,7 +1227,7 @@ public class LayoutLocalServiceWrapper
 					fragmentStyledLayoutStructureItem.getFragmentEntryLinkId());
 
 			FragmentEntryLink targetLayoutFragmentEntryLink =
-				_fragmentEntryLinkLocalService.getFragmentEntryLink(
+				_fragmentEntryLinkLocalService.fetchFragmentEntryLink(
 					targetLayout.getGroupId(),
 					originalFragmentEntryLink.getExternalReferenceCode(),
 					targetLayout.getPlid());
@@ -1557,7 +1557,7 @@ public class LayoutLocalServiceWrapper
 			_copyLayoutClientExtensions(
 				_sourceLayout, _targetLayout, _user.getUserId());
 
-			Image image = _imageLocalService.getImage(
+			Image image = _imageLocalService.fetchImage(
 				_sourceLayout.getIconImageId());
 
 			byte[] imageBytes = null;

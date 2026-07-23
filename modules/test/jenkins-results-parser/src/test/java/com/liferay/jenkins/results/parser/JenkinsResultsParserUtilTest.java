@@ -16,7 +16,6 @@ import java.util.Properties;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -28,11 +27,6 @@ import org.mockito.Mockito;
  */
 public class JenkinsResultsParserUtilTest
 	extends com.liferay.jenkins.results.parser.Test {
-
-	@After
-	public void tearDown() {
-		Environment.setInstance(new Environment());
-	}
 
 	@Test(timeout = 30000)
 	public void testExecuteJenkinsScriptReadTimeout() throws Exception {
@@ -512,6 +506,14 @@ public class JenkinsResultsParserUtilTest
 	}
 
 	@Test
+	public void testIsCINode() {
+		_testIsCINode("https://test-1-1.liferay.com/", "test-network", true);
+		_testIsCINode("https://test-1-1.liferay.com/", null, true);
+		_testIsCINode(null, "test-network", true);
+		_testIsCINode(null, null, false);
+	}
+
+	@Test
 	public void testIsJSONArrayEqual() {
 		JSONArray expectedJSONArray = new JSONArray();
 
@@ -738,6 +740,33 @@ public class JenkinsResultsParserUtilTest
 			expectedPropertyValue,
 			JenkinsResultsParserUtil.getProperty(
 				properties, actualPropertyName));
+	}
+
+	private void _testIsCINode(
+		String jenkinsURL, String masterNetworkName, boolean expected) {
+
+		Environment environment = mockEnvironment();
+
+		Mockito.when(
+			environment.doGet("JENKINS_URL")
+		).thenReturn(
+			jenkinsURL
+		);
+
+		Mockito.when(
+			environment.doGet("MASTER_NETWORK_NAME")
+		).thenReturn(
+			masterNetworkName
+		);
+
+		ReflectionTestUtil.setFieldValue(
+			JenkinsResultsParserUtil.class, "_ciNode", null);
+
+		Assert.assertEquals(
+			JenkinsResultsParserUtil.combine(
+				"Unexpected isCINode() value for JENKINS_URL=", jenkinsURL,
+				" and MASTER_NETWORK_NAME=", masterNetworkName),
+			expected, JenkinsResultsParserUtil.isCINode());
 	}
 
 }

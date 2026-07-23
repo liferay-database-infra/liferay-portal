@@ -125,11 +125,11 @@ public class EmailReportHelper {
 				"[$LOGO_ICON_URL$]", "[$MONTH$]", "[$PREVIOUS_BOUNCE_RATE$]",
 				"[$PREVIOUS_SESSION_DURATION$]",
 				"[$PREVIOUS_SESSIONS_PER_VISITOR$]",
-				"[$PREVIOUS_UNIQUE_VISITORS$]", "[$PROPERTY_NAME$]",
-				"[$SESSION_DURATION$]", "[$SESSION_DURATION_TREND$]",
-				"[$SESSIONS_PER_VISITOR$]", "[$SESSIONS_PER_VISITOR_TREND$]",
-				"[$UNIQUE_VISITORS$]", "[$UNIQUE_VISITORS_TREND$]",
-				"[$WORKSPACE_NAME$]", "[$YEAR$]"
+				"[$PREVIOUS_UNIQUE_VISITORS$]", "[$PRODUCT_NAME$]",
+				"[$PROPERTY_NAME$]", "[$SESSION_DURATION$]",
+				"[$SESSION_DURATION_TREND$]", "[$SESSIONS_PER_VISITOR$]",
+				"[$SESSIONS_PER_VISITOR_TREND$]", "[$UNIQUE_VISITORS$]",
+				"[$UNIQUE_VISITORS_TREND$]", "[$WORKSPACE_NAME$]", "[$YEAR$]"
 			},
 			new String[] {
 				_formatPercentage(
@@ -137,8 +137,7 @@ public class EmailReportHelper {
 				_getMetricTrendIconURL(
 					"bounceRateMetric", siteMetricsJSONObject),
 				faroProject.getAccountName(), _getTemporal(frequency),
-				EmailUtil.getWorkspaceURL(group),
-				EmailUtil.getEmailBannerURL(frequency),
+				EmailUtil.getWorkspaceURL(group), EmailUtil.getEmailHeaderURL(),
 				EmailUtil.getLiferayLogoIconURL(),
 				calendar.getDisplayName(
 					Calendar.MONTH, Calendar.LONG, LocaleUtil.ENGLISH),
@@ -150,7 +149,7 @@ public class EmailReportHelper {
 					"sessionsPerVisitorMetric", siteMetricsJSONObject),
 				_getPreviousMetricValue(
 					"visitorsMetric", siteMetricsJSONObject),
-				faroChannel.getName(),
+				EmailUtil.getProductName(faroProject), faroChannel.getName(),
 				_formatDuration(
 					_getMetricValue(
 						"sessionDurationMetric", siteMetricsJSONObject)),
@@ -170,10 +169,12 @@ public class EmailReportHelper {
 
 		_mailService.sendEmail(
 			new MailMessage(
-				new InternetAddress("ac@liferay.com", "Analytics Cloud"),
+				new InternetAddress(
+					EmailUtil.getSenderEmailAddress(faroProject),
+					EmailUtil.getSenderName(faroProject)),
 				new InternetAddress(user.getEmailAddress(), user.getFullName()),
-				"Analytics Cloud: Your " + StringUtils.capitalize(frequency) +
-					" Report",
+				EmailUtil.getSenderName(faroProject) + ": Your " +
+					StringUtils.capitalize(frequency) + " Report",
 				body, true));
 	}
 

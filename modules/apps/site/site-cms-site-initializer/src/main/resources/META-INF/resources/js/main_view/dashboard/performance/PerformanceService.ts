@@ -8,6 +8,7 @@ import {RangeSelectors} from '@liferay/analytics-reports-js-components-web';
 import ApiHelper from '../../../common/services/ApiHelper';
 import {
 	AssetConsumption,
+	HistogramMetric,
 	MetricType,
 	OverviewMetrics,
 	PerformanceMetric,
@@ -50,6 +51,24 @@ async function getOverviewMetrics({
 		`${BASE_URL}/performance-overview-metric${buildQuery({
 			depotEntryIds,
 			rangeKey,
+		})}`
+	);
+}
+
+async function getHistogramMetric({
+	depotEntryIds,
+	rangeKey,
+	selectedMetric,
+}: {
+	depotEntryIds?: string[];
+	rangeKey: RangeSelectors;
+	selectedMetric: MetricType;
+}) {
+	return ApiHelper.get<HistogramMetric>(
+		`${BASE_URL}/performance-histogram-metric${buildQuery({
+			depotEntryIds,
+			rangeKey,
+			selectedMetric,
 		})}`
 	);
 }
@@ -112,27 +131,27 @@ async function getAssetConsumption({
 }
 
 async function getTopAssets({
-	assetFilterString,
 	depotEntryIds,
 	page,
 	pageSize,
 	rangeKey,
+	search,
 	sort,
 }: {
-	assetFilterString?: string;
 	depotEntryIds?: string[];
 	page?: number;
 	pageSize?: number;
 	rangeKey: RangeSelectors;
+	search?: string;
 	sort?: string;
 }) {
 	return ApiHelper.get<TopAssets>(
 		`${BASE_URL}/performance-top-asset${buildQuery({
-			assetFilterString,
 			depotEntryIds,
 			page,
 			pageSize,
 			rangeKey,
+			search,
 			sort,
 		})}`
 	);
@@ -158,26 +177,27 @@ function getMetricExportURL({
 }
 
 function getTopAssetsExportURL({
-	assetFilterString,
 	depotEntryIds,
 	rangeKey,
+	search,
 	sort,
 }: {
-	assetFilterString?: string;
 	depotEntryIds?: string[];
 	rangeKey: RangeSelectors;
+	search?: string;
 	sort?: string;
 }) {
 	return `${BASE_URL}/performance-top-asset/export${buildQuery({
-		assetFilterString,
 		depotEntryIds,
 		rangeKey,
+		search,
 		sort,
 	})}`;
 }
 
 export default {
 	getAssetConsumption,
+	getHistogramMetric,
 	getMetric,
 	getMetricExportURL,
 	getOverviewMetrics,

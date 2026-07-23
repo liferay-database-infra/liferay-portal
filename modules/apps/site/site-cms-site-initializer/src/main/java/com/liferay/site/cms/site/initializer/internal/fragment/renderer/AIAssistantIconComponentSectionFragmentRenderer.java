@@ -11,12 +11,14 @@ import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.site.cms.site.initializer.internal.util.InfoItemUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
+import java.util.Collections;
 import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
@@ -75,6 +77,10 @@ public class AIAssistantIconComponentSectionFragmentRenderer
 		HttpServletRequest httpServletRequest) {
 
 		return HashMapBuilder.<String, Object>put(
+			"context",
+			Collections.singletonMap(
+				"groupId", InfoItemUtil.getGroupId(httpServletRequest))
+		).put(
 			"hideTriggerLabel", true
 		).put(
 			"instructionDefinitionScope", "cms"
