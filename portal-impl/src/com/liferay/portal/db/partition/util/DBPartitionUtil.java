@@ -207,6 +207,12 @@ public class DBPartitionUtil {
 
 			AutoCloseable autoCloseable = _disableAutoCommit(connection)) {
 
+			if (!_dbPartitionDB.existsPartition(
+					connection, getPartitionName(companyId))) {
+
+				return false;
+			}
+
 			_exportDBPartition(connection, companyId);
 		}
 		catch (PortalException portalException) {
