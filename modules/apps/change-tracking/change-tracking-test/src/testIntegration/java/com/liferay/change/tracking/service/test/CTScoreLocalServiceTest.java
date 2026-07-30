@@ -8,8 +8,10 @@ package com.liferay.change.tracking.service.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.blogs.service.BlogsEntryLocalService;
 import com.liferay.change.tracking.model.CTCollection;
+import com.liferay.change.tracking.model.CTScore;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
 import com.liferay.change.tracking.service.CTScoreLocalService;
+import com.liferay.change.tracking.service.persistence.CTScorePersistence;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
 import com.liferay.document.library.test.util.DLTestUtil;
@@ -20,7 +22,10 @@ import com.liferay.journal.constants.JournalFolderConstants;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
+import com.liferay.portal.kernel.dao.db.DB;
+import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -147,6 +152,39 @@ public class CTScoreLocalServiceTest {
 	}
 
 	@Test
+	public void testDeleteCTCollectionWithOutdatedCTScoreVersion()
+		throws Throwable {
+
+		long ctCollectionId = _ctCollection1.getCtCollectionId();
+
+		TransactionConfig transactionConfig = TransactionConfig.Factory.create(
+			Propagation.REQUIRED, new Class<?>[] {Exception.class});
+
+		TransactionInvokerUtil.invoke(
+			transactionConfig,
+			() -> {
+				CTScore ctScore = _ctScorePersistence.fetchByCtCollectionId(
+					ctCollectionId, false);
+
+				DB db = DBManagerUtil.getDB();
+
+				db.runSQL(
+					StringBundler.concat(
+						"update CTScore set mvccVersion = mvccVersion + 1 ",
+						"where ctScoreId = ", ctScore.getCtScoreId()));
+
+				_ctCollectionLocalService.deleteCTCollection(_ctCollection1);
+
+				return null;
+			});
+
+		_ctCollection1 = null;
+
+		Assert.assertNull(
+			_ctScoreLocalService.fetchCTScoreByCTCollectionId(ctCollectionId));
+	}
+
+	@Test
 	public void testUpdateCTScore() throws Throwable {
 		_ctCollection1 = _ctCollectionLocalService.fetchCTCollection(
 			_ctCollection1.getCtCollectionId());
@@ -206,6 +244,9 @@ public class CTScoreLocalServiceTest {
 
 	@Inject
 	private CTScoreLocalService _ctScoreLocalService;
+
+	@Inject
+	private CTScorePersistence _ctScorePersistence;
 
 	@Inject
 	private DDMStructureLocalService _ddmStructureLocalService;
