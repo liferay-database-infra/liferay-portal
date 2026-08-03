@@ -4,6 +4,7 @@
 		"@clayui/button": "^3.165.0",
 		"@clayui/form": "^3.165.0",
 		"@clayui/layout": "^3.165.0",
+		"@clayui/loading-indicator": "^3.165.0",
 		"formik": "2.1.4",
 		"frontend-js-components-web": "*",
 		"frontend-js-web": "*",
@@ -14,7 +15,8 @@
 	"scripts": {
 		"build": "node-scripts build",
 		"checkFormat": "node-scripts format --check",
-		"format": "node-scripts format"
+		"format": "node-scripts format",
+		"test": "node-scripts test"
 	},
 	"version": "1.0.0"
 }

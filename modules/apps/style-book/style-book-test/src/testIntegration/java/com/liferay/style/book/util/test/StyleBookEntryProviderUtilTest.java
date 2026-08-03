@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.FeatureFlagTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
@@ -139,12 +140,13 @@ public class StyleBookEntryProviderUtilTest {
 			styleBookEntries.contains(parentStyleBookEntry));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-57283")}
-	)
+	@FeatureFlags(featureFlags = @FeatureFlag("LPD-57283"))
 	@Test
 	@TestInfo("LPD-88081")
 	public void testGetStyleBookEntry() throws Exception {
+		FeatureFlagTestUtil.invokeFeatureFlagListeners(
+			TestPropsValues.getCompanyId(), true, "LPD-57283");
+
 		StyleBookEntry styleBookEntry = _addStyleBookEntry(_group.getGroupId());
 
 		_testGetStyleBookEntry(
@@ -233,11 +235,7 @@ public class StyleBookEntryProviderUtilTest {
 			StyleBookEntry styleBookEntry)
 		throws Exception {
 
-		try (PropsTemporarySwapper propsTemporarySwapper1 =
-				new PropsTemporarySwapper(
-					"feature.flag.LPD-17564",
-					String.valueOf(connectedDepotEntriesEnabled));
-			PropsTemporarySwapper propsTemporarySwapper2 =
+		try (PropsTemporarySwapper propsTemporarySwapper =
 				new PropsTemporarySwapper(
 					"feature.flag.LPD-57283",
 					String.valueOf(connectedDepotEntriesEnabled))) {

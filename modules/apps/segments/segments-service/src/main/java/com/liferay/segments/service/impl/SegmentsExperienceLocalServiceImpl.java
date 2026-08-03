@@ -5,14 +5,18 @@
 
 package com.liferay.segments.service.impl;
 
+import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
+import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.LockedLayoutException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.kernel.security.auth.GuestOrUserUtil;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ResourceLocalService;
@@ -27,6 +31,8 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
+import com.liferay.segments.exception.DefaultSegmentsExperienceException;
+import com.liferay.segments.exception.DuplicateSegmentsExperienceKeyException;
 import com.liferay.segments.exception.LockedSegmentsExperimentException;
 import com.liferay.segments.exception.RequiredSegmentsExperienceException;
 import com.liferay.segments.exception.SegmentsExperienceNameException;
@@ -123,8 +129,12 @@ public class SegmentsExperienceLocalServiceImpl
 
 		User user = _userLocalService.getUser(userId);
 
+		_validateDefaultSegmentsExperience(
+			segmentsEntryERC, segmentsExperienceKey);
+		_validateLayout(plid, segmentsExperienceKey);
 		_validateName(nameMap);
 		_validatePriority(groupId, plid, priority);
+		_validateSegmentsExperienceKey(groupId, plid, segmentsExperienceKey);
 
 		long segmentsExperienceId = counterLocalService.increment();
 
@@ -517,6 +527,9 @@ public class SegmentsExperienceLocalServiceImpl
 			segmentsExperiencePersistence.findByPrimaryKey(
 				segmentsExperienceId);
 
+		_validateDefaultSegmentsExperience(
+			segmentsEntryERC, segmentsExperience.getSegmentsExperienceKey());
+
 		if (segmentsExperience.hasSegmentsExperiment()) {
 			throw new LockedSegmentsExperimentException(
 				"Segments experience " + segmentsExperienceId +
@@ -751,13 +764,70 @@ public class SegmentsExperienceLocalServiceImpl
 		segmentsExperiencePersistence.flush();
 	}
 
+	private void _validateDefaultSegmentsExperience(
+			String segmentsEntryERC, String segmentsExperienceKey)
+		throws PortalException {
+
+		if (SegmentsExperienceConstants.KEY_DEFAULT.equals(
+				segmentsExperienceKey) &&
+			Validator.isNotNull(segmentsEntryERC)) {
+
+			throw new DefaultSegmentsExperienceException();
+		}
+	}
+
+	private void _validateLayout(long plid, String segmentsExperienceKey) {
+		if (SegmentsExperienceConstants.KEY_DEFAULT.equals(
+				segmentsExperienceKey)) {
+
+			return;
+		}
+
+		Layout layout = _layoutLocalService.fetchLayout(plid);
+
+		if (layout == null) {
+			return;
+		}
+
+		if (!LayoutConstants.TYPE_CONTENT.equals(layout.getType())) {
+			throw new IllegalArgumentException(
+				"Segments experiences cannot be added to layout " + plid +
+					" because it is not a content page");
+		}
+
+		long layoutPageTemplateEntryPlid = layout.getPlid();
+
+		if (layout.getClassPK() > 0) {
+			layoutPageTemplateEntryPlid = layout.getClassPK();
+		}
+
+		LayoutPageTemplateEntryLocalService
+			layoutPageTemplateEntryLocalService =
+				_layoutPageTemplateEntryLocalServiceSnapshot.get();
+
+		if (layoutPageTemplateEntryLocalService == null) {
+			return;
+		}
+
+		LayoutPageTemplateEntry layoutPageTemplateEntry =
+			layoutPageTemplateEntryLocalService.
+				fetchLayoutPageTemplateEntryByPlid(layoutPageTemplateEntryPlid);
+
+		if (layoutPageTemplateEntry != null) {
+			throw new IllegalArgumentException(
+				"Segments experiences cannot be added to layout " + plid +
+					" because it belongs to a page template");
+		}
+	}
+
 	private void _validateName(Map<Locale, String> nameMap)
 		throws PortalException {
 
 		Locale locale = LocaleUtil.getSiteDefault();
 
 		if (nameMap.isEmpty() || Validator.isNull(nameMap.get(locale))) {
-			throw new SegmentsExperienceNameException();
+			throw new SegmentsExperienceNameException(
+				"A name in the site's default language is required");
 		}
 	}
 
@@ -773,6 +843,25 @@ public class SegmentsExperienceLocalServiceImpl
 					" already exists");
 		}
 	}
+
+	private void _validateSegmentsExperienceKey(
+			long groupId, long plid, String segmentsExperienceKey)
+		throws PortalException {
+
+		SegmentsExperience segmentsExperience =
+			segmentsExperiencePersistence.fetchByG_SEK_P(
+				groupId, segmentsExperienceKey, plid);
+
+		if (segmentsExperience != null) {
+			throw new DuplicateSegmentsExperienceKeyException(
+				segmentsExperienceKey);
+		}
+	}
+
+	private static final Snapshot<LayoutPageTemplateEntryLocalService>
+		_layoutPageTemplateEntryLocalServiceSnapshot = new Snapshot<>(
+			SegmentsExperienceLocalServiceImpl.class,
+			LayoutPageTemplateEntryLocalService.class);
 
 	@Reference
 	private Language _language;

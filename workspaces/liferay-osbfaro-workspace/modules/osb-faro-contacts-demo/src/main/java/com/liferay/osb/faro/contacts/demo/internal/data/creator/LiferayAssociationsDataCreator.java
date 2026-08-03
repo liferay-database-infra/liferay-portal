@@ -49,6 +49,8 @@ public class LiferayAssociationsDataCreator extends DataCreator {
 				"Content-Type", ContentTypes.APPLICATION_JSON
 			).put(
 				"OSB-Asah-Data-Source-ID", dataSourceId
+			).put(
+				"OSB-Asah-Project-ID", faroProject.getProjectId()
 			).build());
 
 		options.setLocation(
@@ -89,10 +91,10 @@ public class LiferayAssociationsDataCreator extends DataCreator {
 				"classPK", fields.get(dataCreator.getClassPKFieldName()));
 		}
 
-		Map<String, Object> liferayUser = (Map<String, Object>)params[0];
+		Map<String, Object> liferayUserMap = (Map<String, Object>)params[0];
 
-		objectMap.put("emailAddress", liferayUser.get("emailAddress"));
-		objectMap.put("userId", liferayUser.get("userId"));
+		objectMap.put("emailAddress", liferayUserMap.get("emailAddress"));
+		objectMap.put("userId", liferayUserMap.get("userId"));
 
 		return HashMapBuilder.<String, Object>put(
 			"action", "addAssociation"

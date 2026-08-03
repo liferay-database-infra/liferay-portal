@@ -33,6 +33,7 @@ import com.liferay.osb.faro.engine.client.model.Results;
 import com.liferay.osb.faro.engine.client.model.credentials.OAuth1Credentials;
 import com.liferay.osb.faro.engine.client.model.credentials.OAuth2Credentials;
 import com.liferay.osb.faro.engine.client.model.credentials.TokenCredentials;
+import com.liferay.osb.faro.model.FaroChannel;
 import com.liferay.osb.faro.model.FaroProject;
 import com.liferay.osb.faro.provisioning.client.ProvisioningClient;
 import com.liferay.osb.faro.provisioning.client.constants.ProductConstants;
@@ -59,6 +60,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferencePolicy;
@@ -107,6 +109,13 @@ public abstract class DemoCreatorService {
 			portal.getDefaultCompanyId(), "test@liferay.com");
 
 		for (Channel channel : results.getItems()) {
+			FaroChannel faroChannel = faroChannelLocalService.fetchFaroChannel(
+				channel.getId(), faroProject.getGroupId());
+
+			if (faroChannel != null) {
+				continue;
+			}
+
 			faroChannelLocalService.addFaroChannel(
 				user.getUserId(), channel.getName(), channel.getId(),
 				faroProject.getGroupId());
@@ -122,8 +131,15 @@ public abstract class DemoCreatorService {
 		if (FaroPropsValues.OSB_FARO_SUBSCRIPTION_PUSH_ENABLED) {
 			OSBOfferingEntry osbOfferingEntry = new OSBOfferingEntry();
 
-			osbOfferingEntry.setProductEntryId(
-				ProductConstants.ENTERPRISE_PRODUCT_ENTRY_ID);
+			String productEntryId =
+				ProductConstants.ENTERPRISE_PRODUCT_ENTRY_ID;
+
+			if (FaroPropsValues.FARO_DEMO_DATA_PLATFORM_ENABLED) {
+				productEntryId =
+					ProductConstants.DATA_PLATFORM_ENTERPRISE_PRODUCT_ENTRY_ID;
+			}
+
+			osbOfferingEntry.setProductEntryId(productEntryId);
 			osbOfferingEntry.setQuantity(1);
 			osbOfferingEntry.setStartDate(new Date());
 			osbOfferingEntry.setStatus(
@@ -142,6 +158,10 @@ public abstract class DemoCreatorService {
 
 		FaroSubscriptionDisplay faroSubscriptionDisplay =
 			new FaroSubscriptionDisplay(osbAccountEntry);
+
+		faroSubscriptionDisplay.setBatchSegmentsLimit(100);
+		faroSubscriptionDisplay.setEventAnalysisLimit(100);
+		faroSubscriptionDisplay.setRealTimeSegmentsLimit(100);
 
 		FaroProject faroProject = faroProjectLocalService.addFaroProject(
 			user.getUserId(), FaroPropsValues.FARO_PROJECT_ID,
@@ -227,10 +247,24 @@ public abstract class DemoCreatorService {
 	}
 
 	protected boolean hasExistingData() {
-		Results<Individual> individuals = contactsEngineClient.getIndividuals(
-			faroProject, (String)null, false, 1, 0, null);
+		Results<Channel> channelResults = contactsEngineClient.getChannels(
+			faroProject, 0, 1, null, null);
 
-		if (individuals.getTotal() > 0) {
+		List<Channel> channels = channelResults.getItems();
+
+		if (channels.isEmpty()) {
+			return false;
+		}
+
+		Channel channel = channels.get(0);
+
+		Results<Individual> individualResults =
+			contactsEngineClient.getIndividuals(
+				faroProject, null, null, null, channel.getId(), null, null,
+				null, false, null, null, null, null, null, null, null, null, 1,
+				0, null);
+
+		if (individualResults.getTotal() > 0) {
 			return true;
 		}
 

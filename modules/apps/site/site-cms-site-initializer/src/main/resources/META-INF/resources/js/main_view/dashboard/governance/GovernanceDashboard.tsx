@@ -3,20 +3,18 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import React, {useState} from 'react';
+import React from 'react';
 
-import {SpaceOption, SpacePicker, initialSpace} from '../common/SpacePicker';
+import {GovernanceContextProvider} from './GovernanceContext';
+import {AttentionRequired} from './components/AttentionRequired';
+import {Filters} from './components/Filters';
 
 export default function GovernanceDashboard() {
-	const [selectedSpace, setSelectedSpace] =
-		useState<SpaceOption>(initialSpace);
-
 	return (
-		<div className="mb-4">
-			<SpacePicker
-				onSelectSpace={setSelectedSpace}
-				selectedSpace={selectedSpace}
-			/>
-		</div>
+		<GovernanceContextProvider>
+			<Filters />
+
+			<AttentionRequired />
+		</GovernanceContextProvider>
 	);
 }

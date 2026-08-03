@@ -6,17 +6,26 @@
 import ClayForm, {ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import ClayPanel from '@clayui/panel';
+import classNames from 'classnames';
 import React from 'react';
 
 interface IProps {
+	errorMessage?: string;
+	expanded: boolean;
 	externalReferenceCode: string;
+	externalReferenceCodeInputRef: React.RefObject<HTMLInputElement>;
 	namespace: string;
+	onExpandedChange: (expanded: boolean) => void;
 	onExternalReferenceCodeChange: (externalReferenceCode: string) => void;
 }
 
 export default function GeneralSettings({
+	errorMessage,
+	expanded,
 	externalReferenceCode,
+	externalReferenceCodeInputRef,
 	namespace,
+	onExpandedChange,
 	onExternalReferenceCodeChange,
 }: IProps) {
 	return (
@@ -29,10 +38,16 @@ export default function GeneralSettings({
 					{Liferay.Language.get('general-settings')}
 				</span>
 			}
+			expanded={expanded}
+			onExpandedChange={onExpandedChange}
 			showCollapseIcon
 		>
 			<ClayPanel.Body>
-				<ClayForm.Group className="mb-0">
+				<ClayForm.Group
+					className={classNames('mb-0', {
+						'has-error': !!errorMessage,
+					})}
+				>
 					<label htmlFor={`${namespace}externalReferenceCodeInput`}>
 						{Liferay.Language.get('erc')}
 
@@ -56,14 +71,32 @@ export default function GeneralSettings({
 					</label>
 
 					<ClayInput
+						aria-describedby={
+							errorMessage &&
+							`${namespace}externalReferenceCodeError`
+						}
+						aria-invalid={!!errorMessage}
+						aria-required
 						id={`${namespace}externalReferenceCodeInput`}
 						onChange={(event) =>
 							onExternalReferenceCodeChange(event.target.value)
 						}
-						required
+						ref={externalReferenceCodeInputRef}
 						type="text"
 						value={externalReferenceCode}
 					/>
+
+					{errorMessage && (
+						<ClayForm.FeedbackGroup role="alert">
+							<ClayForm.FeedbackItem
+								id={`${namespace}externalReferenceCodeError`}
+							>
+								<ClayForm.FeedbackIndicator symbol="exclamation-full" />
+
+								{errorMessage}
+							</ClayForm.FeedbackItem>
+						</ClayForm.FeedbackGroup>
+					)}
 				</ClayForm.Group>
 			</ClayPanel.Body>
 		</ClayPanel>

@@ -6,6 +6,7 @@
 package com.liferay.depot.internal.util;
 
 import com.liferay.depot.constants.DepotRolesConstants;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 
 import java.util.Objects;
 
@@ -14,19 +15,28 @@ import java.util.Objects;
  */
 public class DepotRoleNameUtil {
 
-	public static String getAdministratorRoleName(String subtype) {
+	public static String getAdministratorRoleName(
+		long companyId, String subtype) {
+
 		if (Objects.equals(
-				subtype, DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY)) {
+				subtype, DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY) &&
+			FeatureFlagManagerUtil.isEnabled(companyId, "LPD-57283")) {
 
 			return DepotRolesConstants.DESIGN_LIBRARY_ADMINISTRATOR;
+		}
+		else if (Objects.equals(subtype, DepotRolesConstants.SUBTYPE_PROJECT)) {
+			return DepotRolesConstants.PROJECT_MANAGER;
 		}
 
 		return DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR;
 	}
 
-	public static String getContentReviewerRoleName(String subtype) {
+	public static String getContentReviewerRoleName(
+		long companyId, String subtype) {
+
 		if (Objects.equals(
-				subtype, DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY)) {
+				subtype, DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY) &&
+			FeatureFlagManagerUtil.isEnabled(companyId, "LPD-57283")) {
 
 			return DepotRolesConstants.DESIGN_LIBRARY_CONTENT_REVIEWER;
 		}
@@ -34,19 +44,24 @@ public class DepotRoleNameUtil {
 		return DepotRolesConstants.ASSET_LIBRARY_CONTENT_REVIEWER;
 	}
 
-	public static String getMemberRoleName(String subtype) {
+	public static String getMemberRoleName(long companyId, String subtype) {
 		if (Objects.equals(
-				subtype, DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY)) {
+				subtype, DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY) &&
+			FeatureFlagManagerUtil.isEnabled(companyId, "LPD-57283")) {
 
 			return DepotRolesConstants.DESIGN_LIBRARY_MEMBER;
+		}
+		else if (Objects.equals(subtype, DepotRolesConstants.SUBTYPE_PROJECT)) {
+			return DepotRolesConstants.PROJECT_MEMBER;
 		}
 
 		return DepotRolesConstants.ASSET_LIBRARY_MEMBER;
 	}
 
-	public static String getOwnerRoleName(String subtype) {
+	public static String getOwnerRoleName(long companyId, String subtype) {
 		if (Objects.equals(
-				subtype, DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY)) {
+				subtype, DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY) &&
+			FeatureFlagManagerUtil.isEnabled(companyId, "LPD-57283")) {
 
 			return DepotRolesConstants.DESIGN_LIBRARY_OWNER;
 		}

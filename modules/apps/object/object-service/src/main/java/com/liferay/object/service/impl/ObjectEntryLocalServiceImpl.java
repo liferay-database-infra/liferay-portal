@@ -185,7 +185,6 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.encryptor.Encryptor;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -464,7 +463,7 @@ public class ObjectEntryLocalServiceImpl
 
 		_setExternalReferenceCode(objectEntry, values);
 		_setRootObjectEntryId(objectDefinition, objectEntry, values);
-		_setDisplayDate(objectDefinition.getCompanyId(), objectEntry, values);
+		_setDisplayDate(objectEntry, values);
 
 		boolean copy = StringUtil.equals(
 			GetterUtil.getString(serviceContext.getAttribute(Constants.ACTION)),
@@ -477,11 +476,10 @@ public class ObjectEntryLocalServiceImpl
 			}
 		}
 		else {
-			_setExpirationDate(
-				objectDefinition.getCompanyId(), objectEntry, values);
+			_setExpirationDate(objectEntry, values);
 		}
 
-		_setReviewDate(objectDefinition.getCompanyId(), objectEntry, values);
+		_setReviewDate(objectEntry, values);
 
 		objectEntry.setStatus(status);
 		objectEntry.setStatusByUserId(user.getUserId());
@@ -716,10 +714,6 @@ public class ObjectEntryLocalServiceImpl
 
 	@Override
 	public void checkObjectEntries(long companyId) throws PortalException {
-		if (!FeatureFlagManagerUtil.isEnabled("LPD-17564")) {
-			return;
-		}
-
 		Date date = new Date();
 
 		ObjectEntryScheduleConfiguration objectEntryScheduleConfiguration =
@@ -905,14 +899,12 @@ public class ObjectEntryLocalServiceImpl
 					objectDefinition.getClassName()),
 				objectEntry.getObjectEntryId());
 
-			if (FeatureFlagManagerUtil.isEnabled("LPD-17564")) {
-				_subscriptionLocalService.deleteSubscriptions(
-					objectEntry.getCompanyId(), objectEntry.getModelClassName(),
-					objectEntry.getObjectEntryId());
-				_trashEntryLocalService.deleteEntry(
-					objectDefinition.getClassName(),
-					objectEntry.getObjectEntryId());
-			}
+			_subscriptionLocalService.deleteSubscriptions(
+				objectEntry.getCompanyId(), objectEntry.getModelClassName(),
+				objectEntry.getObjectEntryId());
+			_trashEntryLocalService.deleteEntry(
+				objectDefinition.getClassName(),
+				objectEntry.getObjectEntryId());
 
 			_deleteFromLocalizationTable(
 				objectDefinition, objectEntry.getObjectEntryId());
@@ -1101,7 +1093,7 @@ public class ObjectEntryLocalServiceImpl
 	@Override
 	public Map<Object, Long> getAggregationCounts(
 			long groupId, long objectDefinitionId, String aggregationTerm,
-			Predicate predicate, boolean preferApproved, int start, int end)
+			Predicate predicate, boolean preferApproved)
 		throws PortalException {
 
 		Map<Object, Long> aggregationCounts = new HashMap<>();
@@ -1153,8 +1145,6 @@ public class ObjectEntryLocalServiceImpl
 			)
 		).groupBy(
 			table.getColumn(objectField.getDBColumnName())
-		).limit(
-			start, end
 		);
 
 		for (Object[] values : (List<Object[]>)dslQuery(dslQuery)) {
@@ -1457,8 +1447,7 @@ public class ObjectEntryLocalServiceImpl
 	public Map<Object, Long> getOneToManyAggregationCounts(
 			long groupId, long objectDefinitionId, long objectEntryId,
 			long objectRelationshipId, String aggregationTerm,
-			Predicate predicate, boolean related, String search, int start,
-			int end)
+			Predicate predicate, boolean related, String search)
 		throws PortalException {
 
 		ObjectDefinition objectDefinition =
@@ -1485,8 +1474,6 @@ public class ObjectEntryLocalServiceImpl
 			related, search
 		).groupBy(
 			table.getColumn(objectField.getDBColumnName())
-		).limit(
-			start, end
 		);
 
 		Map<Object, Long> aggregationCounts = new HashMap<>();
@@ -6733,30 +6720,24 @@ public class ObjectEntryLocalServiceImpl
 	}
 
 	private void _setDisplayDate(
-		long companyId, ObjectEntry objectEntry,
-		Map<String, Serializable> values) {
+		ObjectEntry objectEntry, Map<String, Serializable> values) {
 
-		if (FeatureFlagManagerUtil.isEnabled(companyId, "LPD-17564")) {
-			objectEntry.setDisplayDate((Date)values.get("displayDate"));
-		}
+		objectEntry.setDisplayDate((Date)values.get("displayDate"));
 	}
 
 	private void _setExpirationDate(
-			long companyId, ObjectEntry objectEntry,
-			Map<String, Serializable> values)
+			ObjectEntry objectEntry, Map<String, Serializable> values)
 		throws PortalException {
 
-		if (FeatureFlagManagerUtil.isEnabled(companyId, "LPD-17564")) {
-			Date expirationDate = (Date)values.get("expirationDate");
+		Date expirationDate = (Date)values.get("expirationDate");
 
-			if ((expirationDate != null) && expirationDate.before(new Date())) {
-				throw new ObjectEntryExpirationDateException(
-					"Expiration date must be a future date",
-					"expiration-date-must-be-a-future-date");
-			}
-
-			objectEntry.setExpirationDate(expirationDate);
+		if ((expirationDate != null) && expirationDate.before(new Date())) {
+			throw new ObjectEntryExpirationDateException(
+				"Expiration date must be a future date",
+				"expiration-date-must-be-a-future-date");
 		}
+
+		objectEntry.setExpirationDate(expirationDate);
 	}
 
 	private void _setExternalReferenceCode(
@@ -6782,12 +6763,9 @@ public class ObjectEntryLocalServiceImpl
 	}
 
 	private void _setReviewDate(
-		long companyId, ObjectEntry objectEntry,
-		Map<String, Serializable> values) {
+		ObjectEntry objectEntry, Map<String, Serializable> values) {
 
-		if (FeatureFlagManagerUtil.isEnabled(companyId, "LPD-17564")) {
-			objectEntry.setReviewDate((Date)values.get("reviewDate"));
-		}
+		objectEntry.setReviewDate((Date)values.get("reviewDate"));
 	}
 
 	private void _setRootObjectEntryId(
@@ -7154,12 +7132,9 @@ public class ObjectEntryLocalServiceImpl
 		objectEntry.setObjectEntryFolderId(objectEntryFolderId);
 
 		if (!move) {
-			_setDisplayDate(
-				objectDefinition.getCompanyId(), objectEntry, values);
-			_setExpirationDate(
-				objectDefinition.getCompanyId(), objectEntry, values);
-			_setReviewDate(
-				objectDefinition.getCompanyId(), objectEntry, values);
+			_setDisplayDate(objectEntry, values);
+			_setExpirationDate(objectEntry, values);
+			_setReviewDate(objectEntry, values);
 		}
 
 		if ((workflowAction == WorkflowConstants.ACTION_SAVE_DRAFT) &&

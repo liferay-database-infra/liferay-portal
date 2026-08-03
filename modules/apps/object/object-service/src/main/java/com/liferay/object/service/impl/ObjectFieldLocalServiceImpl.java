@@ -77,7 +77,6 @@ import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnection;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.lazy.referencing.LazyReferencingThreadLocal;
 import com.liferay.portal.kernel.log.Log;
@@ -91,6 +90,8 @@ import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
+import com.liferay.portal.kernel.search.Indexer;
+import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
 import com.liferay.portal.kernel.service.PortletLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
@@ -362,6 +363,8 @@ public class ObjectFieldLocalServiceImpl
 	public void deleteObjectFieldByObjectDefinitionId(Long objectDefinitionId)
 		throws PortalException {
 
+		Indexer<ObjectField> indexer = IndexerRegistryUtil.nullSafeGetIndexer(
+			ObjectField.class);
 		ObjectDefinition objectDefinition =
 			_objectDefinitionPersistence.findByPrimaryKey(objectDefinitionId);
 
@@ -375,9 +378,9 @@ public class ObjectFieldLocalServiceImpl
 
 			objectFieldPersistence.remove(objectField);
 
-			if (FeatureFlagManagerUtil.isEnabled(
-					objectField.getCompanyId(), "LPD-17564") &&
-				objectDefinition.isApproved() &&
+			indexer.delete(objectField);
+
+			if (objectDefinition.isApproved() &&
 				objectField.compareBusinessType(
 					ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT)) {
 
@@ -1026,9 +1029,7 @@ public class ObjectFieldLocalServiceImpl
 			return objectField;
 		}
 
-		if (FeatureFlagManagerUtil.isEnabled(
-				objectField.getCompanyId(), "LPD-17564") &&
-			objectField.compareBusinessType(
+		if (objectField.compareBusinessType(
 				ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT)) {
 
 			try {
@@ -1043,6 +1044,8 @@ public class ObjectFieldLocalServiceImpl
 			catch (Exception exception) {
 				ReflectionUtil.throwException(exception);
 			}
+
+			addOrUpdateObjectFieldPLOEntries(objectField);
 		}
 
 		if (!objectField.compareBusinessType(
@@ -1308,10 +1311,7 @@ public class ObjectFieldLocalServiceImpl
 				objectField.getBusinessType(),
 				ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT)) {
 
-			if (FeatureFlagManagerUtil.isEnabled(
-					objectField.getCompanyId(), "LPD-17564") &&
-				objectDefinition.isApproved()) {
-
+			if (objectDefinition.isApproved()) {
 				String attachmentDownloadActionKey =
 					objectField.getAttachmentDownloadActionKey();
 
@@ -1685,9 +1685,7 @@ public class ObjectFieldLocalServiceImpl
 				newObjectField, objectDefinition, objectFieldBusinessType,
 				objectFieldSettings, oldObjectField);
 
-			if (FeatureFlagManagerUtil.isEnabled(
-					newObjectField.getCompanyId(), "LPD-17564") &&
-				businessType.equals(
+			if (businessType.equals(
 					ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT)) {
 
 				addOrUpdateObjectFieldPLOEntries(newObjectField);

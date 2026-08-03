@@ -153,12 +153,12 @@ export default function DesignLibraryResourcesFDSPropsTransformer(
 		};
 
 		pushAddFragmentItem(
-			Liferay.Language.get('new-component-fragment'),
+			Liferay.Language.get('new-basic-fragment'),
 			FRAGMENT_TYPE_COMPONENT
 		);
 
 		pushAddFragmentItem(
-			Liferay.Language.get('new-input-fragment'),
+			Liferay.Language.get('new-form-fragment'),
 			FRAGMENT_TYPE_INPUT
 		);
 	}
@@ -199,12 +199,19 @@ export default function DesignLibraryResourcesFDSPropsTransformer(
 						return (
 							<LinkRenderer
 								{...rendererProps}
+								options={{
+									actionId: isFragmentCollection
+										? 'view'
+										: 'edit',
+								}}
 								stickerClassName={
 									isFragmentCollection
 										? 'design-library-fds-sticker-fragment-set'
 										: 'design-library-fds-sticker-stylebook'
 								}
-								symbol="book"
+								symbol={getSymbol(
+									rendererProps?.itemData?.entryClassName
+								)}
 							/>
 						);
 					},
@@ -286,4 +293,12 @@ export default function DesignLibraryResourcesFDSPropsTransformer(
 			},
 		],
 	};
+}
+
+function getSymbol(entryClassName?: string): string {
+	if (entryClassName === FRAGMENT_COLLECTION_ENTRY_CLASS_NAME) {
+		return 'squares';
+	}
+
+	return 'book';
 }

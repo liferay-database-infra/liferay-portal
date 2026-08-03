@@ -28,7 +28,7 @@ export function fetchFieldValues({
 	channelId,
 	fieldMappingFieldName,
 	groupId,
-	query,
+	query = '',
 }) {
 	return sendRequest({
 		data: {
@@ -101,5 +101,30 @@ export function search({
 		},
 		method: 'POST',
 		path: `contacts/${groupId}/account/search`,
+	});
+}
+
+export function searchAccounts({
+	assetId,
+	assetTitle,
+	assetType,
+	channelId = '',
+	groupId,
+	page = 0,
+	pageSize = DEFAULT_DELTA,
+	query = '',
+}) {
+	return sendRequest({
+		data: {
+			assetId,
+			assetTitle,
+			assetType,
+			channelId,
+			keywords: query,
+			page,
+			pageSize,
+		},
+		method: 'GET',
+		path: `contacts/${groupId}/account/account-names`,
 	});
 }

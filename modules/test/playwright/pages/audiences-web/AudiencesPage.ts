@@ -12,6 +12,9 @@ import {waitForAlert} from '../../utils/waitForAlert';
 
 export class AudiencesPage {
 	readonly apiHelpers: DataApiHelpers;
+	readonly externalReferenceCodeErrorMessage: Locator;
+	readonly externalReferenceCodeInput: Locator;
+	readonly generalSettingsButton: Locator;
 	readonly nameInput: Locator;
 	readonly newAudienceButton: Locator;
 	readonly page: Page;
@@ -21,6 +24,15 @@ export class AudiencesPage {
 
 	constructor(page: Page, apiHelpers: DataApiHelpers) {
 		this.apiHelpers = apiHelpers;
+		this.externalReferenceCodeErrorMessage = page.locator(
+			'.audience-builder-general-settings .form-feedback-item'
+		);
+		this.externalReferenceCodeInput = page.getByRole('textbox', {
+			name: 'ERC',
+		});
+		this.generalSettingsButton = page.getByRole('button', {
+			name: 'General Settings',
+		});
 		this.nameInput = page.getByPlaceholder('New Audience');
 		this.newAudienceButton = page.getByLabel('New', {exact: true});
 		this.page = page;
@@ -57,12 +69,14 @@ export class AudiencesPage {
 
 	async createAudience({
 		attributeName,
+		externalReferenceCode,
 		name,
 		operator,
 		value,
 		valueType = 'text',
 	}: {
 		attributeName: string;
+		externalReferenceCode?: string;
 		name: string;
 		operator?: string;
 		value: string;
@@ -93,6 +107,10 @@ export class AudiencesPage {
 		}
 
 		await this.setValue({value, valueType});
+
+		if (externalReferenceCode) {
+			await this.fillExternalReferenceCode(externalReferenceCode);
+		}
 
 		await this.saveButton.click();
 
@@ -132,6 +150,12 @@ export class AudiencesPage {
 		});
 
 		await waitForAlert(this.page);
+	}
+
+	async fillExternalReferenceCode(externalReferenceCode: string) {
+		await this.generalSettingsButton.click();
+
+		await this.externalReferenceCodeInput.fill(externalReferenceCode);
 	}
 
 	async goto() {

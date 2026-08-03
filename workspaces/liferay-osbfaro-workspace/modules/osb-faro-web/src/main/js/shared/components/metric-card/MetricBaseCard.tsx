@@ -31,12 +31,14 @@ const MetricContextActions = createContext({
 } as any);
 
 export interface ICommonMetricProps {
+	accountId?: string;
 	emptyDescription?: React.ReactNode;
 	emptyTitle?: string;
 	filters: RawFilters;
 	experienceId?: string;
 	interval: Interval;
 	rangeSelectors: RangeSelectors;
+	segmentId?: string;
 }
 
 export interface IGenericMetricBaseCardProps {
@@ -111,14 +113,23 @@ function MetricBaseCard<TChartData>({
 					reportContainer={reportContainer}
 					showInterval={showIntervals}
 				>
-					{({experienceId, filters, interval, rangeSelectors}) => {
+					{({
+						accountId,
+						experienceId,
+						filters,
+						interval,
+						rangeSelectors,
+						segmentId,
+					}) => {
 						const sharedProps: ICommonMetricProps = {
+							accountId,
 							emptyDescription,
 							emptyTitle,
 							experienceId,
 							filters,
 							interval,
 							rangeSelectors,
+							segmentId,
 						};
 
 						return (

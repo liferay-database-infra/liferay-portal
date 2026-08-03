@@ -12,6 +12,7 @@ import {
 	mapCardPropsToOptions,
 } from './mappers/composition-query';
 import {graphql} from '@apollo/client/react/hoc';
+import {pickBy} from 'lodash';
 import {ReportContainer} from 'shared/components/download-report/DownloadPDFReport';
 import {Routes, setUriQueryValues, toRoute} from 'shared/util/router';
 import {useParams} from 'react-router-dom';
@@ -76,12 +77,14 @@ const InterestsCard = () => {
 			rangeKeys={rangeKeys}
 			reportContainer={ReportContainer.InterestsCard}
 		>
-			{({rangeSelectors}) => (
+			{({accountId, rangeSelectors, segmentId}) => (
 				<>
 					<TableWithData
+						accountId={accountId}
 						channelId={channelId}
 						rangeSelectors={rangeSelectors}
 						rowBordered={false}
+						segmentId={segmentId}
 					/>
 
 					<Card.Footer>
@@ -91,7 +94,11 @@ const InterestsCard = () => {
 							className="button-root"
 							displayType="secondary"
 							href={setUriQueryValues(
-								rangeSelectors,
+								pickBy({
+									accountId,
+									segmentId,
+									...rangeSelectors,
+								}),
 								toRoute(Routes.SITES_INTERESTS, {
 									channelId,
 									groupId,

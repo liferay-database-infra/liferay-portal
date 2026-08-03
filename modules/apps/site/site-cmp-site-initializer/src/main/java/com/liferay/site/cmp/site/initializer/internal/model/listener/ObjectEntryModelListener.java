@@ -14,7 +14,7 @@ import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.sql.dsl.expression.Predicate;
-import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.audit.AuditRouter;
 import com.liferay.portal.kernel.exception.ModelListenerException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -28,7 +28,10 @@ import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.search.Indexer;
+import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
@@ -43,14 +46,19 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.security.audit.event.generators.util.Attribute;
+import com.liferay.portal.security.audit.event.generators.util.AuditMessageBuilder;
+import com.liferay.portal.workflow.kaleo.model.KaleoTaskInstanceToken;
+import com.liferay.portal.workflow.kaleo.service.KaleoTaskInstanceTokenLocalService;
+import com.liferay.site.cmp.site.initializer.internal.util.RoleUtil;
 
 import java.io.Serializable;
 
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 import org.osgi.service.component.annotations.Component;
@@ -67,6 +75,8 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 		throws ModelListenerException {
 
 		try {
+			_reindexLinkedObjectEntry(objectEntry);
+			_route("CMP_ADD_ASSET", objectEntry);
 			_setResourcePermissions(objectEntry);
 			_updateGroup(objectEntry);
 			_updateProjectCompletionRate(objectEntry);
@@ -81,6 +91,8 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 		throws ModelListenerException {
 
 		try {
+			_reindexLinkedObjectEntry(objectEntry);
+			_route("CMP_REMOVE_ASSET", objectEntry);
 			_updateProjectCompletionRate(objectEntry);
 		}
 		catch (Exception exception) {
@@ -103,19 +115,27 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 		}
 	}
 
-	private String[] _getAssetLibraryContentReviewerActionIds(
-		ObjectDefinition objectDefinition) {
+	private ObjectEntry _fetchLinkedObjectEntry(
+		long companyId, Map<String, Serializable> values) {
 
-		if (StringUtil.equals(
-				objectDefinition.getExternalReferenceCode(), "L_CMP_TASK")) {
+		Group group = _groupLocalService.fetchGroupByExternalReferenceCode(
+			MapUtil.getString(values, "groupExternalReferenceCode"), companyId);
 
-			return new String[] {
-				ActionKeys.ADD_DISCUSSION, ActionKeys.DELETE,
-				ActionKeys.PERMISSIONS, ActionKeys.UPDATE, ActionKeys.VIEW
-			};
+		if (group == null) {
+			return null;
 		}
 
-		return new String[] {ActionKeys.ADD_DISCUSSION, ActionKeys.VIEW};
+		ObjectDefinition linkedObjectDefinition =
+			_objectDefinitionLocalService.fetchObjectDefinitionByClassName(
+				companyId, MapUtil.getString(values, "className"));
+
+		if (linkedObjectDefinition == null) {
+			return null;
+		}
+
+		return _objectEntryLocalService.fetchObjectEntry(
+			MapUtil.getString(values, "classExternalReferenceCode"),
+			group.getGroupId(), linkedObjectDefinition.getObjectDefinitionId());
 	}
 
 	private JSONObject _getCMPDefaultPermissionJSONObject(
@@ -127,12 +147,12 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 			ResourceAction::getActionId, String.class);
 
 		return JSONUtil.put(
-			DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR, actionIds
+			DepotRolesConstants.PROJECT_CONTRIBUTOR,
+			_getProjectContributorActionIds(objectDefinition)
 		).put(
-			DepotRolesConstants.ASSET_LIBRARY_CONTENT_REVIEWER,
-			_getAssetLibraryContentReviewerActionIds(objectDefinition)
+			DepotRolesConstants.PROJECT_MANAGER, actionIds
 		).put(
-			DepotRolesConstants.ASSET_LIBRARY_MEMBER,
+			DepotRolesConstants.PROJECT_MEMBER,
 			new String[] {ActionKeys.ADD_DISCUSSION, ActionKeys.VIEW}
 		).put(
 			RoleConstants.CMS_ADMINISTRATOR, actionIds
@@ -152,6 +172,136 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 			_filterFactory.create(filterString, objectDefinition), false, null);
 	}
 
+	private String _getLinkedObjectEntryTitle(
+			long companyId, Map<String, Serializable> values)
+		throws Exception {
+
+		ObjectEntry linkedObjectEntry = _fetchLinkedObjectEntry(
+			companyId, values);
+
+		if (linkedObjectEntry == null) {
+			return null;
+		}
+
+		return linkedObjectEntry.getTitleValue();
+	}
+
+	private String[] _getProjectContributorActionIds(
+		ObjectDefinition objectDefinition) {
+
+		String externalReferenceCode =
+			objectDefinition.getExternalReferenceCode();
+
+		if (StringUtil.equals(externalReferenceCode, "L_CMP_PROJECT_LINK") ||
+			StringUtil.equals(externalReferenceCode, "L_CMP_TASK_LINK")) {
+
+			return new String[] {ActionKeys.DELETE, ActionKeys.VIEW};
+		}
+
+		if (StringUtil.equals(externalReferenceCode, "L_CMP_TASK")) {
+			return new String[] {
+				ActionKeys.ADD_DISCUSSION, ActionKeys.UPDATE, ActionKeys.VIEW
+			};
+		}
+
+		return new String[] {ActionKeys.ADD_DISCUSSION, ActionKeys.VIEW};
+	}
+
+	private void _reindexKaleoTaskInstanceTokens(ObjectEntry objectEntry)
+		throws Exception {
+
+		Indexer<KaleoTaskInstanceToken> indexer =
+			IndexerRegistryUtil.nullSafeGetIndexer(
+				KaleoTaskInstanceToken.class);
+
+		for (KaleoTaskInstanceToken kaleoTaskInstanceToken :
+				_kaleoTaskInstanceTokenLocalService.getKaleoTaskInstanceTokens(
+					objectEntry.getModelClassName(),
+					objectEntry.getObjectEntryId())) {
+
+			indexer.reindex(kaleoTaskInstanceToken);
+		}
+	}
+
+	private void _reindexLinkedObjectEntry(ObjectEntry objectEntry)
+		throws Exception {
+
+		ObjectDefinition objectDefinition = objectEntry.getObjectDefinition();
+
+		if (!StringUtil.equals(
+				objectDefinition.getExternalReferenceCode(),
+				"L_CMP_PROJECT_LINK") &&
+			!StringUtil.equals(
+				objectDefinition.getExternalReferenceCode(),
+				"L_CMP_TASK_LINK")) {
+
+			return;
+		}
+
+		ObjectEntry linkedObjectEntry = _fetchLinkedObjectEntry(
+			objectEntry.getCompanyId(), objectEntry.getValues());
+
+		if (linkedObjectEntry == null) {
+			return;
+		}
+
+		Indexer<ObjectEntry> indexer = IndexerRegistryUtil.nullSafeGetIndexer(
+			linkedObjectEntry.getModelClassName());
+
+		indexer.reindex(linkedObjectEntry);
+
+		_reindexKaleoTaskInstanceTokens(linkedObjectEntry);
+	}
+
+	private void _route(String eventType, ObjectEntry objectEntry)
+		throws Exception {
+
+		if (!FeatureFlagManagerUtil.isEnabled(
+				objectEntry.getCompanyId(), "LPD-58677")) {
+
+			return;
+		}
+
+		ObjectDefinition objectDefinition = objectEntry.getObjectDefinition();
+
+		if (!StringUtil.equals(
+				objectDefinition.getExternalReferenceCode(),
+				"L_CMP_TASK_LINK")) {
+
+			return;
+		}
+
+		Map<String, Serializable> values = objectEntry.getValues();
+
+		ObjectEntry cmpTaskObjectEntry =
+			_objectEntryLocalService.fetchObjectEntry(
+				MapUtil.getLong(values, "r_cmpTaskToCMPTaskLinks_c_cmpTaskId"));
+
+		if (cmpTaskObjectEntry == null) {
+			return;
+		}
+
+		ObjectDefinition cmpTaskObjectDefinition =
+			cmpTaskObjectEntry.getObjectDefinition();
+
+		if (!cmpTaskObjectDefinition.isEnableObjectEntryHistory()) {
+			return;
+		}
+
+		String title = _getLinkedObjectEntryTitle(
+			objectEntry.getCompanyId(), values);
+
+		if (title == null) {
+			return;
+		}
+
+		_auditRouter.route(
+			AuditMessageBuilder.buildAuditMessage(
+				cmpTaskObjectEntry.getModelClassName(),
+				cmpTaskObjectEntry.getObjectEntryId(), eventType,
+				Collections.singletonList(new Attribute(title))));
+	}
+
 	private void _setResourcePermissions(ObjectEntry objectEntry)
 		throws Exception {
 
@@ -160,28 +310,26 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 				objectEntry.getObjectDefinitionId());
 
 		if (!StringUtil.equals(
-				objectDefinition.getExternalReferenceCode(), "L_CMP_PROJECT") &&
-			!StringUtil.equals(
-				objectDefinition.getExternalReferenceCode(), "L_CMP_TASK")) {
+				objectDefinition.getObjectFolderExternalReferenceCode(),
+				"L_CMP_PROJECT_MANAGEMENT_DEFINITIONS")) {
 
 			return;
 		}
 
 		JSONObject defaultPermissionsJSONObject =
-			_getCMPDefaultPermissionJSONObject(
-				_objectDefinitionLocalService.fetchObjectDefinition(
-					objectEntry.getObjectDefinitionId()));
+			_getCMPDefaultPermissionJSONObject(objectDefinition);
 
-		List<Role> roles = _roleLocalService.getGroupRolesAndTeamRoles(
-			objectEntry.getCompanyId(), null,
-			Arrays.asList(
-				RoleConstants.ADMINISTRATOR,
-				DepotRolesConstants.ASSET_LIBRARY_OWNER),
-			null, null,
-			new int[] {RoleConstants.TYPE_REGULAR, RoleConstants.TYPE_DEPOT},
-			null, 0, 0, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+		List<String> resourceActions = ResourceActionsUtil.getResourceActions(
+			objectEntry.getModelClassName());
 
-		for (Role role : roles) {
+		for (Role role :
+				TransformUtil.transformToList(
+					ArrayUtil.append(
+						DepotRolesConstants.PROJECT_ROLE_NAMES,
+						RoleConstants.CMS_ADMINISTRATOR),
+					roleName -> _roleLocalService.fetchRole(
+						objectEntry.getCompanyId(), roleName))) {
+
 			String[] actionIds = (String[])defaultPermissionsJSONObject.get(
 				role.getName());
 
@@ -193,7 +341,8 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 				objectEntry.getCompanyId(), objectEntry.getModelClassName(),
 				ResourceConstants.SCOPE_INDIVIDUAL,
 				String.valueOf(objectEntry.getObjectEntryId()),
-				role.getRoleId(), actionIds);
+				role.getRoleId(),
+				ArrayUtil.filter(actionIds, resourceActions::contains));
 		}
 	}
 
@@ -303,15 +452,13 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 
 		_updateUserGroupRoles(
 			objectEntry.getGroupId(),
-			Arrays.asList(
-				DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR,
-				DepotRolesConstants.ASSET_LIBRARY_MEMBER),
+			Collections.singletonList(DepotRolesConstants.PROJECT_MANAGER),
 			MapUtil.getLong(
 				objectEntry.getValues(), "r_userToCMPProjectManager_userId",
 				0));
 		_updateUserGroupRoles(
 			objectEntry.getGroupId(),
-			Collections.singletonList(DepotRolesConstants.ASSET_LIBRARY_MEMBER),
+			Collections.singletonList(DepotRolesConstants.PROJECT_MEMBER),
 			MapUtil.getLong(
 				objectEntry.getValues(), "r_userToCMPProjectSponsor_userId",
 				0));
@@ -361,12 +508,15 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 			TransformUtil.transformToLongArray(
 				roleNames,
 				roleName -> {
-					Role role = _roleLocalService.fetchRole(
-						companyId, roleName);
+					Role role = RoleUtil.getOrAddProjectRole(
+						companyId, roleName, userId);
 
 					return role.getRoleId();
 				}));
 	}
+
+	@Reference
+	private AuditRouter _auditRouter;
 
 	@Reference(
 		target = "(filter.factory.key=" + ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT + ")"
@@ -375,6 +525,10 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 
 	@Reference
 	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private KaleoTaskInstanceTokenLocalService
+		_kaleoTaskInstanceTokenLocalService;
 
 	@Reference
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;

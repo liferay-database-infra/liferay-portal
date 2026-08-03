@@ -4,7 +4,7 @@
  */
 
 import classNames from 'classnames';
-import React, {useEffect, useRef, useState} from 'react';
+import React from 'react';
 
 import ContentGapCellActions from './ContentGapCellActions';
 import {TaxonomyTerm} from './types';
@@ -14,6 +14,7 @@ interface ContentGapCellProps {
 	funnelStage: TaxonomyTerm;
 	maxRealCount: number;
 	onFilter?: (persona: TaxonomyTerm, funnelStage: TaxonomyTerm) => void;
+	onGenerate?: (persona: TaxonomyTerm, funnelStage: TaxonomyTerm) => void;
 	persona: TaxonomyTerm;
 	selected?: boolean;
 	totalCount: number;
@@ -23,27 +24,21 @@ export default function ContentGapCell({
 	funnelStage,
 	maxRealCount,
 	onFilter,
+	onGenerate,
 	persona,
 	selected,
 	totalCount,
 }: ContentGapCellProps) {
-	const [active, setActive] = useState(false);
-
-	const cellRef = useRef<HTMLDivElement>(null);
-
 	const gap = totalCount === 0;
 
 	const tier = gap ? 0 : getCellTier(totalCount, maxRealCount);
 
-	// Only real persona/funnel-stage cells filter the asset table. The
-	// uncategorized "No Persona" row and "No Funnel" column have no category to
-	// filter by, so they stay static.
+	const clickable = Boolean(onFilter);
 
-	const clickable =
-		Boolean(onFilter) && !isSentinel(persona) && !isSentinel(funnelStage);
+	const generatable =
+		Boolean(onGenerate) && !isSentinel(persona) && !isSentinel(funnelStage);
 
 	const className = classNames('lfr-cmp__content-gap-cell', {
-		'lfr-cmp__content-gap-cell--active': active,
 		'lfr-cmp__content-gap-cell--clickable': clickable,
 		'lfr-cmp__content-gap-cell--gap': gap,
 		'lfr-cmp__content-gap-cell--selected': selected,
@@ -56,37 +51,16 @@ export default function ContentGapCell({
 		<span className="lfr-cmp__content-gap-cell-count">{totalCount}</span>
 	);
 
-	// Close the action bar when clicking outside the cell.
-
-	useEffect(() => {
-		if (!active) {
-			return;
-		}
-
-		function handleDocumentClick(event: MouseEvent) {
-			if (!cellRef.current?.contains(event.target as Node)) {
-				setActive(false);
-			}
-		}
-
-		document.addEventListener('click', handleDocumentClick);
-
-		return () => document.removeEventListener('click', handleDocumentClick);
-	}, [active]);
+	function handleFilter() {
+		onFilter?.(persona, funnelStage);
+	}
 
 	function handleKeyDown(event: React.KeyboardEvent) {
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
 
-			toggleActive();
+			handleFilter();
 		}
-		else if (event.key === 'Escape') {
-			setActive(false);
-		}
-	}
-
-	function toggleActive() {
-		setActive((wasActive) => !wasActive);
 	}
 
 	if (!clickable) {
@@ -99,27 +73,23 @@ export default function ContentGapCell({
 
 	return (
 		<div
-			aria-expanded={active}
-			aria-haspopup="true"
 			aria-label={ariaLabel}
 			className={className}
-			onClick={toggleActive}
+			onClick={handleFilter}
 			onKeyDown={handleKeyDown}
-			ref={cellRef}
 			role="gridcell"
 			tabIndex={0}
 		>
 			{cellCount}
 
-			{active ? (
-				<ContentGapCellActions
-					onFilter={() => {
-						onFilter?.(persona, funnelStage);
-
-						setActive(false);
-					}}
-				/>
-			) : null}
+			<ContentGapCellActions
+				onFilter={handleFilter}
+				onGenerate={
+					generatable
+						? () => onGenerate?.(persona, funnelStage)
+						: undefined
+				}
+			/>
 		</div>
 	);
 }

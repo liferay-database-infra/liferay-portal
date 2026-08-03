@@ -2,11 +2,12 @@ import mockStore from 'test/mock-store';
 import ProfileRoutes from '../ProfileRoutes';
 import React from 'react';
 import {ChannelContext} from 'shared/context/channel';
-import {cleanup, render, screen} from '@testing-library/react';
+import {cleanup, render, screen, waitFor, within} from '@testing-library/react';
 import {createMemoryHistory} from 'history';
 import {mockChannelContext} from 'test/mock-channel-context';
 import {Provider} from 'react-redux';
 import {Router} from 'react-router-dom';
+import {Routes, toRoute} from 'shared/util/router';
 import {useRequest} from 'shared/hooks/useRequest';
 
 jest.unmock('react-dom');
@@ -27,6 +28,11 @@ jest.mock('shared/util/breadcrumbs', () => ({
 	})),
 }));
 
+jest.mock('shared/util/feature-flags', () => ({
+	...jest.requireActual('shared/util/feature-flags'),
+	ENABLE_ACCOUNT_OVERVIEW: true,
+}));
+
 jest.mock('react-router-dom', () => ({
 	...jest.requireActual('react-router-dom'),
 	useParams: () => ({
@@ -41,12 +47,23 @@ jest.mock('../Activities', () => ({
 	default: () => <div data-testid="account-activities" />,
 }));
 
+jest.mock('../Overview', () => ({
+	__esModule: true,
+	default: ({account}: {account?: {accountName?: string}}) => (
+		<div data-testid="account-overview">{account?.accountName}</div>
+	),
+}));
+
 jest.mock('../Profile', () => ({
 	__esModule: true,
 	default: () => <div data-testid="account-profile" />,
 }));
 
+const featureFlags = jest.requireMock('shared/util/feature-flags');
+
 const mockedUseRequest = useRequest as jest.Mock;
+
+const ROUTE_PARAMS = {channelId: '123', groupId: '23', id: 'acc-1'};
 
 const store = mockStore();
 
@@ -68,6 +85,8 @@ const renderProfileRoutes = (
 describe('AccountProfileRoutes', () => {
 	beforeEach(() => {
 		jest.clearAllMocks();
+
+		featureFlags.ENABLE_ACCOUNT_OVERVIEW = true;
 	});
 
 	afterEach(cleanup);
@@ -139,5 +158,176 @@ describe('AccountProfileRoutes', () => {
 
 		expect(screen.getAllByText('Acme Corp').length).toBeGreaterThan(0);
 		expect(screen.queryByText('Account Not Found')).not.toBeInTheDocument();
+	});
+
+	it('lists overview as the first tab in the account nav bar', () => {
+		mockedUseRequest.mockReturnValue({
+			data: {accountName: 'Acme Corp'},
+			error: false,
+			loading: false,
+		});
+
+		renderProfileRoutes();
+
+		const navTabs = within(screen.getByRole('navigation')).getAllByRole(
+			'link'
+		);
+
+		expect(navTabs.map((navTab) => navTab.textContent)).toEqual([
+			'Overview',
+			'Activities',
+			'Profile',
+		]);
+		expect(navTabs[0]).toHaveAttribute(
+			'href',
+			toRoute(Routes.CONTACTS_ACCOUNT_OVERVIEW, ROUTE_PARAMS)
+		);
+	});
+
+	it('renders the overview page on the overview route', async () => {
+		mockedUseRequest.mockReturnValue({
+			data: {accountName: 'Acme Corp'},
+			error: false,
+			loading: false,
+		});
+
+		renderProfileRoutes(
+			createMemoryHistory({
+				initialEntries: [
+					toRoute(Routes.CONTACTS_ACCOUNT_OVERVIEW, ROUTE_PARAMS),
+				],
+			})
+		);
+
+		expect(
+			await screen.findByTestId('account-overview')
+		).toBeInTheDocument();
+	});
+
+	it('passes the account to the overview page', async () => {
+		mockedUseRequest.mockReturnValue({
+			data: {accountName: 'Acme Corp'},
+			error: false,
+			loading: false,
+		});
+
+		renderProfileRoutes(
+			createMemoryHistory({
+				initialEntries: [
+					toRoute(Routes.CONTACTS_ACCOUNT_OVERVIEW, ROUTE_PARAMS),
+				],
+			})
+		);
+
+		expect(await screen.findByTestId('account-overview')).toHaveTextContent(
+			'Acme Corp'
+		);
+	});
+
+	it('renders the activities page on the activities route', async () => {
+		mockedUseRequest.mockReturnValue({
+			data: {accountName: 'Acme Corp'},
+			error: false,
+			loading: false,
+		});
+
+		renderProfileRoutes(
+			createMemoryHistory({
+				initialEntries: [
+					toRoute(Routes.CONTACTS_ACCOUNT_ACTIVITIES, ROUTE_PARAMS),
+				],
+			})
+		);
+
+		expect(
+			await screen.findByTestId('account-activities')
+		).toBeInTheDocument();
+	});
+
+	it('lands on overview when opening an account', async () => {
+		mockedUseRequest.mockReturnValue({
+			data: {accountName: 'Acme Corp'},
+			error: false,
+			loading: false,
+		});
+
+		const history = createMemoryHistory({
+			initialEntries: [toRoute(Routes.CONTACTS_ACCOUNT, ROUTE_PARAMS)],
+		});
+
+		renderProfileRoutes(history);
+
+		await waitFor(() =>
+			expect(history.location.pathname).toBe(
+				toRoute(Routes.CONTACTS_ACCOUNT_OVERVIEW, ROUTE_PARAMS)
+			)
+		);
+
+		expect(
+			await screen.findByTestId('account-overview')
+		).toBeInTheDocument();
+	});
+
+	describe('when the account overview flag is disabled', () => {
+		beforeEach(() => {
+			featureFlags.ENABLE_ACCOUNT_OVERVIEW = false;
+
+			mockedUseRequest.mockReturnValue({
+				data: {accountName: 'Acme Corp'},
+				error: false,
+				loading: false,
+			});
+		});
+
+		it('omits overview from the account nav bar', () => {
+			renderProfileRoutes();
+
+			const navTabs = within(screen.getByRole('navigation')).getAllByRole(
+				'link'
+			);
+
+			expect(navTabs.map((navTab) => navTab.textContent)).toEqual([
+				'Activities',
+				'Profile',
+			]);
+		});
+
+		it('does not route to the overview page', async () => {
+			const history = createMemoryHistory({
+				initialEntries: [
+					toRoute(Routes.CONTACTS_ACCOUNT_OVERVIEW, ROUTE_PARAMS),
+				],
+			});
+
+			renderProfileRoutes(history);
+
+			await waitFor(() =>
+				expect(history.location.state).toEqual({notFoundError: true})
+			);
+
+			expect(
+				screen.queryByTestId('account-overview')
+			).not.toBeInTheDocument();
+		});
+
+		it('lands on activities when opening an account', async () => {
+			const history = createMemoryHistory({
+				initialEntries: [
+					toRoute(Routes.CONTACTS_ACCOUNT, ROUTE_PARAMS),
+				],
+			});
+
+			renderProfileRoutes(history);
+
+			await waitFor(() =>
+				expect(history.location.pathname).toBe(
+					toRoute(Routes.CONTACTS_ACCOUNT_ACTIVITIES, ROUTE_PARAMS)
+				)
+			);
+
+			expect(
+				await screen.findByTestId('account-activities')
+			).toBeInTheDocument();
+		});
 	});
 });

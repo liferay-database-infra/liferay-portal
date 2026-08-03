@@ -23,7 +23,6 @@ export const test = mergeTests(
 	digitalSalesRoomPagesTest,
 	featureFlagsTest({
 		'LPD-35443': {enabled: true},
-		'LPD-66359': {enabled: true},
 	}),
 	loginTest()
 );
@@ -1655,7 +1654,7 @@ test(
 
 test(
 	'A seller can duplicate a room copying only the selected documents',
-	{tag: ['@LPD-92370', '@LPD-97489']},
+	{tag: ['@LPD-92370', '@LPD-97489', '@LPD-97852']},
 	async ({
 		apiHelpers,
 		digitalSalesRoomsPage,
@@ -1734,6 +1733,10 @@ test(
 			await expect(
 				digitalSalesRoomsPage.documentRow('liferay')
 			).toBeVisible();
+
+			await expect(
+				digitalSalesRoomsPage.documentRowTitle('liferay')
+			).toHaveClass(/text-secondary/);
 
 			await digitalSalesRoomsPage.documentRowCheckbox('liferay').check();
 			await digitalSalesRoomsPage.duplicateButton.click();
@@ -2196,7 +2199,7 @@ test(
 			await expect(
 				digitalSalesRoomsPage.archivedRoomWarning
 			).toContainText(
-				'This Digital Sales Room is archived. New comments cannot be added, and it can no longer be shared.'
+				'This digital sales room is archived. New comments cannot be added, and it can no longer be shared.'
 			);
 		});
 	}

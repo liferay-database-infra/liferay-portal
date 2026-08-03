@@ -8,8 +8,13 @@ package com.liferay.jenkins.results.parser;
 import java.io.File;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
+import org.json.JSONObject;
+
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -21,143 +26,181 @@ public class PortalWorkspaceGitRepositoryTest
 	extends com.liferay.jenkins.results.parser.Test {
 
 	@Test
-	public void testSetUp() throws Exception {
+	public void testGetPortalTestProperties() throws Exception {
+		Properties buildProperties = new Properties();
+
+		buildProperties.setProperty("portal.bundle.tomcat[version.0]", "url.0");
+		buildProperties.setProperty("portal.bundle.tomcat[version.1]", "url.1");
+		buildProperties.setProperty("portal.bundle.tomcat[version.2]", "url.2");
+		buildProperties.setProperty(
+			"portal.bundle.tomcat[version.env]", "url.env");
+		buildProperties.setProperty(
+			"portal.latest.bundle.version", "version.0");
+		buildProperties.setProperty(
+			"portal.latest.bundle.version[7.0.x]", "version.2");
+		buildProperties.setProperty(
+			"portal.latest.bundle.version[master]", "version.1");
+
+		JenkinsResultsParserUtil.setBuildProperties(buildProperties);
+
+		Map<String, String> environmentValues = Collections.emptyMap();
+
+		_testGetPortalTestProperties(
+			"url.0", "version.0", environmentValues, null);
+		_testGetPortalTestProperties(
+			"url.1", "version.1", environmentValues, "master");
+		_testGetPortalTestProperties(
+			"url.2", "version.2", environmentValues, "7.0.x");
+
+		environmentValues = Collections.singletonMap(
+			"PORTAL_LATEST_BUNDLE_VERSION", "version.env");
+
+		_testGetPortalTestProperties(
+			"url.env", "version.env", environmentValues, null);
+		_testGetPortalTestProperties(
+			"url.env", "version.env", environmentValues, "7.0.x");
+		_testGetPortalTestProperties(
+			"url.env", "version.env", environmentValues, "master");
+	}
+
+	@Test
+	public void testSetUpAdditionalCaches() throws Exception {
+		Properties buildProperties = new Properties();
+
+		buildProperties.setProperty("binaries.cache.enabled", "false");
+		buildProperties.setProperty("binaries.cache.enabled[job*]", "true");
+		buildProperties.setProperty("binaries.cache.enabled[job-1]", "false");
+		buildProperties.setProperty("binaries.cache.enabled[one][two]", "true");
+		buildProperties.setProperty("binaries.cache.enabled[suite*]", "true");
+		buildProperties.setProperty("binaries.cache.enabled[suite-1]", "false");
+
+		JenkinsResultsParserUtil.setBuildProperties(buildProperties);
+
+		_testSetUpAdditionalCaches(false, "one", null);
+		_testSetUpAdditionalCaches(false, "suite-1", null);
+		_testSetUpAdditionalCaches(false, "wrong", null);
+		_testSetUpAdditionalCaches(false, null, "job-1");
+		_testSetUpAdditionalCaches(false, null, "two");
+		_testSetUpAdditionalCaches(false, null, "wrong");
+		_testSetUpAdditionalCaches(false, null, null);
+		_testSetUpAdditionalCaches(true, "one", "two");
+		_testSetUpAdditionalCaches(true, "suite", null);
+		_testSetUpAdditionalCaches(true, "suite-0", null);
+		_testSetUpAdditionalCaches(true, null, "job");
+		_testSetUpAdditionalCaches(true, null, "job-0");
+	}
+
+	private PortalWorkspaceGitRepository _newPortalWorkspaceGitRepository()
+		throws Exception {
+
 		File workingDirectory = File.createTempFile("portal-workspace-", null);
 
 		workingDirectory.delete();
 
 		workingDirectory.mkdir();
 
-		File gitDirectory = new File(workingDirectory, ".git");
+		String baseBranchSHA = RandomTestUtil.randomSHA();
+		String senderBranchSHA = RandomTestUtil.randomSHA();
 
-		gitDirectory.mkdir();
-
-		mockEnvironment(
-			Collections.singletonMap("MASTER_NETWORK_NAME", "aws-network"));
-
-		Properties buildProperties = new Properties();
-
-		buildProperties.setProperty(
-			"binaries.cache.s3.path",
-			"s3://liferayci-file-propagator/binaries-cache/master.tar.gz");
-		buildProperties.setProperty("git.archive.enabled", "true");
-
-		JenkinsResultsParserUtil.setBuildProperties(buildProperties);
-
-		BuildDatabaseUtil.setBuildDatabase(
-			BuildDatabaseTestUtil.newBuildDatabaseWithPullRequest());
-
-		Shell shell = mockShell();
-
-		Mockito.doReturn(
-			new Shell.ExecutionResult(0, "", "")
-		).when(
-			shell
-		).doExecute(
-			Mockito.any(Shell.ExecutionRequest.class)
+		JSONObject jsonObject = new JSONObject(
+		).put(
+			"base_branch_head_sha", baseBranchSHA
+		).put(
+			"base_branch_sha", baseBranchSHA
+		).put(
+			"base_branch_username", RandomTestUtil.randomString()
+		).put(
+			"directory",
+			JenkinsResultsParserUtil.getCanonicalPath(workingDirectory)
+		).put(
+			"directory_name", "liferay-portal"
+		).put(
+			"git_hub_url", "https://github.com/liferay/liferay-portal"
+		).put(
+			"name", "liferay-portal"
+		).put(
+			"sender_branch_head_sha", senderBranchSHA
+		).put(
+			"sender_branch_name", "master"
+		).put(
+			"sender_branch_sha", senderBranchSHA
+		).put(
+			"sender_branch_username", RandomTestUtil.randomString()
+		).put(
+			"upstream_branch_name", "master"
 		);
 
-		LocalGitBranch localGitBranch = Mockito.mock(LocalGitBranch.class);
+		return Mockito.spy(new PortalWorkspaceGitRepository(jsonObject));
+	}
 
-		Mockito.doReturn(
-			"1234567890123456789012345678901234567890"
-		).when(
-			localGitBranch
-		).getSHA();
+	private void _testGetPortalTestProperties(
+			String bundleURL, String bundleVersion,
+			Map<String, String> environmentValues, String upstreamBranchName)
+		throws Exception {
 
-		GitWorkingDirectory gitWorkingDirectory = Mockito.mock(
-			GitWorkingDirectory.class);
+		mockEnvironment(environmentValues);
 
 		PortalWorkspaceGitRepository portalWorkspaceGitRepository =
-			Mockito.mock(PortalWorkspaceGitRepository.class);
+			_newPortalWorkspaceGitRepository();
 
 		Mockito.doReturn(
-			workingDirectory
-		).when(
-			portalWorkspaceGitRepository
-		).getDirectory();
-
-		Mockito.doReturn(
-			"liferay-portal"
-		).when(
-			portalWorkspaceGitRepository
-		).getDirectoryName();
-
-		Mockito.doReturn(
-			gitWorkingDirectory
-		).when(
-			portalWorkspaceGitRepository
-		).getGitWorkingDirectory();
-
-		Mockito.doReturn(
-			localGitBranch
-		).when(
-			portalWorkspaceGitRepository
-		).getLocalGitBranch();
-
-		Mockito.doReturn(
-			"master"
+			upstreamBranchName
 		).when(
 			portalWorkspaceGitRepository
 		).getUpstreamBranchName();
 
-		Mockito.doReturn(
-			true
-		).when(
-			portalWorkspaceGitRepository
-		).isBinariesCacheEnabled();
+		Properties portalTestProperties =
+			portalWorkspaceGitRepository.getPortalTestProperties();
 
-		Mockito.doCallRealMethod(
-		).when(
-			portalWorkspaceGitRepository
-		).prepareGitWorkingDirectory();
-
-		Mockito.doCallRealMethod(
-		).when(
-			portalWorkspaceGitRepository
-		).setUp();
-
-		Mockito.doCallRealMethod(
-		).when(
-			portalWorkspaceGitRepository
-		).setUpAdditionalCaches();
-
-		portalWorkspaceGitRepository.setUp();
-
-		Mockito.verify(
-			shell
-		).doExecute(
-			Mockito.argThat(
-				executionRequest -> _isCommand(
-					executionRequest, "aws s3 cp", "binaries-cache.tar.gz"))
-		);
-
-		Mockito.verify(
-			shell
-		).doExecute(
-			Mockito.argThat(
-				executionRequest -> _isCommand(
-					executionRequest, "tar --directory=",
-					"binaries-cache.tar.gz"))
-		);
+		Assert.assertEquals(
+			bundleURL,
+			portalTestProperties.getProperty(
+				"test.released.test.portal.bundle.zip.url"));
+		Assert.assertEquals(
+			bundleVersion,
+			portalTestProperties.getProperty(
+				"test.released.release.bundle.version"));
 	}
 
-	private boolean _isCommand(
-		Shell.ExecutionRequest executionRequest, String... substrings) {
+	private void _testSetUpAdditionalCaches(
+			boolean binariesCacheEnabled, String ciTestSuite, String jobName)
+		throws Exception {
 
-		if (executionRequest == null) {
-			return false;
+		Map<String, String> environmentValues = new HashMap<>();
+
+		if (!JenkinsResultsParserUtil.isNullOrEmpty(ciTestSuite)) {
+			environmentValues.put("CI_TEST_SUITE", ciTestSuite);
 		}
 
-		String command = executionRequest.getCommands()[0];
+		environmentValues.put("MASTER_NETWORK_NAME", "aws-network");
 
-		for (String substring : substrings) {
-			if (!command.contains(substring)) {
-				return false;
-			}
+		if (!JenkinsResultsParserUtil.isNullOrEmpty(jobName)) {
+			environmentValues.put("JOB_NAME", jobName);
 		}
 
-		return true;
+		mockEnvironment(environmentValues);
+
+		PortalWorkspaceGitRepository portalWorkspaceGitRepository =
+			_newPortalWorkspaceGitRepository();
+
+		Mockito.doNothing(
+		).when(
+			portalWorkspaceGitRepository
+		).setUpBinariesCache();
+
+		portalWorkspaceGitRepository.setUpAdditionalCaches();
+
+		if (binariesCacheEnabled) {
+			Mockito.verify(
+				portalWorkspaceGitRepository, Mockito.times(1)
+			).setUpBinariesCache();
+
+			return;
+		}
+
+		Mockito.verify(
+			portalWorkspaceGitRepository, Mockito.never()
+		).setUpBinariesCache();
 	}
 
 }

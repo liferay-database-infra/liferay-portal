@@ -8,8 +8,8 @@ import {openToast} from 'frontend-js-components-web';
 import {sub} from 'frontend-js-web';
 import React, {ComponentProps, useCallback, useEffect, useState} from 'react';
 
+import CategorizationSuggestionService from '../../../common/services/CategorizationSuggestionService';
 import CategoryService from '../../../common/services/CategoryService';
-import TagService from '../../../common/services/TagService';
 import {
 	IAssetObjectEntry,
 	ITaxonomyCategoryBrief,
@@ -38,6 +38,7 @@ export default function AssetCategorization({
 	categoriesErrorMessage,
 	categorization,
 	cmsGroupId,
+	getContent,
 	getObjectEntryURL,
 	hasUpdatePermission,
 	inputSize,
@@ -47,6 +48,9 @@ export default function AssetCategorization({
 	categoriesErrorMessage?: string;
 	categorization: Categorization;
 	cmsGroupId: number | string;
+	getContent?: (
+		objectDefinitionExternalReferenceCode?: string
+	) => Promise<string>;
 	getObjectEntryURL: string;
 	hasUpdatePermission: boolean;
 	inputSize?: CategorizationInputSize;
@@ -160,32 +164,15 @@ export default function AssetCategorization({
 				({taxonomyCategoryId}) => taxonomyCategoryId
 			);
 
-			const newSuggestions = suggestions.filter(
-				(suggestion) =>
-					typeof suggestion.id === 'number' &&
-					!currentIds.includes(suggestion.id)
-			);
+			const briefs =
+				await CategorizationSuggestionService.resolveNewCategoryBriefs(
+					suggestions,
+					currentIds
+				);
 
-			if (!newSuggestions.length) {
+			if (!briefs.length) {
 				return;
 			}
-
-			const briefs = (
-				await Promise.all(
-					newSuggestions.map(async (suggestion) => {
-						const {data} = await CategoryService.getCategoryById(
-							suggestion.id as number
-						);
-
-						return data
-							? {
-									embeddedTaxonomyCategory: data,
-									taxonomyCategoryId: Number(data.id),
-								}
-							: null;
-					})
-				)
-			).filter(Boolean) as ITaxonomyCategoryBrief[];
 
 			const newObjectEntry = {
 				...objectEntry,
@@ -219,29 +206,10 @@ export default function AssetCategorization({
 				assetLibraryId ||
 				cmsGroupId;
 
-			const names = (
-				await Promise.all(
-					suggestions.map(async (suggestion) => {
-						if (suggestion.isNew) {
-							const {data, status} = await TagService.createTag({
-								assetLibraryId: scopeId,
-								cmsGroupId,
-								name: suggestion.name,
-							});
-
-							if (data?.name) {
-								return data.name;
-							}
-
-							return status === 'CONFLICT'
-								? suggestion.name
-								: null;
-						}
-
-						return suggestion.name;
-					})
-				)
-			).filter((name): name is string => Boolean(name));
+			const names = await CategorizationSuggestionService.createTagNames(
+				suggestions,
+				{assetLibraryId: scopeId, cmsGroupId}
+			);
 
 			const newObjectEntry = {
 				...objectEntry,
@@ -296,6 +264,7 @@ export default function AssetCategorization({
 			assetLibraryId={assetLibraryId}
 			cmsGroupId={cmsGroupId}
 			errorMessage={categoriesErrorMessage}
+			getContent={getContent}
 			hasUpdatePermission={hasUpdatePermission}
 			inputSize={inputSize}
 			objectEntry={objectEntry}

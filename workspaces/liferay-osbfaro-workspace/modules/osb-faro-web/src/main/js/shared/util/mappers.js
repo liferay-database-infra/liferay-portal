@@ -99,12 +99,14 @@ export function safeResultToProps(mapper) {
  * @param {string} rangeSelectors
  */
 export function getVariables({
+	accountId,
 	assetId: assetIdFromProps,
 	experienceId,
 	filters,
 	interval,
 	params,
 	rangeSelectors = {},
+	segmentId,
 }) {
 	const {
 		assetId: assetIdFromParams,
@@ -152,6 +154,20 @@ export function getVariables({
 		variables = {
 			...variables,
 			experienceId,
+		};
+	}
+
+	if (accountId) {
+		variables = {
+			...variables,
+			accountId,
+		};
+	}
+
+	if (segmentId) {
+		variables = {
+			...variables,
+			segmentId,
 		};
 	}
 

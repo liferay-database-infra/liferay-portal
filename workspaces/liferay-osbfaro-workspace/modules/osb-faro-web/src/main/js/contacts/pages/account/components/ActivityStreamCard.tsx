@@ -17,6 +17,7 @@ import formatAccountSessions from '../utils/formatAccountSessions';
 import NoResultsDisplay from 'shared/components/NoResultsDisplay';
 import React, {useEffect, useMemo, useState} from 'react';
 import URLConstants from 'shared/util/url-constants';
+import {ChartView} from 'shared/components/ChartViewSelector';
 import {fetchPolicyDefinition} from 'shared/util/graphql';
 import {getSafeRangeSelectors} from 'shared/util/util';
 import {getSessionsDateRange} from 'shared/util/activityDateRange';
@@ -34,14 +35,18 @@ import {getDateRangeLabel, getDateRangeLabelFromDate} from 'shared/util/date';
 
 interface IActivityStreamCardProps {
 	accountId: string;
+	accountName?: string;
 	channelId: string;
+	chartView?: ChartView;
 	interval: Interval;
 	rangeSelectors: RangeSelectors;
 }
 
 const AccountActivityStreamCard: React.FC<IActivityStreamCardProps> = ({
 	accountId,
+	accountName,
 	channelId,
+	chartView,
 	interval,
 	rangeSelectors,
 }) => {
@@ -142,7 +147,13 @@ const AccountActivityStreamCard: React.FC<IActivityStreamCardProps> = ({
 				({eventsByUserSessions}) => ({
 					items: formatAccountSessions(
 						eventsByUserSessions?.userSessions ?? [],
-						{channelId, groupId, rangeSelectors}
+						{
+							accountId,
+							accountName,
+							channelId,
+							groupId,
+							rangeSelectors,
+						}
 					),
 					total: eventsByUserSessions?.totalEventsMetric?.value ?? 0,
 				})
@@ -151,6 +162,8 @@ const AccountActivityStreamCard: React.FC<IActivityStreamCardProps> = ({
 			sessionsResponse.data,
 			sessionsResponse.error,
 			sessionsResponse.loading,
+			accountId,
+			accountName,
 			channelId,
 			groupId,
 			rangeSelectors,
@@ -196,6 +209,7 @@ const AccountActivityStreamCard: React.FC<IActivityStreamCardProps> = ({
 					value: (totalSessions ?? 0).toLocaleString(),
 				},
 			]}
+			chartView={chartView}
 			delta={delta}
 			emptyChartContent={
 				<ActivityChartEmptyState

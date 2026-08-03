@@ -45,7 +45,7 @@ public class BuildQueueRebalancer {
 	}
 
 	public void rebalance() {
-		_generateBlackListRebalanceActions();
+		_generateBlacklistRebalanceActions();
 
 		_generateAvailableRebalanceActions();
 
@@ -112,14 +112,21 @@ public class BuildQueueRebalancer {
 		}
 	}
 
-	private void _generateBlackListRebalanceActions() {
+	private void _generateBlacklistRebalanceActions() {
 		for (JenkinsMaster jenkinsMaster :
-				_jenkinsCohort.getBlackListedJenkinsMasters()) {
+				_jenkinsCohort.getBlacklistedJenkinsMasters()) {
 
-			for (JenkinsMaster.QueueItem queueItem :
-					jenkinsMaster.getQueueItems()) {
+			try {
+				for (JenkinsMaster.QueueItem queueItem :
+						jenkinsMaster.getQueueItems()) {
 
-				_rebalanceActions.add(new RebalanceAction(queueItem));
+					_rebalanceActions.add(new RebalanceAction(queueItem));
+				}
+			}
+			catch (Exception exception) {
+				System.out.println(
+					"Unable to drain queue items from " +
+						jenkinsMaster.getName() + ": " + exception);
 			}
 		}
 	}

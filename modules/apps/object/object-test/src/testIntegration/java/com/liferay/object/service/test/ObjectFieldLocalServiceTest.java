@@ -15,6 +15,7 @@ import com.liferay.document.library.test.util.DLTestUtil;
 import com.liferay.list.type.entry.util.ListTypeEntryUtil;
 import com.liferay.list.type.model.ListTypeDefinition;
 import com.liferay.list.type.service.ListTypeDefinitionLocalService;
+import com.liferay.notification.service.NotificationTemplateLocalService;
 import com.liferay.object.constants.ObjectActionNameConstants;
 import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectEntryFolderConstants;
@@ -108,7 +109,6 @@ import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.util.TempFileEntryUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.language.override.service.PLOEntryLocalService;
-import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
@@ -1080,18 +1080,50 @@ public class ObjectFieldLocalServiceTest {
 			).build());
 
 		Assert.assertNotNull(
+			_notificationTemplateLocalService.
+				fetchNotificationTemplateByExternalReferenceCode(
+					objectField1.getExternalReferenceCode() +
+						"_ASSIGNEE_NOTIFICATION_TEMPLATE",
+					objectField1.getCompanyId()));
+
+		Assert.assertNotNull(
 			_objectActionLocalService.fetchObjectAction(
 				objectDefinition.getObjectDefinitionId(),
 				ObjectActionNameConstants.NAME_ASSIGN_TO_ME));
+		Assert.assertNotNull(
+			_objectActionLocalService.fetchObjectAction(
+				objectDefinition.getObjectDefinitionId(),
+				ObjectActionNameConstants.NAME_NOTIFY_ASSIGNEE_ON_AFTER_ADD));
+		Assert.assertNotNull(
+			_objectActionLocalService.fetchObjectAction(
+				objectDefinition.getObjectDefinitionId(),
+				ObjectActionNameConstants.
+					NAME_NOTIFY_ASSIGNEE_ON_AFTER_UPDATE));
 
 		objectField1.setBusinessType(ObjectFieldConstants.BUSINESS_TYPE_TEXT);
 
-		_objectFieldLocalService.updateObjectField(objectField1);
+		objectField1 = _objectFieldLocalService.updateObjectField(objectField1);
+
+		Assert.assertNull(
+			_notificationTemplateLocalService.
+				fetchNotificationTemplateByExternalReferenceCode(
+					objectField1.getExternalReferenceCode() +
+						"_ASSIGNEE_NOTIFICATION_TEMPLATE",
+					objectField1.getCompanyId()));
 
 		Assert.assertNull(
 			_objectActionLocalService.fetchObjectAction(
 				objectDefinition.getObjectDefinitionId(),
 				ObjectActionNameConstants.NAME_ASSIGN_TO_ME));
+		Assert.assertNull(
+			_objectActionLocalService.fetchObjectAction(
+				objectDefinition.getObjectDefinitionId(),
+				ObjectActionNameConstants.NAME_NOTIFY_ASSIGNEE_ON_AFTER_ADD));
+		Assert.assertNull(
+			_objectActionLocalService.fetchObjectAction(
+				objectDefinition.getObjectDefinitionId(),
+				ObjectActionNameConstants.
+					NAME_NOTIFY_ASSIGNEE_ON_AFTER_UPDATE));
 
 		// Object field indexed language id
 
@@ -1554,7 +1586,6 @@ public class ObjectFieldLocalServiceTest {
 			modifiableSystemObjectDefinition);
 	}
 
-	@FeatureFlag("LPD-17564")
 	@Test
 	public void testDeleteObjectField() throws Exception {
 
@@ -3889,6 +3920,9 @@ public class ObjectFieldLocalServiceTest {
 	private ListTypeDefinitionLocalService _listTypeDefinitionLocalService;
 
 	private String _listTypeEntryKey;
+
+	@Inject
+	private NotificationTemplateLocalService _notificationTemplateLocalService;
 
 	@Inject
 	private ObjectActionLocalService _objectActionLocalService;

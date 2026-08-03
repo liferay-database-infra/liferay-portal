@@ -411,23 +411,27 @@ const MetricChartWrapper: React.FC<IMetricChartWrapperProps> = ({
 };
 
 const MetricChartRenderer: React.FC<ICommonMetricProps> = ({
+	accountId,
 	emptyDescription,
 	emptyTitle,
 	experienceId,
 	filters,
 	interval,
 	rangeSelectors,
+	segmentId,
 }) => {
 	const {activeItemIndex, metrics, queries, variables} = useData();
 
 	const metricName = getMetricName(activeItemIndex, metrics);
 
 	const {data, error, loading} = useMetricQuery({
+		accountId,
 		experienceId,
 		filters,
 		interval,
 		Query: queries.MetricQuery(metricName),
 		rangeSelectors,
+		segmentId,
 		variables,
 	});
 

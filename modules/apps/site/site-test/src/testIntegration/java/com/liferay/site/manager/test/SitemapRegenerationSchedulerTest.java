@@ -26,6 +26,7 @@ import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
+import com.liferay.portal.kernel.lock.LockManager;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
@@ -116,6 +117,81 @@ public class SitemapRegenerationSchedulerTest {
 
 		_sitemapStorageHelper.deleteSitemaps(
 			TestPropsValues.getCompanyId(), _group.getGroupId());
+	}
+
+	@Test
+	public void testGetNextRegenerateSitemapDate() throws Exception {
+		long companyId = TestPropsValues.getCompanyId();
+
+		_sitemapManager.scheduleRegenerateSitemap(
+			SitemapConstants.ASSET_TYPE_KEY_WEB_CONTENT, companyId,
+			_group.getGroupId(),
+			new Date(System.currentTimeMillis() + Time.DAY));
+
+		Assert.assertEquals(
+			_getNextFireDate(SitemapConstants.ASSET_TYPE_KEY_WEB_CONTENT),
+			_sitemapManager.getNextRegenerateSitemapDate(companyId));
+	}
+
+	@Test
+	public void testGetNextRegenerateSitemapDateWithMultipleJobsScheduled()
+		throws Exception {
+
+		long companyId = TestPropsValues.getCompanyId();
+		long groupId = _group.getGroupId();
+
+		_sitemapManager.scheduleRegenerateSitemap(
+			SitemapConstants.ASSET_TYPE_KEY_WEB_CONTENT, companyId, groupId,
+			new Date(System.currentTimeMillis() + (2 * Time.DAY)));
+		_sitemapManager.scheduleRegenerateSitemap(
+			SitemapConstants.ASSET_TYPE_KEY_PAGES, companyId, groupId,
+			new Date(System.currentTimeMillis() + Time.DAY));
+
+		Date nextFireDate = _getNextFireDate(
+			SitemapConstants.ASSET_TYPE_KEY_PAGES);
+
+		Assert.assertTrue(
+			nextFireDate.before(
+				_getNextFireDate(SitemapConstants.ASSET_TYPE_KEY_WEB_CONTENT)));
+		Assert.assertEquals(
+			nextFireDate,
+			_sitemapManager.getNextRegenerateSitemapDate(companyId));
+	}
+
+	@Test
+	public void testGetNextRegenerateSitemapDateWithNoJobScheduled()
+		throws Exception {
+
+		_deleteRegenerateSitemapScheduledJobs();
+
+		Assert.assertNull(
+			_sitemapManager.getNextRegenerateSitemapDate(
+				TestPropsValues.getCompanyId()));
+	}
+
+	@Test
+	public void testIsRegenerateSitemapInProgress() throws Exception {
+		long companyId = TestPropsValues.getCompanyId();
+
+		Assert.assertFalse(
+			_sitemapManager.isRegenerateSitemapInProgress(companyId));
+
+		String key = RandomTestUtil.randomString();
+
+		_lockManager.lock(
+			TestPropsValues.getUserId(), _CLASS_NAME_SITEMAP_MANAGER_IMPL, key,
+			_CLASS_NAME_SITEMAP_MANAGER_IMPL, false, Time.MINUTE, false);
+
+		try {
+			Assert.assertTrue(
+				_sitemapManager.isRegenerateSitemapInProgress(companyId));
+		}
+		finally {
+			_lockManager.unlock(_CLASS_NAME_SITEMAP_MANAGER_IMPL, key);
+		}
+
+		Assert.assertFalse(
+			_sitemapManager.isRegenerateSitemapInProgress(companyId));
 	}
 
 	@Test
@@ -510,6 +586,17 @@ public class SitemapRegenerationSchedulerTest {
 			TestPropsValues.getCompanyId());
 	}
 
+	private Date _getNextFireDate(String assetTypeKey) throws Exception {
+		List<SchedulerResponse> schedulerResponses =
+			_getRegenerateSitemapSchedulerResponses(assetTypeKey);
+
+		Assert.assertEquals(
+			schedulerResponses.toString(), 1, schedulerResponses.size());
+
+		return _schedulerEngineHelper.getNextFireDate(
+			schedulerResponses.get(0));
+	}
+
 	private CompanyConfigurationTemporarySwapper
 			_getObjectEntryCompanyConfigurationTemporarySwapper(String scope)
 		throws Exception {
@@ -660,8 +747,11 @@ public class SitemapRegenerationSchedulerTest {
 		Assert.assertEquals(
 			schedulerResponses.toString(), 1, schedulerResponses.size());
 
-		return _schedulerEngineHelper.getStartTime(schedulerResponses.get(0));
+		return _schedulerEngineHelper.getStartDate(schedulerResponses.get(0));
 	}
+
+	private static final String _CLASS_NAME_SITEMAP_MANAGER_IMPL =
+		"com.liferay.site.internal.manager.SitemapManagerImpl";
 
 	private static final String _PID_SITEMAP_COMPANY_CONFIGURATION =
 		"com.liferay.site.internal.configuration.SitemapCompanyConfiguration";
@@ -683,6 +773,9 @@ public class SitemapRegenerationSchedulerTest {
 
 	@Inject
 	private LayoutLocalService _layoutLocalService;
+
+	@Inject
+	private LockManager _lockManager;
 
 	@Inject
 	private ObjectEntryLocalService _objectEntryLocalService;

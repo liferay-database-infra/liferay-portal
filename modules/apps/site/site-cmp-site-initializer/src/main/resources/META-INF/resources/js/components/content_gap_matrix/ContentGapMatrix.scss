@@ -1,6 +1,8 @@
 @import 'atlas-variables';
 
-$content-gap-cell-actions-background: #125449;
+$content-gap-cell-accent: var(--teal);
+$content-gap-cell-accent-tier-4: var(--teal-d2);
+$content-gap-cell-background-gap-hover: var(--warning-l2);
 $content-gap-cell-text: #125449;
 $content-gap-cell-text-gap: #863a00;
 $content-gap-cell-text-inverse: #ffffff;
@@ -24,13 +26,21 @@ $content-gap-cell-tiers: (
 	&--clickable {
 		cursor: pointer;
 
-		&:focus,
+		&:focus-within,
 		&:hover {
-			border-color: $primary;
+			border-color: $content-gap-cell-accent;
+			border-style: solid;
+
+			.lfr-cmp__content-gap-cell-actions {
+				visibility: visible;
+			}
+		}
+
+		&:focus-within {
+			box-shadow: $component-focus-box-shadow;
 		}
 	}
 
-	&--active,
 	&--selected {
 		border-color: $primary;
 		box-shadow: 0 0 0 0.125rem rgba($primary, 0.25);
@@ -42,14 +52,35 @@ $content-gap-cell-tiers: (
 		}
 	}
 
-	&--tier-4 .lfr-cmp__content-gap-cell-count {
-		color: $content-gap-cell-text-inverse;
+	&--tier-4 {
+		&.lfr-cmp__content-gap-cell--clickable:focus-within,
+		&.lfr-cmp__content-gap-cell--clickable:hover {
+			border-color: $content-gap-cell-accent-tier-4;
+
+			.lfr-cmp__content-gap-cell-actions {
+				background-color: $content-gap-cell-accent-tier-4;
+			}
+		}
+
+		.lfr-cmp__content-gap-cell-count {
+			color: $content-gap-cell-text-inverse;
+		}
 	}
 
 	&--gap {
 		background-color: $light-l1;
 		border-color: $warning;
 		border-style: dashed;
+
+		&.lfr-cmp__content-gap-cell--clickable:focus-within,
+		&.lfr-cmp__content-gap-cell--clickable:hover {
+			background-color: $content-gap-cell-background-gap-hover;
+			border-color: $warning;
+
+			.lfr-cmp__content-gap-cell-actions {
+				background-color: $warning;
+			}
+		}
 
 		.lfr-cmp__content-gap-cell-count {
 			color: $content-gap-cell-text-gap;
@@ -58,12 +89,13 @@ $content-gap-cell-tiers: (
 }
 
 .lfr-cmp__content-gap-cell-actions {
-	background-color: $content-gap-cell-actions-background;
+	background-color: $content-gap-cell-accent;
 	bottom: 0;
 	display: flex;
 	left: 0;
 	position: absolute;
 	right: 0;
+	visibility: hidden;
 	white-space: nowrap;
 	z-index: 2;
 }
@@ -145,6 +177,9 @@ $content-gap-cell-tiers: (
 }
 
 .lfr-cmp__content-gap-matrix-header {
+	align-items: flex-start;
+	display: flex;
+	justify-content: space-between;
 	margin: 1.5rem;
 }
 

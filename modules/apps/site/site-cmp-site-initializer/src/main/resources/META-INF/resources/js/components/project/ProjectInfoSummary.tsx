@@ -16,24 +16,26 @@ import StateSelector, {State} from '../StateSelector';
 import User, {UserProps} from './User';
 
 interface ProjectInfoSummaryProps {
+	cmpProjectObjectEntryId: string;
 	dueDate: string;
 	funnelStages: string[];
+	hasUpdatePermission: boolean;
 	initialState: string;
 	manager: UserProps;
 	personas: string[];
-	projectId: string;
 	sponsor: UserProps;
 	states: State[];
 	tags: string[];
 }
 
 export default function ProjectInfoSummary({
+	cmpProjectObjectEntryId,
 	dueDate,
 	funnelStages,
+	hasUpdatePermission,
 	initialState,
 	manager,
 	personas,
-	projectId,
 	sponsor,
 	states,
 	tags,
@@ -49,13 +51,15 @@ export default function ProjectInfoSummary({
 					label: 'State',
 					value: (
 						<StateSelector
-							disabled={stateSelectorDisabled}
+							disabled={
+								!hasUpdatePermission || stateSelectorDisabled
+							}
 							onChange={async (key: string) => {
 								setStateSelectorDisabled(true);
 
 								const {error} = await patchProjectById({
 									body: {state: key},
-									projectId,
+									projectId: cmpProjectObjectEntryId,
 								});
 
 								if (!error) {

@@ -2,87 +2,90 @@ package main
 
 import (
 	"os"
+	"time"
 
-	"github.com/caarlos0/env/v11"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
+	env "github.com/caarlos0/env/v11"
+	licensingv1alpha1 "github.com/liferay/liferay-portal/cloud/operator/api/licensing/v1alpha1"
+	licensingcontroller "github.com/liferay/liferay-portal/cloud/operator/internal/controller/licensing"
+	provisioning "github.com/liferay/liferay-portal/cloud/operator/internal/provisioning"
+
+	runtime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/liferay/liferay-portal/cloud/operator/internal/controller"
+	controllerruntime "sigs.k8s.io/controller-runtime"
+	healthz "sigs.k8s.io/controller-runtime/pkg/healthz"
+	zap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(licensingv1alpha1.AddToScheme(scheme))
 }
 
 func main() {
-	cfg, _ := env.ParseAs[config]()
+	config, _ := env.ParseAs[config]()
 
-	ctrl.SetLogger(zap.New())
+	controllerruntime.SetLogger(zap.New(zap.UseDevMode(config.Debug)))
 
-	mgr, err := ctrl.NewManager(
-		ctrl.GetConfigOrDie(),
-		ctrl.Options{
-			Cache: cache.Options{
-				DefaultLabelSelector: labels.SelectorFromSet(
-					map[string]string{
-						"controller-watched": "yes",
-					},
-				),
-			},
-			HealthProbeBindAddress: cfg.ProbeAddress,
+	manager, error := controllerruntime.NewManager(
+		controllerruntime.GetConfigOrDie(),
+		controllerruntime.Options{
+			HealthProbeBindAddress: config.ProbeAddress,
 			Metrics: metricsserver.Options{
-				BindAddress: cfg.MetricsAddress,
+				BindAddress: config.MetricsAddress,
 			},
 			Scheme: scheme,
 		},
 	)
 
-	if err != nil {
-		setupLog.Error(err, "Unable to start manager.")
+	if error != nil {
+		setupLog.Error(error, "Unable to start manager.")
 
 		os.Exit(1)
 	}
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "Unable to set up health check.")
+	if error := manager.AddHealthzCheck("healthz", healthz.Ping); error != nil {
+		setupLog.Error(error, "Unable to set up health check.")
 
 		os.Exit(1)
 	}
 
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "Unable to set up ready check.")
+	if error := manager.AddReadyzCheck("readyz", healthz.Ping); error != nil {
+		setupLog.Error(error, "Unable to set up ready check.")
 
 		os.Exit(1)
 	}
 
-	reconciler := &controller.Reconciler{Client: mgr.GetClient()}
+	liferayEnvironmentReconciler := &licensingcontroller.LiferayEnvironmentReconciler{
+		Client:            manager.GetClient(),
+		HeartbeatInterval: config.HeartbeatInterval,
+		Provisioning:      provisioning.NewHTTPClient(config.ProvisioningBaseURL),
+	}
 
-	if err := reconciler.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Unable to create controller.")
+	if error := liferayEnvironmentReconciler.SetupWithManager(manager); error != nil {
+		setupLog.Error(error, "Unable to create liferayenvironment controller.")
 
 		os.Exit(1)
 	}
 
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "Unexpected error while running manager.")
+	if error := manager.Start(controllerruntime.SetupSignalHandler()); error != nil {
+		setupLog.Error(error, "Unexpected error while running manager.")
 
 		os.Exit(1)
 	}
 }
 
 type config struct {
-	MetricsAddress string `env:"METRICS_ADDRESS" envDefault:":8080"`
-	ProbeAddress   string `env:"PROBE_ADDRESS" envDefault:":8081"`
+	Debug               bool          `env:"DEBUG" envDefault:"false"`
+	HeartbeatInterval   time.Duration `env:"HEARTBEAT_INTERVAL" envDefault:"10m"`
+	MetricsAddress      string        `env:"METRICS_ADDRESS" envDefault:":8080"`
+	ProbeAddress        string        `env:"PROBE_ADDRESS" envDefault:":8081"`
+	ProvisioningBaseURL string        `env:"PROVISIONING_BASE_URL" envDefault:"https://webserver-lrprovisioning.lfr.cloud"`
 }
 
 var (
 	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	setupLog = controllerruntime.Log.WithName("setup")
 )

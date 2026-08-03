@@ -33,20 +33,24 @@ const MetricTabsView: React.FC<IMetricTabsViewProps> = React.memo(
 );
 
 const MetricTabsRenderer: React.FC<ICommonMetricProps> = ({
+	accountId,
 	experienceId,
 	filters,
 	interval,
 	rangeSelectors,
+	segmentId,
 }) => {
 	const {activeItemIndex, metrics, queries, variables} = useData();
 	const {changeActiveItemIndex} = useActions();
 
 	const {data, error, loading} = useMetricQuery({
+		accountId,
 		experienceId,
 		filters,
 		interval,
 		Query: queries.TabsQuery,
 		rangeSelectors,
+		segmentId,
 		variables,
 	});
 

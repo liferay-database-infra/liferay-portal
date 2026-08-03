@@ -4,7 +4,6 @@
  */
 
 import {IItemsActions, getItemActionURL} from '@liferay/frontend-data-set-web';
-import {Immutable} from '@liferay/frontend-js-state-web';
 import {
 	displayErrorToast,
 	displayRequestSuccessToast,
@@ -14,8 +13,10 @@ import React from 'react';
 
 import DeleteTaskModal from '../components/modal/DeleteTaskModal';
 import EditAssigneeModalContent from '../components/modal/EditAssigneeModalContent';
+import UpdateDueDateModalContent from '../components/modal/UpdateDueDateModalContent';
 import {
 	deleteTaskById,
+	getTaskById,
 	getUserAccount,
 	patchTaskById,
 	postSubscribeTaskByExternalReferenceCode,
@@ -26,16 +27,45 @@ import {
 	displayAssignSuccessToast,
 	displayDeleteSuccessToast,
 } from './toastUtil';
-import {ITaskObjectEntry} from './types';
+import {ITaskItemsActionsTask, ITaskObjectEntry} from './types';
 
 export default function getTaskItemsActions(
 	itemsActions: IItemsActions[],
 	loadData: Function,
-	task: {
-		actions?: ITaskObjectEntry['actions'];
-		embedded: Immutable<ITaskObjectEntry> | ITaskObjectEntry;
-	}
+	task: ITaskItemsActionsTask,
+	onTaskChanged?: (task: ITaskItemsActionsTask) => void
 ) {
+	const applyTaskUpdates = (updatedTask: Partial<ITaskObjectEntry>) => {
+		if (onTaskChanged) {
+			onTaskChanged({
+				actions: updatedTask.actions ?? task.actions,
+				embedded: {...task.embedded, ...updatedTask},
+			});
+		}
+		else {
+			loadData();
+		}
+	};
+
+	const refreshTask = async () => {
+		if (!onTaskChanged) {
+			loadData();
+
+			return;
+		}
+
+		const {data} = await getTaskById({
+			taskId: String(task.embedded.id),
+		});
+
+		if (data) {
+			applyTaskUpdates(data);
+		}
+		else {
+			loadData();
+		}
+	};
+
 	const topItems = [];
 
 	if (task.actions?.update) {
@@ -82,7 +112,8 @@ export default function getTaskItemsActions(
 				});
 
 				if (!error) {
-					loadData();
+					await refreshTask();
+
 					displayRequestSuccessToast();
 				}
 				else {
@@ -105,7 +136,8 @@ export default function getTaskItemsActions(
 					});
 
 				if (!error) {
-					loadData();
+					await refreshTask();
+
 					displayRequestSuccessToast();
 				}
 				else {
@@ -127,7 +159,7 @@ export default function getTaskItemsActions(
 					name: string;
 				};
 
-				const {error} = await patchTaskById({
+				const {data, error} = await patchTaskById({
 					body: {
 						assignTo: {
 							externalReferenceCode: user.externalReferenceCode,
@@ -139,7 +171,13 @@ export default function getTaskItemsActions(
 				});
 
 				if (!error) {
-					loadData();
+					if (data) {
+						applyTaskUpdates(data);
+					}
+					else {
+						loadData();
+					}
+
 					displayAssignSuccessToast(task.embedded.title, user.name);
 				}
 				else {
@@ -162,15 +200,47 @@ export default function getTaskItemsActions(
 					}) => (
 						<EditAssigneeModalContent
 							closeModal={closeModal}
+							cmpTaskObjectEntryId={String(task.embedded.id)}
+							cmpTaskObjectEntryTitle={task.embedded.title}
 							loadData={loadData}
-							taskId={String(task.embedded.id)}
-							taskTitle={task.embedded.title}
+							onTaskUpdated={
+								onTaskChanged ? applyTaskUpdates : undefined
+							}
 							value={task.embedded.assignTo}
 						/>
 					),
 					size: 'md',
 				});
 			},
+		});
+	}
+
+	if (task.actions?.update) {
+		middleItems.push({
+			label: Liferay.Language.get('update-due-date'),
+			onClick: async () => {
+				await openCMPModal({
+					center: true,
+					contentComponent: ({
+						closeModal,
+					}: {
+						closeModal: () => void;
+					}) => (
+						<UpdateDueDateModalContent
+							closeModal={closeModal}
+							cmpTaskObjectEntryId={String(task.embedded.id)}
+							cmpTaskObjectEntryTitle={task.embedded.title}
+							dueDate={task.embedded.dueDate}
+							loadData={loadData}
+							onTaskUpdated={
+								onTaskChanged ? applyTaskUpdates : undefined
+							}
+						/>
+					),
+					size: 'md',
+				});
+			},
+			symbolLeft: 'date-time',
 		});
 	}
 

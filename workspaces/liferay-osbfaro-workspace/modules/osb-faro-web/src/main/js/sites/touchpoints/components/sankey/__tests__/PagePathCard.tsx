@@ -1,3 +1,4 @@
+import BasePage from 'shared/components/base-page';
 import PagePathCard from '../PagePathCard';
 import React from 'react';
 import {CHART_COLORS, MAIN_NODE_COLOR, SECONDARY_NODE_COLOR} from '../utils';
@@ -111,6 +112,7 @@ const EMPTY_STATE_DATA = {
 };
 
 const WrapperComponent = ({
+	accountId,
 	data,
 	rangeSelectors = {
 		rangeEnd: '',
@@ -118,10 +120,13 @@ const WrapperComponent = ({
 		rangeStart: '',
 	},
 	reqOptions = {},
+	segmentId,
 }: {
+	accountId?: string;
 	data: any;
 	rangeSelectors?: RangeSelectors;
 	reqOptions?: Record<string, unknown>;
+	segmentId?: string;
 }) => (
 	<MemoryRouter
 		initialEntries={[
@@ -129,12 +134,22 @@ const WrapperComponent = ({
 		]}
 	>
 		<Route path="/workspace/:groupId/:channelId/sites/pages/overview/:touchpoint/:title">
-			<MockedProvider
-				cache={new InMemoryCache({freezeResults: false} as any)}
-				mocks={[mockPagePathReq(data, reqOptions)]}
+			<BasePage.Context.Provider
+				value={{accountId, filters: {}, router: {}, segmentId}}
 			>
-				<PagePathCard rangeSelectors={rangeSelectors} />
-			</MockedProvider>
+				<MockedProvider
+					cache={new InMemoryCache({freezeResults: false} as any)}
+					mocks={[
+						mockPagePathReq(data, {
+							accountId,
+							segmentId,
+							...reqOptions,
+						} as any),
+					]}
+				>
+					<PagePathCard rangeSelectors={rangeSelectors} />
+				</MockedProvider>
+			</BasePage.Context.Provider>
 		</Route>
 	</MemoryRouter>
 );
@@ -150,6 +165,26 @@ describe('PagePathCard', () => {
 		expect(container).toMatchSnapshot();
 	});
 
+	it('should filter by the selected account', async () => {
+		const {container} = render(
+			<WrapperComponent accountId="100" data={DATA} />
+		);
+
+		await waitForLoadingToBeRemoved(container);
+
+		expect(container).toMatchSnapshot();
+	});
+
+	it('should filter by the selected segment', async () => {
+		const {container} = render(
+			<WrapperComponent data={DATA} segmentId="segment-100" />
+		);
+
+		await waitForLoadingToBeRemoved(container);
+
+		expect(container).toMatchSnapshot();
+	});
+
 	it('should render empty state', async () => {
 		const {container, getByText} = render(
 			<WrapperComponent data={EMPTY_STATE_DATA} />
@@ -158,7 +193,7 @@ describe('PagePathCard', () => {
 		await waitForLoadingToBeRemoved(container);
 
 		expect(getByText('Path Analysis')).toBeInTheDocument();
-		expect(getByText('There are no data found.')).toBeInTheDocument();
+		expect(getByText('No data was found.')).toBeInTheDocument();
 		expect(
 			getByText(
 				'Check back later to verify if data has been received from your data sources.'

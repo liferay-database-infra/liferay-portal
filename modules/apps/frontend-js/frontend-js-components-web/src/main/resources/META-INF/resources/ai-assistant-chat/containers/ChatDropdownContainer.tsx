@@ -3,31 +3,20 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {
-	Overlay,
-	useIsFirstRender,
-	useOverlayPosition,
-	usePrevious,
-} from '@clayui/shared';
+import {Overlay, useOverlayPosition} from '@clayui/shared';
 import classNames from 'classnames';
-import React, {useCallback, useEffect, useRef} from 'react';
+import React, {useCallback, useRef} from 'react';
 
 import {ChatPanelContext} from '../ChatPanelContext';
 import useChatContainer from '../hooks/useChatContainer';
+import useClonedTrigger from '../hooks/useClonedTrigger';
+import useTriggerFocusOnClose from '../hooks/useTriggerFocusOnClose';
+import {ChatContainerProps} from './ChatContainerProps';
 import InitialFocus from './InitialFocus';
 
 import './ChatContainers.scss';
 
-export interface ChatDropdownContainerProps
-	extends React.HTMLAttributes<HTMLDivElement> {
-	children: React.ReactNode;
-	id?: string;
-	onOpenChange?: (open: boolean) => void;
-	open?: boolean;
-	trigger: React.ReactElement & {
-		ref?: React.Ref<HTMLElement>;
-	};
-}
+export interface ChatDropdownContainerProps extends ChatContainerProps {}
 
 export default function ChatDropdownContainer({
 	children,
@@ -40,9 +29,6 @@ export default function ChatDropdownContainer({
 }: ChatDropdownContainerProps) {
 	const menuRef = useRef<HTMLDivElement | null>(null);
 	const triggerRef = useRef<HTMLElement | null>(null);
-
-	const isFirstRender = useIsFirstRender();
-	const previousOpen = usePrevious(open);
 
 	const contextValue = useChatContainer({
 		id,
@@ -58,27 +44,15 @@ export default function ChatDropdownContainer({
 		[trigger, onOpenChange, open]
 	);
 
-	useEffect(() => {
-		if (!isFirstRender && previousOpen && !open) {
-			triggerRef.current?.focus();
-		}
-	}, [isFirstRender, previousOpen, open]);
+	useTriggerFocusOnClose(open, triggerRef);
 
 	useOverlayPosition({isOpen: open, ref: menuRef, triggerRef});
 
-	/*
-	 * React Compiler cannot statically prove that cloning the trigger element
-	 * is safe. That's the reason we're adding the eslint-disable below. This follows
-	 * the same pattern as modal/components/Modal.tsx.
-	 */
-
-	// eslint-disable-next-line react-compiler/react-compiler
-	const clonedTrigger = React.cloneElement(trigger, {
-		'aria-controls': contextValue.dialogId,
-		'aria-expanded': open,
-		'aria-haspopup': 'dialog',
-		'onClick': handleTriggerClick,
-		'ref': triggerRef,
+	const clonedTrigger = useClonedTrigger(trigger, {
+		dialogId: contextValue.dialogId,
+		onClick: handleTriggerClick,
+		open,
+		triggerRef,
 	});
 
 	return (

@@ -40,7 +40,6 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.FeatureFlag;
-import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -63,9 +62,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
  * @author Balázs Sáfrány-Kovalik
  */
 @DataGuard(scope = DataGuard.Scope.METHOD)
-@FeatureFlags(
-	featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-57283")}
-)
+@FeatureFlag("LPD-57283")
 @RunWith(Arquillian.class)
 public class DepotEntryUserNotificationTest {
 
@@ -164,7 +161,7 @@ public class DepotEntryUserNotificationTest {
 						"DesignLibraryAdminPortlet",
 					0, 0, PortletRequest.RENDER_PHASE)
 			).setMVCRenderCommandName(
-				"/design_library/design_library_resources"
+				"/design_library/view_resources_design_library"
 			).setParameter(
 				"designLibraryEntryId", _depotEntry2.getDepotEntryId()
 			).buildString(),

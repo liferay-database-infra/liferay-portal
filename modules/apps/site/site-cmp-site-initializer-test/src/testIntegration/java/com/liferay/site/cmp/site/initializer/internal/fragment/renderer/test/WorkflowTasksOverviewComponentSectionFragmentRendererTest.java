@@ -40,9 +40,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 /**
  * @author Jhosseph Gonzalez
  */
-@FeatureFlags(
-	featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-58677")}
-)
+@FeatureFlags(featureFlags = @FeatureFlag("LPD-58677"))
 @RunWith(Arquillian.class)
 public class WorkflowTasksOverviewComponentSectionFragmentRendererTest {
 
@@ -87,8 +85,8 @@ public class WorkflowTasksOverviewComponentSectionFragmentRendererTest {
 			StringBundler.concat(
 				"/o/search/v1.0/search?emptySearch=true&entryClassNames=",
 				"com.liferay.portal.workflow.kaleo.model.",
-				"KaleoTaskInstanceToken",
-				"&filter=keywords/any(k:startswith(k, 'L_CMP_TASK'))"),
+				"KaleoTaskInstanceToken&filter=cmpTaskObjectEntryIds/any(x:x ",
+				"gt 0)"),
 			props.get("filterURL"));
 	}
 

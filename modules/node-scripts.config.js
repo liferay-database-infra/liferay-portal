@@ -10,15 +10,16 @@
  */
 
 module.exports = {
-	hash: 'e63d387db0f2e94f8b50c6ecf8ffd08efb924ee3133eb60f47c9948a086b5e41',
+	hash: '062057d96994aa523fcea6509917c9119605f2dc4dade4ff54eba58281224816',
 	imports: {
 		'@liferay/accessibility-menu-web': [],
 		'@liferay/accessibility-settings-state-web': [],
 		'@liferay/account-validator-vies-web': [],
 		'@liferay/address-web': [],
 		'@liferay/ai-creator-openai-web': [],
-		'@liferay/ai-hub-cell-js-components-web': [],
-		'@liferay/ai-hub-web': [],
+		'@liferay/ai-hub-cell-js-components-web': [
+			'./renderAIAssistantTrigger',
+		],
 		'@liferay/analytics-reports-js-components-web': [],
 		'@liferay/analytics-settings-web': [],
 		'@liferay/application-list-taglib': [],

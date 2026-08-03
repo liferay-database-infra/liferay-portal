@@ -27,9 +27,7 @@ import org.junit.runner.RunWith;
 /**
  * @author Carolina Barbosa
  */
-@FeatureFlags(
-	featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-58677")}
-)
+@FeatureFlags(featureFlags = @FeatureFlag("LPD-58677"))
 @RunWith(Arquillian.class)
 public class TaskSectionTableFDSViewTest
 	extends BaseSectionTableFDSViewTestCase {
@@ -71,7 +69,7 @@ public class TaskSectionTableFDSViewTest
 		assertFDSTableSchemaField(
 			null, "projectTitleTableCellRenderer", "project", "projectTitle");
 		assertFDSTableSchemaField(
-			null, "stateTableCellRenderer", "state-status", "state");
+			null, "stateTableCellRenderer", "state", "state");
 		assertFDSTableSchemaField(
 			"actionLink", "simpleActionLinkTableCellRenderer", "title",
 			"title");

@@ -2,12 +2,20 @@ import ActivityStreamCard from './components/ActivityStreamCard';
 import ActivityStreamCardHeader from './components/ActivityStreamCardHeader';
 import BaseCard from 'shared/components/base-card';
 import Loading from 'shared/components/Loading';
-import React, {useContext} from 'react';
+import React, {useContext, useState} from 'react';
 import {ChannelContext} from 'shared/context/channel';
+import {
+	ChartView,
+	DEFAULT_CHART_VIEW,
+} from 'shared/components/ChartViewSelector';
 import {Interval, RangeSelectors} from 'shared/types';
 import {useParams} from 'react-router-dom';
 
-const Activities = () => {
+interface IActivitiesProps {
+	accountName?: string;
+}
+
+const Activities: React.FC<IActivitiesProps> = ({accountName}) => {
 	const {selectedChannel} = useContext(ChannelContext);
 
 	const {channelId: routeChannelId, id} = useParams<{
@@ -15,6 +23,8 @@ const Activities = () => {
 		groupId: string;
 		id: string;
 	}>();
+
+	const [chartView, setChartView] = useState<ChartView>(DEFAULT_CHART_VIEW);
 
 	const channelId = routeChannelId ?? selectedChannel?.id;
 
@@ -30,7 +40,11 @@ const Activities = () => {
 					'chronological-timeline-of-the-accounts-activities-within-the-selected-timeframe-with-details-on-events-and-session-context'
 				)}
 				Header={ActivityStreamCardHeader}
-				headerProps={{showRangeKey: true}}
+				headerProps={{
+					chartView,
+					onChartViewChange: setChartView,
+					showRangeKey: true,
+				}}
 				label={Liferay.Language.get('activity-stream').toUpperCase()}
 				legacyDropdownRangeKey={false}
 				minHeight={500}
@@ -45,7 +59,9 @@ const Activities = () => {
 				}) => (
 					<ActivityStreamCard
 						accountId={id}
+						accountName={accountName}
 						channelId={channelId}
+						chartView={chartView}
 						interval={interval}
 						rangeSelectors={rangeSelectors}
 					/>

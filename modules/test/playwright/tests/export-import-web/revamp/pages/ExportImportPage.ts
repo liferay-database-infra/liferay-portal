@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Locator, Page} from '@playwright/test';
+import {Locator, Page, expect} from '@playwright/test';
+import * as fs from 'fs';
 
 import {clickAndExpectToBeVisible} from '../../../../utils/clickAndExpectToBeVisible';
 import {PORTLET_URLS} from '../../../../utils/portletUrls';
@@ -29,6 +30,7 @@ export class ExportImportPage {
 		taskName: string,
 		taskStatus?: taskStatus
 	) => Locator;
+	readonly viewReportEntriesMenuItem: Locator;
 
 	constructor(page: Page) {
 		this.actionsButton = (name) =>
@@ -55,7 +57,7 @@ export class ExportImportPage {
 		this.page = page;
 		this.taskStatusLabel = (taskName, taskStatus = 'success') => {
 			const taskStatusTexts: Record<taskStatus, string> = {
-				completedWithErrors: 'Completed with errors',
+				completedWithErrors: 'Completed With Errors',
 				success: 'Successful',
 			};
 
@@ -64,6 +66,9 @@ export class ExportImportPage {
 				.locator('.cell-status')
 				.getByText(taskStatusTexts[taskStatus], {exact: true});
 		};
+		this.viewReportEntriesMenuItem = page.getByRole('menuitem', {
+			name: 'View Report Entries',
+		});
 	}
 
 	async clickNew() {
@@ -92,6 +97,12 @@ export class ExportImportPage {
 		return filePath;
 	}
 
+	async expectUploadError(folderPath: string, message: string) {
+		await this.selectFile(folderPath);
+
+		await expect(this.page.getByText(message)).toBeVisible();
+	}
+
 	async export(name: string) {
 		await this.clickNew();
 
@@ -106,7 +117,30 @@ export class ExportImportPage {
 		);
 	}
 
-	async import(folderPath: string, name: string) {
+	async goToImport(siteFriendlyUrlPath: string) {
+		await this.page.goto(
+			`/group${siteFriendlyUrlPath}${PORTLET_URLS.import}`
+		);
+	}
+
+	async goToImportDetails(name: string) {
+		await clickAndExpectToBeVisible({
+			target: this.viewReportEntriesMenuItem,
+			trigger: this.actionsButton(name),
+		});
+
+		await this.viewReportEntriesMenuItem.click();
+	}
+
+	async import({
+		folderPath,
+		name,
+		taskStatus = 'success',
+	}: {
+		folderPath: string;
+		name: string;
+		taskStatus?: taskStatus;
+	}) {
 		await this.nameInput.fill(name);
 
 		await this.selectFile(folderPath);
@@ -121,7 +155,7 @@ export class ExportImportPage {
 
 		await this.importButton.click();
 
-		await this.taskStatusLabel(name).waitFor();
+		await this.taskStatusLabel(name, taskStatus).waitFor();
 	}
 
 	async selectFile(folderPath: string) {
@@ -132,7 +166,7 @@ export class ExportImportPage {
 		const fileChooser = await fileChooserPromise;
 
 		await fileChooser.setFiles(
-			folderPath.endsWith('.lar')
+			fs.statSync(folderPath).isDirectory()
 				? await zipFolder(folderPath)
 				: folderPath
 		);

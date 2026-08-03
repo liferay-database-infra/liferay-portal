@@ -20,6 +20,100 @@ const baseProps = {
 };
 
 describe('CategorizationSuggestions', () => {
+	it('disables the actions once committed', () => {
+		render(
+			<CategorizationSuggestions
+				{...baseProps}
+				committed
+				kind="categories"
+				status="ready"
+				suggestions={[{id: 1, name: 'International'}]}
+			/>
+		);
+
+		expect(
+			screen.getByRole('button', {name: 'add-categories'})
+		).toBeDisabled();
+		expect(screen.getByRole('button', {name: 'try-again'})).toBeDisabled();
+	});
+
+	it('fires dismiss when a label close button is clicked', () => {
+		const onDismiss = jest.fn();
+		const suggestion = {isNew: false, name: 'Japan'};
+
+		render(
+			<CategorizationSuggestions
+				{...baseProps}
+				kind="tags"
+				onDismiss={onDismiss}
+				status="ready"
+				suggestions={[suggestion]}
+			/>
+		);
+
+		fireEvent.click(screen.getByRole('button', {name: 'remove'}));
+
+		expect(onDismiss).toHaveBeenCalledWith(suggestion);
+	});
+
+	it('fires try again', () => {
+		const onRegenerate = jest.fn();
+
+		render(
+			<CategorizationSuggestions
+				{...baseProps}
+				kind="tags"
+				onRegenerate={onRegenerate}
+				status="ready"
+				suggestions={[{isNew: false, name: 'Japan'}]}
+			/>
+		);
+
+		fireEvent.click(screen.getByRole('button', {name: 'try-again'}));
+
+		expect(onRegenerate).toHaveBeenCalled();
+	});
+
+	it('flags new tags with the new class', () => {
+		const {container} = render(
+			<CategorizationSuggestions
+				{...baseProps}
+				kind="tags"
+				status="ready"
+				suggestions={[{isNew: true, name: 'Culture'}]}
+			/>
+		);
+
+		expect(
+			container.querySelector('.categorization-suggestion-label--new')
+		).toBeInTheDocument();
+	});
+
+	it('renders labels and commits the suggestions', () => {
+		const onCommit = jest.fn();
+		const suggestions = [
+			{id: 1, name: 'International'},
+			{id: 2, name: 'Roadtrip'},
+		];
+
+		render(
+			<CategorizationSuggestions
+				{...baseProps}
+				kind="categories"
+				onCommit={onCommit}
+				status="ready"
+				suggestions={suggestions}
+			/>
+		);
+
+		expect(screen.getByText('International')).toBeInTheDocument();
+		expect(screen.getByText('Roadtrip')).toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole('button', {name: 'add-categories'}));
+
+		expect(onCommit).toHaveBeenCalledWith(suggestions);
+	});
+
 	it('renders nothing when idle', () => {
 		const {container} = render(
 			<CategorizationSuggestions
@@ -46,18 +140,6 @@ describe('CategorizationSuggestions', () => {
 		).toBeInTheDocument();
 	});
 
-	it('shows the tags loading text', () => {
-		render(
-			<CategorizationSuggestions
-				{...baseProps}
-				kind="tags"
-				status="loading"
-			/>
-		);
-
-		expect(screen.getByText('generating')).toBeInTheDocument();
-	});
-
 	it('shows the no-match text when empty', () => {
 		render(
 			<CategorizationSuggestions
@@ -74,97 +156,15 @@ describe('CategorizationSuggestions', () => {
 		).toBeInTheDocument();
 	});
 
-	it('renders chips and commits the suggestions', () => {
-		const onCommit = jest.fn();
-		const suggestions = [
-			{id: 1, name: 'International'},
-			{id: 2, name: 'Roadtrip'},
-		];
-
-		render(
-			<CategorizationSuggestions
-				{...baseProps}
-				kind="categories"
-				onCommit={onCommit}
-				status="ready"
-				suggestions={suggestions}
-			/>
-		);
-
-		expect(screen.getByText('International')).toBeInTheDocument();
-		expect(screen.getByText('Roadtrip')).toBeInTheDocument();
-
-		fireEvent.click(screen.getByRole('button', {name: 'save-categories'}));
-
-		expect(onCommit).toHaveBeenCalledWith(suggestions);
-	});
-
-	it('fires regenerate', () => {
-		const onRegenerate = jest.fn();
-
+	it('shows the tags loading text', () => {
 		render(
 			<CategorizationSuggestions
 				{...baseProps}
 				kind="tags"
-				onRegenerate={onRegenerate}
-				status="ready"
-				suggestions={[{isNew: false, name: 'Japan'}]}
+				status="loading"
 			/>
 		);
 
-		fireEvent.click(screen.getByRole('button', {name: 'regenerate'}));
-
-		expect(onRegenerate).toHaveBeenCalled();
-	});
-
-	it('fires dismiss when a chip close button is clicked', () => {
-		const onDismiss = jest.fn();
-		const suggestion = {isNew: false, name: 'Japan'};
-
-		render(
-			<CategorizationSuggestions
-				{...baseProps}
-				kind="tags"
-				onDismiss={onDismiss}
-				status="ready"
-				suggestions={[suggestion]}
-			/>
-		);
-
-		fireEvent.click(screen.getByRole('button', {name: 'remove'}));
-
-		expect(onDismiss).toHaveBeenCalledWith(suggestion);
-	});
-
-	it('flags new tags with the new class', () => {
-		const {container} = render(
-			<CategorizationSuggestions
-				{...baseProps}
-				kind="tags"
-				status="ready"
-				suggestions={[{isNew: true, name: 'Culture'}]}
-			/>
-		);
-
-		expect(
-			container.querySelector('.categorization-suggestion-chip--new')
-		).toBeInTheDocument();
-	});
-
-	it('disables the actions once committed', () => {
-		render(
-			<CategorizationSuggestions
-				{...baseProps}
-				committed
-				kind="categories"
-				status="ready"
-				suggestions={[{id: 1, name: 'International'}]}
-			/>
-		);
-
-		expect(
-			screen.getByRole('button', {name: 'save-categories'})
-		).toBeDisabled();
-		expect(screen.getByRole('button', {name: 'try-again'})).toBeDisabled();
+		expect(screen.getByText('generating-tags')).toBeInTheDocument();
 	});
 });

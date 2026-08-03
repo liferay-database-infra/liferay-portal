@@ -5,6 +5,7 @@
 
 package com.liferay.roles.admin.role.type.contributor;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchPaginationUtil;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.role.RoleConstants;
@@ -35,6 +36,10 @@ public interface RoleTypeContributor {
 	 */
 	public default String getClassName() {
 		return null;
+	}
+
+	public default String getDefaultSubtype() {
+		return StringPool.BLANK;
 	}
 
 	/**

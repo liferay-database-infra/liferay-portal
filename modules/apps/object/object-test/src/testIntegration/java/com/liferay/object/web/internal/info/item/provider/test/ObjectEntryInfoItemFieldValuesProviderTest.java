@@ -8,6 +8,7 @@ package com.liferay.object.web.internal.info.item.provider.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
+import com.liferay.document.library.test.util.DLTestUtil;
 import com.liferay.document.library.util.DLURLHelper;
 import com.liferay.info.field.InfoFieldValue;
 import com.liferay.info.item.ClassPKInfoItemIdentifier;
@@ -71,7 +72,6 @@ import com.liferay.portal.kernel.util.TimeZoneUtil;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -206,13 +206,12 @@ public class ObjectEntryInfoItemFieldValuesProviderTest {
 			ObjectRelationshipConstants.TYPE_ONE_TO_MANY, null);
 	}
 
-	@FeatureFlag("LPD-17564")
 	@Test
 	public void testObjectEntryInfoItemFieldValuesProvider() throws Exception {
 		FileEntry fileEntry = _dlAppLocalService.addFileEntry(
 			null, TestPropsValues.getUserId(), _group.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, "test.png",
-			ContentTypes.IMAGE_PNG, RandomTestUtil.randomBytes(), null, null,
+			ContentTypes.IMAGE_PNG, DLTestUtil.getImageBytes("png"), null, null,
 			null,
 			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
@@ -290,7 +289,6 @@ public class ObjectEntryInfoItemFieldValuesProviderTest {
 			_getThemeDisplay(RandomTestUtil.randomString(), "UTC"));
 	}
 
-	@FeatureFlag("LPD-17564")
 	@Test
 	public void testObjectEntryInfoItemFieldValuesProviderWithAttachmentObjectField()
 		throws Exception {
@@ -319,7 +317,7 @@ public class ObjectEntryInfoItemFieldValuesProviderTest {
 		FileEntry fileEntry = _dlAppLocalService.addFileEntry(
 			null, TestPropsValues.getUserId(), _group.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, "test.png",
-			ContentTypes.IMAGE_PNG, RandomTestUtil.randomBytes(), null, null,
+			ContentTypes.IMAGE_PNG, DLTestUtil.getImageBytes("png"), null, null,
 			null,
 			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
@@ -368,7 +366,6 @@ public class ObjectEntryInfoItemFieldValuesProviderTest {
 		}
 	}
 
-	@FeatureFlag("LPD-17564")
 	@Test
 	public void testObjectEntryInfoItemFieldValuesProviderWithObjectEntryVersioning()
 		throws Exception {
@@ -434,7 +431,6 @@ public class ObjectEntryInfoItemFieldValuesProviderTest {
 		}
 	}
 
-	@FeatureFlag("LPD-17564")
 	@Test
 	public void testObjectEntryInfoItemFieldValuesProviderWithObjectRelationship()
 		throws Exception {

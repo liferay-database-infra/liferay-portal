@@ -8,30 +8,40 @@
 <%@ include file="/init.jsp" %>
 
 <%
-long designLibraryEntryId = (long)request.getAttribute(DesignLibraryConstants.DESIGN_LIBRARY_ENTRY_ID_KEY);
+DepotEntry depotEntry = (DepotEntry)request.getAttribute(DesignLibraryWebKeys.DESIGN_LIBRARY_ENTRY);
 
-DesignLibraryResourcesDisplayContext designLibraryResourcesDisplayContext = new DesignLibraryResourcesDisplayContext(request, liferayPortletResponse);
+ViewDesignLibraryResourcesDisplayContext viewDesignLibraryResourcesDisplayContext = new ViewDesignLibraryResourcesDisplayContext(depotEntry, request, liferayPortletResponse);
 %>
 
 <div>
 	<div>
 		<react:component
 			module="{DesignLibraryBreadcrumb} from design-library-web"
-			props="<%= designLibraryResourcesDisplayContext.getBreadcrumbProps(designLibraryEntryId) %>"
+			props="<%= viewDesignLibraryResourcesDisplayContext.getBreadcrumbProps() %>"
 		/>
 	</div>
 
-	<div class="design-library-fds-wrapper design-library-fds-wrapper--resources">
-		<frontend-data-set:headless-display
-			additionalProps="<%= designLibraryResourcesDisplayContext.getFDSAdditionalProps(designLibraryEntryId) %>"
-			apiURL="<%= designLibraryResourcesDisplayContext.getAPIURL(designLibraryEntryId) %>"
-			emptyState="<%= designLibraryResourcesDisplayContext.getEmptyState() %>"
-			fdsActionDropdownItems="<%= designLibraryResourcesDisplayContext.getFDSActionDropdownItems(designLibraryEntryId) %>"
-			formName="fm"
-			id="<%= DesignLibraryAdminFDSNames.DESIGN_LIBRARY_RESOURCES %>"
-			propsTransformer="{DesignLibraryResourcesFDSPropsTransformer} from design-library-web"
-			selectedItemsKey="embedded.id"
-			selectionType="multiple"
-		/>
-	</div>
+	<c:choose>
+		<c:when test="<%= viewDesignLibraryResourcesDisplayContext.hasContentAccess() %>">
+			<div class="design-library-fds-wrapper design-library-fds-wrapper--resources">
+				<frontend-data-set:headless-display
+					additionalProps="<%= viewDesignLibraryResourcesDisplayContext.getFDSAdditionalProps() %>"
+					apiURL="<%= viewDesignLibraryResourcesDisplayContext.getAPIURL() %>"
+					emptyState="<%= viewDesignLibraryResourcesDisplayContext.getEmptyState() %>"
+					fdsActionDropdownItems="<%= viewDesignLibraryResourcesDisplayContext.getFDSActionDropdownItems() %>"
+					formName="fm"
+					id="<%= DesignLibraryAdminFDSNames.DESIGN_LIBRARY_RESOURCES %>"
+					propsTransformer="{DesignLibraryResourcesFDSPropsTransformer} from design-library-web"
+					selectedItemsKey="embedded.id"
+					selectionType="multiple"
+				/>
+			</div>
+		</c:when>
+		<c:otherwise>
+			<clay:alert
+				displayType="info"
+				message="you-do-not-have-access-to-any-content-in-this-design-library"
+			/>
+		</c:otherwise>
+	</c:choose>
 </div>

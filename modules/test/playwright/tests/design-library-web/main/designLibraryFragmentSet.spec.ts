@@ -16,8 +16,6 @@ const test = mergeTests(
 	designLibrariesPageTest,
 	featureFlagsTest({
 		'LPD-11235': {enabled: true},
-		'LPD-17564': {enabled: true},
-		'LPD-34594': {enabled: true},
 		'LPD-35443': {enabled: true},
 		'LPD-57283': {enabled: true},
 		'LPD-76864': {enabled: true},
@@ -106,7 +104,7 @@ test(
 
 				await page.getByRole('button', {name: 'Save'}).click();
 
-				await expect(page).toHaveURL(/design_library_resources/);
+				await expect(page).toHaveURL(/view_resources_design_library/);
 
 				await expect(
 					contentTable.getByRole('row', {

@@ -6,7 +6,6 @@
 import {Page, expect, mergeTests} from '@playwright/test';
 
 import {dataApiHelpersTest} from '../../../../fixtures/dataApiHelpersTest';
-import {featureFlagsTest} from '../../../../fixtures/featureFlagsTest';
 import {loginTest} from '../../../../fixtures/loginTest';
 import {ApiHelpers} from '../../../../helpers/ApiHelpers';
 import {createCategories} from '../../../../helpers/CreateCategories';
@@ -22,9 +21,6 @@ const test = mergeTests(
 	categorizationPagesTest,
 	cmsPagesTest,
 	dataApiHelpersTest,
-	featureFlagsTest({
-		'LPD-17564': {enabled: true},
-	}),
 	loginTest()
 );
 
@@ -48,10 +44,6 @@ const projectVocabularyTest = mergeTests(
 	categorizationPagesTest,
 	cmsPagesTest,
 	dataApiHelpersTest,
-	featureFlagsTest({
-		'LPD-17564': {enabled: true},
-		'LPD-86291': {enabled: true},
-	}),
 	loginTest()
 );
 
@@ -59,10 +51,6 @@ const systemVocabularyTest = mergeTests(
 	categorizationPagesTest,
 	cmsPagesTest,
 	dataApiHelpersTest,
-	featureFlagsTest({
-		'LPD-17564': {enabled: true},
-		'LPD-86291': {enabled: true},
-	}),
 	loginTest()
 );
 
@@ -879,8 +867,11 @@ projectVocabularyTest.describe('Project selection tests', () => {
 });
 
 systemVocabularyTest.describe('System vocabulary tests', () => {
-	let systemVocabularyId: number | undefined;
 	let systemVocabularyName: string;
+
+	// A system vocabulary cannot be deleted once created, so it is left behind
+	// on the site. Each test creates a uniquely named vocabulary and searches
+	// for it, so the leftover data does not interfere with the assertions.
 
 	systemVocabularyTest.beforeEach(
 		'Create a system vocabulary via API',
@@ -891,47 +882,30 @@ systemVocabularyTest.describe('System vocabulary tests', () => {
 				.getSiteByFriendlyUrlPath('cms')
 				.then((response) => response.id);
 
-			systemVocabularyId = await apiHelpers.headlessAdminTaxonomy
-				.postSiteTaxonomyVocabulary({
-					assetLibraries: [{id: -1}],
-					assetTypes: [
-						{
-							required: true,
-							subtype: 'AllAssetSubtypes',
-							type: 'AllAssetTypes',
-						},
-					],
-					name: systemVocabularyName,
-					siteId,
-					system: true,
-					visibilityType: 'PUBLIC',
-				})
-				.then((response) => response.id);
+			await apiHelpers.headlessAdminTaxonomy.postSiteTaxonomyVocabulary({
+				assetLibraries: [{id: -1}],
+				assetTypes: [
+					{
+						required: false,
+						subtype: 'AllAssetSubtypes',
+						type: 'AllAssetTypes',
+					},
+				],
+				name: systemVocabularyName,
+				siteId,
+				system: true,
+				visibilityType: 'PUBLIC',
+			});
 		}
 	);
-
-	systemVocabularyTest.afterEach(async ({apiHelpers}) => {
-		if (systemVocabularyId === undefined) {
-			return;
-		}
-
-		// A system vocabulary cannot be deleted while LPD-86291 is enabled, so
-		// disable it before cleaning up.
-
-		await apiHelpers.featureFlag.updateFeatureFlag('LPD-86291', false);
-
-		await apiHelpers.headlessAdminTaxonomy.deleteTaxonomyVocabulary(
-			systemVocabularyId
-		);
-
-		systemVocabularyId = undefined;
-	});
 
 	systemVocabularyTest(
 		'Hide the delete action for a system vocabulary',
 		{tag: '@LPD-93225'},
 		async ({vocabulariesPage}) => {
 			await vocabulariesPage.goto();
+
+			await vocabulariesPage.search(systemVocabularyName);
 
 			// The delete action is not offered for a system vocabulary
 
@@ -947,6 +921,8 @@ systemVocabularyTest.describe('System vocabulary tests', () => {
 		{tag: '@LPD-93225'},
 		async ({editVocabularyPage, page, vocabulariesPage}) => {
 			await vocabulariesPage.goto();
+
+			await vocabulariesPage.search(systemVocabularyName);
 
 			// Open the system vocabulary edit page
 
@@ -983,6 +959,8 @@ systemVocabularyTest.describe('System vocabulary tests', () => {
 		{tag: '@LPD-93225'},
 		async ({categoriesPage, editCategoryPage, page, vocabulariesPage}) => {
 			await vocabulariesPage.goto();
+
+			await vocabulariesPage.search(systemVocabularyName);
 
 			// Categories can still be added to a system vocabulary
 

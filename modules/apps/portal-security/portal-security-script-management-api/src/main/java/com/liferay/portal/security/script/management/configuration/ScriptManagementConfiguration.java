@@ -13,7 +13,7 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
  * @author Feliphe Marinho
  */
 @ExtendedObjectClassDefinition(
-	category = "script-management",
+	category = "script-management", generateUI = false,
 	scope = ExtendedObjectClassDefinition.Scope.SYSTEM
 )
 @Meta.OCD(
@@ -23,11 +23,7 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
 )
 public interface ScriptManagementConfiguration {
 
-	@Meta.AD(
-		deflt = "false",
-		name = "allow-script-content-to-be-executed-or-included",
-		required = false
-	)
+	@Meta.AD(deflt = "false", required = false)
 	public boolean allowScriptContentToBeExecutedOrIncluded();
 
 }

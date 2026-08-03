@@ -1297,6 +1297,11 @@ public class BundleSiteInitializer implements SiteInitializer {
 			_languageKeyResolver.expand(
 				serviceContext.getCompanyId(), objectDefinitionJSONObject);
 
+			String updateStrategy = objectDefinitionJSONObject.getString(
+				"updateStrategy");
+
+			objectDefinitionJSONObject.remove("updateStrategy");
+
 			json = objectDefinitionJSONObject.toString();
 
 			ObjectDefinition objectDefinition = ObjectDefinition.toDTO(json);
@@ -1308,18 +1313,42 @@ public class BundleSiteInitializer implements SiteInitializer {
 				continue;
 			}
 
-			Page<ObjectDefinition> objectDefinitionsPage =
-				objectDefinitionResource.getObjectDefinitionsPage(
-					null, null,
-					objectDefinitionResource.toFilter(
-						StringBundler.concat(
-							"name eq '", objectDefinition.getName(), "'")),
-					null, null);
+			Long existingObjectDefinitionId = null;
 
-			ObjectDefinition existingObjectDefinition =
-				objectDefinitionsPage.fetchFirstItem();
+			if (Validator.isNotNull(
+					objectDefinition.getExternalReferenceCode())) {
 
-			if (existingObjectDefinition == null) {
+				com.liferay.object.model.ObjectDefinition
+					serviceBuilderObjectDefinition =
+						_objectDefinitionLocalService.
+							fetchObjectDefinitionByExternalReferenceCode(
+								objectDefinition.getExternalReferenceCode(),
+								serviceContext.getCompanyId());
+
+				if (serviceBuilderObjectDefinition != null) {
+					existingObjectDefinitionId =
+						serviceBuilderObjectDefinition.getObjectDefinitionId();
+				}
+			}
+			else {
+				Page<ObjectDefinition> objectDefinitionsPage =
+					objectDefinitionResource.getObjectDefinitionsPage(
+						null, null,
+						objectDefinitionResource.toFilter(
+							StringBundler.concat(
+								"name eq '", objectDefinition.getName(), "'")),
+						null, null);
+
+				ObjectDefinition existingObjectDefinition =
+					objectDefinitionsPage.fetchFirstItem();
+
+				if (existingObjectDefinition != null) {
+					existingObjectDefinitionId =
+						existingObjectDefinition.getId();
+				}
+			}
+
+			if (existingObjectDefinitionId == null) {
 				if (GetterUtil.getBoolean(
 						objectDefinition.getAccountEntryRestricted())) {
 
@@ -1334,9 +1363,16 @@ public class BundleSiteInitializer implements SiteInitializer {
 				objectDefinitionIds.add(objectDefinition.getId());
 			}
 			else {
-				objectDefinition =
-					objectDefinitionResource.patchObjectDefinition(
-						existingObjectDefinition.getId(), objectDefinition);
+				if (Objects.equals(updateStrategy, "UPDATE")) {
+					objectDefinition =
+						objectDefinitionResource.putObjectDefinition(
+							existingObjectDefinitionId, objectDefinition);
+				}
+				else {
+					objectDefinition =
+						objectDefinitionResource.patchObjectDefinition(
+							existingObjectDefinitionId, objectDefinition);
+				}
 			}
 
 			_replaceObjectDefinitionValues(

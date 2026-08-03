@@ -1,6 +1,6 @@
 import {AssetTypes} from 'shared/util/constants';
 import {RangeSelectors} from 'shared/types';
-import {Routes, toRoute} from 'shared/util/router';
+import {Routes, setUriQueryValues, toRoute} from 'shared/util/router';
 import {UserSessionEvent} from 'shared/queries/UserSessionQuery';
 
 /**
@@ -35,6 +35,8 @@ const ASSET_APPLICATIONS: Record<
 };
 
 export interface EventDashboardContext {
+	accountId?: string;
+	accountName?: string;
 	channelId?: string;
 	groupId?: string;
 	isWebhook?: boolean;
@@ -76,16 +78,40 @@ const buildQuery = (rangeSelectors?: RangeSelectors): string => {
  *   the dashboard type.
  * - pageViewed events link to the page (touchpoint) dashboard, using the
  *   canonical URL as the touchpoint.
- * - Anything else (e.g. unmapped application ids or events missing their id
- *   property) returns undefined.
+ *
+ * Every dashboard link carries `accountId`/`accountName` when the caller
+ * provides them, so the destination opens pre-filtered by the same account the
+ * timeline is scoped to. Only the account timeline passes them; the individual
+ * timeline never does, so its links stay untouched.
+ *
+ * Anything else (e.g. unmapped application ids) returns undefined.
  */
 export const getEventDashboardUrl = (
 	event: UserSessionEvent,
-	{channelId, groupId, isWebhook, rangeSelectors}: EventDashboardContext
+	{
+		accountId,
+		accountName,
+		channelId,
+		groupId,
+		isWebhook,
+		rangeSelectors,
+	}: EventDashboardContext
 ): string | undefined => {
 	if (isWebhook || !channelId || !groupId) {
 		return undefined;
 	}
+
+	// One statement of how a dashboard link is assembled: the route, the date
+	// range, then the account. The account params are left off entirely when
+	// there is no account context, so the individual timeline never gains them.
+
+	const link = (route: string, params: object): string => {
+		const href = `${toRoute(route, params)}${buildQuery(rangeSelectors)}`;
+
+		return accountId || accountName
+			? setUriQueryValues({accountId, accountName}, href)
+			: href;
+	};
 
 	const assetApplication = ASSET_APPLICATIONS[event.applicationId];
 
@@ -98,14 +124,14 @@ export const getEventDashboardUrl = (
 
 		const title = event.assetTitle || event.pageTitle;
 
-		return `${toRoute(assetApplication.route, {
+		return link(assetApplication.route, {
 			assetId,
 			channelId,
 			groupId,
 			touchpoint: 'Any',
 			type: assetApplication.type,
 			...(title && {title}),
-		})}${buildQuery(rangeSelectors)}`;
+		});
 	}
 
 	if (event.applicationId === AssetTypes.ObjectEntry) {
@@ -118,25 +144,25 @@ export const getEventDashboardUrl = (
 
 		const title = event.assetTitle || event.pageTitle;
 
-		return `${toRoute(Routes.ASSETS_OBJECT_ENTRY_OVERVIEW, {
+		return link(Routes.ASSETS_OBJECT_ENTRY_OVERVIEW, {
 			assetId,
 			channelId,
 			groupId,
 			touchpoint: 'Any',
 			type,
 			...(title && {title}),
-		})}${buildQuery(rangeSelectors)}`;
+		});
 	}
 
 	if (event.applicationId === AssetTypes.WebPage && event.canonicalUrl) {
 		const title = event.pageTitle || event.assetTitle;
 
-		return `${toRoute(Routes.SITES_TOUCHPOINTS_OVERVIEW, {
+		return link(Routes.SITES_TOUCHPOINTS_OVERVIEW, {
 			channelId,
 			groupId,
 			touchpoint: event.canonicalUrl,
 			...(title && {title}),
-		})}${buildQuery(rangeSelectors)}`;
+		});
 	}
 
 	return undefined;

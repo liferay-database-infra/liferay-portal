@@ -18,32 +18,36 @@ import com.liferay.osb.faro.contacts.demo.internal.data.creator.MembershipChange
 import com.liferay.osb.faro.contacts.demo.internal.data.creator.PageContextsDataCreator;
 import com.liferay.osb.faro.contacts.demo.internal.data.creator.SalesforceAccountsDataCreator;
 import com.liferay.osb.faro.contacts.demo.internal.data.creator.SalesforceIndividualsDataCreator;
-import com.liferay.osb.faro.engine.client.constants.FieldMappingConstants;
 import com.liferay.osb.faro.engine.client.model.Author;
 import com.liferay.osb.faro.engine.client.model.Channel;
 import com.liferay.osb.faro.engine.client.model.ChannelsConfiguration;
 import com.liferay.osb.faro.engine.client.model.Credentials;
 import com.liferay.osb.faro.engine.client.model.DataSource;
-import com.liferay.osb.faro.engine.client.model.FieldMapping;
-import com.liferay.osb.faro.engine.client.model.FieldMappingMap;
 import com.liferay.osb.faro.engine.client.model.IndividualSegment;
 import com.liferay.osb.faro.engine.client.model.IndividualSegmentMembershipChange;
 import com.liferay.osb.faro.engine.client.model.Provider;
 import com.liferay.osb.faro.engine.client.model.Results;
-import com.liferay.osb.faro.engine.client.model.credentials.DummyCredentials;
+import com.liferay.osb.faro.engine.client.model.credentials.OAuth2Credentials;
 import com.liferay.osb.faro.engine.client.model.credentials.TokenCredentials;
 import com.liferay.osb.faro.engine.client.model.provider.LiferayProvider;
 import com.liferay.osb.faro.engine.client.model.provider.SalesforceProvider;
 import com.liferay.osb.faro.model.FaroProject;
 import com.liferay.osb.faro.util.DateUtil;
+import com.liferay.osb.faro.util.FaroPropsValues;
 import com.liferay.osb.faro.util.FaroThreadLocal;
 import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
+
+import java.nio.charset.StandardCharsets;
 
 import java.util.Collections;
 import java.util.Date;
@@ -54,6 +58,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Cristina González
@@ -72,16 +77,8 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 
 		createIndividualSegments(channelId);
 
-		FaroThreadLocal.setCacheEnabled(false);
-
-		int individualsCount =
-			_LIFERAY_INDIVIDUALS_COUNT + _SALESFORCE_INDIVIDUALS_COUNT;
-
-		poll(
-			() -> contactsEngineClient.getIndividuals(
-				faroProject, (String)null, false, 1, 0, null),
-			individualsCount, individualsCount * 2 * Time.SECOND,
-			"individuals");
+		contactsEngineClient.addNanite(
+			faroProject, "DXPEntitiesNanite", Collections.emptyMap());
 
 		PageContextsDataCreator pageContextsDataCreator =
 			new PageContextsDataCreator();
@@ -98,13 +95,17 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 		createAnalyticEvents(
 			analyticEventsDataCreator, liferayUsersDataCreator);
 
+		createIdentities(liferayUsersDataCreator);
+
+		FaroThreadLocal.setCacheEnabled(false);
+
 		poll(
-			() -> contactsEngineClient.getActivities(
-				faroProject, null, null, null, null, null, null, -2, 1, 0,
+			() -> contactsEngineClient.getIndividuals(
+				faroProject, null, null, null, channelId, null, null, null,
+				false, null, null, null, null, null, null, null, null, 1, 0,
 				null),
-			analyticEventsDataCreator.getActivitiesCount(),
-			analyticEventsDataCreator.getActivitiesCount() * Time.SECOND / 2,
-			"activities");
+			_LIFERAY_INDIVIDUALS_COUNT,
+			_LIFERAY_INDIVIDUALS_COUNT * 2 * Time.SECOND, "individuals");
 
 		createMembershipChanges(channelId, _individualSegments.size());
 
@@ -122,14 +123,14 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 		for (Map<String, Object> dxpEntity :
 				liferayUsersDataCreator.getObjects()) {
 
-			Map<String, Object> liferayUser =
+			Map<String, Object> liferayUserMap =
 				(Map<String, Object>)dxpEntity.get("objectJSONObject");
 
 			analyticEventsDataCreator.createRandom(
 				_LIFERAY_ANALYTIC_EVENTS_MAX_COUNT_PER_USER, false,
 				new Object[] {
 					liferayUsersDataCreator.getDataSourceId(),
-					liferayUser.get("uuid")
+					liferayUserMap.get("uuid")
 				});
 		}
 
@@ -158,24 +159,59 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 			DataSource.Status.ACTIVE.name());
 	}
 
-	protected void createFieldMappings(
-		String dataSourceId, List<FieldMappingMap> fieldMappingMaps,
-		String context, String ownerType) {
+	protected void createIdentities(
+		LiferayUsersDataCreator liferayUsersDataCreator) {
 
-		for (FieldMappingMap fieldMappingMap : fieldMappingMaps) {
-			FieldMapping fieldMapping = contactsEngineClient.getFieldMapping(
-				faroProject, context, fieldMappingMap.getName());
+		for (Map<String, Object> dxpEntity :
+				liferayUsersDataCreator.getObjects()) {
 
-			if (fieldMapping == null) {
-				contactsEngineClient.addFieldMapping(
-					faroProject, context, Collections.emptyMap(),
-					fieldMappingMap.getName(), fieldMappingMap.getType(),
-					ownerType, false);
+			Http.Options options = new Http.Options();
+
+			Map<String, Object> liferayUserMap =
+				(Map<String, Object>)dxpEntity.get("objectJSONObject");
+
+			String uuid = (String)liferayUserMap.get("uuid");
+
+			options.setBody(
+				JSONUtil.put(
+					"dataSourceId", liferayUsersDataCreator.getDataSourceId()
+				).put(
+					"id", StringUtil.removeChar(uuid, CharPool.DASH)
+				).put(
+					"identity",
+					JSONUtil.put("email", liferayUserMap.get("emailAddress"))
+				).put(
+					"userId", uuid
+				).toString(),
+				ContentTypes.APPLICATION_JSON, StandardCharsets.UTF_8.name());
+
+			options.setHeaders(
+				HashMapBuilder.put(
+					"Content-Type", ContentTypes.APPLICATION_JSON
+				).put(
+					"OSB-Asah-Project-ID", faroProject.getProjectId()
+				).build());
+			options.setLocation(
+				FaroPropsValues.OSB_ASAH_PUBLISHER_URL + "/identity");
+			options.setPost(true);
+
+			try {
+				String responseString = _http.URLtoString(options);
+
+				Http.Response response = options.getResponse();
+
+				if (response.getResponseCode() != 200) {
+					log.error(
+						StringBundler.concat(
+							"Unable to add an identity for ",
+							liferayUserMap.get("emailAddress"), ": ",
+							response.getResponseCode(), " ", responseString));
+				}
+			}
+			catch (Exception exception) {
+				log.error(exception);
 			}
 		}
-
-		contactsEngineClient.patchFieldMappings(
-			faroProject, dataSourceId, context, ownerType, fieldMappingMaps);
 	}
 
 	protected void createIndividualSegments(String channelId) throws Exception {
@@ -290,10 +326,11 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 		for (Map<String, Object> dxpEntity :
 				liferayUsersDataCreator.getObjects()) {
 
-			Map<String, Object> liferayUser =
+			Map<String, Object> liferayUserMap =
 				(Map<String, Object>)dxpEntity.get("objectJSONObject");
 
-			liferayAssociationsDataCreator.create(new Object[] {liferayUser});
+			liferayAssociationsDataCreator.create(
+				new Object[] {liferayUserMap});
 		}
 
 		liferayAssociationsDataCreator.execute();
@@ -304,6 +341,8 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 			faroProject, new TokenCredentials(), getLiferayProvider(),
 			_LIFERAY_DATA_SOURCE_NAME, "beryl.com");
 
+		updateDataSourceDetails(dataSource.getId());
+
 		// Individuals
 
 		LiferayUsersDataCreator liferayUsersDataCreator =
@@ -313,14 +352,6 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 		liferayUsersDataCreator.create(_LIFERAY_INDIVIDUALS_COUNT, true);
 
 		liferayUsersDataCreator.execute();
-
-		// Field Mappings
-
-		createFieldMappings(
-			dataSource.getId(),
-			FieldMappingConstants.getLiferayFieldMappingMaps(),
-			FieldMappingConstants.CONTEXT_DEMOGRAPHICS,
-			FieldMappingConstants.OWNER_TYPE_INDIVIDUAL);
 
 		return liferayUsersDataCreator;
 	}
@@ -384,6 +415,14 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 					individualSegmentMembershipChange :
 						individualSegmentMembershipChangeResults.getItems()) {
 
+				if ((individualSegmentMembershipChange.getDateChanged() ==
+						null) ||
+					(individualSegmentMembershipChange.getDateFirst() ==
+						null)) {
+
+					continue;
+				}
+
 				membershipChangesDataCreator.create(
 					new Object[] {individualSegmentMembershipChange});
 			}
@@ -394,7 +433,7 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 					"dateModified",
 					() -> DateUtil.formatDate(
 						new Date(System.currentTimeMillis() - Time.MONTH),
-						DateUtil.PATTERN_DATE_TIME)
+						"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 				).put(
 					"individualSegmentJSONObject",
 					HashMapBuilder.<String, Object>put(
@@ -422,7 +461,7 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 		LiferayUsersDataCreator liferayUsersDataCreator) {
 
 		DataSource dataSource = createDataSource(
-			faroProject, new DummyCredentials(), getSalesforceProvider(),
+			faroProject, new OAuth2Credentials(), getSalesforceProvider(),
 			_SALESFORCE_DATA_SOURCE_NAME, "http://salesforce.example.faro.com");
 
 		// Accounts
@@ -455,14 +494,6 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 			_SALESFORCE_INDIVIDUALS_COUNT, false);
 
 		salesforceIndividualsDataCreator.execute();
-
-		// Field Mappings
-
-		createFieldMappings(
-			dataSource.getId(),
-			FieldMappingConstants.getSalesforceIndividualFieldMappingMaps(),
-			FieldMappingConstants.CONTEXT_DEMOGRAPHICS,
-			FieldMappingConstants.OWNER_TYPE_INDIVIDUAL);
 
 		// Nanites
 
@@ -539,10 +570,17 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 
 		salesforceProvider.setAccountsConfiguration(accountsConfiguration);
 
+		SalesforceProvider.CampaignsConfiguration campaignsConfiguration =
+			new SalesforceProvider.CampaignsConfiguration();
+
+		campaignsConfiguration.setEnableAllCampaigns(false);
+
+		salesforceProvider.setCampaignsConfiguration(campaignsConfiguration);
+
 		ChannelsConfiguration channelsConfiguration =
 			new ChannelsConfiguration();
 
-		channelsConfiguration.setEnableAllChannels(false);
+		channelsConfiguration.setEnableAllChannels(true);
 
 		salesforceProvider.setChannelsConfiguration(channelsConfiguration);
 
@@ -553,6 +591,15 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 		contactsConfiguration.setEnableAllLeads(true);
 
 		salesforceProvider.setContactsConfiguration(contactsConfiguration);
+
+		SalesforceProvider.OpportunitiesConfiguration
+			opportunitiesConfiguration =
+				new SalesforceProvider.OpportunitiesConfiguration();
+
+		opportunitiesConfiguration.setEnableAllOpportunities(false);
+
+		salesforceProvider.setOpportunitiesConfiguration(
+			opportunitiesConfiguration);
 
 		return salesforceProvider;
 	}
@@ -594,6 +641,42 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 			entityName);
 	}
 
+	protected void updateDataSourceDetails(String dataSourceId) {
+		Http.Options options = new Http.Options();
+
+		options.setBody(
+			JSONUtil.put(
+				"contactsSelected", true
+			).toString(),
+			ContentTypes.APPLICATION_JSON, StandardCharsets.UTF_8.name());
+		options.setHeaders(
+			HashMapBuilder.put(
+				"Content-Type", ContentTypes.APPLICATION_JSON
+			).put(
+				"OSB-Asah-Project-ID", faroProject.getProjectId()
+			).build());
+		options.setLocation(
+			StringBundler.concat(
+				FaroPropsValues.OSB_ASAH_BACKEND_URL, "/api/1.0/data-sources/",
+				dataSourceId, "/details"));
+		options.setPut(true);
+
+		try {
+			String responseString = _http.URLtoString(options);
+
+			Http.Response response = options.getResponse();
+
+			if (response.getResponseCode() != 200) {
+				log.error(
+					"Unable to enable contact synchronization: " +
+						responseString);
+			}
+		}
+		catch (Exception exception) {
+			log.error(exception);
+		}
+	}
+
 	private static final int _LIFERAY_ANALYTIC_EVENTS_MAX_COUNT_PER_USER = 50;
 
 	private static final int _LIFERAY_ANONYMOUS_EVENTS_COUNT = 1000;
@@ -604,7 +687,7 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 
 	private static final int _LIFERAY_INDIVIDUALS_COUNT = 100;
 
-	private static final int _SALESFORCE_ACCOUNTS_COUNT = 10;
+	private static final int _SALESFORCE_ACCOUNTS_COUNT = 50;
 
 	private static final String _SALESFORCE_DATA_SOURCE_NAME =
 		"Beryl Salesforce";
@@ -619,5 +702,8 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 		).put(
 			"managers", "contains(demographics/jobTitle/value, 'manager')"
 		).build();
+
+	@Reference
+	private Http _http;
 
 }

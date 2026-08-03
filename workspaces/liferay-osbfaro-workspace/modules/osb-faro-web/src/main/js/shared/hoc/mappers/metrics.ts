@@ -15,6 +15,7 @@ export const getMapPropsToOptions: (
 ) => (props: {[key: string]: any}) => GraphQLOptions =
 	(gqlQuery, options = {}) =>
 	({
+		accountId,
 		delta,
 		filters,
 		interestId,
@@ -23,11 +24,14 @@ export const getMapPropsToOptions: (
 		query,
 		rangeSelectors,
 		router: {params, query: routerQuery},
+		segmentId,
 	}) => {
 		const {variables} = getVariables({
+			accountId,
 			filters,
 			params,
 			rangeSelectors,
+			segmentId,
 		});
 
 		// LRAC-6976 POC TEMP

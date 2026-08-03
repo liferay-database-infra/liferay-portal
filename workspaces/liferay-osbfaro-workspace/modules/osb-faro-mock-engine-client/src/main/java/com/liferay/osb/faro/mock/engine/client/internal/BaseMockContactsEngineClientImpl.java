@@ -15,6 +15,7 @@ import com.liferay.osb.faro.engine.client.model.AccountLifecycleMetric;
 import com.liferay.osb.faro.engine.client.model.AccountLifecycleStageMetric;
 import com.liferay.osb.faro.engine.client.model.AccountLifecycleStatus;
 import com.liferay.osb.faro.engine.client.model.AccountMetric;
+import com.liferay.osb.faro.engine.client.model.AccountName;
 import com.liferay.osb.faro.engine.client.model.Activity;
 import com.liferay.osb.faro.engine.client.model.ActivityAggregation;
 import com.liferay.osb.faro.engine.client.model.ActivityAsset;
@@ -28,6 +29,7 @@ import com.liferay.osb.faro.engine.client.model.AssetSummaryType;
 import com.liferay.osb.faro.engine.client.model.AssetSummaryVocabulary;
 import com.liferay.osb.faro.engine.client.model.Author;
 import com.liferay.osb.faro.engine.client.model.BlockedKeyword;
+import com.liferay.osb.faro.engine.client.model.CatalogField;
 import com.liferay.osb.faro.engine.client.model.Channel;
 import com.liferay.osb.faro.engine.client.model.ChannelDataSource;
 import com.liferay.osb.faro.engine.client.model.Credentials;
@@ -80,11 +82,11 @@ public abstract class BaseMockContactsEngineClientImpl
 
 	@Override
 	public AccountLifecycle addAccountLifecycle(
-		FaroProject faroProject, String description, String name,
-		String segmentId) {
+		FaroProject faroProject, AccountLifecycle accountLifecycle,
+		String channelId) {
 
 		return contactsEngineClient.addAccountLifecycle(
-			faroProject, description, name, segmentId);
+			faroProject, accountLifecycle, channelId);
 	}
 
 	@Override
@@ -421,6 +423,17 @@ public abstract class BaseMockContactsEngineClientImpl
 	}
 
 	@Override
+	public Results<AccountName> getAccountNames(
+		FaroProject faroProject, String assetId, String assetTitle,
+		String assetType, Long channelId, String keywords, String rangeEnd,
+		Integer rangeKey, String rangeStart, int page, int pageSize) {
+
+		return contactsEngineClient.getAccountNames(
+			faroProject, assetId, assetTitle, assetType, channelId, keywords,
+			rangeEnd, rangeKey, rangeStart, page, pageSize);
+	}
+
+	@Override
 	public Results<Account> getAccounts(
 		FaroProject faroProject, String channelId, String filterString,
 		String query, int cur, int delta, String sortString) {
@@ -611,6 +624,16 @@ public abstract class BaseMockContactsEngineClientImpl
 
 		return contactsEngineClient.getBlockedKeywords(
 			faroProject, query, cur, delta, orderByFields);
+	}
+
+	@Override
+	public Results<CatalogField> getCatalogFields(
+			FaroProject faroProject, String query, String tableName, int cur,
+			int delta, String sortString)
+		throws FaroEngineClientException {
+
+		return contactsEngineClient.getCatalogFields(
+			faroProject, query, tableName, cur, delta, sortString);
 	}
 
 	@Override
@@ -1308,11 +1331,10 @@ public abstract class BaseMockContactsEngineClientImpl
 
 	@Override
 	public AccountLifecycle updateAccountLifecycle(
-		FaroProject faroProject, String description, String id, String name,
-		String segmentId) {
+		FaroProject faroProject, AccountLifecycle accountLifecycle) {
 
 		return contactsEngineClient.updateAccountLifecycle(
-			faroProject, description, id, name, segmentId);
+			faroProject, accountLifecycle);
 	}
 
 	@Override

@@ -188,22 +188,6 @@ public class JenkinsResultsParserUtil {
 		}
 	}
 
-	public static void cancelQueuedItem(
-		long itemId, JenkinsMaster jenkinsMaster) {
-
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("def queue = Jenkins.instance.queue;\n");
-
-		sb.append("def items = queue.items.findAll{it.getId() == ");
-		sb.append(itemId);
-		sb.append("};\n");
-
-		sb.append("queue.cancel(items[0]);");
-
-		executeJenkinsScript(jenkinsMaster.getName(), sb.toString());
-	}
-
 	public static void clearCache() {
 		_cacheURL = null;
 		_ciNode = null;
@@ -2469,6 +2453,16 @@ public class JenkinsResultsParserUtil {
 		Properties buildProperties, int minimumRAM, int maximumSlavesPerHost,
 		String cohortName, String networkName) {
 
+		return getJenkinsMasters(
+			buildProperties, cohortName, false, maximumSlavesPerHost,
+			minimumRAM, networkName);
+	}
+
+	public static List<JenkinsMaster> getJenkinsMasters(
+		Properties buildProperties, String cohortName,
+		boolean includeBlacklistedJenkinsMasters, int maximumSlavesPerHost,
+		int minimumRAM, String networkName) {
+
 		List<JenkinsMaster> jenkinsMasters = new ArrayList<>();
 
 		Pattern pattern = Pattern.compile(
@@ -2485,7 +2479,8 @@ public class JenkinsResultsParserUtil {
 			JenkinsMaster jenkinsMaster = JenkinsMaster.getInstance(
 				matcher.group("jenkinsMasterName"));
 
-			if (jenkinsMaster.isBlackListed() ||
+			if ((!includeBlacklistedJenkinsMasters &&
+				 jenkinsMaster.isBlacklisted()) ||
 				(jenkinsMaster.getSlaveRAM() < minimumRAM) ||
 				(jenkinsMaster.getSlavesPerHost() > maximumSlavesPerHost)) {
 
@@ -2654,7 +2649,7 @@ public class JenkinsResultsParserUtil {
 	public static int getJobTimeoutMinutes(
 		JenkinsMaster jenkinsMaster, String jobName) {
 
-		if (jenkinsMaster.isBlackListed()) {
+		if (jenkinsMaster.isBlacklisted()) {
 			jenkinsMaster = JenkinsMaster.getInstance(
 				Environment.get("MASTER_HOSTNAME"));
 		}
@@ -3674,36 +3669,57 @@ public class JenkinsResultsParserUtil {
 		JenkinsMaster jenkinsMaster, String jenkinsJobName,
 		Map<String, String> buildParameters, int timeout) {
 
+		return invokeJenkinsBuild(
+			combine(jenkinsMaster.getRemoteURL(), "job/", jenkinsJobName),
+			buildParameters, timeout);
+	}
+
+	public static long invokeJenkinsBuild(
+		String jenkinsJobURL, Map<String, String> buildParameters) {
+
+		return invokeJenkinsBuild(
+			jenkinsJobURL, buildParameters, _MILLIS_TIMEOUT_DEFAULT);
+	}
+
+	public static long invokeJenkinsBuild(
+		String jenkinsJobURL, Map<String, String> buildParameters,
+		int timeout) {
+
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(jenkinsMaster.getRemoteURL());
-		sb.append("job/");
-		sb.append(jenkinsJobName);
-		sb.append("/buildWithParameters?");
+		try {
+			if (buildParameters != null) {
+				for (Map.Entry<String, String> buildParameter :
+						buildParameters.entrySet()) {
 
-		for (Map.Entry<String, String> buildParameter :
-				buildParameters.entrySet()) {
+					String value = buildParameter.getValue();
 
-			String value = buildParameter.getValue();
+					if (isNullOrEmpty(value)) {
+						continue;
+					}
 
-			if (isNullOrEmpty(value)) {
-				continue;
+					sb.append(
+						URLEncoder.encode(buildParameter.getKey(), "UTF-8"));
+					sb.append("=");
+					sb.append(URLEncoder.encode(value, "UTF-8"));
+					sb.append("&");
+				}
 			}
 
-			sb.append(buildParameter.getKey());
-			sb.append("=");
-			sb.append(value);
-			sb.append("&");
-		}
+			if (sb.length() > 0) {
+				sb.deleteCharAt(sb.length() - 1);
+			}
 
-		try {
-			sb.append("token=");
-			sb.append(getBuildProperty("jenkins.authentication.token"));
+			Map<String, String> requestHeaders = new HashMap<>();
+
+			requestHeaders.put(
+				"Content-Type", "application/x-www-form-urlencoded");
 
 			return getJenkinsBuildQueueId(
 				UrlReader.getResponseHeader(
 					"Location", getJenkinsHTTPAuthorization(),
-					HttpRequestMethod.GET, null, timeout, sb.toString()));
+					HttpRequestMethod.POST, sb.toString(), requestHeaders,
+					timeout, combine(jenkinsJobURL, "/buildWithParameters")));
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(
@@ -4331,97 +4347,6 @@ public class JenkinsResultsParserUtil {
 		return lastIndex;
 	}
 
-	public static void loadBalanceQueuedBuilds(
-			String jobName, JenkinsMaster jenkinsMaster)
-		throws IOException {
-
-		List<JenkinsMaster> availableJenkinsMasters = new ArrayList<>();
-
-		JenkinsCohort jenkinsCohort = jenkinsMaster.getJenkinsCohort();
-
-		for (JenkinsMaster availableJenkinsMaster :
-				jenkinsCohort.getJenkinsMasters()) {
-
-			if (!availableJenkinsMaster.isAvailable() ||
-				availableJenkinsMaster.isBlackListed()) {
-
-				continue;
-			}
-
-			availableJenkinsMasters.add(availableJenkinsMaster);
-		}
-
-		JSONObject jsonObject = toJSONObject(
-			combine(
-				"https://", jenkinsMaster.getName(),
-				".liferay.com/queue/api/json"));
-
-		JSONArray itemsJSONArray = jsonObject.getJSONArray("items");
-
-		for (int i = 0; i < itemsJSONArray.length(); i++) {
-			JSONObject itemJSONObject = itemsJSONArray.getJSONObject(i);
-
-			JSONObject taskJSONObject = itemJSONObject.getJSONObject("task");
-
-			String name = taskJSONObject.getString("name");
-
-			if (!name.equals(jobName)) {
-				continue;
-			}
-
-			JSONArray actionsJSONArray = itemJSONObject.optJSONArray("actions");
-
-			StringBuilder sb = new StringBuilder();
-
-			JenkinsMaster availableJenkinsMaster = getRandomListItem(
-				availableJenkinsMasters);
-
-			sb.append("http://");
-			sb.append(availableJenkinsMaster.getName());
-			sb.append("/job/");
-			sb.append(jobName);
-			sb.append("/buildWithParameters?");
-			sb.append("token=raen3Aib");
-
-			for (int j = 0; j < actionsJSONArray.length(); j++) {
-				JSONObject actionJSONObject = actionsJSONArray.getJSONObject(j);
-
-				if (!Objects.equals(
-						actionJSONObject.optString("_class"),
-						"hudson.model.ParametersAction")) {
-
-					continue;
-				}
-
-				JSONArray parametersJSONArray = actionJSONObject.optJSONArray(
-					"parameters");
-
-				for (int k = 0; k < parametersJSONArray.length(); k++) {
-					JSONObject parameterJSONObject =
-						parametersJSONArray.getJSONObject(k);
-
-					String paramName = parameterJSONObject.getString("name");
-					String paramValue = parameterJSONObject.getString("value");
-
-					if (isNullOrEmpty(paramName) || isNullOrEmpty(paramValue)) {
-						continue;
-					}
-
-					sb.append("&");
-					sb.append(paramName);
-					sb.append("=");
-					sb.append(paramValue);
-				}
-			}
-
-			System.out.println(sb);
-
-			toString(sb.toString());
-
-			cancelQueuedItem(itemJSONObject.getLong("id"), jenkinsMaster);
-		}
-	}
-
 	public static void move(File sourceFile, File targetFile)
 		throws IOException {
 
@@ -4883,6 +4808,18 @@ public class JenkinsResultsParserUtil {
 		}
 
 		_buildPropertiesURLs = urls;
+	}
+
+	public static synchronized void setTopLevelJobNames(
+		Set<String> topLevelJobNames) {
+
+		if (topLevelJobNames == null) {
+			_topLevelJobNames = null;
+
+			return;
+		}
+
+		_topLevelJobNames = new HashSet<>(topLevelJobNames);
 	}
 
 	public static void sleep(long duration) {
@@ -5936,8 +5873,18 @@ public class JenkinsResultsParserUtil {
 					String.valueOf(_tokenURL)));
 		}
 
+		public synchronized void invalidateToken(String authorization) {
+			if ((authorization == null) ||
+				!authorization.equals(_tokenType + " " + _token)) {
+
+				return;
+			}
+
+			_tokenExpirationDate = null;
+		}
+
 		@Override
-		public String toString() {
+		public synchronized String toString() {
 			_refreshToken();
 
 			return _tokenType + " " + _token;
@@ -5955,7 +5902,7 @@ public class JenkinsResultsParserUtil {
 			return string.substring(0, 10) + "...";
 		}
 
-		private void _refreshToken() {
+		private synchronized void _refreshToken() {
 			Date currentDate = new Date();
 
 			if ((_tokenExpirationDate != null) &&

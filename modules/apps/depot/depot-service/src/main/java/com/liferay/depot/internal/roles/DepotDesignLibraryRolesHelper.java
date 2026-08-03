@@ -7,6 +7,8 @@ package com.liferay.depot.internal.roles;
 
 import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.model.DepotEntry;
+import com.liferay.depot.security.permission.contributor.DepotRolePermission;
+import com.liferay.depot.security.permission.contributor.DepotRolePermissionsContributor;
 import com.liferay.depot.util.DepotRoleUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
@@ -41,7 +43,7 @@ public class DepotDesignLibraryRolesHelper {
 		_userLocalService = userLocalService;
 	}
 
-	public void setupDesignLibraryRoles(long companyId) throws PortalException {
+	public void setUpDesignLibraryRoles(long companyId) throws PortalException {
 		Role administratorRole = _getOrCreateRole(
 			companyId, DepotRolesConstants.DESIGN_LIBRARY_ADMINISTRATOR);
 
@@ -92,6 +94,35 @@ public class DepotDesignLibraryRolesHelper {
 		}
 	}
 
+	public void setUpResourcePermissions(
+			long companyId,
+			List<DepotRolePermissionsContributor>
+				depotRolePermissionsContributors)
+		throws PortalException {
+
+		for (DepotRolePermissionsContributor depotRolePermissionsContributor :
+				depotRolePermissionsContributors) {
+
+			for (DepotRolePermission depotRolePermission :
+					depotRolePermissionsContributor.getDepotRolePermissions()) {
+
+				Role role = _roleLocalService.fetchRole(
+					companyId, depotRolePermission.getRoleName());
+
+				if (role == null) {
+					continue;
+				}
+
+				for (String actionKey : depotRolePermission.getActionKeys()) {
+					_resourcePermissionLocalService.addResourcePermission(
+						companyId, depotRolePermission.getResourceName(),
+						ResourceConstants.SCOPE_COMPANY,
+						String.valueOf(companyId), role.getRoleId(), actionKey);
+				}
+			}
+		}
+	}
+
 	private Role _getOrCreateRole(long companyId, String name)
 		throws PortalException {
 
@@ -112,7 +143,7 @@ public class DepotDesignLibraryRolesHelper {
 				RoleConstants.toSystemRoleExternalReferenceCode(name),
 				user.getUserId(), null, 0, name,
 				DepotRoleUtil.getTitleMap(_language, name),
-				DepotRoleUtil.getDescriptionMap(companyId, _language, name),
+				DepotRoleUtil.getDescriptionMap(_language, name),
 				RoleConstants.TYPE_DEPOT,
 				DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY, null);
 		}

@@ -66,7 +66,7 @@ const CohortAnalysisWithData = compose(
 )(CohortAnalysis);
 
 const CohortAnalysisCard = () => {
-	const {router} = useContext(BasePage.Context);
+	const {accountId, router, segmentId} = useContext(BasePage.Context);
 
 	const [interval, setInterval] = useState(DAY);
 	const [visitorsType, setVisitorsType] = useState(VISITORS);
@@ -120,8 +120,10 @@ const CohortAnalysisCard = () => {
 				</Form.Group>
 
 				<CohortAnalysisWithData
+					accountId={accountId}
 					channelId={channelId}
 					interval={interval}
+					segmentId={segmentId}
 					visitorsType={visitorsType}
 				/>
 			</Card.Body>

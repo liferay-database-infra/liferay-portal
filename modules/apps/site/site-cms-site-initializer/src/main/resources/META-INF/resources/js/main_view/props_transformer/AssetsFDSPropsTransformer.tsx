@@ -23,12 +23,14 @@ import {
 } from '../../common/types/AssetType';
 import {
 	CMSSiteInitializerFDSNames,
+	OBJECT_ENTRY_CLASS_NAME,
 	OBJECT_ENTRY_FOLDER_CLASS_NAME,
 } from '../../common/utils/constants';
 import {getFormattedLabel} from '../../common/utils/getFormattedText';
 import {getScopeExternalReferenceCode} from '../../common/utils/getScopeExternalReferenceCode';
 import {openBulkActionConfirmationModal} from '../../common/utils/openBulkActionConfirmationModal';
 import {openCMSModal} from '../../common/utils/openCMSModal';
+import refreshOnContentChanged from '../../common/utils/refreshOnContentChanged';
 import EditAssetCategoriesModalContent from '../categorization/modal/EditAssetCategoriesModalContent';
 import EditAssetTagsModalContent from '../categorization/modal/EditAssetTagsModalContent';
 import {defaultPermissionsBulkAction} from '../default_permission/BulkDefaultPermissionModalContent';
@@ -39,6 +41,7 @@ import {handleFindAndReplace} from '../find_and_replace/utils/handleFindAndRepla
 import AssetTypeInfoPanel from '../info_panel/AssetTypeInfoPanelContent';
 import ExportTranslationModalContent from '../modal/ExportTranslationModalContent';
 import AssetNavigationModalContent from '../modal/asset_navigation_view/AssetNavigationModalContent';
+import AddAssetsToProjectModalContent from '../projects/modal/AddAssetsToProjectModalContent';
 import copyOrMoveBulkAction from './actions/copyOrMoveBulkAction';
 import ACTIONS from './actions/creationMenuActions';
 import deleteAssetEntriesBulkAction, {
@@ -145,6 +148,9 @@ export type AdditionalProps = {
 	breadcrumbProps?: IBreadcrumbProps;
 	brokenLinksCheckerEnabled: boolean;
 	candidateAssetLibraries: AssetLibrary[];
+	cmpProjectLinkObjectDefinitionId?: number;
+	cmpProjectObjectDefinitionId?: number;
+	cmpProjectViewURL?: string;
 	cmsGroupId?: number;
 	collaboratorURLs: Record<string, string>;
 	contentViewURL: string;
@@ -181,6 +187,8 @@ export default function AssetsFDSPropsTransformer({
 	itemsActions?: any[];
 	views: IView[];
 }) {
+	refreshOnContentChanged(otherProps?.id);
+
 	let mergedViews = views;
 
 	const isAllSectionView = otherProps?.id?.endsWith(
@@ -231,6 +239,11 @@ export default function AssetsFDSPropsTransformer({
 				}${additionalAPIURLParameters}`
 			: otherProps.apiURL;
 
+	const GENERATE_WITH_AI_ACTIONS = [
+		'generateContentWithAI',
+		'generateImageWithAI',
+	];
+
 	return {
 		...otherProps,
 		additionalAPIURLParameters,
@@ -249,7 +262,7 @@ export default function AssetsFDSPropsTransformer({
 				creationMenu.primaryItems,
 				ACTIONS
 			).map((item) =>
-				item.data?.action === 'generateContentWithAI'
+				GENERATE_WITH_AI_ACTIONS.includes(item.data?.action ?? '')
 					? {...item, className: 'cms-generate-content-with-ai'}
 					: item
 			),
@@ -451,7 +464,21 @@ export default function AssetsFDSPropsTransformer({
 			items: any;
 			loadData: () => {};
 		}) {
-			if (action?.data?.id === 'copy' || action?.data?.id === 'move') {
+			if (action?.data?.id === 'addToLaunch') {
+				event?.preventDefault();
+
+				Liferay.fire('addToLaunch', {
+					className: OBJECT_ENTRY_CLASS_NAME,
+					classPK: itemData.embedded.id,
+					classVersion: String(
+						itemData.embedded.systemProperties.version.number
+					),
+				});
+			}
+			else if (
+				action?.data?.id === 'copy' ||
+				action?.data?.id === 'move'
+			) {
 				openFolderItemSelectorAction(
 					action?.data?.id,
 					additionalProps.assetLibraries,
@@ -642,7 +669,30 @@ export default function AssetsFDSPropsTransformer({
 			action: any;
 			selectedData: any;
 		}) => {
-			if (action?.data?.id === 'edit-categories') {
+			if (action?.data?.id === 'add-assets-to-project') {
+				openCMSModal({
+					center: true,
+					containerProps: {
+						className: 'modal-height-lg',
+					},
+					contentComponent: ({
+						closeModal,
+					}: {
+						closeModal: () => void;
+					}) =>
+						AddAssetsToProjectModalContent({
+							apiURL: bulkActionAPIURL,
+							closeModal,
+							cmpProjectObjectDefinitionId:
+								additionalProps.cmpProjectObjectDefinitionId as number,
+							cmpProjectViewURL:
+								additionalProps.cmpProjectViewURL,
+							selectedData,
+						}),
+					size: 'md',
+				});
+			}
+			else if (action?.data?.id === 'edit-categories') {
 				openCMSModal({
 					center: true,
 					containerProps: {

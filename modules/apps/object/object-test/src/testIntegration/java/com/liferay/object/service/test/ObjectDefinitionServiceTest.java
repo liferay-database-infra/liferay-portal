@@ -45,11 +45,9 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
-import com.liferay.site.cms.site.initializer.test.util.CMSTestUtil;
 import com.liferay.site.cms.site.initializer.util.RoleUtil;
 
 import java.util.Arrays;
@@ -92,13 +90,10 @@ public class ObjectDefinitionServiceTest {
 				objectFolderId, ObjectDefinitionConstants.SCOPE_COMPANY, user));
 	}
 
-	@FeatureFlag("LPD-17564")
 	@Test
 	@TestInfo("LPD-66895")
 	public void testAddCustomObjectDefinitionByCMSAdministratorRole()
 		throws Exception {
-
-		CMSTestUtil.getOrAddGroup(ObjectDefinitionServiceTest.class);
 
 		User user = _addCMSAdministratorUser();
 
@@ -304,13 +299,10 @@ public class ObjectDefinitionServiceTest {
 				_addCustomObjectDefinition(_adminUser), _user));
 	}
 
-	@FeatureFlag("LPD-17564")
 	@Test
 	@TestInfo("LPD-66895")
 	public void testPublishCustomObjectDefinitionByCMSAdministratorRole()
 		throws Exception {
-
-		CMSTestUtil.getOrAddGroup(ObjectDefinitionServiceTest.class);
 
 		_testPublishCustomObjectDefinition(
 			_addCustomObjectDefinition(_adminUser), _addCMSAdministratorUser());

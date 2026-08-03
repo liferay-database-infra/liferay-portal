@@ -64,10 +64,9 @@ function TitleCell({itemData, value}: {itemData: any; value: string}) {
 					/>
 				</ClaySticker>
 			) : (
-				<ClayIcon
-					className="mr-2 text-secondary"
-					symbol="document-text"
-				/>
+				<ClaySticker className="flex-shrink-0 mr-2 text-secondary">
+					<ClayIcon symbol="document-text" />
+				</ClaySticker>
 			)}
 
 			<Text size={3} weight="semi-bold">
@@ -119,13 +118,13 @@ const customRenderers = {
 const sorts = [
 	{
 		direction: 'asc' as const,
-		key: 'title',
+		key: 'assetTitle',
 		label: Liferay.Language.get('title'),
 	},
 	{
 		active: true,
 		direction: 'desc' as const,
-		key: 'views',
+		key: 'viewsMetric',
 		label: Liferay.Language.get('views'),
 	},
 ];

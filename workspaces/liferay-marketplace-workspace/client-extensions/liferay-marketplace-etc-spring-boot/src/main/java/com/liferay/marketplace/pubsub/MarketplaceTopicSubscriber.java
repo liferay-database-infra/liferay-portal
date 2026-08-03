@@ -50,8 +50,8 @@ import org.springframework.stereotype.Service;
 public class MarketplaceTopicSubscriber {
 
 	@PostConstruct
-	public void postConstruct() {
-		GoogleCredentials googleCredentials;
+	public void postConstruct() throws Exception {
+		GoogleCredentials googleCredentials = null;
 
 		try {
 			googleCredentials = ServiceAccountCredentials.fromStream(

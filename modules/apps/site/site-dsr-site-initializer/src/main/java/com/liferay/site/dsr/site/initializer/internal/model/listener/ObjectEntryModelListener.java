@@ -73,6 +73,7 @@ import com.liferay.portal.security.permission.PermissionCacheUtil;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.site.dsr.site.initializer.constants.DSRFolderConstants;
+import com.liferay.site.dsr.site.initializer.internal.util.DSRUtil;
 import com.liferay.site.dsr.site.initializer.thread.local.DSRRoomThreadLocal;
 import com.liferay.site.dsr.site.initializer.util.DSRRoomUtil;
 import com.liferay.sites.kernel.util.Sites;
@@ -128,6 +129,18 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 
 		try {
 			_onAfterUpdate(originalObjectEntry, objectEntry);
+		}
+		catch (Exception exception) {
+			throw new ModelListenerException(exception);
+		}
+	}
+
+	@Override
+	public void onBeforeCreate(ObjectEntry objectEntry)
+		throws ModelListenerException {
+
+		try {
+			_onBeforeCreate(objectEntry);
 		}
 		catch (Exception exception) {
 			throw new ModelListenerException(exception);
@@ -471,6 +484,8 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 							"friendlyURL",
 							StringUtil.removeFirst(group.getFriendlyURL(), "/")
 						).put(
+							"initialized", sourceObjectEntryId != 0
+						).put(
 							"siteExternalReferenceCode",
 							group.getExternalReferenceCode()
 						).put(
@@ -585,6 +600,22 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 			serviceContext);
 	}
 
+	private void _onBeforeCreate(ObjectEntry objectEntry) {
+		ObjectDefinition objectDefinition = objectEntry.getObjectDefinition();
+
+		if (!Objects.equals(
+				objectDefinition.getExternalReferenceCode(), "L_DSR_ROOM")) {
+
+			return;
+		}
+
+		if (DSRUtil.isExpired()) {
+			throw new UnsupportedOperationException(
+				"Unable to create a digital sales room because the license " +
+					"has expired");
+		}
+	}
+
 	private void _onBeforeUpdate(
 			ObjectEntry originalObjectEntry, ObjectEntry objectEntry)
 		throws Exception {
@@ -605,6 +636,7 @@ public class ObjectEntryModelListener extends BaseModelListener<ObjectEntry> {
 			String name = entry.getKey();
 
 			if (Objects.equals(name, "archiveDate") ||
+				Objects.equals(name, "initialized") ||
 				Objects.equals(name, "roomStatus")) {
 
 				continue;

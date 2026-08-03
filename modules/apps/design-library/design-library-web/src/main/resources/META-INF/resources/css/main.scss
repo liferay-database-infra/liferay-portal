@@ -13,11 +13,6 @@
 }
 
 .design-library-fds-wrapper--landing {
-	.design-library-fds-sticker-designlibrary {
-		background-color: $teal-l3;
-		color: $teal;
-	}
-
 	.card-item-first {
 		background-color: $teal-l3;
 
@@ -25,11 +20,20 @@
 			color: $teal;
 		}
 	}
+
+	.design-library-fds-sticker-designlibrary {
+		background-color: $teal-l3;
+		color: $teal;
+	}
 }
 
 .design-library-fds-wrapper--resources {
 	.card-item-first .card-type-asset-icon,
 	.design-library-fds-sticker-stylebook {
 		color: $purple;
+	}
+
+	.design-library-fds-sticker-fragment-set {
+		color: $pink;
 	}
 }

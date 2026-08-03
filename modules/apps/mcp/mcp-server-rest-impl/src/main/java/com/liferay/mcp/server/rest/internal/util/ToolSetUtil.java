@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -42,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -61,6 +63,12 @@ import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
  */
 public class ToolSetUtil {
 
+	public static void clearOpenAPIJSONObjectCache(long companyId) {
+		Set<String> keys = _openAPIJSONObjects.keySet();
+
+		keys.removeIf(key -> key.startsWith(companyId + StringPool.POUND));
+	}
+
 	public static Tool getTool(
 		HttpServletRequest httpServletRequest, String toolName,
 		String toolSetName) {
@@ -68,7 +76,7 @@ public class ToolSetUtil {
 		return OpenAPIUtil.getTool(
 			!Objects.equals(toolSetName, _TOOL_SET_NAME),
 			_getOpenAPIJSONObject(
-				_getOpenAPIBrief(toolSetName), httpServletRequest),
+				httpServletRequest, _getOpenAPIBrief(toolSetName)),
 			toolName);
 	}
 
@@ -98,7 +106,7 @@ public class ToolSetUtil {
 		return Page.of(
 			OpenAPIUtil.getToolSummaries(
 				_getOpenAPIJSONObject(
-					_getOpenAPIBrief(toolSetName), httpServletRequest)));
+					httpServletRequest, _getOpenAPIBrief(toolSetName))));
 	}
 
 	public static Response invokeTool(
@@ -167,7 +175,7 @@ public class ToolSetUtil {
 							dataMaskExternalReferenceCodes, StringPool.COMMA)
 					).build(),
 					inputJSONObject,
-					_getOpenAPIJSONObject(openAPIBrief, httpServletRequest),
+					_getOpenAPIJSONObject(httpServletRequest, openAPIBrief),
 					toolName, _getUser(httpServletRequest)));
 
 		String content = response.getContent();
@@ -286,11 +294,16 @@ public class ToolSetUtil {
 	}
 
 	private static JSONObject _getOpenAPIJSONObject(
-		OpenAPIBrief openAPIBrief, HttpServletRequest httpServletRequest) {
+		HttpServletRequest httpServletRequest, OpenAPIBrief openAPIBrief) {
 
-		return _openAPIJSONObjectCache.computeIfAbsent(
-			openAPIBrief._basePath + openAPIBrief._openAPIPath,
-			path -> {
+		return _openAPIJSONObjects.computeIfAbsent(
+			StringBundler.concat(
+				PortalUtil.getCompanyId(httpServletRequest), StringPool.POUND,
+				openAPIBrief._basePath, openAPIBrief._openAPIPath),
+			key -> {
+				String path =
+					openAPIBrief._basePath + openAPIBrief._openAPIPath;
+
 				try {
 					VulcanRequestForwarder vulcanRequestForwarder =
 						_vulcanRequestForwarderSnapshot.get();
@@ -449,7 +462,7 @@ public class ToolSetUtil {
 	private static final Snapshot<JaxrsServiceRuntime>
 		_jaxrsServiceRuntimeSnapshot = new Snapshot<>(
 			ToolSetUtil.class, JaxrsServiceRuntime.class);
-	private static final Map<String, JSONObject> _openAPIJSONObjectCache =
+	private static final Map<String, JSONObject> _openAPIJSONObjects =
 		new ConcurrentHashMap<>();
 	private static final Snapshot<VulcanRequestForwarder>
 		_vulcanRequestForwarderSnapshot = new Snapshot<>(

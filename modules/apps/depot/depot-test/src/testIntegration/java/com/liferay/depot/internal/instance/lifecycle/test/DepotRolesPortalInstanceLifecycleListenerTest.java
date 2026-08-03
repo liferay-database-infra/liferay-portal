@@ -58,30 +58,26 @@ public class DepotRolesPortalInstanceLifecycleListenerTest {
 		_company = CompanyTestUtil.addCompany();
 	}
 
-	@FeatureFlags(
-		featureFlags = {
-			@FeatureFlag(value = "LPD-17564"), @FeatureFlag("LPD-57283")
-		}
-	)
+	@FeatureFlags(featureFlags = @FeatureFlag("LPD-57283"))
 	@Test
 	public void testAddCompany() throws Exception {
 		long companyId = _company.getCompanyId();
 
 		_assertRole(
 			companyId,
-			"depot-administrators-are-super-users-of-their-depot-but-cannot-" +
-				"make-other-users-into-depot-administrators",
+			"space-administrators-are-super-users-of-their-space-but-cannot-" +
+				"make-other-users-into-space-administrators",
 			DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR,
-			"depot-administrator");
+			"space-administrator");
 		_assertRole(
 			companyId,
-			"all-users-who-belong-to-a-depot-have-this-role-within-that-depot",
-			DepotRolesConstants.ASSET_LIBRARY_MEMBER, "depot-member");
+			"all-users-who-belong-to-a-space-have-this-role-within-that-space",
+			DepotRolesConstants.ASSET_LIBRARY_MEMBER, "space-member");
 		_assertRole(
 			companyId,
-			"depot-owners-are-super-users-of-their-depot-and-can-assign-" +
-				"depot-roles-to-users",
-			DepotRolesConstants.ASSET_LIBRARY_OWNER, "depot-owner");
+			"space-owners-are-super-users-of-their-space-and-can-assign-" +
+				"space-roles-to-users",
+			DepotRolesConstants.ASSET_LIBRARY_OWNER, "space-owner");
 		_assertRoleResourcePermissions(
 			companyId, DepotEntry.class.getName(),
 			DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR,
@@ -141,6 +137,22 @@ public class DepotRolesPortalInstanceLifecycleListenerTest {
 			ResourceConstants.SCOPE_COMPANY, String.valueOf(companyId),
 			DepotRolesConstants.DESIGN_LIBRARY_MEMBER,
 			List.of(ActionKeys.VIEW));
+
+		for (String name :
+				List.of(
+					DepotRolesConstants.DESIGN_LIBRARY_ADMINISTRATOR,
+					DepotRolesConstants.DESIGN_LIBRARY_CONTENT_REVIEWER,
+					DepotRolesConstants.DESIGN_LIBRARY_OWNER)) {
+
+			_assertResourcePermissions(
+				companyId, "com.liferay.fragment",
+				ResourceConstants.SCOPE_COMPANY, String.valueOf(companyId),
+				name, List.of("MANAGE_FRAGMENT_ENTRIES"));
+			_assertResourcePermissions(
+				companyId, "com.liferay.style.book",
+				ResourceConstants.SCOPE_COMPANY, String.valueOf(companyId),
+				name, List.of("MANAGE_STYLE_BOOK_ENTRIES"));
+		}
 
 		Role administratorRole = _roleLocalService.getRole(
 			companyId, DepotRolesConstants.DESIGN_LIBRARY_ADMINISTRATOR);

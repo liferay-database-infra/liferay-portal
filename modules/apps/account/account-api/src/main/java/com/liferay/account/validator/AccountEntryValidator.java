@@ -10,6 +10,9 @@ import com.liferay.account.model.AccountEntry;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONObject;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * @author Tancredi Covioli
  */
@@ -21,6 +24,17 @@ public interface AccountEntryValidator {
 
 	public String getClassPK(AccountEntry accountEntry, JSONObject jsonObject)
 		throws PortalException;
+
+	public default Set<String> getResultMessages() {
+		return Collections.emptySet();
+	}
+
+	public default boolean isSkipped(
+			AccountEntry accountEntry, JSONObject jsonObject)
+		throws PortalException {
+
+		return false;
+	}
 
 	public AccountEntryValidatorResult validate(
 			AccountEntry accountEntry, JSONObject jsonObject)

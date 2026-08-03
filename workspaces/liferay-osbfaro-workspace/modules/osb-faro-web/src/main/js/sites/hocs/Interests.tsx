@@ -1,3 +1,4 @@
+import BasePage from 'shared/components/base-page';
 import Card from 'shared/components/Card';
 import ClayLink from '@clayui/link';
 import Constants, {
@@ -6,7 +7,7 @@ import Constants, {
 	Sizes,
 } from 'shared/util/constants';
 import InterestsQuery from 'shared/queries/InterestsQuery';
-import React from 'react';
+import React, {useContext} from 'react';
 import URLConstants from 'shared/util/url-constants';
 import {compose} from 'redux';
 import {compositionListColumns} from 'shared/util/table-columns';
@@ -63,18 +64,26 @@ const TableWithData = withTableData(withData, {
 		size: Sizes.XXXLarge,
 		symbol: 'ac_satellite',
 	},
-	emptyTitle: Liferay.Language.get('there-are-no-interests-found'),
+	emptyTitle: Liferay.Language.get('no-interests-were-found'),
 	getColumns: ({
+		accountId,
+		accountName,
 		channelId,
 		groupId,
 		maxCount,
 		rangeSelectors,
+		segmentId,
+		segmentName,
 		totalCount,
 	}: {
+		accountId?: string | null;
+		accountName?: string | null;
 		channelId: string;
 		groupId: string;
 		maxCount: number;
 		rangeSelectors: RangeSelectors;
+		segmentId?: string | null;
+		segmentName?: string | null;
 		totalCount: number;
 	}) => [
 		compositionListColumns.getName({
@@ -83,7 +92,13 @@ const TableWithData = withTableData(withData, {
 			routeFn: ({data: {name}}: {data: {name: string}}) =>
 				name &&
 				setUriQueryValues(
-					pickBy({...rangeSelectors}),
+					pickBy({
+						accountId,
+						accountName,
+						segmentId,
+						segmentName,
+						...rangeSelectors,
+					}),
 					toRoute(Routes.SITES_INTEREST_DETAILS, {
 						channelId,
 						groupId,
@@ -106,6 +121,9 @@ const TableWithData = withTableData(withData, {
 });
 
 const Interests = ({history}: {history: {push: (path: string) => void}}) => {
+	const {accountId, accountName, segmentId, segmentName} = useContext(
+		BasePage.Context
+	);
 	const {selectedChannel} = useChannelContext();
 	const {channelId, groupId} = useParams<{
 		channelId: string;
@@ -162,6 +180,8 @@ const Interests = ({history}: {history: {push: (path: string) => void}}) => {
 			</Card.Header>
 
 			<TableWithData
+				accountId={accountId}
+				accountName={accountName}
 				channelId={channelId}
 				delta={delta}
 				groupId={groupId}
@@ -169,6 +189,8 @@ const Interests = ({history}: {history: {push: (path: string) => void}}) => {
 				page={page}
 				rangeSelectors={rangeSelectors}
 				rowBordered={false}
+				segmentId={segmentId}
+				segmentName={segmentName}
 			/>
 		</Card>
 	);

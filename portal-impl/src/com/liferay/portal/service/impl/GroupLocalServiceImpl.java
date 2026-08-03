@@ -822,12 +822,6 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 		long guestUserId = _userLocalService.getGuestUserId(companyId);
 
 		for (String groupKey : systemGroups) {
-			if (groupKey.equals(GroupConstants.CMS) &&
-				!FeatureFlagManagerUtil.isEnabled("LPD-17564")) {
-
-				continue;
-			}
-
 			String groupCacheKey = companyIdHexString.concat(groupKey);
 
 			Group group = _systemGroupsMap.get(groupCacheKey);
@@ -5635,7 +5629,7 @@ public class GroupLocalServiceImpl extends GroupLocalServiceBaseImpl {
 	private void _validateFriendlyURLKeyword(String friendlyURL)
 		throws PortalException {
 
-		String keyword = FriendlyURLKeywordsUtil.getFriendlyURLKeyword(
+		String keyword = FriendlyURLKeywordsUtil.getSiteFriendlyURLKeyword(
 			friendlyURL);
 
 		if (Validator.isNull(keyword)) {

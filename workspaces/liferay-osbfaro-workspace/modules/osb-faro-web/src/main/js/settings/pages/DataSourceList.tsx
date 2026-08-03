@@ -54,6 +54,7 @@ const STANDALONE_DATA_SOURCES: StandaloneDataSourceDescriptor[] = [
 	},
 	{
 		label: Liferay.Language.get('marketo-campaign'),
+		requiresLDP: true,
 		type: DataSourceTypes.MarketoCampaign,
 	},
 	{
@@ -166,12 +167,14 @@ const getAlertMessage = (
 	}
 };
 
-const typeFormatter = (type: DataSourceTypes): string => {
+export const typeFormatter = (type: DataSourceTypes): string => {
 	switch (type) {
 		case DataSourceTypes.Csv:
 			return Liferay.Language.get('.csv');
 		case DataSourceTypes.Liferay:
 			return Liferay.Language.get('liferay-portal');
+		case DataSourceTypes.MarketoCampaign:
+			return Liferay.Language.get('marketo-campaign');
 		case DataSourceTypes.Salesforce:
 			return Liferay.Language.get('salesforce');
 		default:
@@ -372,9 +375,15 @@ const DataSourceList: React.FC<IDataSourceListProps> = ({className}) => {
 		<BasePage
 			className={className}
 			key="dataSourceListpage"
-			pageDescription={Liferay.Language.get(
-				'manage-and-connect-data-sources-to-bring-in-data-from-various-sources-into-liferay-analytics-cloud'
-			)}
+			pageDescription={
+				ldpAllowed
+					? Liferay.Language.get(
+							'manage-and-connect-data-sources-to-bring-in-data-from-various-sources-into-liferay-data-platform'
+						)
+					: Liferay.Language.get(
+							'manage-and-connect-data-sources-to-bring-in-data-from-various-sources-into-liferay-analytics-cloud'
+						)
+			}
 			pageTitle={Liferay.Language.get('data-sources')}
 		>
 			<EmbeddedAlertList alerts={alerts} />

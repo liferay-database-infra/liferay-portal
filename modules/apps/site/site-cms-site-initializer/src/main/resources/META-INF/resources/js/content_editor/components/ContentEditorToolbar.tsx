@@ -10,7 +10,7 @@ import {ClayDropDownWithItems} from '@clayui/drop-down';
 import {ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import ClayLink from '@clayui/link';
-import {AIAssistantChat} from '@liferay/ai-hub-cell-js-components-web';
+import {AIAssistantTriggerButton} from '@liferay/ai-hub-cell-js-components-web';
 import {isCtrlOrMeta} from '@liferay/layout-js-components-web';
 import classNames from 'classnames';
 import {openToast, useSessionState} from 'frontend-js-components-web';
@@ -19,6 +19,8 @@ import React, {useCallback, useEffect, useId, useRef, useState} from 'react';
 import {flushSync} from 'react-dom';
 
 import Toolbar from '../../common/components/Toolbar';
+import applyFieldValues from '../utils/applyFieldValues';
+import getFieldValues from '../utils/getFieldValues';
 import {toMomentDate} from './ScheduleField';
 import SchedulePublicationModal from './SchedulePublicationModal';
 import PreviewModal from './preview/PreviewModal';
@@ -38,6 +40,9 @@ export const EVENT_HANDLE_PREVIEW = 'contentEditor:handlePreview';
 
 export const EVENT_VALIDATE_FORM = 'contentEditor:validateForm';
 
+const APPLY_OBJECT_FIELD_VALUES_EVENT =
+	'cms:aiAssistant:applyObjectFieldValues';
+
 const STATUS_DRAFT_CODE = 2;
 
 const SUCCESS_MESSAGE_SESSION_KEY =
@@ -52,6 +57,7 @@ export default function ContentEditorToolbar({
 	hasWorkflow,
 	headerTitle,
 	isNew,
+	objectFields,
 	title,
 	type,
 }: {
@@ -63,6 +69,7 @@ export default function ContentEditorToolbar({
 	hasWorkflow: boolean;
 	headerTitle: string;
 	isNew: boolean;
+	objectFields?: Array<{label: string; name: string}>;
 	title: string;
 	type: string;
 }) {
@@ -98,6 +105,17 @@ export default function ContentEditorToolbar({
 
 		return form as HTMLFormElement;
 	}, []);
+
+	const getContext = useCallback(() => {
+		const form = getForm();
+
+		return {
+			objectFields: JSON.stringify(objectFields ?? []),
+			properties: JSON.stringify(
+				form ? getFieldValues(form, objectFields ?? []) : {}
+			),
+		};
+	}, [getForm, objectFields]);
 
 	const setSuccessMessage = useCallback(
 		(message: string) => {
@@ -207,6 +225,31 @@ export default function ContentEditorToolbar({
 		openToast({message, type: 'success'});
 	}, [getForm]);
 
+	useEffect(() => {
+		const handleApplyObjectFieldValues = ({
+			values,
+		}: {
+			values: Record<string, string>;
+		}) => {
+			const form = getForm();
+
+			if (form) {
+				applyFieldValues(form, values, localizationLanguageId);
+			}
+		};
+
+		Liferay.on(
+			APPLY_OBJECT_FIELD_VALUES_EVENT,
+			handleApplyObjectFieldValues
+		);
+
+		return () =>
+			Liferay.detach(
+				APPLY_OBJECT_FIELD_VALUES_EVENT,
+				handleApplyObjectFieldValues
+			);
+	}, [getForm, localizationLanguageId]);
+
 	return (
 		<Toolbar
 			backURL={backURL}
@@ -217,11 +260,14 @@ export default function ContentEditorToolbar({
 			{Liferay.FeatureFlags['LPD-62272'] && (
 				<>
 					<Toolbar.Item>
-						<AIAssistantChat
+						<AIAssistantTriggerButton
 							context={{groupId}}
-							hideTriggerLabel
+							enableFreeFormCategorization
+							getContext={getContext}
+							hideLabel
 							instructionDefinitionScope="cms"
-							triggerRound
+							presentation="dropdown"
+							round
 						/>
 					</Toolbar.Item>
 

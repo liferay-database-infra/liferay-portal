@@ -11,16 +11,13 @@ variable "container_registries" {
 variable "deployment_name" {
 	type=string
 }
-variable "machine_type" {
-	default="Standard_D4s_v4"
-	type=string
+variable "host_encryption_enabled" {
+	default=false
+	type=bool
 }
-variable "observability_config" {
-	default={}
-	type=object({
-		enabled=optional(bool, false)
-		namespace=optional(string, "observability")
-	})
+variable "machine_type" {
+	default="Standard_D4ds_v4"
+	type=string
 }
 variable "pod_cidr" {
 	default="10.244.0.0/16"

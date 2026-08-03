@@ -171,16 +171,10 @@ public class RelationshipObjectFieldBusinessType
 			values, objectField.getName());
 
 		if (valueEntry != null) {
-			Object value = valueEntry.getValue();
-
-			if (value == null) {
-				return 0;
-			}
-
-			long valueLong = GetterUtil.getLong(value);
+			long valueLong = GetterUtil.getLong(valueEntry.getValue());
 
 			if (valueLong == 0) {
-				return value;
+				return valueLong;
 			}
 
 			ObjectDefinition objectDefinition = _getObjectDefinition(

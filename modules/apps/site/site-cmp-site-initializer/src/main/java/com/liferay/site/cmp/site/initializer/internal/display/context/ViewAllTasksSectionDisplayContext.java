@@ -39,6 +39,8 @@ public class ViewAllTasksSectionDisplayContext
 	public ViewAllTasksSectionDisplayContext(
 		AssetTagLocalService assetTagLocalService,
 		ClassNameLocalService classNameLocalService,
+		ObjectDefinition cmpProjectObjectDefinition,
+		ObjectDefinition cmpTaskObjectDefinition,
 		DepotEntryLocalService depotEntryLocalService,
 		HttpServletRequest httpServletRequest,
 		ListTypeEntryLocalService listTypeEntryLocalService,
@@ -46,20 +48,20 @@ public class ViewAllTasksSectionDisplayContext
 		ObjectFieldLocalService objectFieldLocalService,
 		ObjectStateFlowLocalService objectStateFlowLocalService,
 		ObjectStateLocalService objectStateLocalService,
-		ObjectDefinition projectObjectDefinition, RoleService roleService,
-		ObjectDefinition taskObjectDefinition) {
+		RoleService roleService) {
 
 		super(
-			assetTagLocalService, classNameLocalService, depotEntryLocalService,
-			httpServletRequest, listTypeEntryLocalService, objectEntryService,
+			assetTagLocalService, classNameLocalService,
+			cmpProjectObjectDefinition, cmpTaskObjectDefinition,
+			depotEntryLocalService, httpServletRequest,
+			listTypeEntryLocalService, objectEntryService,
 			objectFieldLocalService, objectStateFlowLocalService,
-			objectStateLocalService, projectObjectDefinition, roleService,
-			taskObjectDefinition);
+			objectStateLocalService, roleService);
 	}
 
 	@Override
 	public String getAPIURL() {
-		StringBundler sb = new StringBundler(9);
+		StringBundler sb = new StringBundler(8);
 
 		sb.append("/o/search/v1.0/search?emptySearch=true&entryClassNames=");
 		sb.append(HtmlUtil.escapeURL(objectDefinition.getClassName()));
@@ -67,9 +69,8 @@ public class ViewAllTasksSectionDisplayContext
 		sb.append(KaleoTaskInstanceToken.class.getName());
 		sb.append("&filter=(objectDefinitionId eq ");
 		sb.append(objectDefinition.getObjectDefinitionId());
-		sb.append(" or keywords/any(k:startswith(k, '");
-		sb.append(objectDefinition.getExternalReferenceCode());
-		sb.append("')))&nestedFields=cmpProjectToCMPTasks,embedded");
+		sb.append(" or cmpTaskObjectEntryIds/any(x:x gt 0))&nestedFields=");
+		sb.append("cmpProjectToCMPTasks,embedded");
 
 		return sb.toString();
 	}

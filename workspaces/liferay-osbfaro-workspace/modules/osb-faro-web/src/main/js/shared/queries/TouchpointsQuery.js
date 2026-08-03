@@ -2,22 +2,26 @@ import {gql} from '@apollo/client';
 
 export default gql`
 	query Touchpoint(
+		$accountId: String
 		$channelId: String
 		$keywords: String
 		$rangeEnd: String
 		$rangeKey: Int
 		$rangeStart: String
+		$segmentId: String
 		$size: Int!
 		$sort: Sort!
 		$start: Int!
 		$terms: String
 	) {
 		pages(
+			accountId: $accountId
 			channelId: $channelId
 			keywords: $keywords
 			rangeEnd: $rangeEnd
 			rangeKey: $rangeKey
 			rangeStart: $rangeStart
+			segmentId: $segmentId
 			size: $size
 			sort: $sort
 			start: $start
@@ -57,11 +61,13 @@ export default gql`
 
 export const TOUCHPOINTS_QUERY_TEST = gql`
 	query Touchpoint(
+		$accountId: String
 		$channelId: String
 		$keywords: String
 		$rangeEnd: String
 		$rangeKey: Int
 		$rangeStart: String
+		$segmentId: String
 		$size: Int!
 		$sort: Sort!
 		$start: Int!
@@ -69,11 +75,13 @@ export const TOUCHPOINTS_QUERY_TEST = gql`
 		$useDB: Boolean
 	) {
 		pages(
+			accountId: $accountId
 			channelId: $channelId
 			keywords: $keywords
 			rangeEnd: $rangeEnd
 			rangeKey: $rangeKey
 			rangeStart: $rangeStart
+			segmentId: $segmentId
 			size: $size
 			sort: $sort
 			start: $start

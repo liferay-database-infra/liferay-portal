@@ -1,8 +1,18 @@
 import {gql} from '@apollo/client';
 
 export default gql`
-	query CohortHeatMap($channelId: String, $interval: String!) {
-		cohort(channelId: $channelId, interval: $interval) {
+	query CohortHeatMap(
+		$accountId: String
+		$channelId: String
+		$interval: String!
+		$segmentId: String
+	) {
+		cohort(
+			accountId: $accountId
+			channelId: $channelId
+			interval: $interval
+			segmentId: $segmentId
+		) {
 			anonymousCohortHeatMapMetrics {
 				retention
 				rowKey

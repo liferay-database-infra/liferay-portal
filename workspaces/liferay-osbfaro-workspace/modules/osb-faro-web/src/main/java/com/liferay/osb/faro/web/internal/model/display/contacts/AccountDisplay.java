@@ -24,8 +24,10 @@ public class AccountDisplay {
 	public AccountDisplay(Account account) {
 		_accountName = account.getAccountName();
 		_accountType = account.getAccountType();
+		_activitiesCount = account.getActivitiesCount();
 		_annualRevenue = account.getAnnualRevenue();
 		_country = account.getCountry();
+		_firstActivityDate = account.getFirstActivityDate();
 		_id = account.getId();
 		_industry = account.getIndustry();
 		_lastActivityDate = account.getLastActivityDate();
@@ -46,8 +48,13 @@ public class AccountDisplay {
 
 	private String _accountName;
 	private String _accountType;
+	private Long _activitiesCount;
 	private Double _annualRevenue;
 	private String _country;
+
+	@JsonProperty("firstActive")
+	private Date _firstActivityDate;
+
 	private String _id;
 	private String _industry;
 

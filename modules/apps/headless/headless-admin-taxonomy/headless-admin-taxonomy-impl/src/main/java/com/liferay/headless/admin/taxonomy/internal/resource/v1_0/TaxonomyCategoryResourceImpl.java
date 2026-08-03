@@ -20,7 +20,9 @@ import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.service.DepotEntryService;
 import com.liferay.exportimport.constants.ExportImportConstants;
+import com.liferay.exportimport.kernel.lar.ExportImportThreadLocal;
 import com.liferay.exportimport.vulcan.batch.engine.ExportImportVulcanBatchEngineTaskItemDelegate;
+import com.liferay.friendly.url.service.FriendlyURLEntryLocalService;
 import com.liferay.headless.admin.taxonomy.dto.v1_0.ParentTaxonomyCategory;
 import com.liferay.headless.admin.taxonomy.dto.v1_0.ParentTaxonomyVocabulary;
 import com.liferay.headless.admin.taxonomy.dto.v1_0.TaxonomyCategory;
@@ -37,7 +39,6 @@ import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.ProjectionList;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.Type;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
@@ -52,9 +53,11 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.FriendlyURLNormalizer;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.vulcan.aggregation.Aggregation;
@@ -319,6 +322,8 @@ public class TaxonomyCategoryResourceImpl
 				assetCategory.getGroupId(), contextHttpServletRequest,
 				taxonomyCategory.getViewableByAsString()
 			).build());
+
+		_updateFriendlyURLEntry(assetCategory, taxonomyCategory);
 
 		return _toTaxonomyCategory(assetCategory);
 	}
@@ -716,14 +721,16 @@ public class TaxonomyCategoryResourceImpl
 			true, LocaleUtil.fromLanguageId(languageId), "Taxonomy category",
 			titleMap, new HashSet<>(descriptionMap.keySet()));
 
-		return _toTaxonomyCategory(
-			_assetCategoryService.addCategory(
-				externalReferenceCode, groupId, parentTaxonomyCategoryId,
-				titleMap, descriptionMap, taxonomyVocabularyId,
-				GetterUtil.getBoolean(taxonomyCategory.getSystem()),
-				_toStringArray(
-					taxonomyCategory.getTaxonomyCategoryProperties()),
-				_getServiceContext(groupId, taxonomyCategory)));
+		AssetCategory assetCategory = _assetCategoryService.addCategory(
+			externalReferenceCode, groupId, parentTaxonomyCategoryId, titleMap,
+			descriptionMap, taxonomyVocabularyId,
+			GetterUtil.getBoolean(taxonomyCategory.getSystem()),
+			_toStringArray(taxonomyCategory.getTaxonomyCategoryProperties()),
+			_getServiceContext(groupId, taxonomyCategory));
+
+		_updateFriendlyURLEntry(assetCategory, taxonomyCategory);
+
+		return _toTaxonomyCategory(assetCategory);
 	}
 
 	private AssetCategory _getAssetCategory(String taxonomyCategoryId)
@@ -795,6 +802,18 @@ public class TaxonomyCategoryResourceImpl
 				_assetCategoryService.getCategory(
 					GetterUtil.getLong(
 						document.get(Field.ASSET_CATEGORY_ID)))));
+	}
+
+	private long _getFriendlyURLEntryParentClassPK(
+		AssetCategory assetCategory) {
+
+		if (assetCategory.getParentCategoryId() ==
+				AssetCategoryConstants.DEFAULT_PARENT_CATEGORY_ID) {
+
+			return assetCategory.getVocabularyId();
+		}
+
+		return assetCategory.getParentCategoryId();
 	}
 
 	private long _getParentAssetCategoryId(
@@ -954,18 +973,14 @@ public class TaxonomyCategoryResourceImpl
 				_assetVocabularyService.getOrAddEmptyVocabulary(
 					taxonomyVocabularyExternalReferenceCode, groupId);
 
-			if (FeatureFlagManagerUtil.isEnabled(
-					assetVocabulary.getCompanyId(), "LPD-17564")) {
+			Group group = _groupLocalService.getGroup(groupId);
 
-				Group group = _groupLocalService.getGroup(groupId);
-
-				if (group.isCMS()) {
-					_assetVocabularyGroupRelLocalService.
-						setAssetVocabularyGroupRels(
-							assetVocabulary.getVocabularyId(),
-							new long[] {GroupConstants.GROUP_ID_ALL},
-							DepotConstants.TYPE_SPACE);
-				}
+			if (group.isCMS()) {
+				_assetVocabularyGroupRelLocalService.
+					setAssetVocabularyGroupRels(
+						assetVocabulary.getVocabularyId(),
+						new long[] {GroupConstants.GROUP_ID_ALL},
+						DepotConstants.TYPE_SPACE);
 			}
 
 			return assetVocabulary.getVocabularyId();
@@ -1012,6 +1027,14 @@ public class TaxonomyCategoryResourceImpl
 
 		Map<String, String> map = new HashMap<>();
 
+		for (AssetCategoryProperty assetCategoryProperty :
+				assetCategoryProperties) {
+
+			map.put(
+				assetCategoryProperty.getKey(),
+				assetCategoryProperty.getValue());
+		}
+
 		if (taxonomyCategoryProperties != null) {
 			for (TaxonomyCategoryProperty taxonomyCategoryProperty :
 					taxonomyCategoryProperties) {
@@ -1020,14 +1043,6 @@ public class TaxonomyCategoryResourceImpl
 					taxonomyCategoryProperty.getKey(),
 					taxonomyCategoryProperty.getValue());
 			}
-		}
-
-		for (AssetCategoryProperty assetCategoryProperty :
-				assetCategoryProperties) {
-
-			map.put(
-				assetCategoryProperty.getKey(),
-				assetCategoryProperty.getValue());
 		}
 
 		String[] strings = new String[map.size()];
@@ -1081,33 +1096,34 @@ public class TaxonomyCategoryResourceImpl
 		long assetVocabularyId = _getAssetVocabularyId(
 			persistedAssetCategory, groupId, taxonomyCategory);
 
-		return _toTaxonomyCategory(
-			_assetCategoryService.updateCategory(
-				taxonomyCategory.getExternalReferenceCode(),
-				persistedAssetCategory.getCategoryId(),
-				_getParentAssetCategoryId(
-					persistedAssetCategory, assetVocabularyId, groupId,
-					taxonomyCategory),
-				LocalizedMapUtil.patchLocalizedMap(
-					persistedAssetCategory.getTitleMap(),
-					contextAcceptLanguage.getPreferredLocale(),
-					taxonomyCategory.getName(),
-					taxonomyCategory.getName_i18n()),
-				LocalizedMapUtil.patchLocalizedMap(
-					persistedAssetCategory.getDescriptionMap(),
-					contextAcceptLanguage.getPreferredLocale(),
-					taxonomyCategory.getDescription(),
-					taxonomyCategory.getDescription_i18n()),
-				assetVocabularyId,
-				_merge(
-					_assetCategoryPropertyLocalService.getCategoryProperties(
-						persistedAssetCategory.getCategoryId()),
-					taxonomyCategory.getTaxonomyCategoryProperties()),
-				ServiceContextBuilder.create(
-					persistedAssetCategory.getGroupId(),
-					contextHttpServletRequest,
-					taxonomyCategory.getViewableByAsString()
-				).build()));
+		AssetCategory assetCategory = _assetCategoryService.updateCategory(
+			taxonomyCategory.getExternalReferenceCode(),
+			persistedAssetCategory.getCategoryId(),
+			_getParentAssetCategoryId(
+				persistedAssetCategory, assetVocabularyId, groupId,
+				taxonomyCategory),
+			LocalizedMapUtil.patchLocalizedMap(
+				persistedAssetCategory.getTitleMap(),
+				contextAcceptLanguage.getPreferredLocale(),
+				taxonomyCategory.getName(), taxonomyCategory.getName_i18n()),
+			LocalizedMapUtil.patchLocalizedMap(
+				persistedAssetCategory.getDescriptionMap(),
+				contextAcceptLanguage.getPreferredLocale(),
+				taxonomyCategory.getDescription(),
+				taxonomyCategory.getDescription_i18n()),
+			assetVocabularyId,
+			_merge(
+				_assetCategoryPropertyLocalService.getCategoryProperties(
+					persistedAssetCategory.getCategoryId()),
+				taxonomyCategory.getTaxonomyCategoryProperties()),
+			ServiceContextBuilder.create(
+				persistedAssetCategory.getGroupId(), contextHttpServletRequest,
+				taxonomyCategory.getViewableByAsString()
+			).build());
+
+		_updateFriendlyURLEntry(assetCategory, taxonomyCategory);
+
+		return _toTaxonomyCategory(assetCategory);
 	}
 
 	private AssetCategory _toAssetCategory(Object[] assetCategory) {
@@ -1181,18 +1197,80 @@ public class TaxonomyCategoryResourceImpl
 		long assetVocabularyId = _getAssetVocabularyId(
 			assetCategory, assetCategory.getGroupId(), taxonomyCategory);
 
-		return _assetCategoryService.updateCategory(
-			taxonomyCategory.getExternalReferenceCode(),
-			assetCategory.getCategoryId(),
-			_getParentAssetCategoryId(
-				assetCategory, assetVocabularyId, assetCategory.getGroupId(),
-				taxonomyCategory),
-			titleMap, descriptionMap, assetVocabularyId,
-			_toStringArray(taxonomyCategory.getTaxonomyCategoryProperties()),
-			ServiceContextBuilder.create(
-				assetCategory.getGroupId(), contextHttpServletRequest,
-				taxonomyCategory.getViewableByAsString()
-			).build());
+		AssetCategory updatedAssetCategory =
+			_assetCategoryService.updateCategory(
+				taxonomyCategory.getExternalReferenceCode(),
+				assetCategory.getCategoryId(),
+				_getParentAssetCategoryId(
+					assetCategory, assetVocabularyId,
+					assetCategory.getGroupId(), taxonomyCategory),
+				titleMap, descriptionMap, assetVocabularyId,
+				_toStringArray(
+					taxonomyCategory.getTaxonomyCategoryProperties()),
+				ServiceContextBuilder.create(
+					assetCategory.getGroupId(), contextHttpServletRequest,
+					taxonomyCategory.getViewableByAsString()
+				).build());
+
+		_updateFriendlyURLEntry(updatedAssetCategory, taxonomyCategory);
+
+		return updatedAssetCategory;
+	}
+
+	private void _updateFriendlyURLEntry(
+			AssetCategory assetCategory, TaxonomyCategory taxonomyCategory)
+		throws Exception {
+
+		if (ExportImportThreadLocal.isImportInProcess() ||
+			ExportImportThreadLocal.isStagingInProcess()) {
+
+			return;
+		}
+
+		Map<Locale, String> urlTitleMap = LocalizedMapUtil.getLocalizedMap(
+			contextAcceptLanguage.getPreferredLocale(),
+			taxonomyCategory.getFriendlyUrlPath(),
+			taxonomyCategory.getFriendlyUrlPath_i18n());
+
+		if (urlTitleMap.isEmpty()) {
+			return;
+		}
+
+		long classNameId = _portal.getClassNameId(AssetCategory.class);
+		long parentClassPK = _getFriendlyURLEntryParentClassPK(assetCategory);
+
+		String defaultLanguageId = assetCategory.getDefaultLanguageId();
+
+		Map<String, String> uniqueUrlTitleMap = new HashMap<>();
+
+		for (Map.Entry<Locale, String> entry : urlTitleMap.entrySet()) {
+			Locale locale = entry.getKey();
+
+			String languageId = LocaleUtil.toLanguageId(locale);
+
+			String urlTitle = entry.getValue();
+
+			if (Validator.isNull(urlTitle) &&
+				languageId.equals(defaultLanguageId)) {
+
+				urlTitle = assetCategory.getTitle(locale);
+			}
+
+			urlTitle =
+				_friendlyURLNormalizer.normalizeWithEncodingPeriodsAndSlashes(
+					urlTitle);
+
+			uniqueUrlTitleMap.put(
+				languageId,
+				_friendlyURLEntryLocalService.getUniqueUrlTitle(
+					assetCategory.getGroupId(), classNameId, parentClassPK,
+					assetCategory.getCategoryId(), urlTitle, languageId));
+		}
+
+		_friendlyURLEntryLocalService.addFriendlyURLEntry(
+			assetCategory.getGroupId(), classNameId, parentClassPK,
+			assetCategory.getCategoryId(), defaultLanguageId, uniqueUrlTitleMap,
+			new ServiceContext());
 	}
 
 	private static final EntityModel _entityModel = new CategoryEntityModel();
@@ -1221,7 +1299,16 @@ public class TaxonomyCategoryResourceImpl
 	private DTOConverterRegistry _dtoConverterRegistry;
 
 	@Reference
+	private FriendlyURLEntryLocalService _friendlyURLEntryLocalService;
+
+	@Reference
+	private FriendlyURLNormalizer _friendlyURLNormalizer;
+
+	@Reference
 	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private Portal _portal;
 
 	@Reference(
 		target = "(component.name=com.liferay.headless.admin.taxonomy.internal.dto.v1_0.converter.TaxonomyCategoryDTOConverter)"

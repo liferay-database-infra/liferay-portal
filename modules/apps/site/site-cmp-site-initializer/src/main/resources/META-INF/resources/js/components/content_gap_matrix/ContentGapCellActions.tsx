@@ -9,10 +9,17 @@ import React from 'react';
 
 interface ContentGapCellActionsProps {
 	onFilter: () => void;
+
+	/**
+	 * Left out on the uncategorized cells: their assets have no persona or no
+	 * funnel stage to generate content for.
+	 */
+	onGenerate?: () => void;
 }
 
 export default function ContentGapCellActions({
 	onFilter,
+	onGenerate,
 }: ContentGapCellActionsProps) {
 	return (
 		<div className="lfr-cmp__content-gap-cell-actions">
@@ -33,20 +40,24 @@ export default function ContentGapCellActions({
 				{Liferay.Language.get('filter')}
 			</ClayButton>
 
-			{/* Placeholder for the future Generate action */}
+			{onGenerate && Liferay.FeatureFlags['LPD-62272'] && (
+				<ClayButton
+					className="lfr-cmp__content-gap-cell-action"
+					displayType="unstyled"
+					onClick={(event) => {
+						event.stopPropagation();
 
-			<ClayButton
-				className="lfr-cmp__content-gap-cell-action"
-				disabled
-				displayType="unstyled"
-			>
-				<ClayIcon
-					className="inline-item inline-item-before"
-					symbol="stars"
-				/>
+						onGenerate();
+					}}
+				>
+					<ClayIcon
+						className="inline-item inline-item-before"
+						symbol="stars"
+					/>
 
-				{Liferay.Language.get('generate')}
-			</ClayButton>
+					{Liferay.Language.get('generate')}
+				</ClayButton>
+			)}
 		</div>
 	);
 }

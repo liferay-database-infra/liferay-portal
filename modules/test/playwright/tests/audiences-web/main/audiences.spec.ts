@@ -33,7 +33,7 @@ test(
 	{
 		tag: '@LPD-93951',
 	},
-	async ({page}) => {
+	async ({audiencesPage, page}) => {
 		await page.goto(PORTLET_URLS.audiences);
 
 		// Create a new audience
@@ -117,18 +117,7 @@ test(
 
 		// Delete the audience and check it is no longer listed
 
-		page.once('dialog', (dialog) => dialog.accept());
-
-		await clickAndExpectToBeVisible({
-			autoClick: true,
-			target: page.getByRole('menuitem', {name: 'Delete'}),
-			trigger: page
-				.locator('tr')
-				.filter({hasText: audienceName})
-				.locator('button.dropdown-toggle'),
-		});
-
-		await waitForAlert(page);
+		await audiencesPage.deleteAudience(audienceName);
 
 		await expect(
 			page.locator('tr').filter({hasText: audienceName})
@@ -376,6 +365,109 @@ test(
 );
 
 test(
+	'Keeps the values and avoids a duplicate when a save fails',
+	{
+		tag: '@LPD-99227',
+	},
+	async ({audiencesPage, page}) => {
+		const externalReferenceCode = 'ERC-' + getRandomString();
+
+		// Create the audience that already owns the external reference code
+
+		await audiencesPage.goto();
+
+		await audiencesPage.createAudience({
+			attributeName: 'Browser Name',
+			externalReferenceCode,
+			name: 'Audience ' + getRandomString(),
+			value: 'Chrome',
+		});
+
+		// Create the audience to edit
+
+		const audienceName = 'Audience ' + getRandomString();
+
+		await audiencesPage.createAudience({
+			attributeName: 'Browser Name',
+			name: audienceName,
+			value: 'Chrome',
+		});
+
+		// Edit it
+
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: page.getByRole('menuitem', {name: 'Edit'}),
+			trigger: page
+				.locator('tr')
+				.filter({hasText: audienceName})
+				.locator('button.dropdown-toggle'),
+		});
+
+		// An empty external reference code reports the error inline and expands
+		// the general settings on save
+
+		await audiencesPage.generalSettingsButton.click();
+
+		await audiencesPage.externalReferenceCodeInput.fill('');
+
+		await audiencesPage.generalSettingsButton.click();
+
+		await audiencesPage.saveButton.click();
+
+		await expect(
+			audiencesPage.externalReferenceCodeErrorMessage
+		).toHaveText('This field is required.');
+
+		await expect(audiencesPage.externalReferenceCodeInput).toBeVisible();
+
+		// Reuse the external reference code already in use
+
+		await audiencesPage.externalReferenceCodeInput.fill(
+			externalReferenceCode
+		);
+
+		await audiencesPage.saveButton.click();
+
+		// The specific error shows inline on the field instead of a toast
+
+		await expect(
+			audiencesPage.externalReferenceCodeErrorMessage
+		).toHaveText('Please enter a unique external reference code.');
+
+		await expect(
+			page.locator('#ToastAlertContainer .alert-danger')
+		).toHaveCount(0);
+
+		// The values survive and the general settings stay expanded
+
+		await expect(audiencesPage.nameInput).toHaveValue(audienceName);
+		await expect(
+			page.locator('.audience-builder-rule').getByText('Browser Name')
+		).toBeVisible();
+		await expect(audiencesPage.valueInput).toHaveValue('Chrome');
+		await expect(audiencesPage.externalReferenceCodeInput).toBeVisible();
+		await expect(audiencesPage.externalReferenceCodeInput).toHaveValue(
+			externalReferenceCode
+		);
+
+		// Fixing the code updates the audience instead of duplicating it
+
+		await audiencesPage.externalReferenceCodeInput.fill(
+			'ERC-' + getRandomString()
+		);
+
+		await audiencesPage.saveButton.click();
+
+		await waitForAlert(page);
+
+		await expect(
+			page.locator('tr').filter({hasText: audienceName})
+		).toHaveCount(1);
+	}
+);
+
+test(
 	'Groups, navigates, keeps the conjunction independent, caps nesting, and unwraps',
 	{
 		tag: '@LPD-98159',
@@ -555,13 +647,5 @@ test(
 
 		await expect(row).toContainText(editor.familyName);
 		await expect(row).not.toContainText('Test Test');
-
-		// Clean up
-
-		await audiencesPage.deleteAudience(audienceName);
-
-		await expect(
-			page.locator('tr').filter({hasText: audienceName})
-		).toHaveCount(0);
 	}
 );

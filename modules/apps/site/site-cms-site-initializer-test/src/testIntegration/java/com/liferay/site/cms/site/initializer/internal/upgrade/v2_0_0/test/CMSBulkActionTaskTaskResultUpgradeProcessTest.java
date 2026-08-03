@@ -14,12 +14,10 @@ import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
-import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import com.liferay.portal.upgrade.test.util.UpgradeTestUtil;
-import com.liferay.site.cms.site.initializer.test.util.CMSTestUtil;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,7 +29,6 @@ import org.junit.runner.RunWith;
 /**
  * @author Mikel Lorza
  */
-@FeatureFlag("LPD-17564")
 @RunWith(Arquillian.class)
 public class CMSBulkActionTaskTaskResultUpgradeProcessTest {
 
@@ -42,9 +39,6 @@ public class CMSBulkActionTaskTaskResultUpgradeProcessTest {
 
 	@Before
 	public void setUp() throws Exception {
-		CMSTestUtil.getOrAddGroup(
-			CMSBulkActionTaskTaskResultUpgradeProcessTest.class);
-
 		_objectDefinition =
 			_objectDefinitionLocalService.
 				fetchObjectDefinitionByExternalReferenceCode(

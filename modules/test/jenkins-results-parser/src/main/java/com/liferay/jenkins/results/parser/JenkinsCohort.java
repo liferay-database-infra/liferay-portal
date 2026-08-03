@@ -51,7 +51,7 @@ public class JenkinsCohort {
 		List<JenkinsMaster> availableJenkinsMasters = new ArrayList<>();
 
 		for (JenkinsMaster jenkinsMaster : getJenkinsMasters()) {
-			if (!jenkinsMaster.isBlackListed() && jenkinsMaster.isAvailable()) {
+			if (!jenkinsMaster.isBlacklisted() && jenkinsMaster.isAvailable()) {
 				availableJenkinsMasters.add(jenkinsMaster);
 			}
 		}
@@ -59,16 +59,27 @@ public class JenkinsCohort {
 		return availableJenkinsMasters;
 	}
 
-	public List<JenkinsMaster> getBlackListedJenkinsMasters() {
-		List<JenkinsMaster> blackListedJenkinsMasters = new ArrayList<>();
+	public List<JenkinsMaster> getBlacklistedJenkinsMasters() {
+		List<JenkinsMaster> blacklistedJenkinsMasters = new ArrayList<>();
 
-		for (JenkinsMaster jenkinsMaster : getJenkinsMasters()) {
-			if (jenkinsMaster.isBlackListed()) {
-				blackListedJenkinsMasters.add(jenkinsMaster);
+		try {
+			List<JenkinsMaster> jenkinsMasters =
+				JenkinsResultsParserUtil.getJenkinsMasters(
+					JenkinsResultsParserUtil.getBuildProperties(), getName(),
+					true, JenkinsMaster.getSlavesPerHostDefault(),
+					JenkinsMaster.getSlaveRAMMinimumDefault(), null);
+
+			for (JenkinsMaster jenkinsMaster : jenkinsMasters) {
+				if (jenkinsMaster.isBlacklisted()) {
+					blacklistedJenkinsMasters.add(jenkinsMaster);
+				}
 			}
 		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
 
-		return blackListedJenkinsMasters;
+		return blacklistedJenkinsMasters;
 	}
 
 	public int getIdleJenkinsSlaveCount() {
@@ -238,7 +249,7 @@ public class JenkinsCohort {
 		}
 
 		for (JenkinsMaster jenkinsMaster : _jenkinsMastersMap.values()) {
-			if (jenkinsMaster.isBlackListed() || !jenkinsMaster.isAvailable()) {
+			if (jenkinsMaster.isBlacklisted() || !jenkinsMaster.isAvailable()) {
 				continue;
 			}
 
@@ -256,7 +267,7 @@ public class JenkinsCohort {
 		}
 
 		for (JenkinsMaster jenkinsMaster : _jenkinsMastersMap.values()) {
-			if (jenkinsMaster.isBlackListed() || !jenkinsMaster.isAvailable()) {
+			if (jenkinsMaster.isBlacklisted() || !jenkinsMaster.isAvailable()) {
 				continue;
 			}
 

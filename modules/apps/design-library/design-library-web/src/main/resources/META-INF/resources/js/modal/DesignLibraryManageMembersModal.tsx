@@ -10,7 +10,14 @@ import AddMembersInput from '../components/members/AddMembersInput';
 
 const CONFIG: MembersConfig = {
 	defaultRoleExternalReferenceCode: 'L_DESIGN_LIBRARY_MEMBER',
-	excludedRoleExternalReferenceCodes: ['L_DESIGN_LIBRARY_OWNER'],
+	excludedRoleExternalReferenceCodes: [
+		'L_ASSET_LIBRARY_ADMINISTRATOR',
+		'L_ASSET_LIBRARY_CONNECTED_SITE_MEMBER',
+		'L_ASSET_LIBRARY_CONTENT_REVIEWER',
+		'L_ASSET_LIBRARY_MEMBER',
+		'L_ASSET_LIBRARY_OWNER',
+		'L_DESIGN_LIBRARY_OWNER',
+	],
 	messages: {
 		addGroupError: Liferay.Language.get(
 			'failed-to-add-group-x-to-design-library'
@@ -58,10 +65,12 @@ const CONFIG: MembersConfig = {
 export default function DesignLibraryManageMembersModal({
 	externalReferenceCode,
 	hasAssignMembersPermission,
+	headerTitle,
 	ownerId,
 }: {
 	externalReferenceCode: string;
 	hasAssignMembersPermission: boolean;
+	headerTitle: string;
 	ownerId: string;
 }) {
 	return (
@@ -72,7 +81,7 @@ export default function DesignLibraryManageMembersModal({
 			)}
 			externalReferenceCode={externalReferenceCode}
 			hasAssignMembersPermission={hasAssignMembersPermission}
-			headerTitle={Liferay.Language.get('manage-members')}
+			headerTitle={headerTitle}
 			ownerId={ownerId}
 			renderAddMembersInput={(api) => <AddMembersInput {...api} />}
 		/>

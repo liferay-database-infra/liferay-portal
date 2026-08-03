@@ -37,7 +37,6 @@ const test = mergeTests(
 	dataApiHelpersTest,
 	featureFlagsTest({
 		'LPD-11235': {enabled: false},
-		'LPD-17564': {enabled: true},
 	}),
 	fragmentsPagesTest,
 	loginTest(),
@@ -189,8 +188,8 @@ test(
 		await apiHelpers.headlessAssetLibrary.createAssetLibrary({
 			name: spaceName,
 			settings: {
-				availableLanguageIds: ['es-ES'],
-				defaultLanguageId: 'es-ES',
+				availableLanguageIds: ['es_ES'],
+				defaultLanguageId: 'es_ES',
 				useCustomLanguages: true,
 			},
 			type: 'Space',

@@ -110,17 +110,25 @@ public class IntegrationsDisplayContext {
 
 		return JSONUtil.toJSONArray(
 			_seoStudioIntegrationTypeListTypeEntries,
-			listTypeEntry -> JSONUtil.put(
-				"configurationURL",
-				_configurationURLsMap.getOrDefault(
-					listTypeEntry.getKey(), StringPool.BLANK)
-			).put(
-				"disabled", configuredKeys.contains(listTypeEntry.getKey())
-			).put(
-				"id", listTypeEntry.getKey()
-			).put(
-				"name", listTypeEntry.getName(_themeDisplay.getLocale())
-			));
+			listTypeEntry -> {
+				String key = listTypeEntry.getKey();
+
+				String configurationURL = _configurationURLsMap.get(key);
+
+				if (configurationURL == null) {
+					return null;
+				}
+
+				return JSONUtil.put(
+					"configurationURL", configurationURL
+				).put(
+					"disabled", configuredKeys.contains(key)
+				).put(
+					"id", key
+				).put(
+					"name", listTypeEntry.getName(_themeDisplay.getLocale())
+				);
+			});
 	}
 
 	private JSONArray _getItemsJSONArray() throws Exception {
@@ -178,13 +186,17 @@ public class IntegrationsDisplayContext {
 
 		Object value = properties.get(key);
 
+		if (value == null) {
+			return null;
+		}
+
 		if (value instanceof ListEntry) {
 			ListEntry listEntry = (ListEntry)value;
 
 			return listEntry.getKey();
 		}
 
-		return (String)value;
+		return value.toString();
 	}
 
 	private final Map<String, String> _configurationURLsMap;

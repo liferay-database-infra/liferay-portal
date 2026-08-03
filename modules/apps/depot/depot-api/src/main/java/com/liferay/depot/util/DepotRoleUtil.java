@@ -48,20 +48,16 @@ public class DepotRoleUtil {
 			return roles;
 		}
 
-		if (Objects.equals(
-				subtype, DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY)) {
-
-			return ListUtil.filter(
-				roles, role -> Objects.equals(role.getSubtype(), subtype));
-		}
-
 		return ListUtil.filter(
 			roles,
 			role -> {
 				String roleSubtype = role.getSubtype();
 
-				return Validator.isNull(roleSubtype) ||
-					   Objects.equals(roleSubtype, subtype);
+				if (Validator.isNull(roleSubtype)) {
+					roleSubtype = DepotRolesConstants.SUBTYPE_SPACE;
+				}
+
+				return Objects.equals(roleSubtype, subtype);
 			});
 	}
 
@@ -71,12 +67,12 @@ public class DepotRoleUtil {
 	}
 
 	public static Map<Locale, String> getDescriptionMap(
-		long companyId, Language language, String name) {
+		Language language, String name) {
 
 		Map<Locale, String> descriptionMap = new HashMap<>();
 
 		for (Locale locale : language.getAvailableLocales()) {
-			String description = _getDescription(companyId, locale, name);
+			String description = _getDescription(locale, name);
 
 			if (description != null) {
 				descriptionMap.put(locale, description);
@@ -113,67 +109,33 @@ public class DepotRoleUtil {
 		return titleMap;
 	}
 
-	public static Map<Locale, String> getTitleMap(
-		long companyId, Language language, String name) {
-
-		if (!FeatureFlagManagerUtil.isEnabled(companyId, "LPD-17564")) {
-			return null;
-		}
-
-		return getTitleMap(language, name);
-	}
-
-	private static String _getDescription(
-		long companyId, Locale locale, String name) {
-
+	private static String _getDescription(Locale locale, String name) {
 		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
 			locale, DepotRoleUtil.class);
 
 		if (Objects.equals(
 				DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR, name)) {
 
-			if (FeatureFlagManagerUtil.isEnabled(companyId, "LPD-17564")) {
-				return ResourceBundleUtil.getString(
-					resourceBundle,
-					"depot-administrators-are-super-users-of-their-depot-but-" +
-						"cannot-make-other-users-into-depot-administrators");
-			}
-
 			return ResourceBundleUtil.getString(
 				resourceBundle,
-				"asset-library-administrators-are-super-users-of-their-asset-" +
-					"library-but-cannot-make-other-users-into-asset-library-" +
-						"administrators");
+				"space-administrators-are-super-users-of-their-space-but-" +
+					"cannot-make-other-users-into-space-administrators");
 		}
 		else if (Objects.equals(
 					DepotRolesConstants.ASSET_LIBRARY_MEMBER, name)) {
 
-			if (FeatureFlagManagerUtil.isEnabled(companyId, "LPD-17564")) {
-				return ResourceBundleUtil.getString(
-					resourceBundle,
-					"all-users-who-belong-to-a-depot-have-this-role-within-" +
-						"that-depot");
-			}
-
 			return ResourceBundleUtil.getString(
 				resourceBundle,
-				"all-users-who-belong-to-an-asset-library-have-this-role-" +
-					"within-that-asset-library");
+				"all-users-who-belong-to-a-space-have-this-role-within-that-" +
+					"space");
 		}
 		else if (Objects.equals(
 					DepotRolesConstants.ASSET_LIBRARY_OWNER, name)) {
 
-			if (FeatureFlagManagerUtil.isEnabled(companyId, "LPD-17564")) {
-				return ResourceBundleUtil.getString(
-					resourceBundle,
-					"depot-owners-are-super-users-of-their-depot-and-can-" +
-						"assign-depot-roles-to-users");
-			}
-
 			return ResourceBundleUtil.getString(
 				resourceBundle,
-				"asset-library-owners-are-super-users-of-their-asset-library-" +
-					"and-can-assign-asset-library-roles-to-users");
+				"space-owners-are-super-users-of-their-space-and-can-assign-" +
+					"space-roles-to-users");
 		}
 		else if (Objects.equals(
 					DepotRolesConstants.DESIGN_LIBRARY_ADMINISTRATOR, name)) {
@@ -223,17 +185,17 @@ public class DepotRoleUtil {
 		_titleKeys = Collections.unmodifiableMap(
 			HashMapBuilder.put(
 				DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR,
-				"depot-administrator"
+				"space-administrator"
 			).put(
 				DepotRolesConstants.ASSET_LIBRARY_CONNECTED_SITE_MEMBER,
-				"depot-connected-site-member"
+				"space-connected-site-member"
 			).put(
 				DepotRolesConstants.ASSET_LIBRARY_CONTENT_REVIEWER,
-				"depot-content-reviewer"
+				"space-content-reviewer"
 			).put(
-				DepotRolesConstants.ASSET_LIBRARY_MEMBER, "depot-member"
+				DepotRolesConstants.ASSET_LIBRARY_MEMBER, "space-member"
 			).put(
-				DepotRolesConstants.ASSET_LIBRARY_OWNER, "depot-owner"
+				DepotRolesConstants.ASSET_LIBRARY_OWNER, "space-owner"
 			).put(
 				DepotRolesConstants.DESIGN_LIBRARY_ADMINISTRATOR,
 				"design-library-administrator"

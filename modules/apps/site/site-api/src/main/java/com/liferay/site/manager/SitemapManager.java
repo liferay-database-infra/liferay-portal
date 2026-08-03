@@ -55,6 +55,9 @@ public interface SitemapManager {
 
 	public Map<Long, String> getAssetTypeKeys();
 
+	public Date getNextRegenerateSitemapDate(long companyId)
+		throws PortalException;
+
 	public String getSitemap(
 			long groupId, boolean privateLayout, ThemeDisplay themeDisplay)
 		throws PortalException;
@@ -78,6 +81,8 @@ public interface SitemapManager {
 			String assetTypeKey, String layoutUuid, long groupId, int page,
 			boolean privateLayout, ThemeDisplay themeDisplay)
 		throws PortalException;
+
+	public boolean isRegenerateSitemapInProgress(long companyId);
 
 	public void regenerateSitemap(
 			String assetTypeKey, long companyId, long groupId)

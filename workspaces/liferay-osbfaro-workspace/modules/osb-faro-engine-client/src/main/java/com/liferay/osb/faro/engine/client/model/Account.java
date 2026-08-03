@@ -21,12 +21,24 @@ public class Account {
 		return _accountType;
 	}
 
+	public Long getActivitiesCount() {
+		return _activitiesCount;
+	}
+
 	public Double getAnnualRevenue() {
 		return _annualRevenue;
 	}
 
 	public String getCountry() {
 		return _country;
+	}
+
+	public Date getFirstActivityDate() {
+		if (_firstActivityDate == null) {
+			return null;
+		}
+
+		return new Date(_firstActivityDate.getTime());
 	}
 
 	public String getId() {
@@ -73,12 +85,22 @@ public class Account {
 		_accountType = accountType;
 	}
 
+	public void setActivitiesCount(Long activitiesCount) {
+		_activitiesCount = activitiesCount;
+	}
+
 	public void setAnnualRevenue(Double annualRevenue) {
 		_annualRevenue = annualRevenue;
 	}
 
 	public void setCountry(String country) {
 		_country = country;
+	}
+
+	public void setFirstActivityDate(Date firstActivityDate) {
+		if (firstActivityDate != null) {
+			_firstActivityDate = new Date(firstActivityDate.getTime());
+		}
 	}
 
 	public void setId(String id) {
@@ -138,8 +160,10 @@ public class Account {
 
 	private String _accountName;
 	private String _accountType;
+	private Long _activitiesCount;
 	private Double _annualRevenue;
 	private String _country;
+	private Date _firstActivityDate;
 	private String _id;
 	private String _industry;
 	private Date _lastActivityDate;

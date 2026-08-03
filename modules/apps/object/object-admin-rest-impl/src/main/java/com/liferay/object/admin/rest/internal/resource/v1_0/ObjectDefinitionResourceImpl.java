@@ -809,12 +809,10 @@ public class ObjectDefinitionResourceImpl
 			serviceBuilderObjectActions.removeIf(
 				objectAction ->
 					objectAction.isSystem() ||
-					(FeatureFlagManagerUtil.isEnabled(
-						contextCompany.getCompanyId(), "LPD-17564") &&
-					 ArrayUtil.contains(
-						 ObjectActionConstants.
-							 getSubscriptionObjectActionNames(),
-						 objectAction.getName())));
+					ArrayUtil.contains(
+						ObjectActionConstants.
+							getSubscriptionObjectActionNames(),
+						objectAction.getName()));
 			serviceBuilderObjectFields.removeIf(ObjectFieldModel::isSystem);
 			serviceBuilderObjectRelationships.removeIf(
 				ObjectRelationshipModel::isSystem);
@@ -1038,9 +1036,9 @@ public class ObjectDefinitionResourceImpl
 				com.liferay.object.model.ObjectAction
 					serviceBuilderObjectAction = null;
 
-				if (StringUtil.equals(
-						objectAction.getName(),
-						ObjectActionNameConstants.NAME_ASSIGN_TO_ME) &&
+				if (ArrayUtil.contains(
+						ObjectActionNameConstants.OBJECT_ACTION_NAMES,
+						objectAction.getName()) &&
 					GetterUtil.getBoolean(objectAction.getSystem())) {
 
 					serviceBuilderObjectAction =
@@ -1059,9 +1057,7 @@ public class ObjectDefinitionResourceImpl
 				}
 
 				if (serviceBuilderObjectAction != null) {
-					if (FeatureFlagManagerUtil.isEnabled(
-							contextCompany.getCompanyId(), "LPD-17564") &&
-						ArrayUtil.contains(
+					if (ArrayUtil.contains(
 							ObjectActionConstants.
 								getSubscriptionObjectActionNames(),
 							objectAction.getName())) {

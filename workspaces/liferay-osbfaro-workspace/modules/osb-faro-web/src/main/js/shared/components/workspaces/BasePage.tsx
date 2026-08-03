@@ -22,7 +22,9 @@ interface IWorkspacesBasePageProps {
 	className?: string;
 	currentUser?: User;
 	details?: React.ReactNode;
-	title?: string;
+	ldpEnabled?: boolean;
+	loadingLDPEnabled?: boolean;
+	title: string;
 }
 
 export class WorkspacesBasePage extends React.Component<IWorkspacesBasePageProps> {
@@ -85,15 +87,27 @@ export class WorkspacesBasePage extends React.Component<IWorkspacesBasePageProps
 	}
 
 	render() {
-		const {backLabel, backURL, children, className, details, title} =
-			this.props;
+		const {
+			backLabel,
+			backURL,
+			children,
+			className,
+			details,
+			ldpEnabled,
+			loadingLDPEnabled,
+			title,
+		} = this.props;
 
 		const currentUser = this.props.currentUser || new User();
 
 		return (
 			<BasePageContext.Provider value={{currentUser}}>
 				<div className={getCN('workspaces-base-page-root', className)}>
-					<DocumentTitle title={title} />
+					<DocumentTitle
+						ldpEnabled={ldpEnabled}
+						loadingLDPEnabled={loadingLDPEnabled}
+						title={title}
+					/>
 
 					<div className="header-container">
 						<ClayLink href="https://liferay.com" target="_blank">
@@ -133,16 +147,26 @@ export class WorkspacesBasePage extends React.Component<IWorkspacesBasePageProps
 							)}
 
 							<div className="title-container">
-								<div className="logo-container">
+								<div
+									className={getCN('logo-container', {
+										loading: loadingLDPEnabled,
+									})}
+								>
 									<ClayIcon
 										className="icon-root logo-icon"
-										symbol="ac_logo"
+										symbol={
+											ldpEnabled ? 'ldp_logo' : 'ac_logo'
+										}
 									/>
 
 									<span className="logo-text">
-										{Liferay.Language.get(
-											'analytics-cloud'
-										)}
+										{ldpEnabled
+											? Liferay.Language.get(
+													'liferay-data-platform'
+												)
+											: Liferay.Language.get(
+													'analytics-cloud'
+												)}
 									</span>
 								</div>
 

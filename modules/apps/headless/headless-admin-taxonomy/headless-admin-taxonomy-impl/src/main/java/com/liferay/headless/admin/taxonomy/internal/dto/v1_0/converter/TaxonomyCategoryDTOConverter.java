@@ -13,6 +13,8 @@ import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetCategoryService;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.asset.kernel.service.AssetVocabularyService;
+import com.liferay.friendly.url.model.FriendlyURLEntry;
+import com.liferay.friendly.url.service.FriendlyURLEntryLocalService;
 import com.liferay.headless.admin.taxonomy.dto.v1_0.ParentTaxonomyCategory;
 import com.liferay.headless.admin.taxonomy.dto.v1_0.ParentTaxonomyVocabulary;
 import com.liferay.headless.admin.taxonomy.dto.v1_0.TaxonomyCategory;
@@ -20,7 +22,6 @@ import com.liferay.headless.admin.taxonomy.dto.v1_0.TaxonomyCategoryProperty;
 import com.liferay.headless.admin.taxonomy.internal.dto.v1_0.util.CreatorUtil;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -85,6 +86,14 @@ public class TaxonomyCategoryDTOConverter
 		return _toTaxonomyCategory(dtoConverterContext, assetCategory);
 	}
 
+	private FriendlyURLEntry _fetchFriendlyURLEntry(
+		AssetCategory assetCategory) {
+
+		return _friendlyURLEntryLocalService.fetchMainFriendlyURLEntry(
+			_portal.getClassNameId(AssetCategory.class),
+			assetCategory.getCategoryId());
+	}
+
 	private Map<String, Map<String, String>> _getActions(
 		AssetCategory assetCategory, DTOConverterContext dtoConverterContext) {
 
@@ -94,10 +103,7 @@ public class TaxonomyCategoryDTOConverter
 				dtoConverterContext.getUriInfo(),
 				dtoConverterContext.getUserId());
 
-		if (FeatureFlagManagerUtil.isEnabled(
-				assetCategory.getCompanyId(), "LPD-86291") &&
-			assetCategory.isSystem()) {
-
+		if (assetCategory.isSystem()) {
 			actions.remove("add-category");
 			actions.remove("delete");
 			actions.remove("replace");
@@ -166,6 +172,33 @@ public class TaxonomyCategoryDTOConverter
 						assetCategory.getDescriptionMap()));
 				setExternalReferenceCode(
 					assetCategory::getExternalReferenceCode);
+				setFriendlyUrlPath(
+					() -> {
+						FriendlyURLEntry friendlyURLEntry =
+							_fetchFriendlyURLEntry(assetCategory);
+
+						if (friendlyURLEntry == null) {
+							return null;
+						}
+
+						return friendlyURLEntry.getUrlTitle(
+							LocaleUtil.toLanguageId(
+								dtoConverterContext.getLocale()));
+					});
+				setFriendlyUrlPath_i18n(
+					() -> {
+						FriendlyURLEntry friendlyURLEntry =
+							_fetchFriendlyURLEntry(assetCategory);
+
+						if (friendlyURLEntry == null) {
+							return null;
+						}
+
+						return LocalizedMapUtil.getI18nMap(
+							dtoConverterContext.isAcceptAllLanguages(),
+							LocalizedMapUtil.getLocalizedMap(
+								friendlyURLEntry.getLanguageIdToUrlTitleMap()));
+					});
 				setId(() -> String.valueOf(assetCategory.getCategoryId()));
 				setName(
 					() -> assetCategory.getTitle(
@@ -315,6 +348,9 @@ public class TaxonomyCategoryDTOConverter
 		target = "(dto.class.name=com.liferay.headless.admin.taxonomy.dto.v1_0.TaxonomyCategory)"
 	)
 	private DTOActionProvider _dtoActionProvider;
+
+	@Reference
+	private FriendlyURLEntryLocalService _friendlyURLEntryLocalService;
 
 	@Reference
 	private GroupLocalService _groupLocalService;

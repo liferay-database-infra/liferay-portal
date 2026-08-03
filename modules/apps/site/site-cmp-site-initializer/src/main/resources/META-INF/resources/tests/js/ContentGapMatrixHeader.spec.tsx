@@ -4,7 +4,7 @@
  */
 
 import '@testing-library/jest-dom';
-import {render} from '@testing-library/react';
+import {render, waitFor} from '@testing-library/react';
 import React from 'react';
 
 import ContentGapMatrixHeader from '../../js/components/content_gap_matrix/ContentGapMatrixHeader';
@@ -14,7 +14,33 @@ import {
 	PARTIAL_COVERAGE_MATRIX,
 } from '../../js/components/content_gap_matrix/services/fixtures';
 
+const mockGetObjectFields = jest.fn();
+const mockGetSpaces = jest.fn();
+const mockRenderAIAssistantTriggerButton = jest.fn();
+
+jest.mock('@liferay/ai-hub-cell-js-components-web', () => ({
+	AIAssistantTriggerButton: (props: {label: string}) => {
+		mockRenderAIAssistantTriggerButton(props);
+
+		return require('react').createElement('button', null, props.label);
+	},
+	getObjectFields: (externalReferenceCode: string) =>
+		mockGetObjectFields(externalReferenceCode),
+	getSpaces: () => mockGetSpaces(),
+}));
+
 describe('ContentGapMatrixHeader', () => {
+	beforeEach(() => {
+		mockGetObjectFields.mockResolvedValue({items: []});
+		mockGetSpaces.mockResolvedValue([]);
+	});
+
+	afterEach(() => {
+		Liferay.FeatureFlags['LPD-62272'] = false;
+
+		jest.clearAllMocks();
+	});
+
 	it('colors the coverage badge secondary at partial coverage', () => {
 		const {container} = render(
 			<ContentGapMatrixHeader data={PARTIAL_COVERAGE_MATRIX} />
@@ -51,6 +77,123 @@ describe('ContentGapMatrixHeader', () => {
 		expect(label).toHaveClass('label-inverse-warning');
 	});
 
+	it('gives the AI assistant the project, its content type, and the available spaces', async () => {
+		Liferay.FeatureFlags['LPD-62272'] = true;
+
+		const objectFields = [
+			{
+				businessType: 'Text',
+				name: 'title',
+				readOnly: 'false',
+				required: true,
+			},
+			{
+				businessType: 'RichText',
+				name: 'content',
+				readOnly: 'false',
+				required: false,
+			},
+		];
+
+		mockGetObjectFields.mockResolvedValue({items: objectFields});
+
+		mockGetSpaces.mockResolvedValue([
+			{
+				externalReferenceCode: 'MARKETING_ERC',
+				id: 1,
+				name: 'Marketing',
+				siteId: 20123,
+			},
+			{
+				externalReferenceCode: 'SUPPORT_ERC',
+				id: 2,
+				name: 'Support',
+				siteId: 20456,
+			},
+		]);
+
+		render(
+			<ContentGapMatrixHeader
+				cmpProjectObjectEntryId="42"
+				data={PARTIAL_COVERAGE_MATRIX}
+			/>
+		);
+
+		expect(mockGetObjectFields).toHaveBeenCalledWith(
+			'L_CMS_BASIC_WEB_CONTENT'
+		);
+
+		await waitFor(() => {
+			const [{getContext}] =
+				mockRenderAIAssistantTriggerButton.mock.calls.at(-1);
+
+			expect(getContext()).toEqual({
+				focusScope: 'full-matrix',
+				objectDefinitionName: 'CMSBasicWebContent',
+				objectFields,
+				projectDescription: undefined,
+				projectId: '42',
+				projectScopeKey: undefined,
+				spacesJSONArray: [
+					{
+						externalReferenceCode: 'MARKETING_ERC',
+						id: '20123',
+						label: 'Marketing',
+					},
+					{
+						externalReferenceCode: 'SUPPORT_ERC',
+						id: '20456',
+						label: 'Support',
+					},
+				],
+			});
+		});
+	});
+
+	it('passes the project description to the AI insights trigger context', () => {
+		Liferay.FeatureFlags['LPD-62272'] = true;
+
+		render(
+			<ContentGapMatrixHeader
+				cmpProjectObjectEntryDescription="A description of the project"
+				cmpProjectObjectEntryId="42"
+				data={PARTIAL_COVERAGE_MATRIX}
+			/>
+		);
+
+		const [{getContext}] =
+			mockRenderAIAssistantTriggerButton.mock.calls.at(-1);
+
+		expect(getContext()).toEqual(
+			expect.objectContaining({
+				projectDescription: 'A description of the project',
+				projectId: '42',
+			})
+		);
+	});
+
+	it('passes the project scope key to the AI insights trigger context', () => {
+		Liferay.FeatureFlags['LPD-62272'] = true;
+
+		render(
+			<ContentGapMatrixHeader
+				cmpProjectObjectEntryId="42"
+				cmpProjectScopeKey="my-project-scope"
+				data={PARTIAL_COVERAGE_MATRIX}
+			/>
+		);
+
+		const [{getContext}] =
+			mockRenderAIAssistantTriggerButton.mock.calls.at(-1);
+
+		expect(getContext()).toEqual(
+			expect.objectContaining({
+				projectId: '42',
+				projectScopeKey: 'my-project-scope',
+			})
+		);
+	});
+
 	it('replaces the critical gaps count with "No Assets Found" when the project has no assets', () => {
 		const {getByText, queryByText} = render(
 			<ContentGapMatrixHeader data={EMPTY_MATRIX} />
@@ -84,5 +227,15 @@ describe('ContentGapMatrixHeader', () => {
 			getByText('x-critical-gaps', {exact: false})
 		).toBeInTheDocument();
 		expect(queryByText('no-assets-found')).not.toBeInTheDocument();
+	});
+
+	it('renders the AI insights trigger when the feature flag is enabled', () => {
+		Liferay.FeatureFlags['LPD-62272'] = true;
+
+		const {getByText} = render(
+			<ContentGapMatrixHeader data={PARTIAL_COVERAGE_MATRIX} />
+		);
+
+		expect(getByText('get-ai-insights')).toBeInTheDocument();
 	});
 });

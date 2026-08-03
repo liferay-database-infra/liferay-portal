@@ -6,6 +6,7 @@ module "platform" {
 	cluster_secret_store_provider=local.cluster_secret_store_provider
 	git_repository_config=var.git_repository_config
 	git_repository_url=var.git_repository_url
+	gitops_layout_config=var.gitops_layout_config
 	infrastructure_git_repository_config=var.infrastructure_git_repository_config
 	infrastructure_helm_chart_config=var.infrastructure_helm_chart_config
 	infrastructure_helm_chart_version=var.infrastructure_helm_chart_version
@@ -16,7 +17,7 @@ module "platform" {
 	observability_enabled=var.observability_enabled
 	observability_helm_chart_config=var.observability_helm_chart_config
 	observability_helm_chart_version=var.observability_helm_chart_version
-	operators_helm_values=local.operators_helm_values
+	operator_applications_helm_values=local.operator_applications_helm_values
 	platform_helm_chart_config=var.platform_helm_chart_config
 	platform_helm_chart_version=var.platform_helm_chart_version
 	source="../../modules/platform"

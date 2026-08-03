@@ -10,7 +10,6 @@ import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLVersionNumberIncrease;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
-import com.liferay.document.library.kernel.service.DLAppService;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
 import com.liferay.document.library.kernel.service.DLFolderLocalService;
 import com.liferay.fragment.constants.FragmentActionKeys;
@@ -30,6 +29,7 @@ import com.liferay.headless.admin.site.dto.v1_0.util.URLUtil;
 import com.liferay.headless.common.spi.util.GroupUtil;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.portal.kernel.language.Language;
+import com.liferay.portal.kernel.model.UserConstants;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
@@ -81,11 +81,12 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 
 		EnabledUtil.checkEnabled(contextCompany);
 
-		FileEntry fileEntry = _dlAppService.getFileEntryByExternalReferenceCode(
-			resourceFileExternalReferenceCode,
-			GroupUtil.getStagingAwareGroupId(
-				true, contextCompany.getCompanyId(),
-				siteExternalReferenceCode));
+		FileEntry fileEntry =
+			_dlAppLocalService.getFileEntryByExternalReferenceCode(
+				resourceFileExternalReferenceCode,
+				GroupUtil.getStagingAwareGroupId(
+					true, contextCompany.getCompanyId(),
+					siteExternalReferenceCode));
 
 		_checkResourceFile(fileEntry);
 
@@ -109,10 +110,7 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 			true, true, contextCompany.getCompanyId(),
 			siteExternalReferenceCode);
 
-		if (!_portletResourcePermission.contains(
-				PermissionThreadLocal.getPermissionChecker(), groupId,
-				FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES)) {
-
+		if (!_hasManageFragmentEntriesPermission(groupId)) {
 			return Page.of(Collections.emptyList());
 		}
 
@@ -138,11 +136,12 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 
 		EnabledUtil.checkEnabled(contextCompany);
 
-		FileEntry fileEntry = _dlAppService.getFileEntryByExternalReferenceCode(
-			resourceFileExternalReferenceCode,
-			GroupUtil.getGroupId(
-				true, true, contextCompany.getCompanyId(),
-				siteExternalReferenceCode));
+		FileEntry fileEntry =
+			_dlAppLocalService.getFileEntryByExternalReferenceCode(
+				resourceFileExternalReferenceCode,
+				GroupUtil.getGroupId(
+					true, true, contextCompany.getCompanyId(),
+					siteExternalReferenceCode));
 
 		_checkResourceFile(fileEntry);
 
@@ -161,10 +160,7 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 			true, true, contextCompany.getCompanyId(),
 			siteExternalReferenceCode);
 
-		if (!_portletResourcePermission.contains(
-				PermissionThreadLocal.getPermissionChecker(), groupId,
-				FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES)) {
-
+		if (!_hasManageFragmentEntriesPermission(groupId)) {
 			return Page.of(Collections.emptyList());
 		}
 
@@ -203,7 +199,7 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 			true, true, contextCompany.getCompanyId(),
 			siteExternalReferenceCode);
 
-		Folder folder = _dlAppService.getFolderByExternalReferenceCode(
+		Folder folder = _dlAppLocalService.getFolderByExternalReferenceCode(
 			resourceFolderExternalReferenceCode, groupId);
 
 		ResourceFolderUtil.checkResourceFolder(
@@ -223,10 +219,6 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 		long groupId = GroupUtil.getStagingAwareGroupId(
 			true, contextCompany.getCompanyId(), siteExternalReferenceCode);
 
-		_portletResourcePermission.check(
-			PermissionThreadLocal.getPermissionChecker(), groupId,
-			FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES);
-
 		return _addResourceFile(
 			_fragmentCollectionService.
 				getFragmentCollectionByExternalReferenceCode(
@@ -244,9 +236,7 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 		long groupId = GroupUtil.getStagingAwareGroupId(
 			true, contextCompany.getCompanyId(), siteExternalReferenceCode);
 
-		_portletResourcePermission.check(
-			PermissionThreadLocal.getPermissionChecker(), groupId,
-			FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES);
+		_checkManageFragmentEntriesPermission(groupId);
 
 		return _addResourceFile(
 			_getOrAddFragmentCollection(groupId, resourceFile), groupId,
@@ -269,9 +259,7 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 				groupId, resourceFileExternalReferenceCode);
 
 		if (dlFileEntry == null) {
-			_portletResourcePermission.check(
-				PermissionThreadLocal.getPermissionChecker(), groupId,
-				FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES);
+			_checkManageFragmentEntriesPermission(groupId);
 
 			resourceFile.setExternalReferenceCode(
 				() -> resourceFileExternalReferenceCode);
@@ -282,7 +270,7 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 		}
 
 		_checkResourceFile(
-			_dlAppService.getFileEntry(dlFileEntry.getFileEntryId()));
+			_dlAppLocalService.getFileEntry(dlFileEntry.getFileEntryId()));
 
 		_checkName(resourceFile.getName());
 
@@ -336,6 +324,14 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 					contextAcceptLanguage.getPreferredLocale(),
 					"a-file-url-reference-with-content-is-required"));
 		}
+	}
+
+	private void _checkManageFragmentEntriesPermission(long groupId)
+		throws Exception {
+
+		_portletResourcePermission.check(
+			PermissionThreadLocal.getPermissionChecker(), groupId,
+			FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES);
 	}
 
 	private void _checkName(String name) {
@@ -409,11 +405,12 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 				searchContext.setCompanyId(contextCompany.getCompanyId());
 				searchContext.setFolderIds(folderIds);
 				searchContext.setGroupIds(new long[] {groupId});
+				searchContext.setUserId(UserConstants.USER_ID_DEFAULT);
 				searchContext.setVulcanCheckPermissions(false);
 			},
 			null,
 			document -> _toResourceFile(
-				_dlAppService.getFileEntry(
+				_dlAppLocalService.getFileEntry(
 					GetterUtil.getLong(document.get(Field.ENTRY_CLASS_PK)))));
 	}
 
@@ -429,6 +426,12 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 		serviceContext.setAddGuestPermissions(true);
 
 		return serviceContext;
+	}
+
+	private boolean _hasManageFragmentEntriesPermission(long groupId) {
+		return _portletResourcePermission.contains(
+			PermissionThreadLocal.getPermissionChecker(), groupId,
+			FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES);
 	}
 
 	private byte[] _toByteArray(FileURLReference fileURLReference)
@@ -474,9 +477,6 @@ public class ResourceFileResourceImpl extends BaseResourceFileResourceImpl {
 
 	@Reference
 	private DLAppLocalService _dlAppLocalService;
-
-	@Reference
-	private DLAppService _dlAppService;
 
 	@Reference
 	private DLFileEntryLocalService _dlFileEntryLocalService;

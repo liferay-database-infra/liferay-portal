@@ -7,6 +7,7 @@ package com.liferay.depot.internal.role.type.contributor;
 
 import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.internal.roles.admin.role.type.contributor.DepotRoleTypeContributor;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Role;
@@ -36,6 +37,71 @@ public class DepotRoleTypeContributorTest {
 		LiferayUnitTestRule.INSTANCE;
 
 	@Test
+	public void testGetDefaultSubtype() {
+		try (MockedStatic<FeatureFlagManagerUtil> mockedStatic =
+				Mockito.mockStatic(FeatureFlagManagerUtil.class)) {
+
+			mockedStatic.when(
+				() -> FeatureFlagManagerUtil.isEnabled(
+					Mockito.anyLong(), Mockito.eq("LPD-17564"))
+			).thenReturn(
+				false
+			);
+
+			mockedStatic.when(
+				() -> FeatureFlagManagerUtil.isEnabled(
+					Mockito.anyLong(), Mockito.eq("LPD-96750"))
+			).thenReturn(
+				false
+			);
+
+			Assert.assertEquals(
+				StringPool.BLANK,
+				_depotRoleTypeContributor.getDefaultSubtype());
+
+			mockedStatic.when(
+				() -> FeatureFlagManagerUtil.isEnabled(
+					Mockito.anyLong(), Mockito.eq("LPD-17564"))
+			).thenReturn(
+				true
+			);
+
+			Assert.assertEquals(
+				StringPool.BLANK,
+				_depotRoleTypeContributor.getDefaultSubtype());
+
+			mockedStatic.when(
+				() -> FeatureFlagManagerUtil.isEnabled(
+					Mockito.anyLong(), Mockito.eq("LPD-17564"))
+			).thenReturn(
+				false
+			);
+
+			mockedStatic.when(
+				() -> FeatureFlagManagerUtil.isEnabled(
+					Mockito.anyLong(), Mockito.eq("LPD-96750"))
+			).thenReturn(
+				true
+			);
+
+			Assert.assertEquals(
+				StringPool.BLANK,
+				_depotRoleTypeContributor.getDefaultSubtype());
+
+			mockedStatic.when(
+				() -> FeatureFlagManagerUtil.isEnabled(
+					Mockito.anyLong(), Mockito.eq("LPD-17564"))
+			).thenReturn(
+				true
+			);
+
+			Assert.assertEquals(
+				DepotRolesConstants.SUBTYPE_SPACE,
+				_depotRoleTypeContributor.getDefaultSubtype());
+		}
+	}
+
+	@Test
 	public void testGetExcludedRoleNames() {
 		Assert.assertArrayEquals(
 			new String[] {
@@ -50,69 +116,13 @@ public class DepotRoleTypeContributorTest {
 		DepotRoleTypeContributor depotRoleTypeContributor =
 			new DepotRoleTypeContributor();
 
-		try (MockedStatic<FeatureFlagManagerUtil> mockedStatic =
-				Mockito.mockStatic(FeatureFlagManagerUtil.class)) {
-
-			mockedStatic.when(
-				() -> FeatureFlagManagerUtil.isEnabled(
-					Mockito.anyLong(), Mockito.eq("LPD-17564"))
-			).thenReturn(
-				false
-			);
-
-			Assert.assertEquals(
-				"asset-library", depotRoleTypeContributor.getName());
-
-			mockedStatic.when(
-				() -> FeatureFlagManagerUtil.isEnabled(
-					Mockito.anyLong(), Mockito.eq("LPD-17564"))
-			).thenReturn(
-				true
-			);
-
-			Assert.assertEquals("depot", depotRoleTypeContributor.getName());
-		}
+		Assert.assertEquals("space", depotRoleTypeContributor.getName());
 	}
 
 	@Test
 	public void testGetSubtypes() {
 		try (MockedStatic<FeatureFlagManagerUtil> mockedStatic =
 				Mockito.mockStatic(FeatureFlagManagerUtil.class)) {
-
-			mockedStatic.when(
-				() -> FeatureFlagManagerUtil.isEnabled(
-					Mockito.anyLong(), Mockito.eq("LPD-17564"))
-			).thenReturn(
-				false
-			);
-
-			mockedStatic.when(
-				() -> FeatureFlagManagerUtil.isEnabled(
-					Mockito.anyLong(), Mockito.eq("LPD-58677"))
-			).thenReturn(
-				false
-			);
-
-			Assert.assertArrayEquals(
-				new String[0], _depotRoleTypeContributor.getSubtypes());
-
-			mockedStatic.when(
-				() -> FeatureFlagManagerUtil.isEnabled(
-					Mockito.anyLong(), Mockito.eq("LPD-58677"))
-			).thenReturn(
-				true
-			);
-
-			Assert.assertArrayEquals(
-				new String[] {DepotRolesConstants.SUBTYPE_PROJECT},
-				_depotRoleTypeContributor.getSubtypes());
-
-			mockedStatic.when(
-				() -> FeatureFlagManagerUtil.isEnabled(
-					Mockito.anyLong(), Mockito.eq("LPD-17564"))
-			).thenReturn(
-				true
-			);
 
 			mockedStatic.when(
 				() -> FeatureFlagManagerUtil.isEnabled(
@@ -163,31 +173,8 @@ public class DepotRoleTypeContributorTest {
 
 		_setLanguage(depotRoleTypeContributor);
 
-		try (MockedStatic<FeatureFlagManagerUtil> mockedStatic =
-				Mockito.mockStatic(FeatureFlagManagerUtil.class)) {
-
-			mockedStatic.when(
-				() -> FeatureFlagManagerUtil.isEnabled(
-					Mockito.anyLong(), Mockito.eq("LPD-17564"))
-			).thenReturn(
-				false
-			);
-
-			Assert.assertEquals(
-				"asset-library-roles",
-				depotRoleTypeContributor.getTabTitle(LocaleUtil.US));
-
-			mockedStatic.when(
-				() -> FeatureFlagManagerUtil.isEnabled(
-					Mockito.anyLong(), Mockito.eq("LPD-17564"))
-			).thenReturn(
-				true
-			);
-
-			Assert.assertEquals(
-				"depot-roles",
-				depotRoleTypeContributor.getTabTitle(LocaleUtil.US));
-		}
+		Assert.assertEquals(
+			"space-roles", depotRoleTypeContributor.getTabTitle(LocaleUtil.US));
 	}
 
 	@Test
@@ -197,30 +184,8 @@ public class DepotRoleTypeContributorTest {
 
 		_setLanguage(depotRoleTypeContributor);
 
-		try (MockedStatic<FeatureFlagManagerUtil> mockedStatic =
-				Mockito.mockStatic(FeatureFlagManagerUtil.class)) {
-
-			mockedStatic.when(
-				() -> FeatureFlagManagerUtil.isEnabled(
-					Mockito.anyLong(), Mockito.eq("LPD-17564"))
-			).thenReturn(
-				false
-			);
-
-			Assert.assertEquals(
-				"asset-library-role",
-				depotRoleTypeContributor.getTitle(LocaleUtil.US));
-
-			mockedStatic.when(
-				() -> FeatureFlagManagerUtil.isEnabled(
-					Mockito.anyLong(), Mockito.eq("LPD-17564"))
-			).thenReturn(
-				true
-			);
-
-			Assert.assertEquals(
-				"depot-role", depotRoleTypeContributor.getTitle(LocaleUtil.US));
-		}
+		Assert.assertEquals(
+			"space-role", depotRoleTypeContributor.getTitle(LocaleUtil.US));
 	}
 
 	@Test
@@ -246,6 +211,9 @@ public class DepotRoleTypeContributorTest {
 		_testIsAllowDeleteWithDesignLibraryOwner();
 		_testIsAllowDeleteWithMember();
 		_testIsAllowDeleteWithOwner();
+		_testIsAllowDeleteWithProjectContributor();
+		_testIsAllowDeleteWithProjectManager();
+		_testIsAllowDeleteWithProjectMember();
 	}
 
 	@Test
@@ -359,6 +327,24 @@ public class DepotRoleTypeContributorTest {
 		Assert.assertFalse(
 			_depotRoleTypeContributor.isAllowDelete(
 				_mockRole(DepotRolesConstants.ASSET_LIBRARY_OWNER)));
+	}
+
+	private void _testIsAllowDeleteWithProjectContributor() {
+		Assert.assertTrue(
+			_depotRoleTypeContributor.isAllowDelete(
+				_mockRole(DepotRolesConstants.PROJECT_CONTRIBUTOR)));
+	}
+
+	private void _testIsAllowDeleteWithProjectManager() {
+		Assert.assertFalse(
+			_depotRoleTypeContributor.isAllowDelete(
+				_mockRole(DepotRolesConstants.PROJECT_MANAGER)));
+	}
+
+	private void _testIsAllowDeleteWithProjectMember() {
+		Assert.assertFalse(
+			_depotRoleTypeContributor.isAllowDelete(
+				_mockRole(DepotRolesConstants.PROJECT_MEMBER)));
 	}
 
 	private final DepotRoleTypeContributor _depotRoleTypeContributor =

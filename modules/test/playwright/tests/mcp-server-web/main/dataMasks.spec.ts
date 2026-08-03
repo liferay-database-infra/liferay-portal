@@ -10,9 +10,11 @@ import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {mcpServerWebPagesTest} from '../../../fixtures/mcpServerWebPagesTest';
 import {DataApiHelpers} from '../../../helpers/ApiHelpers';
+import {FDSTablePage} from '../../../pages/mcp-server-web/FDSTablePage';
 import getRandomString from '../../../utils/getRandomString';
+import {createFDSTableTests} from './utils/createFDSTableTests';
 
-const test = mergeTests(
+const baseTest = mergeTests(
 	dataApiHelpersTest,
 	featureFlagsTest({
 		'LPD-63311': {enabled: true},
@@ -24,34 +26,36 @@ const test = mergeTests(
 
 const DATA_MASKS_API = 'data-masks';
 
+const PROFILE_DATA_MASKS_API = 'mcp/server-profile-data-masks';
+
 const SYSTEM_MASK = 'Email Address';
 
-const TOKEN = 'pwmask';
-
-interface DataMaskEntry {
-	externalReferenceCode?: string;
-	id: number;
-	maskType?: {key?: string};
-	name?: string;
-}
-
 function maskName() {
-	return `${TOKEN}-${getRandomString()}`;
+	return `pwmask-${getRandomString()}`;
 }
 
 async function createCustomMask(
 	apiHelpers: DataApiHelpers,
 	name: string
-): Promise<DataMaskEntry> {
-	return apiHelpers.post(`${apiHelpers.baseUrl}${DATA_MASKS_API}`, {
-		data: {
+): Promise<ObjectEntry> {
+	const dataMask = await apiHelpers.objectEntry.postObjectEntry(
+		{
 			description: 'Created by Playwright',
 			detectionRegex: '\\bzz\\b',
 			maskType: {key: 'custom'},
 			name,
 			replacementValue: '[ZZ]',
 		},
+		DATA_MASKS_API
+	);
+
+	apiHelpers.data.push({
+		applicationName: DATA_MASKS_API,
+		id: dataMask.id,
+		type: 'objectEntry',
 	});
+
+	return dataMask;
 }
 
 async function associateMaskWithProfile(
@@ -62,63 +66,52 @@ async function associateMaskWithProfile(
 		`${apiHelpers.baseUrl}mcp/server-profiles?pageSize=1`
 	);
 
-	return apiHelpers.post(
-		`${apiHelpers.baseUrl}mcp/server-profile-data-masks`,
+	const association = await apiHelpers.objectEntry.postObjectEntry(
 		{
-			data: {
-				dataMaskExternalReferenceCode,
-				mcpServerProfileExternalReferenceCode:
-					profiles.items[0].externalReferenceCode,
-			},
-		}
+			dataMaskExternalReferenceCode,
+			mcpServerProfileExternalReferenceCode:
+				profiles.items[0].externalReferenceCode,
+		},
+		PROFILE_DATA_MASKS_API
 	);
+
+	apiHelpers.data.push({
+		applicationName: PROFILE_DATA_MASKS_API,
+		id: association.id,
+		type: 'objectEntry',
+	});
+
+	return association;
 }
 
-test.afterEach(async ({apiHelpers}) => {
-	const response = await apiHelpers.get(
-		`${apiHelpers.baseUrl}${DATA_MASKS_API}?pageSize=200`
-	);
+const test = baseTest.extend<{
+	createFDSItem: () => Promise<string>;
+	fdsTablePage: FDSTablePage;
+}>({
+	createFDSItem: async ({apiHelpers}, use) => {
+		await use(async () => {
+			const name = maskName();
 
-	const items: DataMaskEntry[] = response?.items ?? [];
+			await createCustomMask(apiHelpers, name);
 
-	for (const item of items) {
-		const name = item.name ?? '';
+			return name;
+		});
+	},
+	fdsTablePage: async ({dataMasksPage}, use) => {
+		await use(dataMasksPage);
+	},
+});
 
-		if (
-			item.maskType?.key === 'custom' &&
-			(name.includes(TOKEN) || name.startsWith('Copy of '))
-		) {
-			await apiHelpers.delete(
-				`${apiHelpers.baseUrl}${DATA_MASKS_API}/${item.id}`
-			);
-		}
-	}
+createFDSTableTests(test, {
+	columns: ['Title', 'Type', 'Description', 'Last Modified'],
+	rowActions: ['Edit', 'Duplicate', 'Delete'],
+	sortOptions: ['Title', 'Last Modified'],
+	tag: '@LPD-90205',
 });
 
 test.describe('Data Masks - List View', () => {
 	test(
-		'shows the data masks list with Title, Type, Description, and Last Modified columns',
-		{tag: '@LPD-90205'},
-		async ({dataMasksPage, page}) => {
-			await dataMasksPage.goto();
-
-			for (const column of [
-				'Title',
-				'Type',
-				'Description',
-				'Last Modified',
-			]) {
-				await expect(
-					page.getByRole('columnheader', {name: column})
-				).toBeVisible();
-			}
-
-			await expect(dataMasksPage.row(SYSTEM_MASK)).toBeVisible();
-		}
-	);
-
-	test(
-		'opens a system mask read-only and a custom mask in edit when clicking its title',
+		'Opens a system mask read-only and a custom mask in edit when clicking its title',
 		{tag: '@LPD-90205'},
 		async ({apiHelpers, dataMasksPage}) => {
 			const name = maskName();
@@ -143,7 +136,7 @@ test.describe('Data Masks - List View', () => {
 	);
 
 	test(
-		'views a system mask read-only from the three-dot menu',
+		'Views a system mask read-only from the three-dot menu',
 		{tag: '@LPD-90205'},
 		async ({dataMasksPage}) => {
 			await dataMasksPage.goto();
@@ -158,7 +151,7 @@ test.describe('Data Masks - List View', () => {
 	);
 
 	test(
-		'duplicates a system mask into a custom Copy of mask from the three-dot menu',
+		'Duplicates a system mask into a custom Copy of mask from the three-dot menu',
 		{tag: '@LPD-90205'},
 		async ({apiHelpers, dataMasksPage}) => {
 			await dataMasksPage.goto();
@@ -169,21 +162,23 @@ test.describe('Data Masks - List View', () => {
 				dataMasksPage.row(`Copy of ${SYSTEM_MASK}`)
 			).toBeVisible();
 
-			const response = await apiHelpers.get(
-				`${apiHelpers.baseUrl}${DATA_MASKS_API}?search=${encodeURIComponent(
-					`Copy of ${SYSTEM_MASK}`
-				)}&pageSize=5`
-			);
-			const copy = response.items.find(
-				(item: DataMaskEntry) => item.name === `Copy of ${SYSTEM_MASK}`
+			const copy = await apiHelpers.objectEntry.getObjectEntryByName(
+				DATA_MASKS_API,
+				`Copy of ${SYSTEM_MASK}`
 			);
 
-			expect(copy?.maskType?.key).toBe('custom');
+			apiHelpers.data.push({
+				applicationName: DATA_MASKS_API,
+				id: copy.id,
+				type: 'objectEntry',
+			});
+
+			expect(copy.maskType?.key).toBe('custom');
 		}
 	);
 
 	test(
-		'searches the data masks list by name',
+		'Filters the data masks list by type',
 		{tag: '@LPD-90205'},
 		async ({apiHelpers, dataMasksPage}) => {
 			const name = maskName();
@@ -191,25 +186,7 @@ test.describe('Data Masks - List View', () => {
 
 			await dataMasksPage.goto();
 
-			await dataMasksPage.search(name);
-
-			await expect(dataMasksPage.table.locator('tbody tr')).toHaveCount(
-				1
-			);
-			await expect(dataMasksPage.row(name)).toBeVisible();
-		}
-	);
-
-	test(
-		'filters the data masks list by type',
-		{tag: '@LPD-90205'},
-		async ({apiHelpers, dataMasksPage}) => {
-			const name = maskName();
-			await createCustomMask(apiHelpers, name);
-
-			await dataMasksPage.goto();
-
-			await dataMasksPage.filterByType('System');
+			await dataMasksPage.applySelectionFilter('Type', 'System');
 
 			await expect(dataMasksPage.row(SYSTEM_MASK)).toBeVisible();
 			await expect(dataMasksPage.row(name)).toBeHidden();
@@ -217,24 +194,7 @@ test.describe('Data Masks - List View', () => {
 	);
 
 	test(
-		'offers Title and Last Modified sort options',
-		{tag: '@LPD-90205'},
-		async ({dataMasksPage, page}) => {
-			await dataMasksPage.goto();
-
-			await dataMasksPage.orderButton.click();
-
-			await expect(
-				page.getByRole('menuitem', {exact: true, name: 'Title'})
-			).toBeVisible();
-			await expect(
-				page.getByRole('menuitem', {exact: true, name: 'Last Modified'})
-			).toBeVisible();
-		}
-	);
-
-	test(
-		'edits a custom mask from the three-dot menu',
+		'Edits a custom mask from the three-dot menu',
 		{tag: '@LPD-90205'},
 		async ({apiHelpers, dataMasksPage}) => {
 			const name = maskName();
@@ -254,7 +214,7 @@ test.describe('Data Masks - List View', () => {
 	);
 
 	test(
-		'deletes a custom mask with no associations after confirming in the modal',
+		'Deletes a custom mask with no associations after confirming in the modal',
 		{tag: '@LPD-90205'},
 		async ({apiHelpers, dataMasksPage}) => {
 			const name = maskName();
@@ -276,7 +236,7 @@ test.describe('Data Masks - List View', () => {
 	);
 
 	test(
-		'warns about profile associations when deleting a custom mask used by a profile',
+		'Warns about profile associations when deleting a custom mask used by a profile',
 		{tag: '@LPD-90205'},
 		async ({apiHelpers, dataMasksPage}) => {
 			const name = maskName();
@@ -300,7 +260,7 @@ test.describe('Data Masks - List View', () => {
 	);
 
 	test(
-		'duplicates a custom mask into a Copy of mask from the three-dot menu',
+		'Duplicates a custom mask into a Copy of mask from the three-dot menu',
 		{tag: '@LPD-90205'},
 		async ({apiHelpers, dataMasksPage}) => {
 			const name = maskName();
@@ -312,11 +272,22 @@ test.describe('Data Masks - List View', () => {
 			await dataMasksPage.clickAction(name, 'Duplicate');
 
 			await expect(dataMasksPage.row(`Copy of ${name}`)).toBeVisible();
+
+			const copy = await apiHelpers.objectEntry.getObjectEntryByName(
+				DATA_MASKS_API,
+				`Copy of ${name}`
+			);
+
+			apiHelpers.data.push({
+				applicationName: DATA_MASKS_API,
+				id: copy.id,
+				type: 'objectEntry',
+			});
 		}
 	);
 
 	test(
-		'creates a custom mask from the New Data Mask button',
+		'Creates a custom mask from the New Data Mask button',
 		{tag: '@LPD-90205'},
 		async ({apiHelpers, dataMasksPage}) => {
 			const name = maskName();
@@ -331,15 +302,23 @@ test.describe('Data Masks - List View', () => {
 
 			await expect(dataMasksPage.row(name)).toBeVisible();
 
-			const response = await apiHelpers.get(
-				`${apiHelpers.baseUrl}${DATA_MASKS_API}?search=${name}&pageSize=5`
+			const dataMask = await apiHelpers.objectEntry.getObjectEntryByName(
+				DATA_MASKS_API,
+				name
 			);
-			expect(response.items[0]?.maskType?.key).toBe('custom');
+
+			apiHelpers.data.push({
+				applicationName: DATA_MASKS_API,
+				id: dataMask.id,
+				type: 'objectEntry',
+			});
+
+			expect(dataMask.maskType?.key).toBe('custom');
 		}
 	);
 
 	test(
-		'cannot delete a system mask',
+		'Cannot delete a system mask',
 		{tag: '@LPD-90205'},
 		async ({dataMasksPage, page}) => {
 			await dataMasksPage.goto();
@@ -358,7 +337,7 @@ test.describe('Data Masks - List View', () => {
 
 test.describe('Data Masks - Detail (Create / Edit / View)', () => {
 	test(
-		'shows system masks as read-only in the form',
+		'Shows system masks as read-only in the form',
 		{tag: '@LPD-90205'},
 		async ({dataMasksPage}) => {
 			await dataMasksPage.goto();
@@ -373,7 +352,7 @@ test.describe('Data Masks - Detail (Create / Edit / View)', () => {
 	);
 
 	test(
-		'tests a system mask and previews the masked output',
+		'Tests a system mask and previews the masked output',
 		{tag: '@LPD-90205'},
 		async ({dataMasksPage}) => {
 			await dataMasksPage.goto();
@@ -391,7 +370,7 @@ test.describe('Data Masks - Detail (Create / Edit / View)', () => {
 	);
 
 	test(
-		'requires Title, Regex Pattern, and Replacement when creating a mask',
+		'Requires Title, Regex Pattern, and Replacement when creating a mask',
 		{tag: '@LPD-90205'},
 		async ({dataMasksPage}) => {
 			await dataMasksPage.goto();
@@ -408,7 +387,7 @@ test.describe('Data Masks - Detail (Create / Edit / View)', () => {
 	);
 
 	test(
-		'shows a required-field error on Title, Regex Pattern, and Replacement',
+		'Shows a required-field error on Title, Regex Pattern, and Replacement',
 		{tag: '@LPD-90205'},
 		async ({dataMasksPage}) => {
 			await dataMasksPage.goto();
@@ -429,7 +408,7 @@ test.describe('Data Masks - Detail (Create / Edit / View)', () => {
 	);
 
 	test(
-		'clears the required error once the field is filled',
+		'Clears the required error once the field is filled',
 		{tag: '@LPD-90205'},
 		async ({dataMasksPage}) => {
 			await dataMasksPage.goto();
@@ -450,7 +429,7 @@ test.describe('Data Masks - Detail (Create / Edit / View)', () => {
 	);
 
 	test(
-		'links field help text to its input as an accessible description',
+		'Links field help text to its input as an accessible description',
 		{tag: '@LPD-90205'},
 		async ({dataMasksPage}) => {
 			await dataMasksPage.goto();
@@ -470,7 +449,7 @@ test.describe('Data Masks - Detail (Create / Edit / View)', () => {
 	);
 
 	test(
-		'edits a custom mask and persists the change',
+		'Edits a custom mask and persists the change',
 		{tag: '@LPD-90205'},
 		async ({apiHelpers, dataMasksPage}) => {
 			const name = maskName();

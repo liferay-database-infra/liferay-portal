@@ -4,11 +4,12 @@ import mockStore from 'test/mock-store';
 import React from 'react';
 import URLConstants from 'shared/util/url-constants';
 import {ChannelContext} from 'shared/context/channel';
-import {cleanup, render, screen} from '@testing-library/react';
+import {cleanup, fireEvent, render, screen} from '@testing-library/react';
 import {createMemoryHistory} from 'history';
 import {mockChannelContext} from 'test/mock-channel-context';
 import {Provider} from 'react-redux';
 import {Router} from 'react-router-dom';
+import {Routes, toRoute} from 'shared/util/router';
 import {useCurrentUser} from 'shared/hooks/useCurrentUser';
 import {useDataSources} from 'shared/context/dataSources';
 import {useRequest} from 'shared/hooks/useRequest';
@@ -42,9 +43,20 @@ jest.mock('react-router-dom', () => ({
 	}),
 }));
 
-jest.mock('lifecycle/components/GlobalFilters', () => ({
+jest.mock('lifecycle/components/FilterPicker', () => ({
 	__esModule: true,
-	default: () => <div data-testid="global-filters" />,
+	default: ({
+		entityLabel,
+		filterKey,
+	}: {
+		entityLabel: string;
+		filterKey: string;
+	}) => (
+		<div
+			data-entity-label={entityLabel}
+			data-testid={`filter-${filterKey}`}
+		/>
+	),
 }));
 
 jest.mock('lifecycle/components/OverviewSection', () => ({
@@ -77,10 +89,16 @@ const useRequestImpl =
 	({
 		lifecycles = [{id: '1'}],
 		metricsLoading = false,
+		processedDate = 1700000000000,
 		totalCount = 1,
 	}: {
-		lifecycles?: {id: string}[];
+		lifecycles?: {
+			id: string;
+			name?: string;
+			processedDate?: number | null;
+		}[];
 		metricsLoading?: boolean;
+		processedDate?: number | null;
 		totalCount?: number;
 	} = {}) =>
 	({variables}: {variables?: {[key: string]: any}} = {}) =>
@@ -90,7 +108,14 @@ const useRequestImpl =
 					error: false,
 					loading: metricsLoading,
 				}
-			: {data: lifecycles, error: false, loading: false};
+			: {
+					data: lifecycles.map((lifecycle) => ({
+						processedDate,
+						...lifecycle,
+					})),
+					error: false,
+					loading: false,
+				};
 
 const store = mockStore();
 
@@ -123,7 +148,35 @@ describe('BaseLifecycle', () => {
 
 	afterEach(cleanup);
 
-	it('renders the page title', () => {
+	it('titles the page with the lifecycle name', () => {
+		mockedUseRequest.mockImplementation(
+			useRequestImpl({
+				lifecycles: [{id: '1', name: "Tiago's Lifecycle"}],
+				totalCount: 5,
+			})
+		);
+
+		renderPage();
+
+		expect(screen.getByText("Tiago's Lifecycle")).toBeInTheDocument();
+		expect(screen.queryByText('Lifecycles')).toBeNull();
+	});
+
+	it('titles the page generically when no lifecycle exists', () => {
+		mockedUseRequest.mockImplementation(
+			useRequestImpl({lifecycles: [], totalCount: 5})
+		);
+
+		renderPage();
+
+		expect(screen.getByText('Lifecycles')).toBeInTheDocument();
+	});
+
+	it('titles the page generically when the lifecycle is unnamed', () => {
+		mockedUseRequest.mockImplementation(
+			useRequestImpl({lifecycles: [{id: '1'}], totalCount: 5})
+		);
+
 		renderPage();
 
 		expect(screen.getByText('Lifecycles')).toBeInTheDocument();
@@ -167,7 +220,7 @@ describe('BaseLifecycle', () => {
 				)
 			).toBeInTheDocument();
 			expect(screen.queryByTestId('overview-section')).toBeNull();
-			expect(screen.queryByTestId('global-filters')).toBeNull();
+			expect(screen.queryByTestId('filter-industryFilter')).toBeNull();
 		});
 
 		it('renders the connect action for admins', () => {
@@ -219,7 +272,7 @@ describe('BaseLifecycle', () => {
 				)
 			).toBeInTheDocument();
 			expect(screen.queryByTestId('overview-section')).toBeNull();
-			expect(screen.queryByTestId('global-filters')).toBeNull();
+			expect(screen.queryByTestId('filter-industryFilter')).toBeNull();
 		});
 
 		it('renders the contact-administrator message for non-admins', () => {
@@ -236,27 +289,107 @@ describe('BaseLifecycle', () => {
 		});
 	});
 
+	describe('when no lifecycles are configured', () => {
+		beforeEach(() => {
+			mockedUseRequest.mockImplementation(
+				useRequestImpl({lifecycles: []})
+			);
+		});
+
+		it('renders the "Configure a New Lifecycle" empty state', () => {
+			renderPage();
+
+			expect(
+				screen.getByText('Configure a New Lifecycle')
+			).toBeInTheDocument();
+			expect(
+				screen.getByText(
+					'Complete the configuration to start seeing insights.'
+				)
+			).toBeInTheDocument();
+			expect(screen.queryByTestId('overview-section')).toBeNull();
+			expect(screen.queryByTestId('filter-industryFilter')).toBeNull();
+		});
+
+		it('renders the New Lifecycle action linking to the create route', () => {
+			renderPage();
+
+			expect(
+				screen.getByRole('link', {name: 'New Lifecycle'})
+			).toHaveAttribute(
+				'href',
+				toRoute(Routes.LIFECYCLE_CREATE, {
+					channelId: '123',
+					groupId: '23',
+				})
+			);
+		});
+	});
+
+	describe('when the lifecycle is still processing', () => {
+		beforeEach(() => {
+			mockedUseRequest.mockImplementation(
+				useRequestImpl({processedDate: null})
+			);
+		});
+
+		it('renders the "almost ready" processing state', () => {
+			renderPage();
+
+			expect(
+				screen.getByText('Your dashboard is almost ready!')
+			).toBeInTheDocument();
+			expect(screen.queryByTestId('overview-section')).toBeNull();
+			expect(screen.queryByTestId('filter-industryFilter')).toBeNull();
+		});
+	});
+
+	describe('the Lifecycle Configuration action', () => {
+		it('navigates to the edit route when clicked by an admin', () => {
+			const history = createMemoryHistory({
+				initialEntries: ['/workspace/23/123/lifecycles'],
+			});
+
+			renderPage(history);
+
+			fireEvent.click(
+				screen.getByRole('button', {name: 'Lifecycle Configuration'})
+			);
+
+			expect(history.location.pathname).toBe(
+				toRoute(Routes.LIFECYCLE_EDIT, {
+					channelId: '123',
+					groupId: '23',
+					lifecycleId: '1',
+				})
+			);
+		});
+
+		it('is hidden for non-admins', () => {
+			mockedUseCurrentUser.mockReturnValue({isAdmin: () => false});
+
+			renderPage();
+
+			expect(
+				screen.queryByRole('button', {name: 'Lifecycle Configuration'})
+			).toBeNull();
+		});
+	});
+
 	it('renders the lifecycle content when account data is available', () => {
 		renderPage();
 
 		expect(screen.getByTestId('overview-section')).toBeInTheDocument();
 		expect(screen.getByTestId('lifecycle-chart')).toBeInTheDocument();
 		expect(screen.getByTestId('accounts-dataset')).toBeInTheDocument();
-		expect(screen.getByTestId('global-filters')).toBeInTheDocument();
-		expect(screen.queryByText('No Account Data Available')).toBeNull();
-	});
-
-	it('renders the empty state and hides the filters when no lifecycle exists', () => {
-		mockedUseRequest.mockImplementation(
-			useRequestImpl({lifecycles: [], totalCount: 5})
+		expect(screen.getByTestId('filter-industryFilter')).toHaveAttribute(
+			'data-entity-label',
+			'Industries'
 		);
-
-		renderPage();
-
-		expect(
-			screen.getByText('No Account Data Available')
-		).toBeInTheDocument();
-		expect(screen.queryByTestId('overview-section')).toBeNull();
-		expect(screen.queryByTestId('global-filters')).toBeNull();
+		expect(screen.getByTestId('filter-countryFilter')).toHaveAttribute(
+			'data-entity-label',
+			'Countries'
+		);
+		expect(screen.queryByText('No Account Data Available')).toBeNull();
 	});
 });

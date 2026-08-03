@@ -88,6 +88,15 @@ public class CompanyServiceUtil {
 			schemaName, name, virtualHost, webId);
 	}
 
+	public static Company copyDBPartitionCompany(
+			long fromCompanyId, Long toCompanyId, String name,
+			String virtualHost, String webId)
+		throws PortalException {
+
+		return getService().copyDBPartitionCompany(
+			fromCompanyId, toCompanyId, name, virtualHost, webId);
+	}
+
 	public static Company deleteCompany(long companyId) throws PortalException {
 		return getService().deleteCompany(companyId);
 	}
@@ -99,6 +108,10 @@ public class CompanyServiceUtil {
 	 */
 	public static void deleteLogo(long companyId) throws PortalException {
 		getService().deleteLogo(companyId);
+	}
+
+	public static Company exportCompany(long companyId) throws PortalException {
+		return getService().exportCompany(companyId);
 	}
 
 	public static void forEachCompany(
@@ -387,4 +400,4 @@ public class CompanyServiceUtil {
 	private static volatile CompanyService _service;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-2125220250
+// LIFERAY-SERVICE-BUILDER-HASH:-1880922067

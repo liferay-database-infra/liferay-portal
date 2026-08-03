@@ -15,6 +15,7 @@ import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.object.service.ObjectRelationshipLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.object.test.util.ObjectRelationshipTestUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
@@ -44,9 +45,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 /**
  * @author Larissa Ribeiro
  */
-@FeatureFlags(
-	featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-58677")}
-)
+@FeatureFlags(featureFlags = @FeatureFlag("LPD-58677"))
 @RunWith(Arquillian.class)
 @Sync
 public class ViewAllRelatedAssetsSectionDisplayContextTest
@@ -80,6 +79,12 @@ public class ViewAllRelatedAssetsSectionDisplayContextTest
 	}
 
 	@Test
+	public void testGetAdditionalAPIURLParameters() throws Exception {
+		_testGetAdditionalAPIURLParametersWithoutRelatedCMPTasks();
+		_testGetAdditionalAPIURLParametersWithRelatedCMPTasks();
+	}
+
+	@Test
 	public void testGetAdditionalProps() throws Exception {
 		Map<String, Object> additionalProps = ReflectionTestUtil.invoke(
 			_getViewAllRelatedAssetsSectionDisplayContext(
@@ -107,6 +112,56 @@ public class ViewAllRelatedAssetsSectionDisplayContextTest
 		return httpServletRequest.getAttribute(
 			"com.liferay.site.cms.site.initializer.internal.display.context." +
 				"ViewAllRelatedAssetsSectionDisplayContext");
+	}
+
+	private void _testGetAdditionalAPIURLParametersWithoutRelatedCMPTasks()
+		throws Exception {
+
+		String additionalAPIURLParameters = ReflectionTestUtil.invoke(
+			_getViewAllRelatedAssetsSectionDisplayContext(
+				mockHttpServletRequest),
+			"getAdditionalAPIURLParameters", new Class<?>[0]);
+
+		Assert.assertTrue(
+			additionalAPIURLParameters,
+			additionalAPIURLParameters.contains(
+				StringBundler.concat(
+					"(cmsSection eq 'contents' or cmsSection eq 'files') and ",
+					"cmpProjectObjectEntryIds in (",
+					_objectEntry.getObjectEntryId(),
+					") and rootDescendantNode eq false")));
+	}
+
+	private void _testGetAdditionalAPIURLParametersWithRelatedCMPTasks()
+		throws Exception {
+
+		ObjectEntry relatedObjectEntry =
+			_objectEntryLocalService.addObjectEntry(
+				0, TestPropsValues.getUserId(),
+				_childObjectDefinition.getObjectDefinitionId(), 0, null,
+				Collections.emptyMap(),
+				ServiceContextTestUtil.getServiceContext());
+
+		ObjectRelationshipTestUtil.relateObjectEntries(
+			_objectEntry.getObjectEntryId(),
+			relatedObjectEntry.getObjectEntryId(), _objectRelationship,
+			TestPropsValues.getUserId());
+
+		String additionalAPIURLParameters = ReflectionTestUtil.invoke(
+			_getViewAllRelatedAssetsSectionDisplayContext(
+				mockHttpServletRequest),
+			"getAdditionalAPIURLParameters", new Class<?>[0]);
+
+		Assert.assertTrue(
+			additionalAPIURLParameters,
+			additionalAPIURLParameters.contains(
+				StringBundler.concat(
+					"(cmsSection eq 'contents' or cmsSection eq 'files') and ",
+					"(cmpProjectObjectEntryIds in (",
+					_objectEntry.getObjectEntryId(),
+					") or cmpTaskObjectEntryIds in (",
+					relatedObjectEntry.getObjectEntryId(),
+					")) and rootDescendantNode eq false")));
 	}
 
 	@DeleteAfterTestRun

@@ -16,6 +16,7 @@
 		"@clayui/core": "3.165.0",
 		"@clayui/css": "3.165.0",
 		"@clayui/data-provider": "3.165.0",
+		"@clayui/date-picker": "3.165.0",
 		"@clayui/drop-down": "3.165.0",
 		"@clayui/empty-state": "3.165.0",
 		"@clayui/form": "3.165.0",
@@ -76,7 +77,7 @@
 		"uuid": "9.0.0",
 		"whatwg-fetch": "^3.0.0"
 	},
-	"description": "Liferay Analytics Cloud",
+	"description": "Liferay Data Platform",
 	"devDependencies": {
 		"@babel/core": "^7.22.0",
 		"@babel/plugin-proposal-class-properties": "^7.4.4",

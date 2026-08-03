@@ -20,14 +20,13 @@ import {AssetsPage} from '../../../site-cms-site-initializer/main/pages/AssetsPa
 import {ContentsPage} from '../../../site-cms-site-initializer/main/pages/ContentsPage';
 import {
 	addSpaceUserWithSession,
-	clickItemAction,
-	openFolder,
+	gotoAndOpenFolder,
+	renameFolder,
 } from './utils/folders';
 
 const test = mergeTests(
 	dataApiHelpersTest,
 	featureFlagsTest({
-		'LPD-17564': {enabled: true},
 		'LPS-178052': {enabled: true},
 	}),
 	isolatedSiteTest,
@@ -176,41 +175,37 @@ test(
 			await test.step('The Space Administrator renames the populated folders', async () => {
 				await spaContentsPage.goto();
 
-				await clickItemAction(spaPage, contentFolderName, 'Edit');
-
-				await spaPage
-					.getByLabel('NameRequired')
-					.fill(renamedContentFolderName);
-
-				await spaPage.getByRole('button', {name: 'Save'}).click();
-
-				await spaPage.waitForURL('**/web/cms/contents**');
+				await renameFolder(
+					spaPage,
+					contentFolderName,
+					renamedContentFolderName
+				);
 
 				await spaAssetsPage.gotoFiles();
 
-				await clickItemAction(spaPage, fileFolderName, 'Edit');
-
-				await spaPage
-					.getByLabel('NameRequired')
-					.fill(renamedFileFolderName);
-
-				await spaPage.getByRole('button', {name: 'Save'}).click();
-
-				await spaPage.waitForURL('**/web/cms/files**');
+				await renameFolder(
+					spaPage,
+					fileFolderName,
+					renamedFileFolderName
+				);
 			});
 
 			await test.step('The items remain accessible inside the renamed folders', async () => {
-				await spaContentsPage.goto();
-
-				await openFolder(spaPage, renamedContentFolderName);
+				await gotoAndOpenFolder(
+					spaPage,
+					() => spaContentsPage.goto(),
+					renamedContentFolderName
+				);
 
 				await expect(
 					spaPage.getByRole('link', {exact: true, name: contentTitle})
 				).toBeVisible({timeout: 5000});
 
-				await spaAssetsPage.gotoFiles();
-
-				await openFolder(spaPage, renamedFileFolderName);
+				await gotoAndOpenFolder(
+					spaPage,
+					() => spaAssetsPage.gotoFiles(),
+					renamedFileFolderName
+				);
 
 				await expect(
 					spaPage.getByRole('button', {

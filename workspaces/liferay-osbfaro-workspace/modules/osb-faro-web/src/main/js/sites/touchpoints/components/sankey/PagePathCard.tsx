@@ -1,9 +1,10 @@
+import BasePage from 'shared/components/base-page';
 import Card from 'shared/components/Card';
 import ClayLink from '@clayui/link';
 import ErrorDisplay from 'shared/components/ErrorDisplay';
 import NoResultsDisplay from 'shared/components/NoResultsDisplay';
 import PagePathQuery from 'shared/queries/PagePathQuery';
-import React, {useRef} from 'react';
+import React, {useContext, useRef} from 'react';
 import Sankey from './Sankey';
 import StatesRenderer from 'shared/components/states-renderer/StatesRenderer';
 import URLConstants from 'shared/util/url-constants';
@@ -99,14 +100,11 @@ function formatData({pagePath}: {pagePath: pagePathNode}) {
 
 interface IPagePathCardProps {
 	rangeSelectors: RangeSelectors;
-	selectedSegment?: {id: string};
 }
 
-const PagePathCard: React.FC<IPagePathCardProps> = ({
-	rangeSelectors,
-	selectedSegment,
-}) => {
+const PagePathCard: React.FC<IPagePathCardProps> = ({rangeSelectors}) => {
 	const cardRef = useRef(null);
+	const {accountId, segmentId} = useContext(BasePage.Context);
 	const {channelId, title, touchpoint} = useParams<{
 		channelId: string;
 		title: string;
@@ -117,9 +115,8 @@ const PagePathCard: React.FC<IPagePathCardProps> = ({
 			canonicalUrl: getSafeTouchpoint(touchpoint ?? ''),
 			channelId,
 			title: getSafeDecodedURIComponent(title ?? ''),
-			...(selectedSegment?.id && {
-				segmentId: selectedSegment.id,
-			}),
+			...(accountId && {accountId}),
+			...(segmentId && {segmentId}),
 			...getSafeRangeSelectors(rangeSelectors),
 		},
 	});
@@ -193,7 +190,7 @@ const PagePathCard: React.FC<IPagePathCardProps> = ({
 									}
 									flexGrow={false}
 									title={Liferay.Language.get(
-										'there-are-no-data-found'
+										'no-data-was-found'
 									)}
 								/>
 							</>

@@ -9,6 +9,16 @@
 
 <liferay-util:include page="/navigation.jsp" servletContext="<%= application %>" />
 
-<div class="p-4 text-secondary">
-	<%= LanguageUtil.format(request, "the-x-tab-is-not-implemented-yet", LanguageUtil.get(request, "prompts")) %>
-</div>
+<%
+ViewPromptsDisplayContext viewPromptsDisplayContext = new ViewPromptsDisplayContext(request, liferayPortletResponse);
+%>
+
+<frontend-data-set:headless-display
+	apiURL="<%= viewPromptsDisplayContext.getAPIURL() %>"
+	creationMenu="<%= viewPromptsDisplayContext.getCreationMenu() %>"
+	fdsActionDropdownItems="<%= viewPromptsDisplayContext.getFDSActionDropdownItems() %>"
+	fdsSortItemList="<%= viewPromptsDisplayContext.getFDSSortItemList() %>"
+	id="<%= viewPromptsDisplayContext.getFDSName() %>"
+	propsTransformer="{PromptsFDSPropsTransformer} from mcp-server-web"
+	style="fluid"
+/>

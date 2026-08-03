@@ -32,6 +32,8 @@ const withData = () =>
 	);
 
 interface ITableWithDataProps {
+	accountId?: string | null;
+	accountName?: string | null;
 	channelId: string;
 	delta: number;
 	groupId: string;
@@ -41,6 +43,8 @@ interface ITableWithDataProps {
 	query: string;
 	rangeSelectors: RangeSelectors;
 	router: Router;
+	segmentId?: string | null;
+	segmentName?: string | null;
 }
 
 const {Last7Days, Last30Days, Last90Days, Yesterday} = RangeKeyTimeRanges;
@@ -62,15 +66,23 @@ const TableWithData: React.FC<ITableWithDataProps> = withRangeKey(
 		),
 		emptyTitle: Liferay.Language.get('empty-title-pages'),
 		getColumns: ({
+			accountId,
+			accountName,
 			channelId,
 			groupId,
 			rangeSelectors,
+			segmentId,
+			segmentName,
 		}: ITableWithDataProps) => [
 			sitePagesListColumns.getTitleUrl({
+				accountId,
+				accountName,
 				channelId,
 				groupId,
 				rangeSelectors,
 				route: Routes.SITES_TOUCHPOINTS_OVERVIEW,
+				segmentId,
+				segmentName,
 			}),
 			metricsListColumns.visitorsMetric,
 			metricsListColumns.viewsMetric,

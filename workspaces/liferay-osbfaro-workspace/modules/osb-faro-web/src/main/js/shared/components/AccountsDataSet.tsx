@@ -104,6 +104,9 @@ const AccountsDataSet: React.FC<IAccountsDataSetProps> = ({
 							route: Routes.CONTACTS_ACCOUNT,
 							value,
 						}),
+					activitiesCountRenderer: ({value}: {value?: number}) => (
+						<div>{toThousands(value ?? 0)}</div>
+					),
 					annualRevenueRenderer: ({value}: {value: number}) => (
 						<div>{toThousands(value)}</div>
 					),
@@ -236,8 +239,22 @@ const AccountsDataSet: React.FC<IAccountsDataSetProps> = ({
 								},
 								{
 									contentRenderer: 'dateRenderer',
+									fieldName: 'firstActive',
+									label: Liferay.Language.get('first-active'),
+									sortable: true,
+								},
+								{
+									contentRenderer: 'dateRenderer',
 									fieldName: 'lastActive',
 									label: Liferay.Language.get('last-active'),
+									sortable: true,
+								},
+								{
+									contentRenderer: 'activitiesCountRenderer',
+									fieldName: 'activitiesCount',
+									label: Liferay.Language.get(
+										'recent-activities'
+									),
 									sortable: true,
 								},
 								{

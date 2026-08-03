@@ -7,22 +7,26 @@ package com.liferay.site.cmp.site.initializer.internal.model.listener.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.depot.constants.DepotRolesConstants;
+import com.liferay.object.constants.ObjectActionKeys;
 import com.liferay.object.model.ObjectEntry;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
@@ -49,9 +53,7 @@ import org.junit.runner.RunWith;
 /**
  * @author Pedro Leite
  */
-@FeatureFlags(
-	featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-58677")}
-)
+@FeatureFlags(featureFlags = @FeatureFlag("LPD-58677"))
 @RunWith(Arquillian.class)
 public class ObjectEntryModelListenerTest {
 
@@ -69,88 +71,126 @@ public class ObjectEntryModelListenerTest {
 
 	@Test
 	public void testOnAfterCreate() throws Exception {
-		ObjectEntry projectObjectEntry = CMPTestUtil.addProjectObjectEntry();
+		ObjectEntry cmpProjectObjectEntry =
+			CMPTestUtil.addCMPProjectObjectEntry();
 
 		Group group = _groupLocalService.getGroup(
-			projectObjectEntry.getGroupId());
+			cmpProjectObjectEntry.getGroupId());
 
 		Assert.assertEquals(
 			group.getName(LocaleUtil.getDefault()),
-			MapUtil.getString(projectObjectEntry.getValues(), "title"));
+			MapUtil.getString(cmpProjectObjectEntry.getValues(), "title"));
 
 		Role role = RoleUtil.getOrAddCMSAdministratorRole(
 			TestPropsValues.getCompanyId(), TestPropsValues.getUserId());
 
 		_assertResourceActions(
-			projectObjectEntry, role.getName(), ActionKeys.ADD_DISCUSSION,
+			cmpProjectObjectEntry, role.getName(), ActionKeys.ADD_DISCUSSION,
 			ActionKeys.DELETE, ActionKeys.DELETE_DISCUSSION,
-			ActionKeys.PERMISSIONS, ActionKeys.UPDATE,
-			ActionKeys.UPDATE_DISCUSSION, ActionKeys.VIEW);
+			ActionKeys.PERMISSIONS, ActionKeys.SUBSCRIBE, ActionKeys.UPDATE,
+			ActionKeys.UPDATE_DISCUSSION, ActionKeys.VIEW,
+			ObjectActionKeys.OBJECT_ENTRY_HISTORY);
 
 		_assertResourceActions(
-			projectObjectEntry, DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR,
-			ActionKeys.ADD_DISCUSSION, ActionKeys.DELETE,
-			ActionKeys.DELETE_DISCUSSION, ActionKeys.PERMISSIONS,
-			ActionKeys.UPDATE, ActionKeys.UPDATE_DISCUSSION, ActionKeys.VIEW);
-		_assertResourceActions(
-			projectObjectEntry,
-			DepotRolesConstants.ASSET_LIBRARY_CONTENT_REVIEWER,
+			cmpProjectObjectEntry, DepotRolesConstants.PROJECT_CONTRIBUTOR,
 			ActionKeys.ADD_DISCUSSION, ActionKeys.VIEW);
 		_assertResourceActions(
-			projectObjectEntry, DepotRolesConstants.ASSET_LIBRARY_MEMBER,
-			ActionKeys.ADD_DISCUSSION, ActionKeys.VIEW);
-
-		ObjectEntry taskObjectEntry = CMPTestUtil.addTaskObjectEntry(
-			projectObjectEntry);
-
-		_assertResourceActions(
-			taskObjectEntry, role.getName(), ActionKeys.ADD_DISCUSSION,
-			ActionKeys.DELETE, ActionKeys.DELETE_DISCUSSION,
-			ActionKeys.PERMISSIONS, ActionKeys.UPDATE,
-			ActionKeys.UPDATE_DISCUSSION, ActionKeys.VIEW);
-		_assertResourceActions(
-			taskObjectEntry, DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR,
+			cmpProjectObjectEntry, DepotRolesConstants.PROJECT_MANAGER,
 			ActionKeys.ADD_DISCUSSION, ActionKeys.DELETE,
 			ActionKeys.DELETE_DISCUSSION, ActionKeys.PERMISSIONS,
-			ActionKeys.UPDATE, ActionKeys.UPDATE_DISCUSSION, ActionKeys.VIEW);
+			ActionKeys.SUBSCRIBE, ActionKeys.UPDATE,
+			ActionKeys.UPDATE_DISCUSSION, ActionKeys.VIEW,
+			ObjectActionKeys.OBJECT_ENTRY_HISTORY);
 		_assertResourceActions(
-			taskObjectEntry, DepotRolesConstants.ASSET_LIBRARY_CONTENT_REVIEWER,
-			ActionKeys.ADD_DISCUSSION, ActionKeys.DELETE,
+			cmpProjectObjectEntry, DepotRolesConstants.PROJECT_MEMBER,
+			ActionKeys.ADD_DISCUSSION, ActionKeys.VIEW);
+
+		ObjectEntry cmpProjectLinkObjectEntry =
+			CMPTestUtil.addCMPProjectLinkObjectEntry(cmpProjectObjectEntry);
+
+		_assertResourceActions(
+			cmpProjectLinkObjectEntry, role.getName(), ActionKeys.DELETE,
 			ActionKeys.PERMISSIONS, ActionKeys.UPDATE, ActionKeys.VIEW);
 		_assertResourceActions(
-			taskObjectEntry, DepotRolesConstants.ASSET_LIBRARY_MEMBER,
+			cmpProjectLinkObjectEntry, DepotRolesConstants.PROJECT_CONTRIBUTOR,
+			ActionKeys.DELETE, ActionKeys.VIEW);
+		_assertResourceActions(
+			cmpProjectLinkObjectEntry, DepotRolesConstants.PROJECT_MANAGER,
+			ActionKeys.DELETE, ActionKeys.PERMISSIONS, ActionKeys.UPDATE,
+			ActionKeys.VIEW);
+		_assertResourceActions(
+			cmpProjectLinkObjectEntry, DepotRolesConstants.PROJECT_MEMBER,
+			ActionKeys.VIEW);
+
+		ObjectEntry cmpTaskObjectEntry = CMPTestUtil.addCMPTaskObjectEntry(
+			cmpProjectObjectEntry);
+
+		_assertResourceActions(
+			cmpTaskObjectEntry, role.getName(), ActionKeys.ADD_DISCUSSION,
+			ActionKeys.DELETE, ActionKeys.DELETE_DISCUSSION,
+			ActionKeys.PERMISSIONS, ActionKeys.SUBSCRIBE, ActionKeys.UPDATE,
+			ActionKeys.UPDATE_DISCUSSION, ActionKeys.VIEW,
+			ObjectActionKeys.OBJECT_ENTRY_HISTORY);
+		_assertResourceActions(
+			cmpTaskObjectEntry, DepotRolesConstants.PROJECT_CONTRIBUTOR,
+			ActionKeys.ADD_DISCUSSION, ActionKeys.UPDATE, ActionKeys.VIEW);
+		_assertResourceActions(
+			cmpTaskObjectEntry, DepotRolesConstants.PROJECT_MANAGER,
+			ActionKeys.ADD_DISCUSSION, ActionKeys.DELETE,
+			ActionKeys.DELETE_DISCUSSION, ActionKeys.PERMISSIONS,
+			ActionKeys.SUBSCRIBE, ActionKeys.UPDATE,
+			ActionKeys.UPDATE_DISCUSSION, ActionKeys.VIEW,
+			ObjectActionKeys.OBJECT_ENTRY_HISTORY);
+		_assertResourceActions(
+			cmpTaskObjectEntry, DepotRolesConstants.PROJECT_MEMBER,
 			ActionKeys.ADD_DISCUSSION, ActionKeys.VIEW);
+
+		ObjectEntry cmpTaskLinkObjectEntry =
+			CMPTestUtil.addCMPTaskLinkObjectEntry(cmpTaskObjectEntry);
+
+		_assertResourceActions(
+			cmpTaskLinkObjectEntry, role.getName(), ActionKeys.DELETE,
+			ActionKeys.PERMISSIONS, ActionKeys.UPDATE, ActionKeys.VIEW);
+		_assertResourceActions(
+			cmpTaskLinkObjectEntry, DepotRolesConstants.PROJECT_CONTRIBUTOR,
+			ActionKeys.DELETE, ActionKeys.VIEW);
+		_assertResourceActions(
+			cmpTaskLinkObjectEntry, DepotRolesConstants.PROJECT_MANAGER,
+			ActionKeys.DELETE, ActionKeys.PERMISSIONS, ActionKeys.UPDATE,
+			ActionKeys.VIEW);
+		_assertResourceActions(
+			cmpTaskLinkObjectEntry, DepotRolesConstants.PROJECT_MEMBER,
+			ActionKeys.VIEW);
 	}
 
 	@Test
 	public void testOnAfterUpdate() throws Exception {
-		ObjectEntry projectObjectEntry = CMPTestUtil.addProjectObjectEntry();
+		ObjectEntry cmpProjectObjectEntry =
+			CMPTestUtil.addCMPProjectObjectEntry();
 
-		User user1 = UserTestUtil.addUser(projectObjectEntry.getGroupId());
-		User user2 = UserTestUtil.addUser(projectObjectEntry.getGroupId());
+		User user1 = UserTestUtil.addUser(cmpProjectObjectEntry.getGroupId());
+		User user2 = UserTestUtil.addUser(cmpProjectObjectEntry.getGroupId());
 
-		Map<String, Serializable> values = projectObjectEntry.getValues();
+		Map<String, Serializable> values = cmpProjectObjectEntry.getValues();
 
 		values.put("r_userToCMPProjectManager_userId", user1.getUserId());
 		values.put("r_userToCMPProjectSponsor_userId", user2.getUserId());
 
-		projectObjectEntry.setValues(values);
+		cmpProjectObjectEntry.setValues(values);
 
-		projectObjectEntry = _objectEntryLocalService.partialUpdateObjectEntry(
-			TestPropsValues.getUserId(), projectObjectEntry.getObjectEntryId(),
-			projectObjectEntry.getObjectEntryFolderId(), values,
-			ServiceContextTestUtil.getServiceContext());
+		cmpProjectObjectEntry =
+			_objectEntryLocalService.partialUpdateObjectEntry(
+				TestPropsValues.getUserId(),
+				cmpProjectObjectEntry.getObjectEntryId(),
+				cmpProjectObjectEntry.getObjectEntryFolderId(), values,
+				ServiceContextTestUtil.getServiceContext());
 
 		_assertUserGroupRoles(
-			2,
-			List.of(
-				DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR,
-				DepotRolesConstants.ASSET_LIBRARY_MEMBER),
-			projectObjectEntry.getGroupId(), user1.getUserId());
+			1, Collections.singletonList(DepotRolesConstants.PROJECT_MANAGER),
+			cmpProjectObjectEntry.getGroupId(), user1.getUserId());
 		_assertUserGroupRoles(
-			1,
-			Collections.singletonList(DepotRolesConstants.ASSET_LIBRARY_MEMBER),
-			projectObjectEntry.getGroupId(), user2.getUserId());
+			1, Collections.singletonList(DepotRolesConstants.PROJECT_MEMBER),
+			cmpProjectObjectEntry.getGroupId(), user2.getUserId());
 	}
 
 	private void _assertResourceActions(
@@ -167,8 +207,15 @@ public class ObjectEntryModelListenerTest {
 				String.valueOf(objectEntry.getObjectEntryId()),
 				role.getRoleId());
 
-		for (String actionId : actionIds) {
-			Assert.assertTrue(resourcePermission.hasActionId(actionId));
+		for (ResourceAction resourceAction :
+				_resourceActionLocalService.getResourceActions(
+					objectEntry.getModelClassName())) {
+
+			String actionId = resourceAction.getActionId();
+
+			Assert.assertEquals(
+				ArrayUtil.contains(actionIds, actionId),
+				resourcePermission.hasActionId(actionId));
 		}
 	}
 
@@ -194,6 +241,9 @@ public class ObjectEntryModelListenerTest {
 
 	@Inject
 	private ObjectEntryLocalService _objectEntryLocalService;
+
+	@Inject
+	private ResourceActionLocalService _resourceActionLocalService;
 
 	@Inject
 	private ResourcePermissionLocalService _resourcePermissionLocalService;

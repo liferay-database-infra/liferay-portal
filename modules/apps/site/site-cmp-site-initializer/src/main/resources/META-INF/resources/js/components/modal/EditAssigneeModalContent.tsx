@@ -11,23 +11,26 @@ import React, {useState} from 'react';
 
 import {patchTaskById} from '../../utils/api';
 import {displayAssignSuccessToast} from '../../utils/toastUtil';
+import {ITaskObjectEntry} from '../../utils/types';
 import CustomAssignee from '../CustomAssignee';
 
 import './../AssigneeTrigger.scss';
 
 type Props = {
 	closeModal: () => void;
+	cmpTaskObjectEntryId: string;
+	cmpTaskObjectEntryTitle: string;
 	loadData: Function;
-	taskId: string;
-	taskTitle: string;
+	onTaskUpdated?: (task: ITaskObjectEntry) => void;
 	value: AssigneeValue | {} | null;
 };
 
 export default function EditAssigneeModalContent({
 	closeModal,
+	cmpTaskObjectEntryId,
+	cmpTaskObjectEntryTitle,
 	loadData,
-	taskId,
-	taskTitle,
+	onTaskUpdated,
 	value: initialValue,
 }: Props) {
 	const [value, setValue] = useState<AssigneeValue | null | {}>(initialValue);
@@ -35,17 +38,25 @@ export default function EditAssigneeModalContent({
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 
-		const {error} = await patchTaskById({
+		const {data, error} = await patchTaskById({
 			body: {assignTo: value},
-			taskId,
+			taskId: cmpTaskObjectEntryId,
 		});
 
 		if (!error) {
 			closeModal();
 
-			loadData();
+			if (onTaskUpdated && data) {
+				onTaskUpdated(data);
+			}
+			else {
+				loadData();
+			}
 
-			displayAssignSuccessToast(taskTitle, (value as AssigneeValue).name);
+			displayAssignSuccessToast(
+				cmpTaskObjectEntryTitle,
+				(value as AssigneeValue).name
+			);
 		}
 		else {
 			displayErrorToast(error);

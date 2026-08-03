@@ -12,6 +12,8 @@ export {default as ChatPanel} from './ai-assistant-chat';
 export type {ChatPanelProps} from './ai-assistant-chat/ChatPanel';
 export {default as ChatActionButton} from './ai-assistant-chat/components/ChatActionButton';
 export {default as ChatDropdownContainer} from './ai-assistant-chat/containers/ChatDropdownContainer';
+export {default as ChatFloatingContainer} from './ai-assistant-chat/containers/ChatFloatingContainer';
+export {default as ChatSidebarContainer} from './ai-assistant-chat/containers/ChatSidebarContainer';
 
 export {default as CodeMirrorKeyboardMessage} from './code_mirror_keyboard_message/CodeMirrorKeyboardMessage';
 export {default as FeatureIndicator} from './feature_indicator/FeatureIndicator';

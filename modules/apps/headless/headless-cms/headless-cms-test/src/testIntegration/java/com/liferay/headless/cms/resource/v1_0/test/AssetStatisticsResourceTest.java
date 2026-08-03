@@ -22,9 +22,11 @@ import com.liferay.object.service.ObjectEntryFolderLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
@@ -40,11 +42,9 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
-import com.liferay.site.cms.site.initializer.test.util.CMSTestUtil;
 
 import java.io.Serializable;
 
@@ -61,7 +61,6 @@ import org.junit.runner.RunWith;
 /**
  * @author Crescenzo Rega
  */
-@FeatureFlag("LPD-17564")
 @RunWith(Arquillian.class)
 public class AssetStatisticsResourceTest
 	extends BaseAssetStatisticsResourceTestCase {
@@ -349,8 +348,8 @@ public class AssetStatisticsResourceTest
 	private ObjectDefinition _getBasicWebContentObjectDefinition()
 		throws Exception {
 
-		Group cmsGroup = CMSTestUtil.getOrAddGroup(
-			AssetStatisticsResourceTest.class);
+		Group cmsGroup = _groupLocalService.getGroup(
+			TestPropsValues.getCompanyId(), GroupConstants.CMS);
 
 		return _objectDefinitionLocalService.
 			getObjectDefinitionByExternalReferenceCode(
@@ -407,6 +406,9 @@ public class AssetStatisticsResourceTest
 
 	@Inject
 	private DepotEntryLocalService _depotEntryLocalService;
+
+	@Inject
+	private GroupLocalService _groupLocalService;
 
 	@Inject
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;

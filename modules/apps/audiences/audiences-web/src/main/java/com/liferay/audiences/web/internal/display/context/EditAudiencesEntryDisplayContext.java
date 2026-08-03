@@ -17,9 +17,11 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
@@ -148,6 +150,8 @@ public class EditAudiencesEntryDisplayContext {
 					"label", audiencesCriteriaType.getLabel()
 				).build())
 		).put(
+			"audiencesEntryId", getAudiencesEntryId()
+		).put(
 			"backURL", getBackURL()
 		).put(
 			"backURLTitle", getBackURLTitle()
@@ -158,7 +162,16 @@ public class EditAudiencesEntryDisplayContext {
 		).put(
 			"namespace", _renderResponse.getNamespace()
 		).put(
+			"redirect", getRedirect()
+		).put(
 			"rulesGroup", getAudiencesEntryJSONObject()
+		).put(
+			"updateAudiencesEntryActionURL",
+			PortletURLBuilder.createActionURL(
+				PortalUtil.getLiferayPortletResponse(_renderResponse)
+			).setActionName(
+				"/audiences/update_audiences_entry"
+			).buildString()
 		).build();
 	}
 

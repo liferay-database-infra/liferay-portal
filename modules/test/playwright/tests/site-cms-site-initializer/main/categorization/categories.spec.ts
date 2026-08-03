@@ -6,7 +6,6 @@
 import {expect, mergeTests} from '@playwright/test';
 
 import {dataApiHelpersTest} from '../../../../fixtures/dataApiHelpersTest';
-import {featureFlagsTest} from '../../../../fixtures/featureFlagsTest';
 import {loginTest} from '../../../../fixtures/loginTest';
 import {checkAccessibility} from '../../../../utils/checkAccessibility';
 import {clickAndExpectToBeVisible} from '../../../../utils/clickAndExpectToBeVisible';
@@ -20,9 +19,6 @@ const test = mergeTests(
 	categorizationPagesTest,
 	cmsPagesTest,
 	dataApiHelpersTest,
-	featureFlagsTest({
-		'LPD-17564': {enabled: true},
-	}),
 	loginTest()
 );
 
@@ -30,10 +26,6 @@ const systemCategoryTest = mergeTests(
 	categorizationPagesTest,
 	cmsPagesTest,
 	dataApiHelpersTest,
-	featureFlagsTest({
-		'LPD-17564': {enabled: true},
-		'LPD-86291': {enabled: true},
-	}),
 	loginTest()
 );
 
@@ -245,6 +237,38 @@ test.describe("Category tests that don't focus on creation", () => {
 			await editCategoryPage.gotoEditCategory(categoryId);
 
 			await expect(page.getByText(newCategoryDescription)).toBeVisible();
+		}
+	);
+
+	test(
+		"Edit the slug of a Vocabulary's Category",
+		{tag: '@LPD-99566'},
+		async ({editCategoryPage}) => {
+
+			// A new category has no slug yet
+
+			await editCategoryPage.gotoCreateCategory(vocabularyId);
+
+			await expect(editCategoryPage.slugInput).toBeEmpty();
+
+			// An empty slug falls back to the category name
+
+			await editCategoryPage.gotoEditCategory(categoryId);
+
+			await expect(editCategoryPage.slugInput).toHaveValue(categoryName);
+
+			// A slug is normalized and kept
+
+			await editCategoryPage.fillSlug('Winter Sports');
+
+			await editCategoryPage.clickSave();
+			await editCategoryPage.handleEditConfirmationModal(true);
+
+			await editCategoryPage.gotoEditCategory(categoryId);
+
+			await expect(editCategoryPage.slugInput).toHaveValue(
+				'winter-sports'
+			);
 		}
 	);
 
@@ -757,7 +781,7 @@ systemCategoryTest.describe('System category tests', () => {
 					assetLibraries: [{id: -1}],
 					assetTypes: [
 						{
-							required: true,
+							required: false,
 							subtype: 'AllAssetSubtypes',
 							type: 'AllAssetTypes',
 						},
@@ -778,13 +802,10 @@ systemCategoryTest.describe('System category tests', () => {
 		}
 	);
 
-	systemCategoryTest.afterEach(async ({apiHelpers}) => {
-
-		// A system category cannot be deleted while LPD-86291 is enabled, so
-		// disable it before the vocabulary and its categories are cleaned up.
-
-		await apiHelpers.featureFlag.updateFeatureFlag('LPD-86291', false);
-	});
+	// A system category cannot be deleted once created, so the automatic
+	// cleanup of its vocabulary fails silently and both are left behind. Each
+	// test creates a fresh vocabulary and navigates to it by id, so the
+	// leftover data does not interfere with the assertions.
 
 	systemCategoryTest(
 		'Mark a system category with a lock icon and hide its edit, move, and delete actions',

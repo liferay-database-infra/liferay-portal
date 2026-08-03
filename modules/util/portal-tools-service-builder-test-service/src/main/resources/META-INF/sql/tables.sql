@@ -46,6 +46,13 @@ create table ColumnNameEntry (
 	name VARCHAR(75) null
 );
 
+create table CompoundPKEntry (
+	companyId LONG not null,
+	classNameId LONG not null,
+	name VARCHAR(75) null,
+	primary key (companyId, classNameId)
+);
+
 create table DSLQueryEntry (
 	dslQueryEntryId LONG not null primary key,
 	name VARCHAR(75) null
@@ -66,6 +73,11 @@ create table DataLimitEntry (
 	userName VARCHAR(75) null,
 	createDate DATE null,
 	modifiedDate DATE null
+);
+
+create table DateEntry (
+	dateEntryId LONG not null primary key,
+	value DATE null
 );
 
 create table DefinedDefaultOrderEntry (
@@ -110,7 +122,8 @@ create table ERCVersionedEntry (
 	head BOOLEAN,
 	ercVersionedEntryId LONG not null primary key,
 	groupId LONG,
-	companyId LONG
+	companyId LONG,
+	blob_ BLOB
 );
 
 create table ERCVersionedEntryVersion (
@@ -120,7 +133,8 @@ create table ERCVersionedEntryVersion (
 	externalReferenceCode VARCHAR(75) null,
 	ercVersionedEntryId LONG,
 	groupId LONG,
-	companyId LONG
+	companyId LONG,
+	blob_ BLOB
 );
 
 create table EagerBlobEntry (

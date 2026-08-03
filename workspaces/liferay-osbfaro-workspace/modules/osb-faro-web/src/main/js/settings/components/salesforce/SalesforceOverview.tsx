@@ -25,6 +25,7 @@ import {Entity} from '../3rd-party-connector/types';
 import {fetch, updateSalesforce} from 'shared/api/data-source';
 import {fetchConnectorEntityCount} from 'shared/api/connector';
 import {getDataSourceDisplayObject} from 'shared/util/data-sources';
+import {sub} from 'shared/util/lang';
 import {Text} from '@clayui/core';
 import {useCurrentUser} from 'shared/hooks/useCurrentUser';
 import {useDisconnectDataSource} from '../data-source/utils';
@@ -121,9 +122,12 @@ const SalesforceOverview: React.FC<ISalesforceOverviewProps> = ({
 		if (!dataSourceActive) {
 			alert.displayType = 'warning';
 
-			alert.message = Liferay.Language.get(
-				'the-data-source-is-disconnected.-data-is-no-longer-being-synced-from-salesforce,-but-you-can-reconnect-to-resume-syncing'
-			);
+			alert.message = sub(
+				Liferay.Language.get(
+					'the-data-source-is-disconnected.-data-is-no-longer-being-synced-from-x,-but-you-can-reconnect-to-resume-syncing'
+				),
+				[Liferay.Language.get('salesforce')]
+			) as string;
 		}
 		else if (enabledAllAccounts || enabledAllContacts || enableAllLeads) {
 			alert.message = Liferay.Language.get(
@@ -192,8 +196,11 @@ const SalesforceOverview: React.FC<ISalesforceOverviewProps> = ({
 						<>
 							<div className="mb-3">
 								<Text color="secondary" size={4}>
-									{Liferay.Language.get(
-										'to-reestablish-the-connection-between-salesforce-and-liferay-analytics-cloud,-generate-a-token-and-paste-the-code-on-the-input-below'
+									{sub(
+										Liferay.Language.get(
+											'to-reestablish-the-connection-between-x-and-liferay-analytics-cloud,-check-your-credentials-and-paste-on-the-input-below'
+										),
+										[Liferay.Language.get('salesforce')]
 									)}
 								</Text>
 
@@ -410,8 +417,11 @@ const AccountAndIndividuals = ({
 
 			<div className="mb-2">
 				<Text color="secondary" size={4}>
-					{Liferay.Language.get(
-						'to-configure-your-salesforce-data-source,-go-to-your-salesforce-environment-to-update-this-app-connection'
+					{sub(
+						Liferay.Language.get(
+							'to-configure-your-x-data-source,-go-to-your-x-environment-to-update-this-app-connection'
+						),
+						[Liferay.Language.get('salesforce')]
 					)}
 				</Text>
 			</div>

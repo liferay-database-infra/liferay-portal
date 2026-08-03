@@ -512,7 +512,7 @@ public class ObjectEntryLocalServiceSearchObjectEntriesTest {
 			_objectDefinition.getPortletId(),
 			TempFileEntryUtil.getTempFileName(
 				RandomTestUtil.randomString() + ".jpg"),
-			FileUtil.createTempFile(DLTestUtil.randomTextFileBytes()),
+			FileUtil.createTempFile(DLTestUtil.getImageBytes("jpg")),
 			ContentTypes.IMAGE_JPEG);
 
 		_addObjectEntry(

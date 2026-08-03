@@ -10,6 +10,9 @@ import com.liferay.batch.planner.batch.engine.task.TaskItemUtil;
 import com.liferay.batch.planner.rest.client.dto.v1_0.SiteScope;
 import com.liferay.batch.planner.rest.client.http.HttpInvoker;
 import com.liferay.batch.planner.rest.client.pagination.Page;
+import com.liferay.depot.constants.DepotConstants;
+import com.liferay.depot.model.DepotEntry;
+import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.field.util.ObjectFieldUtil;
 import com.liferay.object.model.ObjectDefinition;
@@ -17,8 +20,13 @@ import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.URLCodec;
+import com.liferay.portal.test.rule.Inject;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -89,7 +97,17 @@ public class SiteScopeResourceTest extends BaseSiteScopeResourceTestCase {
 		_testGetPlanInternalClassNameKeySiteScopesPage(
 			Collections.emptyList(), true, internalClassNameKey);
 
-		// Object definition (site scoped)
+		// Object definition (depot scoped)
+
+		DepotEntry depotEntry = _depotEntryLocalService.addDepotEntry(
+			HashMapBuilder.put(
+				LocaleUtil.getDefault(), RandomTestUtil.randomString()
+			).build(),
+			HashMapBuilder.put(
+				LocaleUtil.getDefault(), RandomTestUtil.randomString()
+			).build(),
+			DepotConstants.TYPE_SPACE,
+			ServiceContextTestUtil.getServiceContext());
 
 		ObjectDefinition objectDefinition2 =
 			ObjectDefinitionTestUtil.publishObjectDefinition(
@@ -98,9 +116,29 @@ public class SiteScopeResourceTest extends BaseSiteScopeResourceTestCase {
 						"Text", "String", true, true, null,
 						RandomTestUtil.randomString(),
 						"a" + RandomTestUtil.randomString(), false)),
-				ObjectDefinitionConstants.SCOPE_SITE);
+				ObjectDefinitionConstants.SCOPE_DEPOT);
 
 		internalClassNameKey = _getInternalClassNameKey(objectDefinition2);
+
+		_testGetPlanInternalClassNameKeySiteScopesPageDepot(
+			depotEntry.getGroupId(), null, internalClassNameKey);
+		_testGetPlanInternalClassNameKeySiteScopesPageDepot(
+			depotEntry.getGroupId(), false, internalClassNameKey);
+		_testGetPlanInternalClassNameKeySiteScopesPageDepot(
+			depotEntry.getGroupId(), true, internalClassNameKey);
+
+		// Object definition (site scoped)
+
+		ObjectDefinition objectDefinition3 =
+			ObjectDefinitionTestUtil.publishObjectDefinition(
+				Collections.singletonList(
+					ObjectFieldUtil.createObjectField(
+						"Text", "String", true, true, null,
+						RandomTestUtil.randomString(),
+						"a" + RandomTestUtil.randomString(), false)),
+				ObjectDefinitionConstants.SCOPE_SITE);
+
+		internalClassNameKey = _getInternalClassNameKey(objectDefinition3);
 
 		_testGetPlanInternalClassNameKeySiteScopesPage(
 			Arrays.asList(companyGroup, group, testGroup), null,
@@ -194,6 +232,21 @@ public class SiteScopeResourceTest extends BaseSiteScopeResourceTestCase {
 		}
 	}
 
+	private void _testGetPlanInternalClassNameKeySiteScopesPageDepot(
+			long expectedGroupId, Boolean export, String internalClassNameKey)
+		throws Exception {
+
+		Page<SiteScope> page =
+			siteScopeResource.getPlanInternalClassNameKeySiteScopesPage(
+				internalClassNameKey, export);
+
+		Assert.assertTrue(
+			ListUtil.exists(
+				ListUtil.fromCollection(page.getItems()),
+				siteScope -> Objects.equals(
+					siteScope.getValue(), expectedGroupId)));
+	}
+
 	private void _testGetPlanInternalClassNameKeySiteScopesPageNotFound(
 			Boolean export, String internalClassNameKey)
 		throws Exception {
@@ -214,5 +267,8 @@ public class SiteScopeResourceTest extends BaseSiteScopeResourceTestCase {
 
 		return siteScope;
 	}
+
+	@Inject
+	private DepotEntryLocalService _depotEntryLocalService;
 
 }

@@ -28,7 +28,9 @@ import java.security.NoSuchAlgorithmException;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,9 +48,20 @@ public class UrlReader {
 			int timeout, String url)
 		throws IOException {
 
+		return getResponseHeader(
+			headerName, httpAuthorization, httpRequestMethod, postContent, null,
+			timeout, url);
+	}
+
+	public static String getResponseHeader(
+			String headerName, HTTPAuthorization httpAuthorization,
+			HttpRequestMethod httpRequestMethod, String postContent,
+			Map<String, String> requestHeaders, int timeout, String url)
+		throws IOException {
+
 		return _urlReader.doGetResponseHeader(
 			headerName, httpAuthorization, httpRequestMethod, postContent,
-			timeout, url);
+			requestHeaders, timeout, url);
 	}
 
 	public static InputStream read(
@@ -69,13 +82,18 @@ public class UrlReader {
 	protected String doGetResponseHeader(
 			String headerName, HTTPAuthorization httpAuthorization,
 			HttpRequestMethod httpRequestMethod, String postContent,
-			int timeout, String url)
+			Map<String, String> requestHeaders, int timeout, String url)
 		throws IOException {
 
 		URL urlObject = new URL(JenkinsResultsParserUtil.fixURL(url));
 
 		HttpURLConnection httpURLConnection =
 			(HttpURLConnection)urlObject.openConnection();
+
+		if (timeout != 0) {
+			httpURLConnection.setConnectTimeout(timeout);
+			httpURLConnection.setReadTimeout(timeout);
+		}
 
 		if (httpRequestMethod != null) {
 			httpURLConnection.setRequestMethod(httpRequestMethod.name());
@@ -86,9 +104,13 @@ public class UrlReader {
 				"Authorization", httpAuthorization.toString());
 		}
 
-		if (timeout != 0) {
-			httpURLConnection.setConnectTimeout(timeout);
-			httpURLConnection.setReadTimeout(timeout);
+		if (requestHeaders != null) {
+			for (Map.Entry<String, String> requestHeader :
+					requestHeaders.entrySet()) {
+
+				httpURLConnection.setRequestProperty(
+					requestHeader.getKey(), requestHeader.getValue());
+			}
 		}
 
 		if (postContent != null) {
@@ -162,6 +184,7 @@ public class UrlReader {
 		int retryCount = 0;
 
 		while (true) {
+			String authorization = null;
 			URLConnection urlConnection = null;
 
 			try {
@@ -243,13 +266,10 @@ public class UrlReader {
 				if ((httpAuthorization == null) && testray2URLMatcher.find() &&
 					!url.contains("/o/oauth2/token")) {
 
+					String baseURL = testray2URLMatcher.group("baseURL");
+
 					Properties buildProperties =
 						JenkinsResultsParserUtil.getBuildProperties();
-
-					URL tokenURL = new URL(
-						testray2URLMatcher.group("baseURL") +
-							"/o/oauth2/token");
-
 					String lxcEnvironment = testray2URLMatcher.group(
 						"lxcEnvironment");
 
@@ -260,8 +280,14 @@ public class UrlReader {
 						buildProperties, "testray.oauth2.client.secret",
 						lxcEnvironment);
 
-					httpAuthorization = new ClientCredentialsHTTPAuthorization(
-						clientId, clientSecret, tokenURL);
+					URL tokenURL = new URL(baseURL + "/o/oauth2/token");
+
+					httpAuthorization =
+						_testrayHTTPAuthorizations.computeIfAbsent(
+							baseURL,
+							testrayBaseURL ->
+								new ClientCredentialsHTTPAuthorization(
+									clientId, clientSecret, tokenURL));
 				}
 
 				URL urlObject = new URL(url);
@@ -314,10 +340,12 @@ public class UrlReader {
 					}
 
 					if (httpAuthorization != null) {
+						authorization = httpAuthorization.toString();
+
 						httpURLConnection.setRequestProperty(
 							"accept", "application/json");
 						httpURLConnection.setRequestProperty(
-							"Authorization", httpAuthorization.toString());
+							"Authorization", authorization);
 
 						if (!testray1Request) {
 							httpURLConnection.setRequestProperty(
@@ -390,12 +418,12 @@ public class UrlReader {
 
 				return urlConnection.getInputStream();
 			}
-			catch (IOException ioException) {
-				if (ioException instanceof FileNotFoundException) {
-					throw ioException;
+			catch (IOException ioException1) {
+				if (ioException1 instanceof FileNotFoundException) {
+					throw ioException1;
 				}
 
-				if ((ioException instanceof UnknownHostException) &&
+				if ((ioException1 instanceof UnknownHostException) &&
 					url.matches("http://test-\\d+-\\d+/.*")) {
 
 					return doRead(
@@ -406,7 +434,7 @@ public class UrlReader {
 							"https://$1.liferay.com$2"));
 				}
 
-				String exceptionMessage = ioException.getMessage();
+				String exceptionMessage = ioException1.getMessage();
 
 				if (exceptionMessage.matches(
 						".*HTTP response code\\: 422 .*") &&
@@ -424,7 +452,58 @@ public class UrlReader {
 
 					System.out.println(sb.toString());
 
-					throw new RuntimeException(exceptionMessage, ioException);
+					throw new RuntimeException(exceptionMessage, ioException1);
+				}
+
+				Matcher testray2URLMatcher = _testray2URLPattern.matcher(url);
+
+				if (exceptionMessage.matches(
+						".*HTTP response code\\: 403 .*") &&
+					testray2URLMatcher.find() &&
+					(urlConnection instanceof HttpURLConnection)) {
+
+					HttpURLConnection httpURLConnection =
+						(HttpURLConnection)urlConnection;
+
+					StringBuilder sb = new StringBuilder();
+
+					sb.append(exceptionMessage);
+
+					try (InputStream errorInputStream =
+							httpURLConnection.getErrorStream()) {
+
+						if (errorInputStream != null) {
+							sb.append("\nError response:\n");
+							sb.append(
+								JenkinsResultsParserUtil.readInputStream(
+									errorInputStream));
+						}
+					}
+					catch (IOException ioException2) {
+						sb.append("\nUnable to read the error response: ");
+						sb.append(ioException2.getMessage());
+					}
+
+					if ((maxRetries >= 0) && (retryCount >= maxRetries) &&
+						!JenkinsResultsParserUtil.isNullOrEmpty(postContent)) {
+
+						sb.append("\nPost content:\n");
+						sb.append(postContent);
+					}
+
+					System.out.println(sb.toString());
+
+					if (httpAuthorization instanceof
+							ClientCredentialsHTTPAuthorization) {
+
+						ClientCredentialsHTTPAuthorization
+							clientCredentialsHTTPAuthorization =
+								(ClientCredentialsHTTPAuthorization)
+									httpAuthorization;
+
+						clientCredentialsHTTPAuthorization.invalidateToken(
+							authorization);
+					}
 				}
 
 				Integer retryPeriodOverride = null;
@@ -456,7 +535,7 @@ public class UrlReader {
 						(retryPeriodOverride > _SECONDS_RETRY_PERIOD_MAX)) {
 
 						throw new GitHubSecondaryRateLimitRuntimeException(
-							url, retryPeriodOverride, ioException);
+							url, retryPeriodOverride, ioException1);
 					}
 				}
 
@@ -469,7 +548,7 @@ public class UrlReader {
 				}
 
 				if ((maxRetries >= 0) && (retryCount >= maxRetries)) {
-					throw ioException;
+					throw ioException1;
 				}
 
 				System.out.println(
@@ -492,6 +571,8 @@ public class UrlReader {
 	private static final Pattern _testray2URLPattern = Pattern.compile(
 		"(?<baseURL>https://webserver-testray2(-(?<lxcEnvironment>.+))?" +
 			"\\.lfr\\.cloud|https://testray\\.liferay\\.com).*");
+	private static final Map<String, HTTPAuthorization>
+		_testrayHTTPAuthorizations = new ConcurrentHashMap<>();
 	private static final List<HttpRequestMethod> _updatingHttpRequestMethods =
 		Arrays.asList(
 			HttpRequestMethod.POST, HttpRequestMethod.PATCH,

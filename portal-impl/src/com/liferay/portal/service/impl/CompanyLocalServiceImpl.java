@@ -569,11 +569,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		Company fromCompany = companyPersistence.findByPrimaryKey(
 			fromCompanyId);
 
-		if (fromCompany == null) {
-			throw new IllegalArgumentException(
-				"Company ID " + fromCompanyId + " does not exist");
-		}
-
 		if (fromCompanyId == PortalInstancePool.getDefaultCompanyId()) {
 			throw new IllegalArgumentException(
 				"Company ID " + fromCompanyId + " is the default company ID");
@@ -1700,12 +1695,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		String[] systemGroups = PortalUtil.getSystemGroups();
 
 		for (String groupName : systemGroups) {
-			if (groupName.equals(GroupConstants.CMS) &&
-				!FeatureFlagManagerUtil.isEnabled("LPD-17564")) {
-
-				continue;
-			}
-
 			deleteGroupActionableDynamicQuery.deleteGroup(
 				_groupLocalService.getGroup(companyId, groupName));
 		}

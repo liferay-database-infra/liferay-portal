@@ -5,12 +5,11 @@
 
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
-import ClayLoadingIndicator from '@clayui/loading-indicator';
 import {sub} from 'frontend-js-web';
 import React from 'react';
 
 import {CategorizationStatus, Suggestion} from '../types';
-import SuggestionChip from './SuggestionChip';
+import SuggestionLabel from './SuggestionLabel';
 
 import '../categorization.scss';
 
@@ -72,15 +71,11 @@ export default function CategorizationSuggestions({
 
 	if (status === 'loading') {
 		return (
-			<div className="align-items-center categorization-suggestions d-flex">
-				<ClayLoadingIndicator className="mr-2" />
-
-				<span className="font-weight-semi-bold text-secondary">
-					{kind === 'categories'
-						? Liferay.Language.get('searching-for-categories')
-						: Liferay.Language.get('generating')}
-				</span>
-			</div>
+			<span className="categorization-suggestions categorization-suggestions__loading-text font-weight-semi-bold">
+				{kind === 'categories'
+					? Liferay.Language.get('searching-for-categories')
+					: Liferay.Language.get('generating-tags')}
+			</span>
 		);
 	}
 
@@ -110,9 +105,9 @@ export default function CategorizationSuggestions({
 		<div className="categorization-suggestions">
 			<p>{getIntroText(kind, suggestions)}</p>
 
-			<div className="categorization-suggestions__chips mb-3">
+			<div className="categorization-suggestions__labels mb-3">
 				{suggestions.map((suggestion) => (
-					<SuggestionChip
+					<SuggestionLabel
 						disabled={committed}
 						key={`${suggestion.id ?? suggestion.name}`}
 						onDismiss={onDismiss}
@@ -127,6 +122,7 @@ export default function CategorizationSuggestions({
 					disabled={committed}
 					displayType="secondary"
 					onClick={onRegenerate}
+					size="sm"
 				>
 					<ClayIcon
 						className="mr-2"
@@ -134,18 +130,17 @@ export default function CategorizationSuggestions({
 						symbol="reload"
 					/>
 
-					{kind === 'categories'
-						? Liferay.Language.get('try-again')
-						: Liferay.Language.get('regenerate')}
+					{Liferay.Language.get('try-again')}
 				</ClayButton>
 
 				<ClayButton
 					disabled={committed || !suggestions.length}
 					displayType="primary"
 					onClick={() => onCommit(suggestions)}
+					size="sm"
 				>
 					{kind === 'categories'
-						? Liferay.Language.get('save-categories')
+						? Liferay.Language.get('add-categories')
 						: Liferay.Language.get('add-tags')}
 				</ClayButton>
 			</div>

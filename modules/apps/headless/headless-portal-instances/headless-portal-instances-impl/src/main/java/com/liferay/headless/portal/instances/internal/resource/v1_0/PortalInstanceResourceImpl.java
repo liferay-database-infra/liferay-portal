@@ -7,6 +7,7 @@ package com.liferay.headless.portal.instances.internal.resource.v1_0;
 
 import com.liferay.headless.portal.instances.dto.v1_0.Admin;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstance;
+import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceCopy;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceExport;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceImport;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceResource;
@@ -28,7 +29,6 @@ import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
-import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.CompanyService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -153,6 +153,57 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 	}
 
 	@Override
+	public PortalInstance postPortalInstanceCopy(
+			String portalInstanceId, PortalInstanceCopy portalInstanceCopy)
+		throws Exception {
+
+		_checkFeatureFlag();
+
+		_checkPermission();
+
+		if (portalInstanceCopy == null) {
+			throw new BadRequestException("Copy configuration is required");
+		}
+
+		if (Validator.isNull(portalInstanceCopy.getName())) {
+			throw new BadRequestException("Name is required");
+		}
+
+		if (Validator.isNull(portalInstanceCopy.getVirtualHost())) {
+			throw new BadRequestException("Virtual host is required");
+		}
+
+		if (Validator.isNull(portalInstanceCopy.getWebId())) {
+			throw new BadRequestException("Web ID is required");
+		}
+
+		Company fromCompany = _companyService.getCompanyByWebId(
+			portalInstanceId);
+
+		Long toCompanyId = portalInstanceCopy.getDestinationCompanyId();
+
+		if ((toCompanyId != null) && (toCompanyId <= 0)) {
+			toCompanyId = null;
+		}
+
+		try {
+			return _toPortalInstance(
+				_companyService.copyDBPartitionCompany(
+					fromCompany.getCompanyId(), toCompanyId,
+					portalInstanceCopy.getName(),
+					portalInstanceCopy.getVirtualHost(),
+					portalInstanceCopy.getWebId()));
+		}
+		catch (Exception exception) {
+			_log.error(
+				"Unable to copy portal instance " + portalInstanceId,
+				exception);
+
+			throw exception;
+		}
+	}
+
+	@Override
 	public PortalInstanceExport postPortalInstanceExport(
 			String portalInstanceId)
 		throws Exception {
@@ -166,7 +217,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 		long companyId = company.getCompanyId();
 
 		try {
-			_companyLocalService.exportCompany(companyId);
+			_companyService.exportCompany(companyId);
 
 			_exportConfigurations(companyId);
 		}
@@ -424,9 +475,6 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		PortalInstanceResourceImpl.class);
-
-	@Reference
-	private CompanyLocalService _companyLocalService;
 
 	@Reference
 	private CompanyService _companyService;

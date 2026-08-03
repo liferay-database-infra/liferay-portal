@@ -1,4 +1,5 @@
 import * as breadcrumbs from 'shared/util/breadcrumbs';
+import AccountDropdown from 'shared/components/AccountDropdown';
 import BasePage from 'shared/components/base-page';
 import BundleRouter from 'route-middleware/BundleRouter';
 import ClayLink from '@clayui/link';
@@ -8,14 +9,20 @@ import getCN from 'classnames';
 import Loading from 'shared/components/Loading';
 import React, {lazy, Suspense} from 'react';
 import RouteNotFound from 'shared/components/RouteNotFound';
+import SegmentDropdown from 'shared/components/SegmentDropdown';
 import StatesRenderer from 'shared/components/states-renderer/StatesRenderer';
 import URLConstants from 'shared/util/url-constants';
 import {CSVType} from 'shared/components/download-report/utils';
 import {getMatchedRoute, Routes, toRoute} from 'shared/util/router';
+import {pickBy} from 'lodash';
+import {Router} from 'shared/types';
 import {Switch, useParams} from 'react-router-dom';
+import {useAccountFilter} from 'shared/hooks/useAccountFilter';
 import {useChannelContext} from 'shared/context/channel';
 import {useCurrentUser} from 'shared/hooks/useCurrentUser';
 import {useDataSources} from 'shared/context/dataSources';
+import {useLDPEnabled} from 'shared/hooks/useLDPEnabled';
+import {useSegmentFilter} from 'shared/hooks/useSegmentFilter';
 
 const InterestDetails = lazy(
 	() =>
@@ -69,16 +76,6 @@ const NAV_ITEMS = [
 	},
 ];
 
-type RouterParams = {
-	channelId: string;
-	groupId: string;
-};
-
-type Router = {
-	params: RouterParams;
-	query: object;
-};
-
 interface IDashboardProps extends React.HTMLAttributes<HTMLDivElement> {
 	router: Router;
 }
@@ -88,7 +85,10 @@ export const Dashboard: React.FC<IDashboardProps> = ({router}) => {
 		channelId: string;
 		groupId: string;
 	}>();
+	const {accountId, accountName, setAccount} = useAccountFilter();
+	const {segmentId, segmentName, setSegment} = useSegmentFilter();
 	const dataSourceStates = useDataSources();
+	const LDPEnabled = useLDPEnabled({groupId});
 	const {selectedChannel} = useChannelContext();
 	const currentUser = useCurrentUser();
 
@@ -127,43 +127,69 @@ export const Dashboard: React.FC<IDashboardProps> = ({router}) => {
 				<BasePage.Header.NavBar
 					items={NAV_ITEMS}
 					routeParams={{channelId, groupId}}
+					routeQueries={pickBy({
+						accountId,
+						accountName,
+						segmentId,
+						segmentName,
+					})}
 				/>
 			</BasePage.Header>
 
-			{matchedRoute !== Routes.SITES_INTERESTS && (
-				<BasePage.SubHeader>
-					<div className="d-flex justify-content-end w-100">
-						{matchedRoute === Routes.SITES && (
-							<DownloadPDFReport
-								disabled={!!dataSourceStates.empty}
-								subtitle={selectedChannelName ?? undefined}
-								title={Liferay.Language.get('sites-dashboard')}
-							/>
-						)}
+			<BasePage.SubHeader>
+				{LDPEnabled && (
+					<AccountDropdown
+						className="mr-2"
+						initialAccountId={accountId}
+						initialAccountName={accountName}
+						onFilterChange={setAccount}
+					/>
+				)}
 
-						{matchedRoute === Routes.SITES_SEARCH_TERMS && (
-							<DownloadCSVReport
-								disabled={!!dataSourceStates.empty}
-								type={CSVType.SearchTerms}
-								typeLang={Liferay.Language.get('search-terms')}
-							/>
-						)}
+				{LDPEnabled && (
+					<SegmentDropdown
+						className="mr-2"
+						initialSegmentId={segmentId}
+						initialSegmentName={segmentName}
+						onFilterChange={setSegment}
+					/>
+				)}
 
-						{matchedRoute === Routes.SITES_TOUCHPOINTS && (
-							<DownloadCSVReport
-								disabled={!!dataSourceStates.empty}
-								type={CSVType.Page}
-								typeLang={Liferay.Language.get('pages')}
-							/>
-						)}
-					</div>
-				</BasePage.SubHeader>
-			)}
+				<div className="d-flex justify-content-end w-100">
+					{matchedRoute === Routes.SITES && (
+						<DownloadPDFReport
+							disabled={!!dataSourceStates.empty}
+							subtitle={selectedChannelName ?? undefined}
+							title={Liferay.Language.get('sites-dashboard')}
+						/>
+					)}
+
+					{matchedRoute === Routes.SITES_SEARCH_TERMS && (
+						<DownloadCSVReport
+							disabled={!!dataSourceStates.empty}
+							type={CSVType.SearchTerms}
+							typeLang={Liferay.Language.get('search-terms')}
+						/>
+					)}
+
+					{matchedRoute === Routes.SITES_TOUCHPOINTS && (
+						<DownloadCSVReport
+							disabled={!!dataSourceStates.empty}
+							type={CSVType.Page}
+							typeLang={Liferay.Language.get('pages')}
+						/>
+					)}
+				</div>
+			</BasePage.SubHeader>
 
 			<BasePage.Context.Provider
 				value={{
+					accountId,
+					accountName,
 					filters: {},
 					router,
+					segmentId,
+					segmentName,
 				}}
 			>
 				<BasePage.Body>

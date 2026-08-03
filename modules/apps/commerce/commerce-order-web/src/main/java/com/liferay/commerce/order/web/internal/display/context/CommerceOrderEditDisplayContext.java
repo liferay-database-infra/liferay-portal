@@ -700,6 +700,7 @@ public class CommerceOrderEditDisplayContext {
 				_getAccountEntryValidatorResultsMap(accountEntry);
 
 		boolean pending = false;
+		boolean skipped = false;
 
 		for (AccountEntryValidatorResult accountEntryValidatorResult :
 				accountEntryValidatorResultsMap.values()) {
@@ -712,6 +713,15 @@ public class CommerceOrderEditDisplayContext {
 
 			String resultStatus = accountEntryValidatorResult.getResultStatus();
 
+			if (Objects.equals(
+					AccountEntryValidatorConstants.RESULT_SKIPPED,
+					resultStatus)) {
+
+				skipped = true;
+
+				continue;
+			}
+
 			if (!Objects.equals(
 					AccountEntryValidatorConstants.RESULT_MANUAL,
 					resultStatus) &&
@@ -719,7 +729,7 @@ public class CommerceOrderEditDisplayContext {
 					AccountEntryValidatorConstants.RESULT_SUCCESS,
 					resultStatus)) {
 
-				return "text-warning";
+				return "text-danger";
 			}
 		}
 
@@ -727,7 +737,11 @@ public class CommerceOrderEditDisplayContext {
 			return "text-secondary";
 		}
 
-		return "success";
+		if (skipped) {
+			return "text-info";
+		}
+
+		return "text-success";
 	}
 
 	public boolean hasManageCommerceOrderDeliveryTermsPermission() {
@@ -796,6 +810,18 @@ public class CommerceOrderEditDisplayContext {
 		if ((accountEntry == null) ||
 			!FeatureFlagManagerUtil.isEnabled(
 				accountEntry.getCompanyId(), "LPD-89850")) {
+
+			return false;
+		}
+
+		ThemeDisplay themeDisplay =
+			_commerceOrderRequestHelper.getThemeDisplay();
+
+		if (!_commerceOrderPortletResourcePermission.contains(
+				themeDisplay.getPermissionChecker(),
+				accountEntry.getAccountEntryGroupId(),
+				CommerceOrderActionKeys.
+					MANAGE_ACCOUNTS_SCOPED_COMMERCE_ORDERS)) {
 
 			return false;
 		}

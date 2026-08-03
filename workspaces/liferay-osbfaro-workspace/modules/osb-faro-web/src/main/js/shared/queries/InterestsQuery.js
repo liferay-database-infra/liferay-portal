@@ -3,18 +3,22 @@ import {gql} from '@apollo/client';
 
 export default gql`
 	query Interests(
+		$accountId: String
 		$channelId: String
 		$rangeEnd: String
 		$rangeKey: Int
 		$rangeStart: String
+		$segmentId: String
 		$size: Int!
 		$start: Int!
 	) {
 		siteInterests(
+			accountId: $accountId
 			channelId: $channelId
 			rangeEnd: $rangeEnd
 			rangeKey: $rangeKey
 			rangeStart: $rangeStart
+			segmentId: $segmentId
 			size: $size
 			start: $start
 		) {

@@ -11,6 +11,12 @@ export interface TaxonomyTerm {
 	uncategorized?: boolean;
 }
 
+export interface SpaceOption {
+	externalReferenceCode: string;
+	id: string;
+	label: string;
+}
+
 export interface MatrixCell {
 	funnelStageId: string;
 	personaId: string;

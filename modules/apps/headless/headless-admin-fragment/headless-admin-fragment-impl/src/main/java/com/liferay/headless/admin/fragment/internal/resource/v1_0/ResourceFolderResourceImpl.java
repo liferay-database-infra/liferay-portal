@@ -6,7 +6,7 @@
 package com.liferay.headless.admin.fragment.internal.resource.v1_0;
 
 import com.liferay.document.library.kernel.model.DLFolder;
-import com.liferay.document.library.kernel.service.DLAppService;
+import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.document.library.kernel.service.DLFolderLocalService;
 import com.liferay.fragment.constants.FragmentActionKeys;
 import com.liferay.fragment.constants.FragmentConstants;
@@ -66,7 +66,7 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 
 		EnabledUtil.checkEnabled(contextCompany);
 
-		Folder folder = _dlAppService.getFolderByExternalReferenceCode(
+		Folder folder = _dlAppLocalService.getFolderByExternalReferenceCode(
 			resourceFolderExternalReferenceCode,
 			GroupUtil.getStagingAwareGroupId(
 				true, contextCompany.getCompanyId(),
@@ -75,7 +75,7 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 		ResourceFolderUtil.checkResourceFolder(
 			_dlFolderLocalService.getDLFolder(folder.getFolderId()));
 
-		_dlAppService.deleteFolder(folder.getFolderId());
+		_dlAppLocalService.deleteFolder(folder.getFolderId());
 	}
 
 	@Override
@@ -95,10 +95,7 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 			true, true, contextCompany.getCompanyId(),
 			siteExternalReferenceCode);
 
-		if (!_portletResourcePermission.contains(
-				PermissionThreadLocal.getPermissionChecker(), groupId,
-				FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES)) {
-
+		if (!_hasManageFragmentEntriesPermission(groupId)) {
 			return Page.of(Collections.emptyList());
 		}
 
@@ -124,7 +121,7 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 
 		EnabledUtil.checkEnabled(contextCompany);
 
-		Folder folder = _dlAppService.getFolderByExternalReferenceCode(
+		Folder folder = _dlAppLocalService.getFolderByExternalReferenceCode(
 			resourceFolderExternalReferenceCode,
 			GroupUtil.getGroupId(
 				true, true, contextCompany.getCompanyId(),
@@ -150,7 +147,7 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 			true, true, contextCompany.getCompanyId(),
 			siteExternalReferenceCode);
 
-		Folder folder = _dlAppService.getFolderByExternalReferenceCode(
+		Folder folder = _dlAppLocalService.getFolderByExternalReferenceCode(
 			resourceFolderExternalReferenceCode, groupId);
 
 		ResourceFolderUtil.checkResourceFolder(
@@ -172,10 +169,7 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 			true, true, contextCompany.getCompanyId(),
 			siteExternalReferenceCode);
 
-		if (!_portletResourcePermission.contains(
-				PermissionThreadLocal.getPermissionChecker(), groupId,
-				FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES)) {
-
+		if (!_hasManageFragmentEntriesPermission(groupId)) {
 			return Page.of(Collections.emptyList());
 		}
 
@@ -226,6 +220,8 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 		long groupId = GroupUtil.getStagingAwareGroupId(
 			true, contextCompany.getCompanyId(), siteExternalReferenceCode);
 
+		_checkManageFragmentEntriesPermission(groupId);
+
 		return _toResourceFolder(
 			_addDLFolder(
 				_getOrAddFragmentCollection(groupId, resourceFolder), groupId,
@@ -249,6 +245,8 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 				resourceFolderExternalReferenceCode, groupId);
 
 		if (dlFolder == null) {
+			_checkManageFragmentEntriesPermission(groupId);
+
 			resourceFolder.setExternalReferenceCode(
 				() -> resourceFolderExternalReferenceCode);
 
@@ -260,9 +258,9 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 
 		ResourceFolderUtil.checkResourceFolder(dlFolder);
 
-		Folder folder = _dlAppService.updateFolder(
-			dlFolder.getFolderId(), resourceFolder.getName(),
-			dlFolder.getDescription(),
+		Folder folder = _dlAppLocalService.updateFolder(
+			dlFolder.getFolderId(), dlFolder.getParentFolderId(),
+			resourceFolder.getName(), dlFolder.getDescription(),
 			ServiceContextUtil.getServiceContext(
 				contextCompany.getCompanyId(), resourceFolder.getDateCreated(),
 				groupId, contextHttpServletRequest,
@@ -282,6 +280,14 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 			contextHttpServletRequest,
 			contextAcceptLanguage.getPreferredLocale(), resourceFolder,
 			contextUser.getUserId());
+	}
+
+	private void _checkManageFragmentEntriesPermission(long groupId)
+		throws Exception {
+
+		_portletResourcePermission.check(
+			PermissionThreadLocal.getPermissionChecker(), groupId,
+			FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES);
 	}
 
 	private FragmentCollection _getOrAddFragmentCollection(
@@ -370,6 +376,12 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 					GetterUtil.getLong(document.get(Field.ENTRY_CLASS_PK)))));
 	}
 
+	private boolean _hasManageFragmentEntriesPermission(long groupId) {
+		return _portletResourcePermission.contains(
+			PermissionThreadLocal.getPermissionChecker(), groupId,
+			FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES);
+	}
+
 	private ResourceFolder _toResourceFolder(DLFolder dlFolder)
 		throws Exception {
 
@@ -386,7 +398,7 @@ public class ResourceFolderResourceImpl extends BaseResourceFolderResourceImpl {
 		new ResourceFolderEntityModel();
 
 	@Reference
-	private DLAppService _dlAppService;
+	private DLAppLocalService _dlAppLocalService;
 
 	@Reference
 	private DLFolderLocalService _dlFolderLocalService;
