@@ -145,6 +145,7 @@ const DocumentAndMedia: React.FC<{
 					{LDPEnabled && (
 						<AccountDropdown
 							assetType="document"
+							className="mr-3"
 							initialAccountId={accountId}
 							initialAccountName={accountName}
 							onFilterChange={setAccount}
@@ -170,6 +171,17 @@ const DocumentAndMedia: React.FC<{
 							}
 						/>
 					</div>
+				</BasePage.SubHeader>
+			)}
+
+			{getMatchedRoute(NAV_ITEMS) ===
+				Routes.ASSETS_DOCUMENTS_AND_MEDIA_ACCOUNTS && (
+				<BasePage.SubHeader>
+					<SegmentDropdown
+						initialSegmentId={segmentId}
+						initialSegmentName={segmentName}
+						onFilterChange={setSegment}
+					/>
 				</BasePage.SubHeader>
 			)}
 

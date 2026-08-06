@@ -11,7 +11,7 @@ import {
 } from 'contacts/pages/account/utils/constants';
 import {SectionHeader} from 'shared/components/SectionHeader';
 import {sub} from 'shared/util/lang';
-import {toRounded, toThousands} from 'shared/util/numbers';
+import {formatPercent, toRounded, toThousands} from 'shared/util/numbers';
 import {useLifecycle} from 'lifecycle/context/LifecycleContext';
 
 const EMPTY_STAGES: ILifecycleStage[] = [
@@ -21,7 +21,7 @@ const EMPTY_STAGES: ILifecycleStage[] = [
 	LifecycleStages.ONBOARDING,
 	LifecycleStages.ESTABLISHED,
 ].map((stageType) => ({
-	accountCount: 0,
+	accountsCount: 0,
 	averageStageDuration: 0,
 	conversionRateToNextStage: 0,
 	description: '',
@@ -41,7 +41,7 @@ const getBarHeight = (percentage: number, referencePercentage: number) => {
 };
 
 interface IStageMetricsProps {
-	accountCount: number;
+	accountsCount: number;
 	averageDaysInStage: number;
 	description: string;
 	onFilterClick: (stageType: LifecycleStages) => void;
@@ -52,7 +52,7 @@ interface IStageMetricsProps {
 }
 
 const StageMetrics = ({
-	accountCount,
+	accountsCount,
 	averageDaysInStage,
 	description,
 	onFilterClick,
@@ -97,7 +97,7 @@ const StageMetrics = ({
 				<div>
 					<p className="mb-0">
 						<Text size={7} weight="bold">
-							{toThousands(accountCount)}
+							{toThousands(accountsCount)}
 						</Text>
 					</p>
 					<Text color="secondary" size={4}>
@@ -114,9 +114,9 @@ const StageMetrics = ({
 				<div className="mt-3 text-secondary">
 					{averageDaysInStage != 0 ? (
 						<>
-							<span className="mr-4">{`${averageDaysInStage.toFixed(
-								2
-							)}`}</span>
+							<span className="mr-4">
+								{toRounded(averageDaysInStage, 2)}
+							</span>
 							<span>
 								{Liferay.Language.get('avg.-day').toLowerCase()}
 							</span>
@@ -168,7 +168,7 @@ const StageProgression = ({
 		<div className="align-items-center align-items-lg-stretch border-light col-12 col-lg-auto d-flex flex-lg-column flex-row justify-content-center justify-content-lg-start px-2 py-3 stage-progression">
 			<Label className="mt-lg-auto p-0" displayType="info">
 				<span className="inline-item ml-1">
-					{`${percentage.toFixed(0)}%`}
+					{formatPercent(percentage, 0)}
 					<span className="d-lg-none ml-1">
 						{Liferay.Language.get(
 							'conversion-to-next-stage'
@@ -247,8 +247,8 @@ const LifecycleChart = ({error, loading, stages}: ILifecycleChartProps) => {
 									return (
 										<React.Fragment key={stage.stageType}>
 											<StageMetrics
-												accountCount={
-													stage.accountCount
+												accountsCount={
+													stage.accountsCount
 												}
 												averageDaysInStage={
 													stage.averageStageDuration

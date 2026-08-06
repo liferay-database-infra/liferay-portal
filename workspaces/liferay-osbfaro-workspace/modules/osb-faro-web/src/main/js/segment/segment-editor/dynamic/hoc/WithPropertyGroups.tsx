@@ -10,13 +10,14 @@ import {
 import {
 	FieldContexts,
 	FieldOwnerTypes,
+	SegmentCategories,
 	SegmentTypes,
 } from 'shared/util/constants';
 import {
+	createWebBehaviors,
 	INDIVIDUAL_PROPERTIES,
 	ORGANIZATION_PROPERTIES,
 	SESSION_PROPERTIES,
-	WEB_BEHAVIORS,
 } from '../utils/properties';
 import {List} from 'immutable';
 import {PropertyGroup, PropertySubgroup} from 'shared/util/records';
@@ -27,10 +28,12 @@ const MAX_DELTA = 500;
 const fetchPropertyGroups = ({
 	channelId,
 	groupId,
+	segmentCategory,
 	type,
 }: {
 	channelId: string;
 	groupId: string;
+	segmentCategory?: string;
 	type?: string;
 }): Promise<any> =>
 	Promise.all([
@@ -60,8 +63,15 @@ const fetchPropertyGroups = ({
 			groupId,
 			ownerType: FieldOwnerTypes.Organization,
 		}),
-		Promise.resolve(WEB_BEHAVIORS),
-		type === SegmentTypes.Batch
+		Promise.resolve(
+			createWebBehaviors(
+				segmentCategory === SegmentCategories.Account
+					? Liferay.Language.get('account')
+					: Liferay.Language.get('individual')
+			)
+		),
+		type === SegmentTypes.Batch &&
+		segmentCategory !== SegmentCategories.Account
 			? API.interests.searchKeywords({
 					channelId,
 					delta: MAX_DELTA,
@@ -83,8 +93,16 @@ const mapResultToProps = (
 		interestKeywords,
 		sessionProperties,
 	]: any[],
-	{type}: {type: SegmentTypes}
+	{
+		segmentCategory,
+		type,
+	}: {segmentCategory: SegmentCategories; type: SegmentTypes}
 ) => {
+	const isAccountSegment = segmentCategory === SegmentCategories.Account;
+
+	const individualCriteriaEnabled =
+		type === SegmentTypes.Batch && !isAccountSegment;
+
 	const individualDemographicProperties =
 		individualDemographicsMappings.items.map(
 			convertFieldMappingToIndividualProperty
@@ -121,7 +139,7 @@ const mapResultToProps = (
 					}),
 				]),
 			}),
-			type === SegmentTypes.Batch &&
+			individualCriteriaEnabled &&
 				new PropertyGroup({
 					label: Liferay.Language.get('individual'),
 					propertyKey: FieldOwnerTypes.Individual,
@@ -141,7 +159,7 @@ const mapResultToProps = (
 						}),
 					]),
 				}),
-			type === SegmentTypes.Batch &&
+			individualCriteriaEnabled &&
 				new PropertyGroup({
 					label: Liferay.Language.get('interests'),
 					propertyKey: 'interest',
@@ -155,7 +173,7 @@ const mapResultToProps = (
 						}),
 					]),
 				}),
-			type === SegmentTypes.Batch &&
+			individualCriteriaEnabled &&
 				new PropertyGroup({
 					label: Liferay.Language.get('session'),
 					propertyKey: 'session',
@@ -165,7 +183,7 @@ const mapResultToProps = (
 						}),
 					]),
 				}),
-			type === SegmentTypes.Batch &&
+			individualCriteriaEnabled &&
 				new PropertyGroup({
 					label: Liferay.Language.get('vocabularies-and-categories'),
 					propertyKey: 'vocabulary',
@@ -173,7 +191,7 @@ const mapResultToProps = (
 						new PropertySubgroup({properties: List()}),
 					]),
 				}),
-			type === SegmentTypes.Batch &&
+			individualCriteriaEnabled &&
 				new PropertyGroup({
 					label: Liferay.Language.get('tags'),
 					propertyKey: 'tag',
@@ -184,7 +202,7 @@ const mapResultToProps = (
 		].filter(Boolean) as PropertyGroup[]
 	);
 
-	if (type === SegmentTypes.Batch) {
+	if (individualCriteriaEnabled) {
 		const organizationPropertyGroup = new PropertyGroup({
 			label: Liferay.Language.get('organization'),
 			propertyKey: FieldOwnerTypes.Organization,

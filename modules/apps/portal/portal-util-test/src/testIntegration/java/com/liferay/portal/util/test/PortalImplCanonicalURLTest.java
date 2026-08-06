@@ -10,22 +10,23 @@ import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutSet;
+import com.liferay.portal.kernel.model.VirtualLayoutConstants;
+import com.liferay.portal.kernel.model.impl.VirtualLayout;
 import com.liferay.portal.kernel.portlet.FriendlyURLResolverRegistryUtil;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.LayoutFriendlyURLLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.VirtualHostLocalService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
-import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
@@ -72,7 +73,7 @@ public class PortalImplCanonicalURLTest {
 		new LiferayIntegrationTestRule();
 
 	@BeforeClass
-	public static void setUpClass() throws PortalException {
+	public static void setUpClass() throws Exception {
 		_originalVirtualHostsDefaultSiteName =
 			ReflectionTestUtil.getAndSetFieldValue(
 				PropsValues.class, "VIRTUAL_HOSTS_DEFAULT_SITE_NAME", "Guest");
@@ -93,32 +94,11 @@ public class PortalImplCanonicalURLTest {
 			TreeMapBuilder.put(
 				"localhost", StringPool.BLANK
 			).build());
-	}
 
-	@AfterClass
-	public static void tearDownClass() {
-		LocaleUtil.setDefault(
-			_defaultLocale.getLanguage(), _defaultLocale.getCountry(),
-			_defaultLocale.getVariant());
-
-		TestPropsUtil.set(
-			PropsKeys.LOCALE_PREPEND_FRIENDLY_URL_STYLE,
-			GetterUtil.getString(_defaultPrependStyle));
-
-		ReflectionTestUtil.setFieldValue(
-			PropsValues.class, "VIRTUAL_HOSTS_DEFAULT_SITE_NAME",
-			_originalVirtualHostsDefaultSiteName);
-		ReflectionTestUtil.setFieldValue(
-			PropsValues.class, "WEB_SERVER_HTTP_PORT",
-			_originalWebServerHTTPPort);
-		ReflectionTestUtil.setFieldValue(
-			PropsValues.class, "WEB_SERVER_HTTPS_PORT",
-			_originalWebServerHTTPSPort);
-	}
-
-	@Before
-	public void setUp() throws Exception {
 		_group = GroupTestUtil.addGroup();
+
+		_originalGroupFriendlyURL = _group.getFriendlyURL();
+		_originalGroupTypeSettings = _group.getTypeSettings();
 
 		_layout1 = LayoutTestUtil.addTypePortletLayout(
 			_group.getGroupId(), false,
@@ -180,6 +160,14 @@ public class PortalImplCanonicalURLTest {
 			HashMapBuilder.put(
 				LocaleUtil.US, "/test-page"
 			).build());
+		_layout6 = LayoutTestUtil.addTypePortletLayout(
+			_group.getGroupId(), false,
+			HashMapBuilder.put(
+				LocaleUtil.US, "Pöge"
+			).build(),
+			HashMapBuilder.put(
+				LocaleUtil.US, "/pöge"
+			).build());
 
 		String groupKey = PropsValues.VIRTUAL_HOSTS_DEFAULT_SITE_NAME;
 
@@ -187,22 +175,53 @@ public class PortalImplCanonicalURLTest {
 			groupKey = GroupConstants.GUEST;
 		}
 
-		if (_defaultGroup == null) {
-			_defaultGroup = _groupLocalService.getGroup(
-				TestPropsValues.getCompanyId(), groupKey);
+		_defaultGroup = _groupLocalService.getGroup(
+			TestPropsValues.getCompanyId(), groupKey);
 
-			_defaultGrouplayout1 = _layoutLocalService.fetchFirstLayout(
-				_defaultGroup.getGroupId(), false,
-				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
+		_defaultGroupLayout1 = _layoutLocalService.fetchFirstLayout(
+			_defaultGroup.getGroupId(), false,
+			LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
 
-			if (_defaultGrouplayout1 == null) {
-				_defaultGrouplayout1 = LayoutTestUtil.addTypePortletLayout(
-					_defaultGroup);
-			}
-
-			_defaultGrouplayout2 = LayoutTestUtil.addTypePortletLayout(
-				_defaultGroup.getGroupId());
+		if (_defaultGroupLayout1 == null) {
+			_defaultGroupLayout1 = LayoutTestUtil.addTypePortletLayout(
+				_defaultGroup);
 		}
+
+		_defaultGroupLayout2 = LayoutTestUtil.addTypePortletLayout(
+			_defaultGroup.getGroupId());
+
+		_targetGroup = GroupTestUtil.addGroup();
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		LocaleUtil.setDefault(
+			_defaultLocale.getLanguage(), _defaultLocale.getCountry(),
+			_defaultLocale.getVariant());
+
+		TestPropsUtil.set(
+			PropsKeys.LOCALE_PREPEND_FRIENDLY_URL_STYLE,
+			GetterUtil.getString(_defaultPrependStyle));
+
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class, "VIRTUAL_HOSTS_DEFAULT_SITE_NAME",
+			_originalVirtualHostsDefaultSiteName);
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class, "WEB_SERVER_HTTP_PORT",
+			_originalWebServerHTTPPort);
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class, "WEB_SERVER_HTTPS_PORT",
+			_originalWebServerHTTPSPort);
+	}
+
+	@Before
+	public void setUp() throws Exception {
+		_group = _groupLocalService.updateGroup(
+			_group.getGroupId(), _originalGroupTypeSettings);
+
+		_group.setFriendlyURL(_originalGroupFriendlyURL);
+
+		_group = _groupLocalService.updateGroup(_group);
 	}
 
 	@Test
@@ -239,6 +258,31 @@ public class PortalImplCanonicalURLTest {
 	}
 
 	@Test
+	@TestInfo("LPD-98055")
+	public void testCanonicalURLLayoutFriendlyURLWithNonasciiCharacter()
+		throws Exception {
+
+		Assert.assertEquals("/p%C3%B6ge", _layout6.getFriendlyURL());
+
+		_testCanonicalURL(
+			"localhost", "localhost", _group, _layout6, null, null, "/en",
+			"/p%C3%B6ge", false, false);
+		_testCanonicalURL(
+			"localhost", "localhost", _group, _addLegacyLayout("/legacy-pöge"),
+			null, null, "/en", "/legacy-pöge", false, false);
+	}
+
+	@Test
+	@TestInfo("LPD-98055")
+	public void testCanonicalURLLegacyLayoutFriendlyURLWithMixedCase()
+		throws Exception {
+
+		_testCanonicalURL(
+			"localhost", "localhost", _group, _addLegacyLayout("/LegacyHome1"),
+			null, null, "/en", "/LegacyHome1", false, false);
+	}
+
+	@Test
 	public void testCanonicalURLPartialCollisionWIthPublicGroupServletMapping()
 		throws Exception {
 
@@ -265,6 +309,22 @@ public class PortalImplCanonicalURLTest {
 					completeURL, "_ga",
 					"2.237928582.786466685.1515402734-1365236376"),
 				themeDisplay, _layout4, false, false));
+	}
+
+	@Test
+	@TestInfo("LPD-98055")
+	public void testCanonicalURLVirtualLayout() throws Exception {
+		Layout virtualLayout = new VirtualLayout(_layout6, _targetGroup);
+
+		_testCanonicalURL(
+			"localhost", "localhost", _targetGroup, virtualLayout, null, null,
+			"/en", StringPool.BLANK, false, false);
+		_testCanonicalURL(
+			"localhost", "localhost", _targetGroup, virtualLayout, null, null,
+			"/en",
+			VirtualLayoutConstants.CANONICAL_URL_SEPARATOR +
+				_group.getFriendlyURL() + "/p%C3%B6ge",
+			true, false);
 	}
 
 	@Test
@@ -415,7 +475,7 @@ public class PortalImplCanonicalURLTest {
 	@Test
 	public void testDefaultSiteFirstPage() throws Exception {
 		_testCanonicalURL(
-			"localhost", "localhost", _defaultGroup, _defaultGrouplayout1, null,
+			"localhost", "localhost", _defaultGroup, _defaultGroupLayout1, null,
 			null, "/en", StringPool.BLANK, false, false);
 	}
 
@@ -424,15 +484,15 @@ public class PortalImplCanonicalURLTest {
 		throws Exception {
 
 		_testCanonicalURL(
-			"localhost", "localhost", _defaultGroup, _defaultGrouplayout1, null,
+			"localhost", "localhost", _defaultGroup, _defaultGroupLayout1, null,
 			null, "/es", StringPool.BLANK, false, false);
 	}
 
 	@Test
 	public void testDefaultSiteSecondPage() throws Exception {
 		_testCanonicalURL(
-			"localhost", "localhost", _defaultGroup, _defaultGrouplayout2, null,
-			null, "/en", _defaultGrouplayout2.getFriendlyURL(), false, false);
+			"localhost", "localhost", _defaultGroup, _defaultGroupLayout2, null,
+			null, "/en", _defaultGroupLayout2.getFriendlyURL(), false, false);
 	}
 
 	@Test
@@ -440,8 +500,8 @@ public class PortalImplCanonicalURLTest {
 		throws Exception {
 
 		_testCanonicalURL(
-			"localhost", "localhost", _defaultGroup, _defaultGrouplayout2, null,
-			null, "/es", _defaultGrouplayout2.getFriendlyURL(), false, false);
+			"localhost", "localhost", _defaultGroup, _defaultGroupLayout2, null,
+			null, "/es", _defaultGroupLayout2.getFriendlyURL(), false, false);
 	}
 
 	@Test
@@ -456,7 +516,7 @@ public class PortalImplCanonicalURLTest {
 	@Test
 	public void testDomainDefaultSiteFirstPageFromLocalhost() throws Exception {
 		_testCanonicalURL(
-			"liferay.com", "localhost", _defaultGroup, _defaultGrouplayout1,
+			"liferay.com", "localhost", _defaultGroup, _defaultGroupLayout1,
 			null, null, "/en", StringPool.BLANK, false, false);
 	}
 
@@ -466,7 +526,7 @@ public class PortalImplCanonicalURLTest {
 
 		_testCanonicalURL(
 			"liferay.com", "localhost:" + PortalUtil.getPortalServerPort(false),
-			_defaultGroup, _defaultGrouplayout1, null, null, "/en",
+			_defaultGroup, _defaultGroupLayout1, null, null, "/en",
 			StringPool.BLANK, false, false);
 	}
 
@@ -476,7 +536,7 @@ public class PortalImplCanonicalURLTest {
 
 		_testCanonicalURL(
 			"liferay.com", "localhost:" + PortalUtil.getPortalServerPort(false),
-			_defaultGroup, _defaultGrouplayout1, null, null, "/en",
+			_defaultGroup, _defaultGroupLayout1, null, null, "/en",
 			StringPool.BLANK, false, true);
 	}
 
@@ -595,15 +655,15 @@ public class PortalImplCanonicalURLTest {
 	@Test
 	public void testNonlocalhostDefaultSiteFirstPage() throws Exception {
 		_testCanonicalURL(
-			"localhost", "liferay.com", _defaultGroup, _defaultGrouplayout1,
+			"localhost", "liferay.com", _defaultGroup, _defaultGroupLayout1,
 			null, null, "/en", StringPool.BLANK, false, false);
 	}
 
 	@Test
 	public void testNonlocalhostDefaultSiteSecondPage() throws Exception {
 		_testCanonicalURL(
-			"localhost", "liferay.com", _defaultGroup, _defaultGrouplayout2,
-			null, null, "/en", _defaultGrouplayout2.getFriendlyURL(), false,
+			"localhost", "liferay.com", _defaultGroup, _defaultGroupLayout2,
+			null, null, "/en", _defaultGroupLayout2.getFriendlyURL(), false,
 			false);
 	}
 
@@ -628,6 +688,21 @@ public class PortalImplCanonicalURLTest {
 		_testCanonicalURL(
 			"localhost", "liferay.com", _group, _layout2, null, null, "/en",
 			"/home2", false, false);
+	}
+
+	private Layout _addLegacyLayout(String friendlyURL) throws Exception {
+		Layout layout = LayoutTestUtil.addTypePortletLayout(
+			_group.getGroupId());
+
+		_layoutFriendlyURLLocalService.updateLayoutFriendlyURL(
+			TestPropsValues.getUserId(), layout.getCompanyId(),
+			layout.getGroupId(), layout.getPlid(), layout.isPrivateLayout(),
+			friendlyURL, LocaleUtil.toLanguageId(LocaleUtil.US),
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
+
+		layout.setFriendlyURL(friendlyURL);
+
+		return _layoutLocalService.updateLayout(layout);
 	}
 
 	private ThemeDisplay _createThemeDisplay(
@@ -784,11 +859,32 @@ public class PortalImplCanonicalURLTest {
 				layout, forceLayoutFriendlyURL));
 	}
 
+	private static Group _defaultGroup;
+	private static Layout _defaultGroupLayout1;
+	private static Layout _defaultGroupLayout2;
 	private static Locale _defaultLocale;
 	private static int _defaultPrependStyle;
+	private static Group _group;
+
+	@Inject
+	private static GroupLocalService _groupLocalService;
+
+	private static Layout _layout1;
+	private static Layout _layout2;
+	private static Layout _layout3;
+	private static Layout _layout4;
+	private static Layout _layout5;
+	private static Layout _layout6;
+
+	@Inject
+	private static LayoutLocalService _layoutLocalService;
+
+	private static String _originalGroupFriendlyURL;
+	private static String _originalGroupTypeSettings;
 	private static String _originalVirtualHostsDefaultSiteName;
 	private static int _originalWebServerHTTPPort;
 	private static int _originalWebServerHTTPSPort;
+	private static Group _targetGroup;
 
 	@Inject
 	private static VirtualHostLocalService _virtualHostLocalService;
@@ -796,24 +892,8 @@ public class PortalImplCanonicalURLTest {
 	@Inject
 	private CompanyLocalService _companyLocalService;
 
-	private Group _defaultGroup;
-	private Layout _defaultGrouplayout1;
-	private Layout _defaultGrouplayout2;
-
-	@DeleteAfterTestRun
-	private Group _group;
-
 	@Inject
-	private GroupLocalService _groupLocalService;
-
-	private Layout _layout1;
-	private Layout _layout2;
-	private Layout _layout3;
-	private Layout _layout4;
-	private Layout _layout5;
-
-	@Inject
-	private LayoutLocalService _layoutLocalService;
+	private LayoutFriendlyURLLocalService _layoutFriendlyURLLocalService;
 
 	@Inject
 	private Portal _portal;

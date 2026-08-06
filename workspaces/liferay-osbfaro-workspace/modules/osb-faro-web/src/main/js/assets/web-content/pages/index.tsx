@@ -143,6 +143,7 @@ const WebContent: React.FC<{
 					{LDPEnabled && (
 						<AccountDropdown
 							assetType="journal"
+							className="mr-3"
 							initialAccountId={accountId}
 							initialAccountName={accountName}
 							onFilterChange={setAccount}
@@ -168,6 +169,17 @@ const WebContent: React.FC<{
 							}
 						/>
 					</div>
+				</BasePage.SubHeader>
+			)}
+
+			{getMatchedRoute(NAV_ITEMS) ===
+				Routes.ASSETS_WEB_CONTENT_ACCOUNTS && (
+				<BasePage.SubHeader>
+					<SegmentDropdown
+						initialSegmentId={segmentId}
+						initialSegmentName={segmentName}
+						onFilterChange={setSegment}
+					/>
 				</BasePage.SubHeader>
 			)}
 

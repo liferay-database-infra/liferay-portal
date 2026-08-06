@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.ldap.DuplicateLDAPServerNameException;
+import com.liferay.portal.security.ldap.LDAPConfigurationModelListenerException;
 import com.liferay.portal.security.ldap.LDAPServerNameException;
 import com.liferay.portal.security.ldap.configuration.ConfigurationProvider;
 import com.liferay.portal.security.ldap.configuration.LDAPServerConfiguration;
@@ -75,11 +76,21 @@ public class EditLDAPServerMVCActionCommand extends BaseMVCActionCommand {
 			sendRedirect(actionRequest, actionResponse);
 		}
 		catch (Exception exception) {
-			if (exception instanceof DuplicateLDAPServerNameException ||
-				exception instanceof LDAPFilterException ||
-				exception instanceof LDAPServerNameException) {
+			Throwable throwable = exception.getCause();
 
-				SessionErrors.add(actionRequest, exception.getClass());
+			if (!(throwable instanceof
+					LDAPConfigurationModelListenerException)) {
+
+				throwable = exception;
+			}
+
+			if (throwable instanceof DuplicateLDAPServerNameException ||
+				throwable instanceof LDAPConfigurationModelListenerException ||
+				throwable instanceof LDAPFilterException ||
+				throwable instanceof LDAPServerNameException) {
+
+				SessionErrors.add(
+					actionRequest, throwable.getClass(), throwable);
 
 				PortletURL portletURL = PortletURLBuilder.create(
 					PortletURLFactoryUtil.create(
@@ -87,8 +98,7 @@ public class EditLDAPServerMVCActionCommand extends BaseMVCActionCommand {
 						ConfigurationAdminPortletKeys.INSTANCE_SETTINGS,
 						PortletRequest.RENDER_PHASE)
 				).setMVCRenderCommandName(
-					"/portal_settings_authentication_ldap" +
-						"/portal_settings_edit_ldap_server"
+					"/portal_settings_authentication_ldap/edit_ldap_server"
 				).buildPortletURL();
 
 				String redirect = ParamUtil.getString(

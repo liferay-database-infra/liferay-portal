@@ -15,12 +15,12 @@ import {Colors} from 'shared/util/charts';
 import {get} from 'lodash';
 import {getPercentage} from 'shared/util/util';
 import {PropTypes} from 'prop-types';
-import {toRounded, toThousands} from 'shared/util/numbers';
+import {formatPercent, toThousands} from 'shared/util/numbers';
 
 const CLASSNAME = 'analytics-web-browser-chart';
 
 const getChartPercentage = (value, total) =>
-	`${toRounded(getPercentage(value, total))}%`;
+	formatPercent(getPercentage(value, total));
 
 /**
  * Web Browser
@@ -132,7 +132,12 @@ class WebBrowser extends React.Component {
 						<Legend
 							align='right'
 							formatter={(val, {payload: {value, valueKey}}) => (
-								<>
+
+								// Recharts colors the legend label after its
+								// series. Override it so only the icon and the
+								// slice carry the series color.
+
+								<span style={{color: Colors.neutral}}>
 									<TextTruncate
 										inline
 										maxCharLength={24}
@@ -142,7 +147,7 @@ class WebBrowser extends React.Component {
 									<span className='legend-percentage'>
 										{getChartPercentage(value, total)}
 									</span>
-								</>
+								</span>
 							)}
 							iconSize={14}
 							layout='vertical'

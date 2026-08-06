@@ -59,6 +59,20 @@ public class LayoutContentVersionDisplayContext {
 				"defaultLanguageId",
 				LocaleUtil.toLanguageId(_themeDisplay.getSiteDefaultLocale())
 			).put(
+				"defaultUserImageSrc",
+				_themeDisplay.getPathImage() + "/user_portrait?img_id=0"
+			).put(
+				"layout",
+				() -> {
+					Layout layout = _themeDisplay.getLayout();
+
+					return HashMapBuilder.<String, Object>put(
+						"name", layout.getName(_themeDisplay.getLocale())
+					).put(
+						"status", layout.isApproved() ? "approved" : "draft"
+					).build();
+				}
+			).put(
 				"pageSpecificationVersionsURL",
 				_getPageSpecificationVersionsURL()
 			).build()

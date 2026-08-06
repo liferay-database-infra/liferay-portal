@@ -5,8 +5,8 @@ import AcquisitionsQuery, {
 import BaseCard from 'shared/components/base-card';
 import BasePage from 'shared/components/base-page';
 import Card from 'shared/components/Card';
-import CardTabs from 'shared/components/CardTabs';
 import ClayLink from '@clayui/link';
+import ClayTabs from '@clayui/tabs';
 import ErrorDisplay from 'shared/components/ErrorDisplay';
 import React, {useContext, useState} from 'react';
 import StatesRenderer from 'shared/components/states-renderer/StatesRenderer';
@@ -76,6 +76,7 @@ interface IAcquisitionsCardProps extends React.HTMLAttributes<HTMLElement> {
 	compositionBagName: CompositionTypes;
 	label: string;
 	legacyDropdownRangeKey?: boolean;
+	minHeight?: number;
 }
 
 const AcquisitionsCard: React.FC<IAcquisitionsCardProps> = ({
@@ -83,11 +84,13 @@ const AcquisitionsCard: React.FC<IAcquisitionsCardProps> = ({
 	compositionBagName,
 	label,
 	legacyDropdownRangeKey,
+	minHeight,
 }) => (
 	<BaseCard
 		className={className}
 		label={label}
 		legacyDropdownRangeKey={legacyDropdownRangeKey ?? true}
+		minHeight={minHeight}
 		reportContainer={ReportContainer.AcquisitionsCard}
 	>
 		{({rangeSelectors}) => (
@@ -113,6 +116,7 @@ const AcquisitionsCardWithData: React.FC<IAcquisitionsCard> = ({
 		router: {
 			params: {channelId},
 		},
+		segmentId,
 	} = useContext(BasePage.Context);
 	const {data, error, loading} = useQuery<
 		AcquisitionsQueryData,
@@ -123,13 +127,18 @@ const AcquisitionsCardWithData: React.FC<IAcquisitionsCard> = ({
 			accountId,
 			activeTabId,
 			channelId,
+			segmentId,
 			size: 5,
 			start: 0,
 		},
 	});
 
-	const activeTab = tabs.find(({tabId}) => tabId === activeTabId) ?? tabs[0];
-	const {getColumns, rowIdentifier} = activeTab;
+	const activeIndex = Math.max(
+		tabs.findIndex(({tabId}) => tabId === activeTabId),
+		0
+	);
+
+	const {getColumns, rowIdentifier} = tabs[activeIndex];
 
 	const {
 		compositions = [],
@@ -142,11 +151,17 @@ const AcquisitionsCardWithData: React.FC<IAcquisitionsCard> = ({
 
 	return (
 		<Card.Body className="w-100 d-flex flex-column flex-grow-1" noPadding>
-			<CardTabs
-				activeTabId={activeTabId}
-				onChange={(tabId) => setActiveTabId(tabId)}
-				tabs={tabs.map(({tabId, title}) => ({tabId, title}))}
-			/>
+			<ClayTabs
+				active={activeIndex}
+				className="mb-3"
+				onActiveChange={(index) =>
+					setActiveTabId(tabs[Number(index)].tabId)
+				}
+			>
+				{tabs.map(({tabId, title}) => (
+					<ClayTabs.Item key={tabId}>{title}</ClayTabs.Item>
+				))}
+			</ClayTabs>
 
 			<AcquisitionsCardWithStatesRenderer
 				empty={!total}

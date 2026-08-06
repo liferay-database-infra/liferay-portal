@@ -1,5 +1,7 @@
 import sendRequest from 'shared/util/request';
 
+export type CatalogFieldCapability = 'DISPLAY' | 'FILTER' | 'SORT';
+
 export type CatalogFieldDataCategory = 'Boolean' | 'Date' | 'Number' | 'Text';
 
 export interface ICatalogField {
@@ -22,6 +24,7 @@ export interface IFaroFDSResultsDisplay<T> {
 }
 
 interface IFetchCatalogFields {
+	capability?: CatalogFieldCapability;
 	groupId: string;
 	page?: number;
 	pageSize?: number;
@@ -32,7 +35,11 @@ interface IFetchCatalogFields {
 
 export const CATALOG_FIELDS_MAX_PAGE_SIZE = 200;
 
+export const getCatalogFieldLabel = ({displayName, name}: ICatalogField) =>
+	displayName || name;
+
 export function fetchCatalogFields({
+	capability,
 	groupId,
 	page = 1,
 	pageSize = 20,
@@ -46,6 +53,7 @@ export function fetchCatalogFields({
 			pageSize,
 			sort,
 			tableName,
+			...(capability && {capability}),
 			...(query && {query}),
 		},
 		method: 'GET',

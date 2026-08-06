@@ -6,6 +6,7 @@
 package com.liferay.headless.admin.site.internal.dto.v1_0.converter;
 
 import com.liferay.headless.admin.site.dto.v1_0.PageSpecificationVersion;
+import com.liferay.headless.admin.site.internal.dto.v1_0.util.CreatorUtil;
 import com.liferay.layout.content.model.LayoutContentVersion;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -33,6 +34,10 @@ public class PageSpecificationVersionDTOConverter
 
 		return new PageSpecificationVersion() {
 			{
+				setCreator(
+					() -> CreatorUtil.toCreator(
+						layoutContentVersion.getUserId(),
+						layoutContentVersion.getUserName()));
 				setDateCreated(layoutContentVersion::getCreateDate);
 				setDateModified(layoutContentVersion::getModifiedDate);
 				setExternalReferenceCode(

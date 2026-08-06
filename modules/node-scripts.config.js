@@ -10,7 +10,7 @@
  */
 
 module.exports = {
-	hash: '062057d96994aa523fcea6509917c9119605f2dc4dade4ff54eba58281224816',
+	hash: '02af141ac4c76a96102d8ea45680fb91bcfb31519feede94f6d0b17167594c64',
 	imports: {
 		'@liferay/accessibility-menu-web': [],
 		'@liferay/accessibility-settings-state-web': [],
@@ -269,7 +269,6 @@ module.exports = {
 		'@liferay/saved-content-web': [],
 		'@liferay/scim-configuration-web': [],
 		'@liferay/search-experiences-web': [],
-		'@liferay/seo-studio-web': [],
 		'@liferay/site-cmp-site-initializer': [],
 		'@liferay/site-cms-site-initializer': [],
 		'@liferay/site-cms-standalone-site-initializer': [],
@@ -410,10 +409,18 @@ module.exports = {
 			'@ckeditor/ckeditor5-watchdog/dist/index.js',
 			'@ckeditor/ckeditor5-widget/dist/index.js',
 			'@ckeditor/ckeditor5-word-count/dist/index.js',
-			'frontend-editor-ckeditor-web/plugins/DocumentLinkSelector',
+			'@codemirror/autocomplete',
+			'@codemirror/commands',
+			'@codemirror/lang-html',
+			'@codemirror/lang-markdown',
+			'@codemirror/language',
+			'@codemirror/state',
+			'@codemirror/theme-one-dark',
+			'@codemirror/view',
 			'ckeditor5/ckeditor5.css',
 			'ckeditor5-premium-features/ckeditor5-premium-features.css',
 			'eventsource',
+			'frontend-editor-ckeditor-web/plugins/DocumentLinkSelector',
 		],
 		'frontend-js-aui-web': [],
 		'frontend-js-clay-sample-web': [],
@@ -511,13 +518,17 @@ module.exports = {
 	// 1. The build cannot infer the exported symbols because the package cannot be required from
 	//    Node.js (eg: if it references `window` or any other browser API not available).
 	// 2. The inferred exported symbols are wrong (eg: polymorphic packages).
-	// 3. The package must re-export everything as `default` so that it can be directly imported
-	//    using ES syntax (eg: `react` since it can be imported as `import React from 'react';` even
-	//    though it is a CJS package that doesn't really export any `default` symbol).
+	// 3. The package needs a `default` export that the build cannot infer, or the entry replaces an
+	//    inferred set that already contained one. Overrides are exhaustive, so `default` must be
+	//    listed explicitly whenever the package should have it.
 	//
-	// For number 3 note that tools like `webpack` sometimes rely on the `__esModule` symbol to
-	// mimic that behavior. However we prefer to make it explicit in this file due to how much
-	// headaches the `__esModule` inferences usually cause when they don't work correctly.
+	// For number 3 note that CJS packages not tagged with `__esModule` don't need an entry just to
+	// get a `default` export: the build infers one for them pointing to the exported object, which
+	// is what tools like `babel` and `webpack` do, so that they can be directly imported using ES
+	// syntax (eg: `import React from 'react';`).
+	//
+	// Also note that listing `__esModule` here has no effect, since the generated bridges always
+	// drop that symbol.
 	//
 	// The way to obtain these symbols is different for each package but it usually starts with a
 	// runtime error in the browser and a following investigation on what the package is really
@@ -566,33 +577,18 @@ module.exports = {
 			'__UNSTABLE_DataClient',
 			'useProvider',
 		],
-		'axe-core': ['*', 'default'],
-		'clipboard': ['*', 'default'],
-		'cropperjs': ['*', 'default'],
-		'dagre': ['*', 'default'],
-		'date-fns': ['*'],
+		'@codemirror/autocomplete': ['*'],
+		'@codemirror/commands': ['*'],
+		'@codemirror/lang-html': ['*'],
+		'@codemirror/lang-markdown': ['*'],
+		'@codemirror/language': ['*'],
+		'@codemirror/state': ['*'],
+		'@codemirror/theme-one-dark': ['*'],
+		'@codemirror/view': ['*'],
 		'frontend-editor-ckeditor-web/plugins/DocumentLinkSelector': [
 			'default',
 		],
-		'fuzzy': ['*', 'default'],
-		'graphql-hooks-memcache': ['*', 'default'],
-		'highlight.js': ['*', 'default'],
-		'highlight.js/lib/core': ['*', 'default'],
-		'highlight.js/lib/languages/java': ['*', 'default'],
-		'highlight.js/lib/languages/javascript': ['*', 'default'],
-		'highlight.js/lib/languages/plaintext': ['*', 'default'],
-		'liferay-ckeditor': [],
-		'moment': ['*', 'default'],
-		'moment/min/moment-with-locales': ['*', 'default'],
-		'numeral': ['*', 'default'],
-		'object-hash': ['*', 'default'],
 		'prop-types': ['*', 'bigint', 'default'],
 		'qrcode': ['create', 'toCanvas', 'toString', 'toDataURL'],
-		'qs': ['*', 'default'],
-		'react': ['*', 'default'],
-		'react-dnd': ['*'],
-		'react-dom': ['*', 'default'],
-		'text-mask-addons': ['*', 'default'],
-		'text-mask-core': ['*', 'default'],
 	},
 };

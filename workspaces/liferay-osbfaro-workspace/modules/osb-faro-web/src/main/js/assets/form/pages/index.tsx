@@ -142,6 +142,7 @@ const Form: React.FC<{
 					{LDPEnabled && (
 						<AccountDropdown
 							assetType="form"
+							className="mr-3"
 							initialAccountId={accountId}
 							initialAccountName={accountName}
 							onFilterChange={setAccount}
@@ -167,6 +168,16 @@ const Form: React.FC<{
 							}
 						/>
 					</div>
+				</BasePage.SubHeader>
+			)}
+
+			{getMatchedRoute(NAV_ITEMS) === Routes.ASSETS_FORMS_ACCOUNTS && (
+				<BasePage.SubHeader>
+					<SegmentDropdown
+						initialSegmentId={segmentId}
+						initialSegmentName={segmentName}
+						onFilterChange={setSegment}
+					/>
 				</BasePage.SubHeader>
 			)}
 

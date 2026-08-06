@@ -41,9 +41,36 @@ function MockItemSelector({
 	);
 }
 
+function MockAIAssistantTriggerButton({
+	anchorId,
+	label,
+	onOpen,
+	presentation,
+}: {
+	anchorId?: string;
+	label?: string;
+	onOpen?: () => void;
+	presentation?: string;
+}) {
+	return (
+		<button
+			aria-label={label}
+			data-anchor-id={anchorId}
+			data-presentation={presentation}
+			onClick={onOpen}
+		>
+			{label}
+		</button>
+	);
+}
+
 function MockItemSelectorItem({children}: {children: React.ReactNode}) {
 	return <div>{children}</div>;
 }
+
+jest.mock('@liferay/ai-hub-cell-js-components-web', () => ({
+	AIAssistantTriggerButton: MockAIAssistantTriggerButton,
+}));
 
 jest.mock(
 	'../../../../../src/main/resources/META-INF/resources/js/common/services/ApiHelper'
@@ -237,6 +264,22 @@ describe('AssetTags', () => {
 				})
 			)
 		);
+	});
+
+	it('opens the AI assistant as a dropdown anchored to the toolbar trigger when generating tags', () => {
+		(global as any).Liferay.FeatureFlags = {'LPD-62272': true};
+
+		renderComponent({contentRawText: 'persisted content'});
+
+		const trigger = screen.getByRole('button', {
+			name: 'generate-tags-with-ai',
+		});
+
+		expect(trigger).toHaveAttribute(
+			'data-anchor-id',
+			'ai-assistant-toolbar-trigger'
+		);
+		expect(trigger).toHaveAttribute('data-presentation', 'dropdown');
 	});
 
 	it('prefers the edited content from getContent over the persisted content', async () => {

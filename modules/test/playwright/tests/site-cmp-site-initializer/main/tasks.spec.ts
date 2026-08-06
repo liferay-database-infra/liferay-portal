@@ -100,6 +100,54 @@ test.afterEach(async ({apiHelpers}) => {
 	}
 });
 
+test(
+	'Bulk actions and selection are hidden for project members',
+	{tag: ['@LPD-99451']},
+	async ({apiHelpers, page, tasksPage}) => {
+		const defaultSpace =
+			await apiHelpers.headlessAssetLibrary.createAssetLibrary({
+				name: `Space ${getRandomString()}`,
+				settings: {},
+				type: 'Space',
+			});
+
+		const user = await addSpaceUser(
+			apiHelpers,
+			project.systemProperties.scope.externalReferenceCode,
+			'Project Member'
+		);
+
+		await apiHelpers.headlessAssetLibrary.putAssetLibraryUserAccount(
+			defaultSpace.externalReferenceCode,
+			user.externalReferenceCode
+		);
+
+		await performUserSwitch(page, user.alternateName);
+
+		await tasksPage.goto();
+
+		await tasksPage.projectTasksTab.click();
+
+		await expect(tasksPage.getItem(taskNames[0])).toBeVisible();
+		await expect(
+			tasksPage
+				.getItem(taskNames[0])
+				.locator('input[title="Select Item"]')
+		).toBeHidden();
+
+		await tasksPage.allTasksTab.click();
+
+		await expect(tasksPage.getItem(taskNames[0])).toBeVisible();
+		await expect(
+			tasksPage
+				.getItem(taskNames[0])
+				.locator('input[title="Select Item"]')
+		).toBeHidden();
+
+		await performUserSwitch(page, 'test');
+	}
+);
+
 test('Bulk delete tasks', {tag: ['@LPD-75299']}, async ({page, tasksPage}) => {
 	await test.step('Select 2 task and delete them using the Bulk Action', async () => {
 		await tasksPage.goto();
@@ -156,13 +204,11 @@ test(
 
 			await expect(tasksPage.assignTaskToDialog).toBeVisible();
 
-			await page
-				.getByPlaceholder('Unassigned')
-				.fill('Asset Library Content Reviewer');
+			await page.getByPlaceholder('Unassigned').fill('Project Member');
 
 			await page
 				.getByRole('option', {
-					name: 'Asset Library Content Reviewer',
+					name: 'Project Member',
 				})
 				.click();
 
@@ -173,7 +219,7 @@ test(
 
 				await expect(
 					page.getByRole('row', {
-						name: 'Asset Library Content Reviewer',
+						name: 'Project Member',
 					})
 				).toHaveCount(2, {timeout: 1000});
 			}).toPass({timeout: 10000});

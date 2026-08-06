@@ -282,6 +282,11 @@
 		</check>
 	</source-processor>
 	<source-processor name="GradleSourceProcessor">
+		<check name="BouncyCastleFIPSCheck">
+			<category name="Bug Prevention" />
+			<description name="Finds non-FIPS BouncyCastle artifacts in `build.gradle` files." />
+			<property name="enabled" value="false" />
+		</check>
 		<check name="GradleBlockOrderCheck">
 			<category name="Styling" />
 			<description name="Sorts logic in gradle build files." />
@@ -472,6 +477,11 @@
 			<category name="Performance" />
 			<description name="Checks if performance can be improved by using different methods that can be used by collections." />
 		</check>
+		<check name="BouncyCastleFIPSCheck">
+			<category name="Bug Prevention" />
+			<description name="Finds imports of non-FIPS BouncyCastle packages." />
+			<property name="enabled" value="false" />
+		</check>
 		<check name="EmptyCollectionCheck">
 			<category name="Styling" />
 			<description name="Checks that there are no calls to `Collections.EMPTY_LIST`, `Collections.EMPTY_MAP` or `Collections.EMPTY_SET`." />
@@ -633,6 +643,11 @@
 			<category name="Bug Prevention" />
 			<description name="Checks for correct use of attributes `description` and `name` in annotation `@aQute.bnd.annotation.metatype.Meta`." />
 			<property name="checkConfigurationName" value="false" />
+		</check>
+		<check name="JavaMetaOCDSecretFieldCheck">
+			<category name="Bug Prevention" />
+			<description name="Finds missing `type = Meta.Type.Password` on secret-bearing fields." />
+			<property name="enabled" value="false" />
 		</check>
 		<check name="JavaModifiedServiceMethodCheck">
 			<category name="Bug Prevention" />

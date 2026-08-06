@@ -108,7 +108,20 @@ tests:
         it: Omits the service account annotations by default
     -   asserts:
             -   lengthEqual:
-                    count: 5
+                    count: 7
+                    path: rules
+            -   contains:
+                    content:
+                        apiGroups:
+                            -   ""
+                        resources:
+                            -   namespaces
+                        verbs:
+                            -   get
+                            -   list
+                            -   patch
+                            -   update
+                            -   watch
                     path: rules
             -   contains:
                     content:
@@ -123,10 +136,23 @@ tests:
                             -   update
                             -   watch
                     path: rules
+            -   contains:
+                    content:
+                        apiGroups:
+                            -   apps
+                        resources:
+                            -   statefulsets
+                        verbs:
+                            -   get
+                            -   list
+                            -   patch
+                            -   update
+                            -   watch
+                    path: rules
         documentSelector:
             path: kind
             value: ClusterRole
-        it: Renders the operator cluster role rules for namespaces, secrets, and the licensing API group
+        it: Renders the required operator cluster role rules
     -   asserts:
             -   hasDocuments:
                     count: 3

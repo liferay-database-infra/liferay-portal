@@ -1,6 +1,6 @@
 import * as API from 'shared/api';
 import * as breadcrumbs from 'shared/util/breadcrumbs';
-import AccountsDataSet from 'shared/components/AccountsDataSet';
+import AccountsDataSet from 'shared/components/accounts-data-set/AccountsDataSet';
 import BasePage from 'shared/components/base-page';
 import ClayIcon from '@clayui/icon';
 import ClayLink from '@clayui/link';
@@ -11,6 +11,7 @@ import Loading from 'shared/components/Loading';
 import NoResultsDisplay from 'shared/components/NoResultsDisplay';
 import OverviewSection from '../components/OverviewSection';
 import React, {useContext} from 'react';
+import SegmentDropdown from 'shared/components/SegmentDropdown';
 import URLConstants from 'shared/util/url-constants';
 import {
 	AccountMetricType,
@@ -21,13 +22,14 @@ import {
 	LifecycleContextProvider,
 	useLifecycle,
 } from '../context/LifecycleContext';
+import {RangeKeyTimeRanges, Sizes} from 'shared/util/constants';
 import {Routes, toRoute} from 'shared/util/router';
 import {SectionHeader} from 'shared/components/SectionHeader';
-import {Sizes} from 'shared/util/constants';
 import {useCurrentUser} from 'shared/hooks/useCurrentUser';
 import {useDataSources} from 'shared/context/dataSources';
 import {useHistory, useParams} from 'react-router-dom';
 import {useRequest} from 'shared/hooks/useRequest';
+import {useSegmentFilter} from 'shared/hooks/useSegmentFilter';
 
 const LifecycleEmptyState = ({
 	authorized,
@@ -151,6 +153,8 @@ const LifecycleStagesSection = () => {
 
 	const {groupId} = useParams();
 
+	const {segmentId} = useSegmentFilter();
+
 	const {
 		data: stagesData,
 		error: stagesError,
@@ -162,6 +166,7 @@ const LifecycleStagesSection = () => {
 			groupId,
 			industry: filters.industryFilter,
 			lifecycleId,
+			segmentId,
 		},
 	});
 
@@ -179,6 +184,8 @@ const LifecycleAccounts = () => {
 
 	const {channelId, groupId} = useParams();
 
+	const {segmentId, segmentName} = useSegmentFilter();
+
 	return (
 		<section>
 			<SectionHeader
@@ -194,6 +201,9 @@ const LifecycleAccounts = () => {
 				groupId={groupId!}
 				industryFilter={filters.industryFilter}
 				lifecycleStageFilter={filters.lifecycleStageFilter}
+				rangeKeyFilter={RangeKeyTimeRanges.Last30Days}
+				segmentFilter={segmentId}
+				segmentName={segmentName}
 				stageSelectionNonce={stageSelectionNonce}
 			/>
 		</section>
@@ -210,6 +220,8 @@ const BaseLifecycle = () => {
 
 	const {empty: noDataSources, loading: dataSourcesLoading} =
 		useDataSources();
+
+	const {segmentId, segmentName, setSegment} = useSegmentFilter();
 
 	const {data: lifecycles, loading: lifecyclesLoading} = useRequest({
 		dataSourceFn: API.lifecycle.fetchLifecycles,
@@ -378,11 +390,18 @@ const BaseLifecycle = () => {
 								/>
 
 								<FilterPicker
+									className="mr-3"
 									entityLabel={Liferay.Language.get(
 										'countries'
 									)}
 									fieldMappingFieldName="country"
 									filterKey="countryFilter"
+								/>
+
+								<SegmentDropdown
+									initialSegmentId={segmentId}
+									initialSegmentName={segmentName}
+									onFilterChange={setSegment}
 								/>
 							</div>
 						</div>

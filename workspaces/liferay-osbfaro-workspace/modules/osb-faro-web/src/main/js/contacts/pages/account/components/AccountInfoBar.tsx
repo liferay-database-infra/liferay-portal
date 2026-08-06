@@ -3,7 +3,6 @@ import ClayIcon from '@clayui/icon';
 import Label from '@clayui/label';
 import React from 'react';
 import {getAccountInfoDisplayValues} from 'contacts/pages/account/utils/accountInfo';
-import {SectionHeader} from 'shared/components/SectionHeader';
 import {sub} from 'shared/util/lang';
 import {Text} from '@clayui/core';
 
@@ -45,58 +44,49 @@ const AccountInfoBar: React.FC<IAccountInfoBarProps> = ({
 		getAccountInfoDisplayValues({annualRevenue, lifecycleStage});
 
 	return (
-		<>
-			<SectionHeader
-				icon="box-container"
-				title={Liferay.Language.get('account-info')}
-			/>
+		<Card className="mb-3">
+			<Card.Body className="align-items-center d-flex flex-row flex-wrap justify-content-between p-3">
+				<Text size={5} weight="semi-bold">
+					{accountName}
+				</Text>
 
-			<Card className="mb-3">
-				<Card.Body className="align-items-center d-flex flex-row flex-wrap justify-content-between p-3">
-					<Text size={5} weight="semi-bold">
-						{accountName}
-					</Text>
+				<div className="align-items-center d-flex flex-wrap">
+					{country && infoItem('globe', country)}
 
-					<div className="align-items-center d-flex flex-wrap">
-						{country && infoItem('globe', country)}
-
-						{revenue &&
-							infoItem(
-								'dollar-symbol',
-								sub(Liferay.Language.get('x-revenue'), [
-									revenue,
-								]) as string
-							)}
-
-						{industry && infoItem('briefcase', industry)}
-
-						{(lifecycleStageValue || accountType) && (
-							<span className="align-self-stretch border-left mr-4" />
+					{revenue &&
+						infoItem(
+							'dollar-symbol',
+							sub(Liferay.Language.get('x-revenue'), [
+								revenue,
+							]) as string
 						)}
 
-						{lifecycleStageValue && (
-							<Label
-								className="mr-2"
-								displayType={lifecycleStageValue.displayType}
-								inverse
-							>
-								{sub(Liferay.Language.get('lifecycle-x'), [
-									lifecycleStageValue.label,
-								])}
-							</Label>
-						)}
+					{industry && infoItem('briefcase', industry)}
 
-						{accountType && (
-							<Label displayType="info" inverse>
-								{sub(Liferay.Language.get('type-x'), [
-									accountType,
-								])}
-							</Label>
-						)}
-					</div>
-				</Card.Body>
-			</Card>
-		</>
+					{(lifecycleStageValue || accountType) && (
+						<span className="align-self-stretch border-left mr-4" />
+					)}
+
+					{lifecycleStageValue && (
+						<Label
+							className="mr-2"
+							displayType={lifecycleStageValue.displayType}
+							inverse
+						>
+							{sub(Liferay.Language.get('lifecycle-x'), [
+								lifecycleStageValue.label,
+							])}
+						</Label>
+					)}
+
+					{accountType && (
+						<Label displayType="info" inverse>
+							{sub(Liferay.Language.get('type-x'), [accountType])}
+						</Label>
+					)}
+				</div>
+			</Card.Body>
+		</Card>
 	);
 };
 

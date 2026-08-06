@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.FeatureFlagTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserGroupTestUtil;
@@ -73,6 +74,9 @@ public class DepotEntryUserNotificationTest {
 
 	@Before
 	public void setUp() throws Exception {
+		FeatureFlagTestUtil.invokeFeatureFlagListeners(
+			TestPropsValues.getCompanyId(), true, "LPD-57283");
+
 		_depotEntry1 = _depotEntryLocalService.addDepotEntry(
 			HashMapBuilder.put(
 				LocaleUtil.getDefault(), StringUtil.randomString()
@@ -319,6 +323,7 @@ public class DepotEntryUserNotificationTest {
 		themeDisplay.setCompany(
 			_companyLocalService.getCompany(TestPropsValues.getCompanyId()));
 		themeDisplay.setPathFriendlyURLPublic("/path-friendly-url-public");
+		themeDisplay.setSiteGroupId(TestPropsValues.getGroupId());
 
 		HttpServletRequest httpServletRequest = new MockHttpServletRequest();
 

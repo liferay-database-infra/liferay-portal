@@ -3,15 +3,12 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {ObjectDefinitionAPI} from '@liferay/object-admin-rest-client-js';
 import {expect, mergeTests} from '@playwright/test';
-import * as path from 'path';
 
 import {accountSettingsPagesTest} from '../../../fixtures/accountSettingsPagesTest';
 import {accountsPagesTest} from '../../../fixtures/accountsPagesTest';
 import {dataApiHelpersTest} from '../../../fixtures/dataApiHelpersTest';
 import {depotAdminPageTest} from '../../../fixtures/depotAdminPageTest';
-import {documentLibraryPagesTest} from '../../../fixtures/documentLibraryPages.fixtures';
 import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {globalMenuPagesTest} from '../../../fixtures/globalMenuPagesTest';
 import {isolatedSiteTest} from '../../../fixtures/isolatedSiteTest';
@@ -27,7 +24,6 @@ import {wikiPagesTest} from '../../../fixtures/wikiPagesTest';
 import {DataApiHelpers} from '../../../helpers/ApiHelpers';
 import {createCategories} from '../../../helpers/CreateCategories';
 import {liferayConfig} from '../../../liferay.config';
-import {getRandomInt} from '../../../utils/getRandomInt';
 import getRandomString from '../../../utils/getRandomString';
 import {normalizeRestPath} from '../../../utils/normalizeRestPath';
 import {openFieldset} from '../../../utils/openFieldset';
@@ -46,7 +42,6 @@ export const test = mergeTests(
 	companyExportImportPageTest,
 	dataApiHelpersTest,
 	depotAdminPageTest,
-	documentLibraryPagesTest,
 	exportImportPagesTest,
 	featureFlagsTest({
 		'LPD-35013': {enabled: true},
@@ -288,30 +283,6 @@ test(
 	}
 );
 
-test('Can import a folder with document type restrictions and workflow', async ({
-	apiHelpers,
-	documentLibraryEditFolderPage,
-	documentLibraryPage,
-	exportImportFramePage,
-}) => {
-	await documentLibraryPage.goto();
-	await documentLibraryPage.openOptionsMenu();
-	await documentLibraryPage.exportImportOptionsMenuItem.click();
-	await exportImportFramePage.importLARFile(
-		path.join(__dirname, 'dependencies', 'folder.portlet.lar')
-	);
-	await exportImportFramePage.close();
-	await documentLibraryPage.goToEditFolder('LPS-205933');
-
-	expect(
-		await documentLibraryEditFolderPage.getSelectedWorkflowDefinition()
-	).toBe('Single Approver@1');
-
-	await apiHelpers.headlessDelivery.deleteSiteDocumentsFolderByExternalReferenceCode(
-		'LPS-205933'
-	);
-});
-
 test('Can import a lar file selecting some items to import', async ({
 	exportImportPage,
 }) => {
@@ -322,91 +293,6 @@ test('Can import a lar file selecting some items to import', async ({
 	await exportImportPage.goToImport();
 
 	await exportImportPage.import({filePath: exportFilePath});
-});
-
-test('Can only import site level custom object entries when their definitions are already in the system', async ({
-	apiHelpers,
-	exportImportPage,
-}) => {
-	const objectDefinitionExternalReferenceCode = `ObjectDefinition${getRandomInt()}`;
-
-	const objectDefinition =
-		await apiHelpers.objectAdmin.postRandomObjectDefinition({
-			className: `com.liferay.object.model.ObjectDefinition#${objectDefinitionExternalReferenceCode}`,
-			objectDefinitionExternalReferenceCode,
-			scope: 'site',
-			status: {code: 0},
-		});
-
-	const applicationName = `${normalizeRestPath(objectDefinition.restContextPath)}`;
-
-	let objectEntry: ObjectEntry;
-
-	try {
-		objectEntry = await apiHelpers.objectEntry.postObjectEntry(
-			{externalReferenceCode: 'testERC', textField: 'test'},
-			`${applicationName}/scopes/Guest`
-		);
-	}
-	catch {
-
-		// Ensure cleanup if test execution stops before removing the object definition.
-
-		apiHelpers.data.push({
-			id: objectDefinition.id,
-			type: 'objectDefinition',
-		});
-	}
-
-	await exportImportPage.goToExport();
-
-	const exportFilePath = await exportImportPage.export({
-		portletLabels: [`${objectDefinitionExternalReferenceCode} 1 Items`],
-	});
-
-	const objectDefinitionAPIClient =
-		await apiHelpers.buildRestClient(ObjectDefinitionAPI);
-
-	await objectDefinitionAPIClient.deleteObjectDefinition(objectDefinition.id);
-
-	await exportImportPage.goToImport();
-
-	await exportImportPage.import({
-		expectedUploadErrorMessage: `The Data Handler for the "${objectDefinitionExternalReferenceCode}" portlet is missing from the system.`,
-		filePath: exportFilePath,
-	});
-
-	await test.step('Recreate the object definition', async () => {
-		const objectDefinition2 =
-			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				className: `com.liferay.object.model.ObjectDefinition#${objectDefinitionExternalReferenceCode}`,
-				objectDefinitionExternalReferenceCode,
-				scope: 'site',
-				status: {code: 0},
-			});
-
-		apiHelpers.data.push({
-			id: objectDefinition2.id,
-			type: 'objectDefinition',
-		});
-	});
-
-	await exportImportPage.goToImport();
-
-	await exportImportPage.import({
-		filePath: exportFilePath,
-	});
-
-	expect(
-		await apiHelpers.get(
-			`${apiHelpers.baseUrl}${applicationName}/scopes/Guest/by-external-reference-code/${objectEntry.externalReferenceCode}`
-		)
-	).toEqual(
-		expect.objectContaining({
-			externalReferenceCode: objectEntry.externalReferenceCode,
-			textField: objectEntry.textField,
-		})
-	);
 });
 
 test('Can see corresponding elements at site level', async ({

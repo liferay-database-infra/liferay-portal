@@ -224,6 +224,7 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 			contactsEngineClient.addIndividualSegment(
 				faroProject, user.getUserId(), channelId, null,
 				individualSegment.getValue(), false, individualSegment.getKey(),
+				IndividualSegment.Category.INDIVIDUAL.name(),
 				IndividualSegment.Type.BATCH.name(), false,
 				IndividualSegment.Status.ACTIVE.name());
 		}
@@ -378,7 +379,7 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 		poll(
 			() -> contactsEngineClient.getIndividualSegments(
 				faroProject, channelId, null, null, null, null, null, null,
-				null, 1, 10000, null),
+				null, null, 1, 10000, null),
 			expectedCount,
 			results -> {
 				for (IndividualSegment individualSegment : results.getItems()) {
@@ -400,7 +401,7 @@ public class NaniteDemoCreatorService extends DemoCreatorService {
 		Results<IndividualSegment> individualSegmentResults =
 			contactsEngineClient.getIndividualSegments(
 				faroProject, channelId, null, null, null, null, null, null,
-				null, 1, 10000, null);
+				null, null, 1, 10000, null);
 
 		for (IndividualSegment individualSegment :
 				individualSegmentResults.getItems()) {

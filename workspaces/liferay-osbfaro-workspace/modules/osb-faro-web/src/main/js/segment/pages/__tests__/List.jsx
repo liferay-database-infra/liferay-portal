@@ -5,12 +5,12 @@ import mockStore from 'test/mock-store';
 import React from 'react';
 import {act} from '@testing-library/react';
 import {ChannelContext} from 'shared/context/channel';
-import {cleanup, render, screen} from '@testing-library/react';
+import {cleanup, render, screen, within} from '@testing-library/react';
 import {MemoryRouter, Route} from 'react-router-dom';
 import {mockChannelContext} from 'test/mock-channel-context';
 import {Provider} from 'react-redux';
 import {Routes} from 'shared/util/router';
-import {SegmentTypes} from 'shared/util/constants';
+import {SegmentCategories, SegmentTypes} from 'shared/util/constants';
 import {UnassignedSegmentsContext} from 'shared/context/unassignedSegments';
 import {User} from 'shared/util/records';
 import {waitForLoadingToBeRemoved} from 'test/helpers';
@@ -169,7 +169,7 @@ describe('List', () => {
 			featureFlags.ENABLE_REAL_TIME_SEGMENTS = false;
 		});
 
-		it('creates a batch segment directly without a type dropdown', async () => {
+		it('hides the real time segment option', async () => {
 			render(<DefaultComponent />);
 
 			await act(async () => {
@@ -177,12 +177,12 @@ describe('List', () => {
 			});
 
 			expect(
-				screen.getByTestId('batch-segment-button')
+				screen.getByTestId('account-batch-segment-dropdown-item')
+			).toBeInTheDocument();
+			expect(
+				screen.getByTestId('batch-segment-dropdown-item')
 			).toBeInTheDocument();
 
-			expect(
-				screen.queryByTestId('batch-segment-dropdown-item')
-			).not.toBeInTheDocument();
 			expect(
 				screen.queryByTestId('real-time-segment-dropdown-item')
 			).not.toBeInTheDocument();
@@ -197,13 +197,68 @@ describe('List', () => {
 		});
 
 		expect(
+			screen.getByTestId('account-batch-segment-dropdown-item')
+		).toBeInTheDocument();
+		expect(
 			screen.getByTestId('batch-segment-dropdown-item')
 		).toBeInTheDocument();
 		expect(
 			screen.getByTestId('real-time-segment-dropdown-item')
 		).toBeInTheDocument();
-		expect(
-			screen.queryByTestId('batch-segment-button')
-		).not.toBeInTheDocument();
+
+		const accountOption = screen.getByTestId(
+			'account-batch-segment-dropdown-item'
+		);
+
+		const [accountGroup, individualGroup] = accountOption
+			.closest('.dropdown-menu')
+			.querySelectorAll('.dropdown-subheader');
+
+		expect(accountGroup).toHaveTextContent('Account');
+		expect(individualGroup).toHaveTextContent('Individual');
+	});
+
+	it('shows the account count for account segments', async () => {
+		API.projects.fetchFeatureUsages.mockResolvedValueOnce([]);
+		API.individualSegment.search.mockReturnValue(
+			Promise.resolve(
+				data.mockSearch(data.mockSegment, 1, {
+					accountsCount: 1800,
+					individualCount: 2300,
+					segmentCategory: SegmentCategories.Account
+				})
+			)
+		);
+
+		render(<DefaultComponent />);
+
+		await waitForLoadingToBeRemoved(document.body);
+
+		const row = screen.getByText('Seattle0').closest('tr');
+
+		expect(within(row).getByText('Account')).toBeInTheDocument();
+		expect(within(row).getByText('1.8K accounts')).toBeInTheDocument();
+	});
+
+	it('shows the individual count for individual segments', async () => {
+		API.projects.fetchFeatureUsages.mockResolvedValueOnce([]);
+		API.individualSegment.search.mockReturnValue(
+			Promise.resolve(
+				data.mockSearch(data.mockSegment, 1, {
+					accountsCount: 1800,
+					individualCount: 2300,
+					segmentCategory: SegmentCategories.Individual
+				})
+			)
+		);
+
+		render(<DefaultComponent />);
+
+		await waitForLoadingToBeRemoved(document.body);
+
+		const row = screen.getByText('Seattle0').closest('tr');
+
+		expect(within(row).getByText('Individual')).toBeInTheDocument();
+		expect(within(row).getByText('2.3K individuals')).toBeInTheDocument();
 	});
 });

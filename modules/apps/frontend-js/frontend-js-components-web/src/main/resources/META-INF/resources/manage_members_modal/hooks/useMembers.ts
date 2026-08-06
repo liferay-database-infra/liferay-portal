@@ -20,7 +20,8 @@ import {runOptimisticMutation} from './runOptimisticMutation';
 export function useMembers(
 	config: MembersConfig,
 	externalReferenceCode: string,
-	pageSize: number
+	pageSize: number,
+	onChange?: () => void
 ) {
 	const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -131,7 +132,7 @@ export function useMembers(
 				});
 			}
 		},
-		[state.isFetching, state.users, state.groups, state.keywords, fetchPage]
+		[fetchPage, state.groups, state.isFetching, state.keywords, state.users]
 	);
 
 	const search = useCallback(
@@ -165,7 +166,7 @@ export function useMembers(
 				});
 			}
 		},
-		[state.isSearching, fetchInitialData, fetchPage]
+		[fetchInitialData, fetchPage, state.isSearching]
 	);
 
 	const addMember = useCallback(
@@ -182,6 +183,7 @@ export function useMembers(
 					? config.messages.addUserError
 					: config.messages.addGroupError,
 				name: item.name,
+				onSuccess: onChange,
 				optimisticAction: {
 					payload: {item: {...item, roles: []}, type},
 					type: ActionTypes.AddMemberSuccess,
@@ -211,8 +213,9 @@ export function useMembers(
 		[
 			config.messages,
 			externalReferenceCode,
-			state.users.items,
+			onChange,
 			state.groups.items,
+			state.users.items,
 		]
 	);
 
@@ -225,6 +228,7 @@ export function useMembers(
 					? config.messages.removeUserError
 					: config.messages.removeGroupError,
 				name: item.name,
+				onSuccess: onChange,
 				optimisticAction: {
 					payload: {id: item.id, type},
 					type: ActionTypes.RemoveMemberSuccess,
@@ -251,7 +255,7 @@ export function useMembers(
 					: config.messages.removeGroupSuccess,
 			});
 		},
-		[config.messages, externalReferenceCode]
+		[config.messages, externalReferenceCode, onChange]
 	);
 
 	const updateMemberRoles = useCallback(
@@ -272,6 +276,7 @@ export function useMembers(
 					? config.messages.updateUserError
 					: config.messages.updateGroupError,
 				name: itemToUpdate.name,
+				onSuccess: onChange,
 				optimisticAction: {
 					payload: {id: itemToUpdate.id, roles: newRoleObjects},
 					type: ActionTypes.UpdateRolesSuccess,
@@ -307,7 +312,7 @@ export function useMembers(
 				successMessage: config.messages.updateSuccess,
 			});
 		},
-		[config.messages, externalReferenceCode, state.roles]
+		[config.messages, externalReferenceCode, onChange, state.roles]
 	);
 
 	return {

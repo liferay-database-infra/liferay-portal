@@ -41,6 +41,8 @@ import type {FirstDayOfWeekLocale} from 'frontend-js-web';
 
 const ADD_TASK_BUTTON_CLASS_NAME = 'lfr__calendar-view-add-task-button';
 
+const MIN_DAY_COLUMN_WIDTH = 100;
+
 const calendarNavigationStates = new Map<string, {date: Date; view: string}>();
 
 interface CalendarViewProps {
@@ -86,6 +88,7 @@ export default function CalendarView({
 		useState<HTMLElement | null>(null);
 	const [moreLinkPopover, setMoreLinkPopover] =
 		useState<MoreLinkPopover | null>(null);
+	const [narrowDayColumns, setNarrowDayColumns] = useState(false);
 	const [title, setTitle] = useState('');
 	const [unscheduledTasksPanelOpen, setUnscheduledTasksPanelOpen] =
 		useState(false);
@@ -181,6 +184,15 @@ export default function CalendarView({
 		const resizeObserver = new ResizeObserver(() => {
 			requestAnimationFrame(() => {
 				calendarRef.current?.getApi().updateSize();
+
+				const dayColumn = element.querySelector('.fc-daygrid-day');
+
+				if (dayColumn) {
+					setNarrowDayColumns(
+						dayColumn.getBoundingClientRect().width <
+							MIN_DAY_COLUMN_WIDTH
+					);
+				}
 			});
 		});
 
@@ -222,13 +234,22 @@ export default function CalendarView({
 			items: [{...item, embedded: {...task, dueDate}}],
 		});
 
-		const {error} = await patchTaskById({
+		const {error, status} = await patchTaskById({
 			body: {dueDate},
 			taskId: String(task.id),
 		});
 
 		if (error) {
-			displayErrorToast();
+			if (status === 'FORBIDDEN') {
+				displayErrorToast(
+					Liferay.Language.get(
+						'you-do-not-have-permission-to-update-this-task'
+					)
+				);
+			}
+			else {
+				displayErrorToast();
+			}
 
 			onItemsChange({itemKey: 'embedded.id', items: [item]});
 
@@ -479,7 +500,9 @@ export default function CalendarView({
 						)}
 					</>
 				)}
-				dayHeaderFormat={{weekday: 'long'}}
+				dayHeaderFormat={{
+					weekday: narrowDayColumns ? 'short' : 'long',
+				}}
 				dayMaxEvents
 				drop={async (arg) => {
 
@@ -494,11 +517,26 @@ export default function CalendarView({
 							String(item.embedded?.id) === droppedTaskId
 					);
 
-					if (droppedItem) {
-						await rescheduleTask(droppedItem, droppedDate);
+					if (!droppedItem) {
+						return;
 					}
+
+					if (!droppedItem.embedded?.actions?.update) {
+						displayErrorToast(
+							Liferay.Language.get(
+								'you-do-not-have-permission-to-update-this-task'
+							)
+						);
+
+						return;
+					}
+
+					await rescheduleTask(droppedItem, droppedDate);
 				}}
 				droppable
+				eventAllow={(_dateSpan, draggedEvent) =>
+					!!draggedEvent?.extendedProps.task?.actions?.update
+				}
 				eventContent={(arg) => (
 					<CalendarTaskCard
 						expanded={currentView !== 'dayGridMonth'}
@@ -511,9 +549,17 @@ export default function CalendarView({
 				eventDragStart={() =>
 					document.body.classList.add(TASK_DRAGGING_CLASS_NAME)
 				}
-				eventDragStop={() =>
-					document.body.classList.remove(TASK_DRAGGING_CLASS_NAME)
-				}
+				eventDragStop={(arg) => {
+					document.body.classList.remove(TASK_DRAGGING_CLASS_NAME);
+
+					if (!arg.event.extendedProps.task?.actions?.update) {
+						displayErrorToast(
+							Liferay.Language.get(
+								'you-do-not-have-permission-to-update-this-task'
+							)
+						);
+					}
+				}}
 				eventDrop={async (arg) => {
 
 					// Task in calendar dropped into another date.
@@ -578,6 +624,11 @@ export default function CalendarView({
 				moreLinkHint={Liferay.Language.get('view-all-tasks')}
 				plugins={[dayGridPlugin, interactionPlugin]}
 				ref={calendarRef}
+				views={{
+					dayGridWeek: {
+						dayMaxEvents: narrowDayColumns ? 0 : true,
+					},
+				}}
 				{...(hasAddTaskPermission && {
 					dateClick: (arg: DateClickArg) => {
 						const target = arg.jsEvent.target as HTMLElement;

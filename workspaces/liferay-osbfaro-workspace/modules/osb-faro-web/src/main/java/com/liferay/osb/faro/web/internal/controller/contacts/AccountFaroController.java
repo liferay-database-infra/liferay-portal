@@ -13,6 +13,7 @@ import com.liferay.osb.faro.engine.client.model.AccountLifecycleStatus;
 import com.liferay.osb.faro.engine.client.model.AccountMetric;
 import com.liferay.osb.faro.engine.client.model.AccountName;
 import com.liferay.osb.faro.engine.client.model.Individual;
+import com.liferay.osb.faro.engine.client.model.Metric;
 import com.liferay.osb.faro.engine.client.model.Results;
 import com.liferay.osb.faro.engine.client.util.OrderByField;
 import com.liferay.osb.faro.web.internal.constants.FaroConstants;
@@ -174,6 +175,19 @@ public class AccountFaroController extends BaseFaroController {
 			page, pageSize);
 	}
 
+	@GET
+	@Path("/{id}/overview")
+	@RolesAllowed(RoleConstants.SITE_MEMBER)
+	public List<Metric> getAccountOverviewMetrics(
+			@PathParam("groupId") long groupId, @PathParam("id") String id,
+			@QueryParam("channelId") Long channelId)
+		throws Exception {
+
+		return contactsEngineClient.getAccountOverviewMetrics(
+			faroProjectLocalService.getFaroProjectByGroupId(groupId), channelId,
+			id);
+	}
+
 	@Override
 	public int[] getEntityTypes() {
 		return _ENTITY_TYPES.clone();
@@ -207,11 +221,13 @@ public class AccountFaroController extends BaseFaroController {
 			@PathParam("groupId") long groupId,
 			@QueryParam("channelId") String channelId,
 			@QueryParam("filter") String filterString,
+			@QueryParam("includeAnonymousUsers") boolean includeAnonymousUsers,
 			@QueryParam("rangeEnd") String rangeEnd,
 			@QueryParam("rangeKey") Integer rangeKey,
 			@QueryParam("rangeStart") String rangeStart,
-			@QueryParam("search") String search, @QueryParam("page") int page,
-			@QueryParam("pageSize") int pageSize,
+			@QueryParam("search") String search,
+			@QueryParam("segmentId") String segmentId,
+			@QueryParam("page") int page, @QueryParam("pageSize") int pageSize,
 			@DefaultValue(StringPool.BLANK) @QueryParam("sort") String
 				sortString)
 		throws Exception {
@@ -219,8 +235,9 @@ public class AccountFaroController extends BaseFaroController {
 		return new FaroFDSResultsDisplay<>(
 			contactsEngineClient.getAccounts(
 				faroProjectLocalService.getFaroProjectByGroupId(groupId),
-				channelId, filterString, search, rangeEnd, rangeKey, rangeStart,
-				page, pageSize, sortString),
+				channelId, filterString, includeAnonymousUsers, search,
+				rangeEnd, rangeKey, rangeStart, segmentId, page, pageSize,
+				sortString),
 			AccountDisplay::new, page, pageSize);
 	}
 

@@ -522,6 +522,13 @@ public class BatchEnginePortletDataHandlerTest {
 			GroupConstants.DEFAULT_PARENT_GROUP_ID, TestPropsValues.getUserId(),
 			objectDefinition);
 
+		ObjectDefinition systemObjectDefinition =
+			_objectDefinitionLocalService.fetchSystemObjectDefinition(
+				TestPropsValues.getCompanyId(), "FunctionalCookieEntry");
+
+		ObjectEntry systemObjectEntry = _addSystemObjectEntry(
+			systemObjectDefinition);
+
 		Date date = new Date();
 
 		File larFile = new ExportImportExecutor(
@@ -532,9 +539,12 @@ public class BatchEnginePortletDataHandlerTest {
 			group.getGroupId()
 		).withObjectEntries(
 			objectDefinition
+		).withObjectEntries(
+			systemObjectDefinition
 		).executeExport();
 
 		_objectEntryLocalService.deleteObjectEntry(objectEntry);
+		_objectEntryLocalService.deleteObjectEntry(systemObjectEntry);
 
 		new ExportImportExecutor(
 		).withGroupId(
@@ -543,6 +553,8 @@ public class BatchEnginePortletDataHandlerTest {
 			larFile
 		).withObjectEntries(
 			objectDefinition
+		).withObjectEntries(
+			systemObjectDefinition
 		).executeImport();
 
 		Assert.assertEquals(
@@ -550,9 +562,13 @@ public class BatchEnginePortletDataHandlerTest {
 			_objectEntryLocalService.getObjectEntriesCount(
 				objectDefinition.getObjectDefinitionId()));
 
+		_assertNull(
+			systemObjectDefinition.getObjectDefinitionId(), systemObjectEntry);
+
 		objectEntry = _addTextObjectEntry(
 			GroupConstants.DEFAULT_PARENT_GROUP_ID, TestPropsValues.getUserId(),
 			objectDefinition);
+		systemObjectEntry = _addSystemObjectEntry(systemObjectDefinition);
 
 		larFile = new ExportImportExecutor(
 		).withGroupId(
@@ -561,9 +577,12 @@ public class BatchEnginePortletDataHandlerTest {
 			12
 		).withObjectEntries(
 			objectDefinition
+		).withObjectEntries(
+			systemObjectDefinition
 		).executeExport();
 
 		_objectEntryLocalService.deleteObjectEntry(objectEntry);
+		_objectEntryLocalService.deleteObjectEntry(systemObjectEntry);
 
 		new ExportImportExecutor(
 		).withGroupId(
@@ -572,12 +591,24 @@ public class BatchEnginePortletDataHandlerTest {
 			larFile
 		).withObjectEntries(
 			objectDefinition
+		).withObjectEntries(
+			systemObjectDefinition
 		).executeImport();
 
 		Assert.assertEquals(
 			1,
 			_objectEntryLocalService.getObjectEntriesCount(
 				objectDefinition.getObjectDefinitionId()));
+
+		ObjectEntry importedSystemObjectEntry =
+			_objectEntryLocalService.fetchObjectEntry(
+				systemObjectEntry.getExternalReferenceCode(),
+				systemObjectEntry.getGroupId(),
+				systemObjectDefinition.getObjectDefinitionId());
+
+		Assert.assertNotNull(importedSystemObjectEntry);
+
+		_objectEntryLocalService.deleteObjectEntry(importedSystemObjectEntry);
 	}
 
 	@Test
@@ -2989,6 +3020,20 @@ public class BatchEnginePortletDataHandlerTest {
 		}
 
 		return objectFields;
+	}
+
+	private ObjectEntry _addSystemObjectEntry(ObjectDefinition objectDefinition)
+		throws Exception {
+
+		return _objectEntryLocalService.addObjectEntry(
+			GroupConstants.DEFAULT_PARENT_GROUP_ID, TestPropsValues.getUserId(),
+			objectDefinition.getObjectDefinitionId(),
+			ObjectEntryFolderConstants.PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
+			null,
+			HashMapBuilder.<String, Serializable>put(
+				"name", RandomTestUtil.randomString()
+			).build(),
+			ServiceContextTestUtil.getServiceContext());
 	}
 
 	private FileEntry _addTempFileEntry(

@@ -1,8 +1,9 @@
-import {EntityTypes, SegmentTypes} from '../constants';
+import {EntityTypes, SegmentCategories, SegmentTypes} from '../constants';
 import {fromJS, Map, Record} from 'immutable';
 import {SegmentActivationDetails} from 'segment/components/SegmentActivationCard';
 
 interface ISegment {
+	accountsCount: number;
 	activation: SegmentActivationDetails;
 	activeIndividualCount: number;
 	activitiesCount: number;
@@ -20,6 +21,7 @@ interface ISegment {
 	name: string;
 	properties: Map<string, any>;
 	referencedObjects?: Map<string, any>;
+	segmentCategory: SegmentCategories | null;
 	segmentType: SegmentTypes | null;
 	sequential: boolean;
 	state: string;
@@ -30,6 +32,7 @@ interface ISegment {
 
 export default class Segment
 	extends Record({
+		accountsCount: 0,
 		activation: null,
 		activeIndividualCount: 0,
 		activitiesCount: 0,
@@ -52,6 +55,7 @@ export default class Segment
 			events: Map(),
 			fieldMappings: Map(),
 		}),
+		segmentCategory: null,
 		segmentType: null,
 		sequential: false,
 		state: '',
@@ -61,6 +65,7 @@ export default class Segment
 	})
 	implements ISegment
 {
+	declare accountsCount: number;
 	declare activation: SegmentActivationDetails;
 	declare activeIndividualCount: number;
 	declare activitiesCount: number;
@@ -78,6 +83,7 @@ export default class Segment
 	declare name: string;
 	declare properties: Map<string, any>;
 	declare referencedObjects?: Map<string, any>;
+	declare segmentCategory: SegmentCategories | null;
 	declare segmentType: SegmentTypes | null;
 	declare sequential: boolean;
 	declare state: string;

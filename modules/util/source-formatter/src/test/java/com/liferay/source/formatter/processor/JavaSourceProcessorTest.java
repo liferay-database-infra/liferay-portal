@@ -69,6 +69,18 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testBouncyCastleFIPS() throws Exception {
+		test(
+			SourceProcessorTestParameters.create(
+				"BouncyCastleFIPS.testjava"
+			).addExpectedMessage(
+				"Do not use non-FIPS BouncyCastle, see LPD-90318", 9
+			).addExpectedMessage(
+				"Do not use non-FIPS BouncyCastle, see LPD-90318", 10
+			));
+	}
+
+	@Test
 	public void testBuilder() throws Exception {
 		test(
 			SourceProcessorTestParameters.create(
@@ -603,6 +615,22 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 		test(
 			"MetaAnnotationMissingName.testjava",
 			"Missing attribute \"name\" in \"@Meta.AD\"", 20);
+	}
+
+	@Test
+	public void testMetaAnnotationMissingPasswordType() throws Exception {
+		test(
+			SourceProcessorTestParameters.create(
+				"MetaAnnotationMissingPasswordType.testjava"
+			).addExpectedMessage(
+				"Use \"type = Meta.Type.Password\" in \"@Meta.AD\" for " +
+					"\"apiKey\", which appears to hold a secret",
+				23
+			).addExpectedMessage(
+				"Use \"type = Meta.Type.Password\" in \"@Meta.AD\" for " +
+					"\"clientSecret\", which appears to hold a secret",
+				26
+			));
 	}
 
 	@Test

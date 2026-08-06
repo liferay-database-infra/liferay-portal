@@ -8,12 +8,6 @@ $ai-assistant-sidebar-width: 448px;
 }
 
 html#{$cadmin-selector} {
-	.ai-assistant__separator {
-		align-self: center;
-		border: 1px solid #a7a9bc;
-		height: 16px;
-	}
-
 	.ai-assistant-chat__dropdown {
 		display: flex;
 		padding: 0;
@@ -133,6 +127,7 @@ html#{$cadmin-selector} .cadmin {
 	.ai-assistant-chat__panel-close-button,
 	.ai-assistant-chat__panel-expand-button {
 		color: $cadmin-gray-600;
+		font-size: 0.75rem;
 	}
 
 	.ai-assistant-chat__body-slot {

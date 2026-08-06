@@ -333,6 +333,25 @@ public class PatcherBuildUtil {
 			key);
 	}
 
+	public static String getDownloadPath(String fileName) {
+		if (Validator.isNull(fileName)) {
+			return StringPool.BLANK;
+		}
+
+		return StringUtil.replace(fileName, "/hotfix/", StringPool.SLASH);
+	}
+
+	public static String getDownloadURL(PatcherBuild patcherBuild)
+		throws Exception {
+
+		PatcherConfiguration patcherConfiguration =
+			ConfigurationProviderUtil.getCompanyConfiguration(
+				PatcherConfiguration.class, patcherBuild.getCompanyId());
+
+		return patcherConfiguration.patcherBuildDownloadURL() +
+			StringPool.SLASH + getDownloadPath(patcherBuild.getFileName());
+	}
+
 	public static List<PatcherBuild> getEquivalentPatcherBuilds(
 		long patcherProjectVersionId, String tickets) {
 
@@ -664,7 +683,7 @@ public class PatcherBuildUtil {
 				StringPool.FORWARD_SLASH + supportTicket;
 		}
 
-		return patcherConfiguration.jiraURL() + StringPool.FORWARD_SLASH +
+		return patcherConfiguration.jiraBrowseURL() + StringPool.FORWARD_SLASH +
 			supportTicket;
 	}
 

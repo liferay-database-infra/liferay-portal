@@ -95,6 +95,7 @@ Immutable.Map {
   "segments": Immutable.Map {
     "4": Immutable.Record {
       "data": Immutable.Record {
+        "accountsCount": 0,
         "activation": null,
         "activeIndividualCount": 0,
         "activitiesCount": 0,
@@ -117,6 +118,7 @@ Immutable.Map {
           "events": Immutable.Map {},
           "fieldMappings": Immutable.Map {},
         },
+        "segmentCategory": null,
         "segmentType": null,
         "sequential": false,
         "state": "",

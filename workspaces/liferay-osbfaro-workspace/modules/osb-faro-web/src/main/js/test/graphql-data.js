@@ -992,7 +992,7 @@ export function mockSitesTabsReq({rangeKey}) {
 	};
 }
 
-export function mockSitesTopPagesReq() {
+export function mockSitesTopPagesReq(variables = {}) {
 	return {
 		request: {
 			query: SitesTopPagesQuery,
@@ -1007,6 +1007,7 @@ export function mockSitesTopPagesReq() {
 					type: 'DESC',
 				},
 				start: 0,
+				...variables,
 			},
 		},
 		result: {
@@ -1598,7 +1599,10 @@ export function mockRecommendationReq(item = {}, mockVariables = {}) {
 	};
 }
 
-export function mockPagePathReq(data = [], {accountId, rangeKey = 30} = {}) {
+export function mockPagePathReq(
+	data = [],
+	{accountId, rangeKey = 30, segmentId} = {}
+) {
 	return {
 		request: {
 			query: PagePathQuery,
@@ -1610,6 +1614,7 @@ export function mockPagePathReq(data = [], {accountId, rangeKey = 30} = {}) {
 				rangeStart: null,
 				title: 'Liferay DXP - Home',
 				...(accountId && {accountId}),
+				...(segmentId && {segmentId}),
 			},
 		},
 		result: {
@@ -2434,6 +2439,7 @@ const DEFAULT_ACCOUNT_USER_SESSIONS = [
 				url: 'https://liferay.com/home',
 			},
 		],
+		individualId: 'jane-doe-id',
 		languageId: 'en-US',
 		screenHeight: 1080,
 		screenWidth: 1920,

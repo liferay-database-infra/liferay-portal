@@ -87,8 +87,9 @@ exports[`Sites Dashboard Overview render 1`] = `
         class="col-xl-6"
       >
         <div
-          class="card card-root top-pages-card-root table-tabs-root"
+          class="card card-root top-pages-card-root"
           id="container.report.topPagesCard"
+          style="min-height: 575px;"
         >
           <div
             class="card-header align-items-center d-flex justify-content-between"
@@ -116,78 +117,69 @@ exports[`Sites Dashboard Overview render 1`] = `
             class="card-body w-100 d-flex flex-column flex-grow-1 no-padding"
           >
             <ul
-              class="card-tabs-root"
+              class="nav nav-tabs mb-3"
+              role="tablist"
             >
               <li
-                class="card-tab active"
-                data-testid="visitorsMetric"
+                class="nav-item"
+                role="none"
               >
                 <button
-                  class="button-root btn btn-unstyled"
+                  aria-selected="true"
+                  class="nav-link active btn btn-unstyled"
+                  data-testid="tabItem"
+                  role="tab"
+                  tabindex="0"
                   type="button"
                 >
-                  <span
-                    class="title"
-                  >
-                    Visited Pages
-                  </span>
-                  <div />
+                  Visited Pages
                 </button>
               </li>
               <li
-                class="card-tab"
-                data-testid="entrancesMetric"
+                class="nav-item"
+                role="none"
               >
                 <button
-                  class="button-root btn btn-unstyled"
+                  aria-selected="false"
+                  class="nav-link btn btn-unstyled"
+                  data-testid="tabItem"
+                  role="tab"
+                  tabindex="-1"
                   type="button"
                 >
-                  <span
-                    class="title"
-                  >
-                    Entrance Pages
-                  </span>
-                  <div />
+                  Entrance Pages
                 </button>
               </li>
               <li
-                class="card-tab"
-                data-testid="exitRateMetric"
+                class="nav-item"
+                role="none"
               >
                 <button
-                  class="button-root btn btn-unstyled"
+                  aria-selected="false"
+                  class="nav-link btn btn-unstyled"
+                  data-testid="tabItem"
+                  role="tab"
+                  tabindex="-1"
                   type="button"
                 >
-                  <span
-                    class="title"
-                  >
-                    Exit Pages
-                  </span>
-                  <div />
+                  Exit Pages
                 </button>
               </li>
             </ul>
             <span
               aria-hidden="true"
-              class="loading-root center loading-animation"
+              class="loading-root spacer loading-animation"
             />
           </div>
           <div
-            class="card-footer"
+            class="card-footer d-flex"
           >
             <a
-              class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
+              aria-label="View All Pages"
+              class="ml-auto rounded-lg btn btn-outline-borderless btn-sm btn-outline-primary"
               href="/workspace/23/123123/sites/pages?rangeKey=30&field=visitorsMetric&sortOrder=DESC"
             >
-              View Pages
-              <svg
-                class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
-                role="presentation"
-              >
-                <use
-                  href="#angle-right-small"
-                />
-              </svg>
+              View All
             </a>
           </div>
         </div>
@@ -196,8 +188,9 @@ exports[`Sites Dashboard Overview render 1`] = `
         class="col-xl-6"
       >
         <div
-          class="card card-root acquisitions-card-root table-tabs-root"
+          class="card card-root acquisitions-card-root"
           id="container.report.acquisitionsCard"
+          style="min-height: 575px;"
         >
           <div
             class="card-header align-items-center d-flex justify-content-between"
@@ -225,54 +218,52 @@ exports[`Sites Dashboard Overview render 1`] = `
             class="card-body w-100 d-flex flex-column flex-grow-1 no-padding"
           >
             <ul
-              class="card-tabs-root"
+              class="nav nav-tabs mb-3"
+              role="tablist"
             >
               <li
-                class="card-tab active"
-                data-testid="CHANNEL"
+                class="nav-item"
+                role="none"
               >
                 <button
-                  class="button-root btn btn-unstyled"
+                  aria-selected="true"
+                  class="nav-link active btn btn-unstyled"
+                  data-testid="tabItem"
+                  role="tab"
+                  tabindex="0"
                   type="button"
                 >
-                  <span
-                    class="title"
-                  >
-                    Channels
-                  </span>
-                  <div />
+                  Channels
                 </button>
               </li>
               <li
-                class="card-tab"
-                data-testid="SOURCE_MEDIUM"
+                class="nav-item"
+                role="none"
               >
                 <button
-                  class="button-root btn btn-unstyled"
+                  aria-selected="false"
+                  class="nav-link btn btn-unstyled"
+                  data-testid="tabItem"
+                  role="tab"
+                  tabindex="-1"
                   type="button"
                 >
-                  <span
-                    class="title"
-                  >
-                    Source | Medium
-                  </span>
-                  <div />
+                  Source | Medium
                 </button>
               </li>
               <li
-                class="card-tab"
-                data-testid="REFERRER"
+                class="nav-item"
+                role="none"
               >
                 <button
-                  class="button-root btn btn-unstyled"
+                  aria-selected="false"
+                  class="nav-link btn btn-unstyled"
+                  data-testid="tabItem"
+                  role="tab"
+                  tabindex="-1"
                   type="button"
                 >
-                  <span
-                    class="title"
-                  >
-                    Referrers
-                  </span>
-                  <div />
+                  Referrers
                 </button>
               </li>
             </ul>
@@ -295,6 +286,7 @@ exports[`Sites Dashboard Overview render 1`] = `
         <div
           class="card card-root visitors-by-time-card"
           id="container.report.visitorsByTimeCard"
+          style="min-height: 545px;"
         >
           <div
             class="card-header align-items-center d-flex justify-content-between"
@@ -334,6 +326,7 @@ exports[`Sites Dashboard Overview render 1`] = `
         <div
           class="card card-root search-terms-card-root"
           id="container.report.searchTermsCard"
+          style="min-height: 545px;"
         >
           <div
             class="card-header align-items-center d-flex justify-content-between"
@@ -366,21 +359,14 @@ exports[`Sites Dashboard Overview render 1`] = `
             />
           </div>
           <div
-            class="card-footer"
+            class="card-footer d-flex"
           >
             <a
-              class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
+              aria-label="View All Search Terms"
+              class="ml-auto rounded-lg btn btn-outline-borderless btn-sm btn-outline-primary"
               href="/workspace/23/123123/sites/search-terms?rangeKey=30"
             >
-              All Search Terms
-              <svg
-                class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
-                role="presentation"
-              >
-                <use
-                  href="#angle-right-small"
-                />
-              </svg>
+              View All
             </a>
           </div>
         </div>
@@ -391,6 +377,7 @@ exports[`Sites Dashboard Overview render 1`] = `
         <div
           class="card card-root interests-card-root"
           id="container.report.interestsCard"
+          style="min-height: 545px;"
         >
           <div
             class="card-header align-items-center d-flex justify-content-between"
@@ -423,21 +410,14 @@ exports[`Sites Dashboard Overview render 1`] = `
             />
           </div>
           <div
-            class="card-footer"
+            class="card-footer d-flex"
           >
             <a
-              class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
+              aria-label="View All Interests"
+              class="ml-auto rounded-lg btn btn-outline-borderless btn-sm btn-outline-primary"
               href="/workspace/23/123123/sites/interests?rangeKey=30"
             >
-              All Interests
-              <svg
-                class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
-                role="presentation"
-              >
-                <use
-                  href="#angle-right-small"
-                />
-              </svg>
+              View All
             </a>
           </div>
         </div>
@@ -519,12 +499,51 @@ exports[`Sites Dashboard Overview render 1`] = `
             </div>
           </div>
           <div
-            class="card-body"
+            class="card-body w-100 d-flex flex-column flex-grow-1 no-padding"
           >
-            <span
-              aria-hidden="true"
-              class="loading-root center loading-animation"
-            />
+            <ul
+              class="nav nav-tabs mb-3"
+              role="tablist"
+            >
+              <li
+                class="nav-item"
+                role="none"
+              >
+                <button
+                  aria-selected="true"
+                  class="nav-link active btn btn-unstyled"
+                  data-testid="tabItem"
+                  role="tab"
+                  tabindex="0"
+                  type="button"
+                >
+                  Devices
+                </button>
+              </li>
+              <li
+                class="nav-item"
+                role="none"
+              >
+                <button
+                  aria-selected="false"
+                  class="nav-link btn btn-unstyled"
+                  data-testid="tabItem"
+                  role="tab"
+                  tabindex="-1"
+                  type="button"
+                >
+                  Browsers
+                </button>
+              </li>
+            </ul>
+            <div
+              class="px-4 pb-4"
+            >
+              <span
+                aria-hidden="true"
+                class="loading-root center loading-animation"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -561,10 +580,10 @@ exports[`Sites Dashboard Overview render 1`] = `
               >
                 <button
                   aria-activedescendant="visitors"
-                  aria-controls="clay-id-2"
+                  aria-controls="clay-id-19"
                   aria-expanded="true"
                   aria-haspopup="listbox"
-                  aria-owns="clay-id-2"
+                  aria-owns="clay-id-19"
                   class="form-control form-control-select form-control-select-secondary visitors-type-select show"
                   role="combobox"
                   style=""

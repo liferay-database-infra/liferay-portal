@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {ClayButtonWithIcon} from '@clayui/button';
 import Label from '@clayui/label';
 import ClayPanel from '@clayui/panel';
+import {AIAssistantTriggerButton} from '@liferay/ai-hub-cell-js-components-web';
 import {ItemSelector} from '@liferay/frontend-js-item-selector-web';
 import classNames from 'classnames';
 import {sub} from 'frontend-js-web';
@@ -14,6 +14,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import ApiHelper from '../../../common/services/ApiHelper';
 import TagService from '../../../common/services/TagService';
 import {IAssetObjectEntry} from '../../../common/types/AssetType';
+import {AI_ASSISTANT_TOOLBAR_TRIGGER_ID} from '../../../common/utils/constants';
 import {EntryCategorizationDTO} from '../services/ObjectEntryService';
 import {CategorizationInputSize} from './AssetCategorization';
 import {
@@ -62,7 +63,7 @@ const AssetTags = ({
 	const apiURL = useMemo(() => {
 		const baseURL = `${Liferay.ThemeDisplay.getPortalURL()}/o/headless-admin-taxonomy/v1.0/sites`;
 
-		if (scopeId >= 0) {
+		if (scopeId > 0) {
 			return `${baseURL}/${scopeId}/keywords`;
 		}
 
@@ -233,17 +234,16 @@ const AssetTags = ({
 					hasUpdatePermission &&
 					(getContent ||
 						(objectEntry as IAssetObjectEntry).contentRawText) ? (
-						<ClayButtonWithIcon
-							aria-label={Liferay.Language.get(
-								'generate-tags-with-ai'
-							)}
+						<AIAssistantTriggerButton
+							anchorId={AI_ASSISTANT_TOOLBAR_TRIGGER_ID}
 							className="ml-2"
-							displayType="unstyled"
-							onClick={handleGenerateTags}
-							symbol="stars"
-							title={Liferay.Language.get(
+							hideLabel
+							instructionDefinitionScope="cms"
+							label={Liferay.Language.get(
 								'generate-tags-with-ai'
 							)}
+							onOpen={handleGenerateTags}
+							presentation="dropdown"
 						/>
 					) : null}
 				</div>

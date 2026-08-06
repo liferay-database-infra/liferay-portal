@@ -1,6 +1,5 @@
 import BaseCard from 'shared/components/base-card';
 import Card from 'shared/components/Card';
-import ClayIcon from '@clayui/icon';
 import ClayLink from '@clayui/link';
 import InterestsQuery from 'shared/queries/InterestsQuery';
 import React from 'react';
@@ -62,7 +61,7 @@ const TableWithData = withTableData(withData, {
 	rowIdentifier: 'name',
 });
 
-const InterestsCard = () => {
+const InterestsCard = ({minHeight}) => {
 	const {channelId, groupId} = useParams();
 
 	const {Last7Days, Last30Days, Last90Days, Yesterday} = RangeKeyTimeRanges;
@@ -74,6 +73,7 @@ const InterestsCard = () => {
 			className="interests-card-root"
 			label={Liferay.Language.get('interests')}
 			legacyDropdownRangeKey={false}
+			minHeight={minHeight}
 			rangeKeys={rangeKeys}
 			reportContainer={ReportContainer.InterestsCard}
 		>
@@ -87,12 +87,15 @@ const InterestsCard = () => {
 						segmentId={segmentId}
 					/>
 
-					<Card.Footer>
+					<Card.Footer className="d-flex">
 						<ClayLink
+							aria-label={Liferay.Language.get(
+								'view-all-interests'
+							)}
 							borderless
 							button
-							className="button-root"
-							displayType="secondary"
+							className="ml-auto rounded-lg"
+							displayType="primary"
 							href={setUriQueryValues(
 								pickBy({
 									accountId,
@@ -106,12 +109,7 @@ const InterestsCard = () => {
 							)}
 							small
 						>
-							{Liferay.Language.get('all-interests')}
-
-							<ClayIcon
-								className="icon-root ml-2"
-								symbol="angle-right-small"
-							/>
+							{Liferay.Language.get('view-all')}
 						</ClayLink>
 					</Card.Footer>
 				</>

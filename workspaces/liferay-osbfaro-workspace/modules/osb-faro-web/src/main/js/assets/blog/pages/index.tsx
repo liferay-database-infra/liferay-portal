@@ -138,6 +138,7 @@ const Blog: React.FC<{
 					{LDPEnabled && (
 						<AccountDropdown
 							assetType="blog"
+							className="mr-3"
 							initialAccountId={accountId}
 							initialAccountName={accountName}
 							onFilterChange={setAccount}
@@ -163,6 +164,16 @@ const Blog: React.FC<{
 							}
 						/>
 					</div>
+				</BasePage.SubHeader>
+			)}
+
+			{getMatchedRoute(NAV_ITEMS) === Routes.ASSETS_BLOGS_ACCOUNTS && (
+				<BasePage.SubHeader>
+					<SegmentDropdown
+						initialSegmentId={segmentId}
+						initialSegmentName={segmentName}
+						onFilterChange={setSegment}
+					/>
 				</BasePage.SubHeader>
 			)}
 

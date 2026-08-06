@@ -126,21 +126,21 @@ describe('Shared HOCs Mappers - Locations', () => {
 						id: 'Brazil',
 						name: 'Brazil',
 						total: 100,
-						value: '33.3',
+						value: 33.3,
 					},
 					{
 						group: 'Spain',
 						id: 'Spain',
 						name: 'Spain',
 						total: 100,
-						value: '33.3',
+						value: 33.3,
 					},
 					{
 						group: 'United States',
 						id: 'United States',
 						name: 'United States',
 						total: 100,
-						value: '33.3',
+						value: 33.3,
 					},
 				],
 				total: 3,
@@ -179,6 +179,40 @@ describe('Shared HOCs Mappers - Locations', () => {
 		});
 	});
 
+	it('should include segmentId in the request variables when provided', () => {
+		const mapper = getLocationsMapper(
+			(result) => result.form.submissionsMetric
+		);
+
+		const optionsResult = mapper.options({
+			filters: {
+				location: ['Any'],
+			},
+			rangeSelectors: {rangeKey: '0'},
+			router: {
+				params: {
+					assetId: ASSET_ID,
+					touchpoint: TOUCHPOINT,
+				},
+			},
+			segmentId: 'segment-100',
+		});
+
+		expect(optionsResult).toEqual({
+			variables: {
+				assetId: 'formId',
+				devices: 'Any',
+				location: 'Any',
+				rangeEnd: null,
+				rangeKey: 0,
+				rangeStart: null,
+				segmentId: 'segment-100',
+				title: '',
+				touchpoint: null,
+			},
+		});
+	});
+
 	it('should map locations information with region Brazil', () => {
 		const mapper = getLocationsMapper(
 			(result) => result.form.submissionsMetric
@@ -206,35 +240,35 @@ describe('Shared HOCs Mappers - Locations', () => {
 						id: 'Unknown',
 						name: 'Unknown',
 						total: 100,
-						value: '20',
+						value: 20,
 					},
 					{
 						group: 'Pernambuco',
 						id: 'Pernambuco',
 						name: 'Pernambuco',
 						total: 100,
-						value: '20',
+						value: 20,
 					},
 					{
 						group: 'Sao Paulo',
 						id: 'Sao Paulo',
 						name: 'Sao Paulo',
 						total: 100,
-						value: '20',
+						value: 20,
 					},
 					{
 						group: 'Parana',
 						id: 'Parana',
 						name: 'Parana',
 						total: 100,
-						value: '20',
+						value: 20,
 					},
 					{
 						group: 'Rio Grande do Sul',
 						id: 'Rio Grande do Sul',
 						name: 'Rio Grande do Sul',
 						total: 100,
-						value: '20',
+						value: 20,
 					},
 				],
 				total: 5,
@@ -340,21 +374,21 @@ describe('Shared HOCs Mappers - Locations Countries', () => {
 						id: 'Brazil',
 						name: 'Brazil',
 						total: 100,
-						value: '33.3',
+						value: 33.3,
 					},
 					{
 						group: 'Spain',
 						id: 'Spain',
 						name: 'Spain',
 						total: 100,
-						value: '33.3',
+						value: 33.3,
 					},
 					{
 						group: 'United States',
 						id: 'United States',
 						name: 'United States',
 						total: 100,
-						value: '33.3',
+						value: 33.3,
 					},
 				],
 				total: 3,
@@ -390,6 +424,40 @@ describe('Shared HOCs Mappers - Locations Countries', () => {
 		});
 	});
 
+	it('should include segmentId in the countries request variables when provided', () => {
+		const mapper = getLocationsMapperCountries(
+			(result) => result.form.submissionsMetric
+		);
+
+		const optionsResult = mapper.options({
+			filters: {
+				location: ['Any'],
+			},
+			rangeSelectors: {rangeKey: '0'},
+			router: {
+				params: {
+					assetId: ASSET_ID,
+					touchpoint: TOUCHPOINT,
+				},
+			},
+			segmentId: 'segment-100',
+		});
+
+		expect(optionsResult).toEqual({
+			variables: {
+				assetId: 'formId',
+				devices: 'Any',
+				location: 'Any',
+				rangeEnd: null,
+				rangeKey: 0,
+				rangeStart: null,
+				segmentId: 'segment-100',
+				title: '',
+				touchpoint: null,
+			},
+		});
+	});
+
 	it('should return countries information indepent if Brazil is selected', () => {
 		const mapper = getLocationsMapperCountries(
 			(result) => result.form.submissionsMetric
@@ -417,21 +485,21 @@ describe('Shared HOCs Mappers - Locations Countries', () => {
 						id: 'Brazil',
 						name: 'Brazil',
 						total: 100,
-						value: '33.3',
+						value: 33.3,
 					},
 					{
 						group: 'Spain',
 						id: 'Spain',
 						name: 'Spain',
 						total: 100,
-						value: '33.3',
+						value: 33.3,
 					},
 					{
 						group: 'United States',
 						id: 'United States',
 						name: 'United States',
 						total: 100,
-						value: '33.3',
+						value: 33.3,
 					},
 				],
 				total: 3,

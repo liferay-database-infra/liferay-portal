@@ -14,8 +14,12 @@ import com.liferay.frontend.data.set.renderer.FDSRenderer;
 import com.liferay.info.constants.InfoDisplayWebKeys;
 import com.liferay.info.item.ClassPKInfoItemIdentifier;
 import com.liferay.info.item.ERCInfoItemIdentifier;
+import com.liferay.info.item.InfoItemDetails;
 import com.liferay.info.item.InfoItemIdentifier;
 import com.liferay.info.item.InfoItemReference;
+import com.liferay.info.item.InfoItemServiceRegistry;
+import com.liferay.info.item.provider.InfoItemDetailsProvider;
+import com.liferay.info.item.provider.InfoItemObjectProvider;
 import com.liferay.object.entry.util.ObjectEntryThreadLocal;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.rest.dto.v1_0.ObjectEntry;
@@ -52,6 +56,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Objects;
@@ -209,19 +214,24 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 			boolean hasTokens = _hasTokens(
 				externalReferenceCode, httpServletRequest);
 
+			JSONObject apiURLTokenMappingsJSONObject =
+				_getAPIURLTokenMappingsJSONObject(
+					(String)_fragmentEntryConfigurationParser.getFieldValue(
+						configurationJSONObject,
+						fragmentEntryLink.getEditableValuesJSONObject(),
+						fragmentRendererContext.getLocale(),
+						"apiURLTokenMappings"));
+
 			JSONObject tokenResolutionsJSONObject =
 				_getTokenResolutionsJSONObject(
-					_getAPIURLTokenMappingsJSONObject(
-						(String)_fragmentEntryConfigurationParser.getFieldValue(
-							configurationJSONObject,
-							fragmentEntryLink.getEditableValuesJSONObject(),
-							fragmentRendererContext.getLocale(),
-							"apiURLTokenMappings")),
-					externalReferenceCode, httpServletRequest);
+					apiURLTokenMappingsJSONObject, externalReferenceCode,
+					httpServletRequest);
 
-			boolean resolved = _isResolved(
+			Set<String> unresolvedTokenNames = _getUnresolvedTokenNames(
 				externalReferenceCode, httpServletRequest,
 				tokenResolutionsJSONObject);
+
+			boolean resolved = unresolvedTokenNames.isEmpty();
 
 			if (fragmentRendererContext.isEditMode()) {
 				if (hasTokens) {
@@ -239,6 +249,11 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 					printWriter);
 
 				if (hasTokens && !resolved) {
+					Set<String> unresolvedContextTokenNames =
+						_getUnresolvedContextTokenNames(
+							apiURLTokenMappingsJSONObject, httpServletRequest,
+							unresolvedTokenNames);
+
 					_reactRenderer.renderReact(
 						new ComponentDescriptor(
 							"{UnresolvedDataSetPreview} from " +
@@ -249,6 +264,13 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 							_fdsRenderer.getFDSAPIURL(
 								externalReferenceCode, httpServletRequest, true,
 								tokenResolutionsJSONObject)
+						).put(
+							"hasUnmappedTokens",
+							unresolvedTokenNames.size() >
+								unresolvedContextTokenNames.size()
+						).put(
+							"hasUnresolvedContextTokens",
+							!unresolvedContextTokenNames.isEmpty()
 						).build(),
 						httpServletRequest, printWriter);
 				}
@@ -323,6 +345,66 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 		}
 
 		return tokenNames;
+	}
+
+	private String _getExternalReferenceCode(InfoItemDetails infoItemDetails) {
+		if (infoItemDetails == null) {
+			return null;
+		}
+
+		InfoItemReference infoItemReference =
+			infoItemDetails.getInfoItemReference();
+
+		InfoItemIdentifier infoItemIdentifier =
+			infoItemReference.getInfoItemIdentifier();
+
+		if (!(infoItemIdentifier instanceof ERCInfoItemIdentifier)) {
+			return null;
+		}
+
+		ERCInfoItemIdentifier ercInfoItemIdentifier =
+			(ERCInfoItemIdentifier)infoItemIdentifier;
+
+		return ercInfoItemIdentifier.getExternalReferenceCode();
+	}
+
+	private InfoItemDetails _getInfoItemDetails(
+		HttpServletRequest httpServletRequest,
+		InfoItemReference infoItemReference) {
+
+		String className = infoItemReference.getClassName();
+
+		InfoItemIdentifier infoItemIdentifier =
+			infoItemReference.getInfoItemIdentifier();
+
+		InfoItemObjectProvider<Object> infoItemObjectProvider =
+			_infoItemServiceRegistry.getFirstInfoItemService(
+				InfoItemObjectProvider.class, className,
+				infoItemIdentifier.getInfoItemServiceFilter());
+
+		InfoItemDetailsProvider<Object> infoItemDetailsProvider =
+			_infoItemServiceRegistry.getFirstInfoItemService(
+				InfoItemDetailsProvider.class, className);
+
+		if ((infoItemObjectProvider == null) ||
+			(infoItemDetailsProvider == null)) {
+
+			return null;
+		}
+
+		try {
+			return infoItemDetailsProvider.getInfoItemDetails(
+				_portal.getScopeGroupId(httpServletRequest),
+				ERCInfoItemIdentifier.class,
+				infoItemObjectProvider.getInfoItem(infoItemIdentifier));
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
+			return null;
+		}
 	}
 
 	private Set<String> _getTokenNames(
@@ -411,13 +493,16 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 			InfoItemIdentifier infoItemIdentifier =
 				infoItemReference.getInfoItemIdentifier();
 
-			if (Objects.equals(fieldId, "externalReferenceCode") &&
-				(infoItemIdentifier instanceof ERCInfoItemIdentifier)) {
+			if (Objects.equals(fieldId, "externalReferenceCode")) {
+				if (infoItemIdentifier instanceof ERCInfoItemIdentifier) {
+					ERCInfoItemIdentifier ercInfoItemIdentifier =
+						(ERCInfoItemIdentifier)infoItemIdentifier;
 
-				ERCInfoItemIdentifier ercInfoItemIdentifier =
-					(ERCInfoItemIdentifier)infoItemIdentifier;
+					return ercInfoItemIdentifier.getExternalReferenceCode();
+				}
 
-				return ercInfoItemIdentifier.getExternalReferenceCode();
+				return _getExternalReferenceCode(
+					_getInfoItemDetails(httpServletRequest, infoItemReference));
 			}
 
 			if (infoItemIdentifier instanceof ClassPKInfoItemIdentifier) {
@@ -435,6 +520,59 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 		}
 
 		return mappingJSONObject.getString("classPK");
+	}
+
+	private Set<String> _getUnresolvedContextTokenNames(
+		JSONObject apiURLTokenMappingsJSONObject,
+		HttpServletRequest httpServletRequest,
+		Set<String> unresolvedTokenNames) {
+
+		InfoItemReference infoItemReference =
+			(InfoItemReference)httpServletRequest.getAttribute(
+				InfoDisplayWebKeys.INFO_ITEM_REFERENCE);
+
+		if (infoItemReference != null) {
+			return Collections.emptySet();
+		}
+
+		Set<String> unresolvedContextTokenNames = new HashSet<>();
+
+		for (String unresolvedTokenName : unresolvedTokenNames) {
+			JSONObject mappingJSONObject =
+				apiURLTokenMappingsJSONObject.getJSONObject(
+					unresolvedTokenName);
+
+			if (mappingJSONObject == null) {
+				continue;
+			}
+
+			if (Objects.equals(
+					mappingJSONObject.getString("mappingMode"), "context") &&
+				Validator.isNotNull(mappingJSONObject.getString("fieldId"))) {
+
+				unresolvedContextTokenNames.add(unresolvedTokenName);
+			}
+		}
+
+		return unresolvedContextTokenNames;
+	}
+
+	private Set<String> _getUnresolvedTokenNames(
+		String externalReferenceCode, HttpServletRequest httpServletRequest,
+		JSONObject tokenResolutionsJSONObject) {
+
+		Set<String> unresolvedTokenNames = new HashSet<>();
+
+		Matcher matcher = _pattern.matcher(
+			_fdsRenderer.getFDSAPIURL(
+				externalReferenceCode, httpServletRequest, true,
+				tokenResolutionsJSONObject));
+
+		while (matcher.find()) {
+			unresolvedTokenNames.add(matcher.group(1));
+		}
+
+		return unresolvedTokenNames;
 	}
 
 	private boolean _hasManualMapping(
@@ -463,18 +601,6 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 				externalReferenceCode, httpServletRequest, false, null));
 
 		return matcher.find();
-	}
-
-	private boolean _isResolved(
-		String externalReferenceCode, HttpServletRequest httpServletRequest,
-		JSONObject tokenResolutionsJSONObject) {
-
-		Matcher matcher = _pattern.matcher(
-			_fdsRenderer.getFDSAPIURL(
-				externalReferenceCode, httpServletRequest, true,
-				tokenResolutionsJSONObject));
-
-		return !matcher.find();
 	}
 
 	private void _writeAutoResolvedTokenNames(
@@ -560,6 +686,9 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 
 	@Reference
 	private FragmentEntryConfigurationParser _fragmentEntryConfigurationParser;
+
+	@Reference
+	private InfoItemServiceRegistry _infoItemServiceRegistry;
 
 	@Reference
 	private JSONFactory _jsonFactory;

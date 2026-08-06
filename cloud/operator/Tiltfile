@@ -1,4 +1,5 @@
 load("ext://restart_process", "docker_build_with_restart")
+load("ext://uibutton", "cmd_button", "text_input")
 
 context = k8s_context()
 
@@ -13,12 +14,65 @@ if not context.startswith("k3d-"):
 
 allow_k8s_contexts(context)
 
-activation_code = os.getenv("ACTIVATION_CODE")
+environment_names = [
+    "non-production",
+    "production",
+    "uat",
+]
 
-if not activation_code:
-	fail(
-	    "ACTIVATION_CODE is not set. Usage: ACTIVATION_CODE=<code> tilt up"
+def environment_yaml(name):
+	namespace = "liferay-" + name
+	workload = name + "-liferay"
+
+	return "\n".join(
+	    [
+	        "apiVersion: v1",
+	        "kind: Namespace",
+	        "metadata:",
+	        "    labels:",
+	        "        licensing.liferay.com/environment: \"true\"",
+	        "    name: " + namespace,
+	        "---",
+	        "apiVersion: licensing.liferay.com/v1alpha1",
+	        "kind: LiferayEnvironment",
+	        "metadata:",
+	        "    name: " + name,
+	        "    namespace: " + namespace,
+	        "spec:",
+	        "    activationCodeSecretRef:",
+	        "        key: activationCode",
+	        "        name: " + name + "-activation",
+	        "    desiredReplicas: 3",
+	        "    dxpVersion: 2026.q3.0",
+	        "    environmentName: \"" + name + "\"",
+	        "    marketplaceVolume:",
+	        "        size: 10Gi",
+	        "        storageClassName: local-path",
+	        "    workloadRef:",
+	        "        name: " + workload,
+	        "---",
+	        "apiVersion: apps/v1",
+	        "kind: StatefulSet",
+	        "metadata:",
+	        "    name: " + workload,
+	        "    namespace: " + namespace,
+	        "spec:",
+	        "    replicas: 3",
+	        "    selector:",
+	        "        matchLabels:",
+	        "            app: " + workload,
+	        "    serviceName: " + workload,
+	        "    template:",
+	        "        metadata:",
+	        "            labels:",
+	        "                app: " + workload,
+	        "        spec:",
+	        "            containers:",
+	        "                -   image: registry.k8s.io/pause:3.9",
+	        "                    name: liferay",
+	    ]
 	)
+
 
 docker_build_with_restart(
     "liferay/liferay-dxp-operator",
@@ -30,6 +84,52 @@ docker_build_with_restart(
     ],
     target="dev",
 )
+
+for name in environment_names:
+	namespace = "liferay-" + name
+	workload = name + "-liferay"
+
+	k8s_yaml(blob(environment_yaml(name)))
+
+	k8s_resource(
+	    labels=["environments"],
+	    new_name=namespace,
+	    objects=[
+	        name + ":liferayenvironment",
+	        namespace + ":namespace",
+	    ],
+	    resource_deps=[
+	        "liferay-dxp-operator",
+	        "operator-infra",
+	    ],
+	)
+
+	k8s_resource(
+	    labels=["environments"],
+	    resource_deps=[namespace],
+	    workload=workload,
+	)
+
+	cmd_button(
+	    namespace + ":activate",
+	    argv=[
+	        "sh",
+	        "-c",
+	        "kubectl create secret generic " + name + "-activation" +
+	        " --dry-run=client" +
+	        " --from-literal=activationCode=\"$ACTIVATION_CODE\"" +
+	        " --namespace " + namespace + " -o yaml | kubectl apply -f - && " +
+	        "kubectl annotate --namespace " + namespace +
+	        " --overwrite liferayenvironment " + name +
+	        " tilt.dev/activate-requested=\"$(date +%s)\"",
+	    ],
+	    icon_name="key",
+	    inputs=[
+	        text_input("ACTIVATION_CODE", label="Activation code"),
+	    ],
+	    resource=namespace,
+	    text="Activate with a new code",
+	)
 
 local_resource(
     "operator-build",
@@ -53,34 +153,27 @@ k8s_resource(
     labels=["operator"],
     new_name="operator-infra",
     objects=[
-        "liferayenvironments.licensing.liferay.com:customresourcedefinition",
-        "liferay-dxp-operator:serviceaccount",
+        "liferay-dxp-operator-webhook:secret",
+        "liferay-dxp-operator-webhook:validatingwebhookconfiguration",
         "liferay-dxp-operator:clusterrole",
         "liferay-dxp-operator:clusterrolebinding",
+        "liferay-dxp-operator:serviceaccount",
         "liferay-system:namespace",
-    ],
-)
-
-k8s_resource(
-    labels=["operator"],
-    new_name="sample-environment",
-    objects=[
-        "dev-activation:secret",
-        "dev:liferayenvironment",
-    ],
-    resource_deps=[
-        "liferay-dxp-operator",
-        "operator-infra",
+        "liferayenvironments.licensing.liferay.com:customresourcedefinition",
     ],
 )
 
 k8s_yaml(
-    blob("\n".join([
-        "apiVersion: v1",
-        "kind: Namespace",
-        "metadata:",
-        "  name: liferay-system",
-    ]))
+    blob(
+        "\n".join(
+            [
+                "apiVersion: v1",
+                "kind: Namespace",
+                "metadata:",
+                "    name: liferay-system",
+            ]
+        )
+    )
 )
 
 k8s_yaml(
@@ -90,39 +183,10 @@ k8s_yaml(
         namespace="liferay-system",
         set=[
             "debug=true",
+            "heartbeatInterval=30s",
             "image.repository=liferay/liferay-dxp-operator",
             "provisioning.baseURL=https://webserver-lrprovisioning-uat.lfr.cloud",
             "securityContext.readOnlyRootFilesystem=false",
         ],
     )
-)
-
-k8s_yaml(
-    blob("\n".join([
-        "apiVersion: licensing.liferay.com/v1alpha1",
-        "kind: LiferayEnvironment",
-        "metadata:",
-        "    name: dev",
-        "    namespace: liferay-system",
-        "spec:",
-        "    activationCodeSecretRef:",
-        "      name: dev-activation",
-        "      key: activationCode",
-        "    dxpVersion: 2026.q3.0",
-        "    environmentName: \"Local dev\"",
-        "    workloadRef:",
-        "      name: dev-liferay",
-    ]))
-)
-
-k8s_yaml(
-    blob("\n".join([
-        "apiVersion: v1",
-        "kind: Secret",
-        "metadata:",
-        "    name: dev-activation",
-        "    namespace: liferay-system",
-        "stringData:",
-        "    activationCode: \"" + activation_code + "\"",
-    ]))
 )

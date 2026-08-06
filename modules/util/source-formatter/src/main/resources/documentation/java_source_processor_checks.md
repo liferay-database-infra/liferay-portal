@@ -16,6 +16,7 @@ AssignAsUsedCheck | [Performance](performance_checks.md#performance-checks) | Fi
 [AvoidNestedBlocksCheck](https://checkstyle.sourceforge.io/checks/blocks/avoidnestedblocks.html) | [Styling](styling_checks.md#styling-checks) | Finds nested blocks (blocks that are used freely in the code). |
 [AvoidStarImportCheck](https://checkstyle.sourceforge.io/checks/imports/avoidstarimport.html) | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Checks that there are no import statements that use the * notation. |
 [BatchableUpdateCheck](check/batchable_update_check.md#batchableupdatecheck) | [Performance](performance_checks.md#performance-checks) | Checks for cases where batch updates should be used inside a loop instead of individual executeUpdate calls. |
+BouncyCastleFIPSCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds non-FIPS BouncyCastle artifacts in `build.gradle` files. |
 BrandNameCheck | [Naming Conventions](naming_conventions_checks.md#naming-conventions-checks) | Checks the correct brand name. |
 [CamelCaseNameCheck](check/camel_case_name_check.md#camelcasenamecheck) | [Naming Conventions](naming_conventions_checks.md#naming-conventions-checks) | Checks variable names for correct use of `CamelCase`. |
 CapsNameCheck | [Naming Conventions](naming_conventions_checks.md#naming-conventions-checks) | Checks the correct caps name. |
@@ -131,6 +132,7 @@ JavaLogClassNameCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention
 JavaLongLinesCheck | [Styling](styling_checks.md#styling-checks) | Finds lines that are longer than the specified maximum line length. |
 JavaMapBuilderGenericsCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds missing or unnecessary generics on `*MapBuilder.put` calls. |
 [JavaMetaAnnotationsCheck](check/java_meta_annotations_check.md#javametaannotationscheck) | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Checks for correct use of attributes `description` and `name` in annotation `@aQute.bnd.annotation.metatype.Meta`. |
+JavaMetaOCDSecretFieldCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds missing `type = Meta.Type.Password` on secret-bearing fields. |
 JavaMissingOverrideCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds missing @Override annotations. |
 JavaMissingXMLPublicIdsCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds missing public IDs for check XML files. |
 JavaModifiedServiceMethodCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds missing empty lines before `removedService` or `addingService` calls. |

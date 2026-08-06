@@ -2,14 +2,10 @@ import * as API from 'shared/api';
 import * as breadcrumbs from 'shared/util/breadcrumbs';
 import BasePage from 'shared/components/base-page';
 import BundleRouter from 'route-middleware/BundleRouter';
-import ClayButton from '@clayui/button';
-import ClayIcon from '@clayui/icon';
-import ClayLink from '@clayui/link';
 import DownloadPDFReport from 'shared/components/download-report/DownloadPDFReport';
 import EmbeddedAlertList from 'shared/components/EmbeddedAlertList';
 import ErrorPage from 'shared/pages/ErrorPage';
 import getCN from 'classnames';
-import Label from 'shared/components/Label';
 import Loading from 'shared/components/Loading';
 import React, {
 	lazy,
@@ -23,17 +19,20 @@ import RouteNotFound from 'shared/components/RouteNotFound';
 import {AlertTypes} from 'shared/components/Alert';
 import {ChannelContext} from 'shared/context/channel';
 import {CSVType} from 'shared/components/download-report/utils';
-import {DownloadReportDropdown} from 'shared/components/download-report/DownloadReportDropdown';
 import {DownloadStaticCSVReport} from 'shared/components/download-report/DownloadStaticCSVReport';
-import {formatUTCDate} from 'shared/util/date';
 import {getMatchedRoute, Routes, SEGMENTS, toRoute} from 'shared/util/router';
 import {Segment} from 'shared/util/records';
-import {SegmentStates, SegmentTypes} from 'shared/util/constants';
-import {sub} from 'shared/util/lang';
+import {
+	SegmentCategories,
+	SegmentStates,
+	SegmentTypes
+} from 'shared/util/constants';
 import {Switch, useParams} from 'react-router-dom';
-import {Text} from '@clayui/core';
 import {useRequest} from 'shared/hooks/useRequest';
 
+const AccountProfile = lazy(() =>
+	import(/* webpackChunkName: "SegmentAccountProfile" */ './AccountProfile')
+);
 const Overview = lazy(() =>
 	import(/* webpackChunkName: "SegmentOverview" */ './Overview')
 );
@@ -77,8 +76,10 @@ const NAV_ITEMS = [
 ];
 
 const SEGMENTS_LANGUAGE_MAP = {
-	[SegmentTypes.Batch]: Liferay.Language.get('batch-segment'),
-	[SegmentTypes.RealTime]: Liferay.Language.get('real-time-segment')
+	[SegmentTypes.Batch]: Liferay.Language.get('individual-batch-segment'),
+	[SegmentTypes.RealTime]: Liferay.Language.get(
+		'individual-real-time-segment'
+	)
 };
 
 export const SegmentProfileRoutes = () => {
@@ -86,7 +87,7 @@ export const SegmentProfileRoutes = () => {
 
 	const {channelId, groupId, id} = useParams();
 
-	const {data, error, loading, refetch} = useRequest({
+	const {data, error, loading} = useRequest({
 		dataSourceFn: API.individualSegment.fetch,
 		variables: {
 			groupId,
@@ -98,7 +99,6 @@ export const SegmentProfileRoutes = () => {
 	const segment = useMemo(() => new Segment(data), [data]);
 
 	const [segmentDetails, setSegmentDetails] = useState({
-		dateModified: segment.dateModified,
 		name: segment.name,
 		segmentType: segment.segmentType
 	});
@@ -106,7 +106,6 @@ export const SegmentProfileRoutes = () => {
 	useEffect(() => {
 		if (data && !loading) {
 			setSegmentDetails({
-				dateModified: segment.dateModified,
 				name: segment.name,
 				segmentType: segment.segmentType
 			});
@@ -133,6 +132,18 @@ export const SegmentProfileRoutes = () => {
 				)}
 				subtitle={Liferay.Language.get('segment-not-found')}
 			/>
+		);
+	}
+
+	if (segment.segmentCategory === SegmentCategories.Account) {
+		return (
+			<Suspense fallback={<Loading />}>
+				<AccountProfile
+					channelId={channelId}
+					groupId={groupId}
+					segment={segment}
+				/>
+			</Suspense>
 		);
 	}
 
@@ -163,11 +174,6 @@ export const SegmentProfileRoutes = () => {
 	};
 
 	const isBatch = segmentDetails.segmentType === SegmentTypes.Batch;
-	const lastUpdateMessage = sub(Liferay.Language.get('last-update-x'), [
-		formatUTCDate(segmentDetails.dateModified, 'MMM DD, YYYY hh:mm a')
-			.replace('am', 'a.m.')
-			.replace('pm', 'p.m.')
-	]);
 
 	return (
 		<BasePage
@@ -199,36 +205,28 @@ export const SegmentProfileRoutes = () => {
 							segment.externalReferenceCode
 						}`}
 						title={title}
-					>
-						<Label display='secondary' size='lg' uppercase>
-							{SEGMENTS_LANGUAGE_MAP[segmentDetails.segmentType]}
-						</Label>
-					</BasePage.Header.TitleSection>
+						topLabel={
+							SEGMENTS_LANGUAGE_MAP[segmentDetails.segmentType]
+						}
+					/>
 
-					{isBatch && (
-						<BasePage.Header.Section>
-							<BasePage.Header.PageActions
-								actions={[
-									{
-										button: true,
-										displayType: 'secondary',
-										href: toRoute(
-											Routes.CONTACTS_SEGMENT_EDIT,
-											{
-												channelId,
-												groupId,
-												id,
-												type: SEGMENTS
-											}
-										),
-										label: Liferay.Language.get(
-											'edit-segment'
-										)
-									}
-								]}
-							/>
-						</BasePage.Header.Section>
-					)}
+					<BasePage.Header.Section>
+						<BasePage.Header.PageActions
+							actions={[
+								{
+									button: true,
+									displayType: 'secondary',
+									href: toRoute(Routes.CONTACTS_SEGMENT_EDIT, {
+										channelId,
+										groupId,
+										id,
+										type: SEGMENTS
+									}),
+									label: Liferay.Language.get('edit-segment')
+								}
+							]}
+						/>
+					</BasePage.Header.Section>
 				</BasePage.Row>
 
 				{isBatch && (
@@ -269,60 +267,6 @@ export const SegmentProfileRoutes = () => {
 						</div>
 					</BasePage.SubHeader>
 				)}
-
-			{!isBatch && (
-				<BasePage.SubHeader>
-					<div className='align-items-center d-flex justify-content-end w-100'>
-						<Text color='secondary' size={3}>
-							{lastUpdateMessage}
-						</Text>
-
-						<span className='mr-2 ml-3'>{'|'}</span>
-
-						<DownloadReportDropdown
-							className='button-root'
-							label={Liferay.Language.get('real-time-segment')}
-							segmentId={segment.id}
-							subtitle={lastUpdateMessage}
-							title={segmentDetails.name}
-						/>
-
-						<ClayButton
-							borderless
-							button
-							className='button-root'
-							disabled={loading}
-							displayType='secondary'
-							key={Liferay.Language.get('refresh-data')}
-							onClick={refetch}
-							size='sm'
-						>
-							{loading ? (
-								<Loading align='false' className='mr-2 mt-n1' />
-							) : (
-								<ClayIcon className='mr-2' symbol='reload' />
-							)}
-							{Liferay.Language.get('refresh-data')}
-						</ClayButton>
-
-						<ClayLink
-							borderless
-							button
-							className='button-root'
-							displayType='secondary'
-							href={toRoute(Routes.CONTACTS_SEGMENT_EDIT, {
-								channelId,
-								groupId,
-								id
-							})}
-							small
-						>
-							<ClayIcon className='mr-2' symbol='pencil' />
-							{Liferay.Language.get('edit-segment')}
-						</ClayLink>
-					</div>
-				</BasePage.SubHeader>
-			)}
 
 			<EmbeddedAlertList alerts={getAlerts()} />
 

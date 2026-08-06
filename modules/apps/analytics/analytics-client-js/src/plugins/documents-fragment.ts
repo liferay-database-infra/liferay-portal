@@ -6,9 +6,11 @@
 import Analytics from '../analytics';
 import {Analytics as AnalyticsType} from '../types';
 import {
+	closest,
 	isDownloadAction,
 	isImpressionAction,
 	isTrackable,
+	isViewAction,
 	transformAssetTypeToSelector,
 } from '../utils/assets';
 import {composeDisposers} from '../utils/disposers';
@@ -77,12 +79,12 @@ function getDocumentPayload({dataset}: AnalyticsType.HTMLElement) {
  */
 function trackDocumentDownloaded(analytics: Analytics) {
 	const onClick = (event: MouseEvent) => {
-		const element = event.target as AnalyticsType.HTMLElement;
-		const parentElement =
-			element.parentElement as AnalyticsType.HTMLElement | null;
-
-		const target = [element, parentElement].find(
-			(element) => element?.dataset.analyticsAssetAction === 'download'
+		const target = closest(
+			event.target as AnalyticsType.HTMLElement,
+			transformAssetTypeToSelector(
+				AnalyticsType.ElementType.FileEntry,
+				'[data-analytics-asset-action="download"]'
+			)
 		);
 
 		if (target && isTrackable(target)) {
@@ -144,12 +146,24 @@ function trackDocumentImpression(analytics: Analytics) {
 }
 
 /**
+ * Sends the view event the first time a Document is visible inside the
+ * viewport.
+ */
+function trackDocumentViewed(analytics: Analytics) {
+	return trackDocument(analytics, {
+		eventId: AnalyticsType.EventId.DocumentPreviewed,
+		isTrackable: (element) => isTrackable(element) && isViewAction(element),
+	});
+}
+
+/**
  * Plugin function that registers listeners for Document events.
  */
 function documents(analytics: Analytics) {
 	return composeDisposers([
 		trackDocumentDownloaded(analytics),
 		trackDocumentImpression(analytics),
+		trackDocumentViewed(analytics),
 	]);
 }
 

@@ -37,8 +37,10 @@ async function createPrompt(
 	const prompt = await apiHelpers.objectEntry.postObjectEntry(
 		{
 			description: `Created by Playwright ${name}`,
+			identifier: name,
 			name,
 			prompt: 'Prompt body created by Playwright',
+			promptStatus: {key: 'active'},
 		},
 		PROMPTS_API
 	);
@@ -60,7 +62,20 @@ const test = baseTest.extend<{
 		await use(async () => {
 			const name = promptName();
 
-			await createPrompt(apiHelpers, name);
+			const prompt = await apiHelpers.objectEntry.postObjectEntry(
+				{
+					description: `Created by Playwright ${name}`,
+					name,
+					prompt: 'Prompt body created by Playwright',
+				},
+				PROMPTS_API
+			);
+
+			apiHelpers.data.push({
+				applicationName: PROMPTS_API,
+				id: prompt.id,
+				type: 'objectEntry',
+			});
 
 			return name;
 		});
@@ -71,7 +86,7 @@ const test = baseTest.extend<{
 });
 
 createFDSTableTests(test, {
-	columns: ['Name', 'Description', 'Last Modified'],
+	columns: ['Name', 'Identifier', 'Description', 'Status', 'Last Modified'],
 	rowActions: ['Edit', 'Duplicate', 'Delete'],
 	sortOptions: ['Name', 'Last Modified'],
 	tag: '@LPD-98309',
@@ -81,9 +96,8 @@ test.describe('Prompts - List View', () => {
 	test(
 		'Opens a prompt in edit when clicking its name',
 		{tag: '@LPD-98309'},
-		async ({apiHelpers, promptsPage}) => {
-			const name = promptName();
-			await createPrompt(apiHelpers, name);
+		async ({createFDSItem, promptsPage}) => {
+			const name = await createFDSItem();
 
 			await promptsPage.goto();
 			await promptsPage.search(name);
@@ -98,9 +112,8 @@ test.describe('Prompts - List View', () => {
 	test(
 		'Edits a prompt from the three-dot menu',
 		{tag: '@LPD-98309'},
-		async ({apiHelpers, promptsPage}) => {
-			const name = promptName();
-			await createPrompt(apiHelpers, name);
+		async ({createFDSItem, promptsPage}) => {
+			const name = await createFDSItem();
 
 			await promptsPage.goto();
 			await promptsPage.search(name);
@@ -117,7 +130,7 @@ test.describe('Prompts - List View', () => {
 		{tag: '@LPD-98309'},
 		async ({apiHelpers, promptsPage}) => {
 			const name = promptName();
-			await createPrompt(apiHelpers, name);
+			const prompt = await createPrompt(apiHelpers, name);
 
 			await promptsPage.goto();
 			await promptsPage.search(name);
@@ -138,15 +151,17 @@ test.describe('Prompts - List View', () => {
 				id: copy.id,
 				type: 'objectEntry',
 			});
+
+			expect(copy.identifier).toBe(`copy-of-${prompt.identifier}`);
+			expect(copy.promptStatus.key).toBe('inactive');
 		}
 	);
 
 	test(
 		'Asks for confirmation with the prompt name before deleting',
 		{tag: '@LPD-98309'},
-		async ({apiHelpers, promptsPage}) => {
-			const name = promptName();
-			await createPrompt(apiHelpers, name);
+		async ({createFDSItem, promptsPage}) => {
+			const name = await createFDSItem();
 
 			await promptsPage.goto();
 			await promptsPage.search(name);
@@ -156,7 +171,7 @@ test.describe('Prompts - List View', () => {
 			await expect(promptsPage.dialog).toBeVisible();
 			await expect(promptsPage.dialog).toContainText('Delete MCP Prompt');
 			await expect(promptsPage.dialog).toContainText(
-				`This will permanently delete "${name}" prompt from your MCP Server configuration.`
+				`This will permanently delete "${name}" prompt from your MCP server configuration.`
 			);
 			await expect(promptsPage.dialog).toContainText(
 				'Do you want to proceed?'
@@ -167,9 +182,8 @@ test.describe('Prompts - List View', () => {
 	test(
 		'Keeps the prompt when the delete confirmation is cancelled',
 		{tag: '@LPD-98309'},
-		async ({apiHelpers, promptsPage}) => {
-			const name = promptName();
-			await createPrompt(apiHelpers, name);
+		async ({createFDSItem, promptsPage}) => {
+			const name = await createFDSItem();
 
 			await promptsPage.goto();
 			await promptsPage.search(name);
@@ -188,9 +202,8 @@ test.describe('Prompts - List View', () => {
 	test(
 		'Deletes a prompt after confirming in the modal',
 		{tag: '@LPD-98309'},
-		async ({apiHelpers, promptsPage}) => {
-			const name = promptName();
-			await createPrompt(apiHelpers, name);
+		async ({createFDSItem, promptsPage}) => {
+			const name = await createFDSItem();
 
 			await promptsPage.goto();
 			await promptsPage.search(name);
@@ -209,11 +222,15 @@ test.describe('Prompts - List View', () => {
 });
 
 test.describe('Prompts - Detail (Create / Edit)', () => {
+	test.beforeEach(async ({createFDSItem}) => {
+		await createFDSItem();
+	});
+
 	test(
 		'Creates a prompt from the New Prompt button',
 		{tag: '@LPD-98309'},
 		async ({apiHelpers, promptsPage}) => {
-			const name = promptName();
+			const name = `Auto Generated ${getRandomString()}`;
 
 			await promptsPage.goto();
 			await promptsPage.newPromptButton.click();
@@ -221,8 +238,23 @@ test.describe('Prompts - Detail (Create / Edit)', () => {
 			await expect(promptsPage.formHeading).toHaveText('New Prompt');
 
 			await promptsPage.nameInput.fill(name);
+
+			await expect(promptsPage.identifierInput).toHaveValue(
+				name.toLowerCase().replace(/\s/g, '-')
+			);
+
+			const identifier = promptName();
+
+			await promptsPage.identifierInput.fill(identifier);
 			await promptsPage.descriptionInput.fill('Created from the UI');
 			await promptsPage.promptInput.fill('Answer as a friendly robot.');
+
+			await expect(promptsPage.statusToggle).not.toBeChecked();
+
+			await promptsPage.statusToggle.click();
+
+			await expect(promptsPage.statusToggle).toBeChecked();
+
 			await promptsPage.saveButton.click();
 
 			await expect(promptsPage.row(name)).toBeVisible();
@@ -238,12 +270,53 @@ test.describe('Prompts - Detail (Create / Edit)', () => {
 				type: 'objectEntry',
 			});
 
+			expect(prompt.identifier).toBe(identifier);
 			expect(prompt.prompt).toBe('Answer as a friendly robot.');
+			expect(prompt.promptStatus.key).toBe('active');
 		}
 	);
 
 	test(
-		'Shows a required-field error on Name, Description, and Prompt',
+		'Stops auto-generating the identifier after a manual edit',
+		{tag: '@LPD-98450'},
+		async ({promptsPage}) => {
+			await promptsPage.goto();
+			await promptsPage.newPromptButton.click();
+
+			await promptsPage.nameInput.fill('First Name');
+
+			await expect(promptsPage.identifierInput).toHaveValue('first-name');
+
+			const identifier = promptName();
+
+			await promptsPage.identifierInput.fill(identifier);
+
+			await promptsPage.nameInput.fill('Second Name');
+
+			await expect(promptsPage.identifierInput).toHaveValue(identifier);
+		}
+	);
+
+	test(
+		'Shows a format error for an invalid identifier',
+		{tag: '@LPD-98450'},
+		async ({promptsPage}) => {
+			await promptsPage.goto();
+			await promptsPage.newPromptButton.click();
+
+			await promptsPage.identifierInput.fill('Invalid_Identifier');
+			await promptsPage.saveButton.click();
+
+			await expect(
+				promptsPage.identifierInput
+			).toHaveAccessibleDescription(
+				/Please enter a valid identifier \(lowercase letters and numbers separated by single hyphens\)\./
+			);
+		}
+	);
+
+	test(
+		'Shows a required-field error on Name, Identifier, Description, and Prompt',
 		{tag: '@LPD-98309'},
 		async ({promptsPage}) => {
 			await promptsPage.goto();
@@ -254,6 +327,9 @@ test.describe('Prompts - Detail (Create / Edit)', () => {
 			await expect(promptsPage.nameInput).toHaveAccessibleDescription(
 				/This field is required\./
 			);
+			await expect(
+				promptsPage.identifierInput
+			).toHaveAccessibleDescription(/This field is required\./);
 			await expect(
 				promptsPage.descriptionInput
 			).toHaveAccessibleDescription(/This field is required\./);
@@ -287,13 +363,15 @@ test.describe('Prompts - Detail (Create / Edit)', () => {
 	test(
 		'Edits a prompt and persists the change',
 		{tag: '@LPD-98309'},
-		async ({apiHelpers, promptsPage}) => {
-			const name = promptName();
-			await createPrompt(apiHelpers, name);
+		async ({apiHelpers, createFDSItem, promptsPage}) => {
+			const name = await createFDSItem();
 
 			await promptsPage.goto();
 			await promptsPage.search(name);
 			await promptsPage.clickAction(name, 'Edit');
+
+			await expect(promptsPage.identifierInput).toHaveValue(name);
+			await expect(promptsPage.statusToggle).toBeChecked();
 
 			await promptsPage.promptInput.fill('Edited by Playwright');
 			await promptsPage.saveButton.click();
@@ -318,7 +396,7 @@ test.describe('Prompts - Detail (Create / Edit)', () => {
 
 			await promptsPage.cancelButton.click();
 
-			await promptsPage.table.waitFor({state: 'visible'});
+			await promptsPage.waitForTable();
 			await expect(promptsPage.newPromptButton).toBeVisible();
 		}
 	);

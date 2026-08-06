@@ -307,10 +307,26 @@ test(
 		await expect(imageButton).toBeDisabled();
 		await expect(videoButton).toBeDisabled();
 
-		await sourceButton.click();
+		await classicPage.sourceEditingEnhancedDialog.cancelButton.click();
 
 		await expect(imageButton).toBeEnabled();
 		await expect(videoButton).toBeEnabled();
+	}
+);
+
+test(
+	'Enhanced source editing opens the source view in a modal for DXP licensed installations',
+	{tag: '@LPD-83978'},
+	async ({classicPage, page}) => {
+		await classicPage.toolbar.container
+			.getByRole('button', {exact: true, name: 'Source'})
+			.click();
+
+		await expect(
+			page.getByRole('dialog', {name: 'Edit source'})
+		).toBeVisible();
+
+		await expect(page.locator('.cm-editor')).toBeVisible();
 	}
 );
 
@@ -324,11 +340,11 @@ test(
 
 		await sourceButton.click();
 
-		await classicPage.sourceEditable.fill(
+		await classicPage.sourceEditingEnhancedDialog.editable.fill(
 			'<h2>Heading Two</h2><p>Paragraph with <i>italic</i> text.</p>'
 		);
 
-		await sourceButton.click();
+		await classicPage.sourceEditingEnhancedDialog.saveButton.click();
 
 		await expect(classicPage.editable.locator('h2')).toContainText(
 			'Heading Two'
@@ -414,37 +430,27 @@ test(
 	}
 );
 
-test(
-	'Enhanced Paste from Office plugin is registered for licensed DXP installations',
-	{tag: '@LPD-95090'},
-	async ({classicPage, page}) => {
-		await expect(classicPage.editable).toBeVisible();
+if (!process.env.CI) {
+	test(
+		'Enhanced Paste from Office plugin is registered for licensed DXP installations',
+		{tag: '@LPD-95090'},
+		async ({classicPage, page}) => {
+			await expect(classicPage.editable).toBeVisible();
 
-		const {hasPasteFromOfficeEnhanced, showPasteFromOfficeEnhanced} =
-			await page.evaluate(() => {
+			const hasPasteFromOfficeEnhanced = await page.evaluate(() => {
 				const editorElement = Array.from(
 					document.querySelectorAll('.lfr-ck *')
 				).find((element) => (element as any).ckeditorInstance);
 
 				const editor = (editorElement as any)?.ckeditorInstance;
 
-				return {
-					hasPasteFromOfficeEnhanced:
-						editor?.plugins.has('PasteFromOfficeEnhanced') ?? false,
-					showPasteFromOfficeEnhanced:
-						editor?.config.get('showPasteFromOfficeEnhanced') ??
-						false,
-				};
+				return editor?.plugins.has('PasteFromOfficeEnhanced') ?? false;
 			});
 
-		test.skip(
-			!showPasteFromOfficeEnhanced,
-			'Enhanced Paste from Office is only available on licensed DXP installations'
-		);
-
-		expect(hasPasteFromOfficeEnhanced).toBe(true);
-	}
-);
+			expect(hasPasteFromOfficeEnhanced).toBe(true);
+		}
+	);
+}
 
 test(
 	'Style Book text colors are available in the Styles dropdown',

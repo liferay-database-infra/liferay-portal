@@ -1,0 +1,97 @@
+suite: Marketplace Volume
+templates:
+    -   templates/configmap.yaml
+    -   templates/liferay-init-scripts-cm.yaml
+    -   templates/liferay-network-cm.yaml
+    -   templates/liferayenvironment.yaml
+    -   templates/workloads.yaml
+tests:
+    -   asserts:
+            -   contains:
+                    any: true
+                    content:
+                        name: liferay-lpkg
+                        persistentVolumeClaim:
+                            claimName: liferay-default-marketplace
+                    path: spec.template.spec.volumes
+        documentSelector:
+            path: kind
+            skipEmptyTemplates: true
+            value: StatefulSet
+        it: Adds the marketplace volume when marketplace is enabled
+        set:
+            marketplace.enabled: true
+            marketplace.storageClassName: nfs-sc
+    -   asserts:
+            -   equal:
+                    path: spec
+                    value:
+                        activationCodeSecretRef:
+                            key: activationCode
+                            name: liferay-default-activation
+                        desiredReplicas: 1
+                        marketplaceVolume:
+                            enabled: true
+                            size: 10Gi
+                            storageClassName: nfs-sc
+                        workloadRef:
+                            name: liferay-default
+        it: Requests the configured marketplace volume through the LiferayEnvironment
+        set:
+            marketplace.enabled: true
+            marketplace.storageClassName: nfs-sc
+        template: templates/liferayenvironment.yaml
+    -   asserts:
+            -   equal:
+                    path: spec.desiredReplicas
+                    value: 3
+        it: Sets desiredReplicas from the configured replica count
+        set:
+            replicaCount: 3
+        template: templates/liferayenvironment.yaml
+    -   asserts:
+            -   notExists:
+                    path: spec.desiredReplicas
+        it: Omits desiredReplicas when autoscaling manages the replica count
+        set:
+            autoscaling.enabled: true
+        template: templates/liferayenvironment.yaml
+    -   asserts:
+            -   equal:
+                    path: metadata.labels.component
+                    value: liferay
+            -   equal:
+                    path: metadata.name
+                    value: liferay-default
+        it: Names the LiferayEnvironment after the Liferay stateful set
+        set:
+            marketplace.enabled: true
+            marketplace.storageClassName: nfs-sc
+        template: templates/liferayenvironment.yaml
+    -   asserts:
+            -   notExists:
+                    path: spec.template.spec.volumes
+        documentSelector:
+            path: spec.serviceName
+            skipEmptyTemplates: true
+            value: liferay-default-search
+        it: Does not create the marketplace volume for statefulsets different from Liferay
+        set:
+            dependencies:
+                search:
+                    source: statefulset
+                    statefulset:
+                        autoscaling:
+                            enabled: false
+                        image:
+                            pullPolicy: IfNotPresent
+                            repository: opensearchproject/opensearch
+                            tag: 2.13.0
+                        replicaCount: 1
+                        service:
+                            ports:
+                                -   name: http
+                                    port: 9200
+            marketplace.enabled: true
+            marketplace.storageClassName: nfs-sc
+        template: templates/workloads.yaml

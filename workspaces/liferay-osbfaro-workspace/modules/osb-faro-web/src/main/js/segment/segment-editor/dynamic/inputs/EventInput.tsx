@@ -31,7 +31,7 @@ import {
 	removeItemsByIndex,
 } from '../utils/custom-inputs';
 import {isBoolean, isNil} from 'lodash';
-import {SegmentTypes} from 'shared/util/constants';
+import {SegmentCategories, SegmentTypes} from 'shared/util/constants';
 
 type Touched = {
 	attribute: boolean;
@@ -50,6 +50,7 @@ type Valid = {
 interface IEventInputProps extends ISegmentEditorCustomInputBase {
 	touched: Touched;
 	valid: Valid;
+	segmentCategory: SegmentCategories;
 	segmentType: SegmentTypes;
 }
 
@@ -58,6 +59,7 @@ const EventInput: React.FC<IEventInputProps> = ({
 	onChange,
 	operatorRenderer: OperatorDropdown,
 	property,
+	segmentCategory,
 	segmentType,
 	touched,
 	valid,
@@ -350,6 +352,7 @@ const EventInput: React.FC<IEventInputProps> = ({
 		);
 	}
 
+	const isAccountSegment = segmentCategory === SegmentCategories.Account;
 	const isRealTime = segmentType === SegmentTypes.RealTime;
 	const isSelectedAttributeDateType =
 		selectedCustomAttribute?.dataType === DataTypes.Date;
@@ -364,14 +367,22 @@ const EventInput: React.FC<IEventInputProps> = ({
 					label
 					shrink
 				>
-					{Liferay.Language.get('individual')}
+					{isAccountSegment
+						? Liferay.Language.get('account')
+						: Liferay.Language.get('individual')}
 				</Form.GroupItem>
 
 				<OperatorDropdown />
 
-				<Form.GroupItem className="entity-name" label shrink>
-					{Liferay.Language.get('triggered').toLowerCase()}
-				</Form.GroupItem>
+				{isAccountSegment ? (
+					<Form.GroupItem className="entity-name" label shrink>
+						{Liferay.Language.get('individual-who-triggered')}
+					</Form.GroupItem>
+				) : (
+					<Form.GroupItem className="entity-name" label shrink>
+						{Liferay.Language.get('triggered').toLowerCase()}
+					</Form.GroupItem>
+				)}
 
 				<Form.GroupItem className="display-value" label shrink>
 					<b>{displayValue}</b>

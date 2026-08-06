@@ -362,6 +362,8 @@ image:
     tag: 2026.q1.8-lts
 initContainers: []
 license:
+    activationCodeSecretKey: activationCode
+    activationCodeSecretName: ""
     enabled: false
     initScriptsVolumeName: liferay-init-scripts-default
     syncInterval: 60
@@ -377,6 +379,10 @@ lpkg:
     enabled: false
     initScriptsVolumeName: liferay-init-scripts-default
     syncInterval: 600
+marketplace:
+    enabled: false
+    size: 10Gi
+    storageClassName: ""
 nameOverride: ""
 network:
     annotations: {}

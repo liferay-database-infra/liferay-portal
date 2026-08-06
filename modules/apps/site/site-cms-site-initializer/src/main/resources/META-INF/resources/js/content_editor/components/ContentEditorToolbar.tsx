@@ -19,6 +19,7 @@ import React, {useCallback, useEffect, useId, useRef, useState} from 'react';
 import {flushSync} from 'react-dom';
 
 import Toolbar from '../../common/components/Toolbar';
+import {AI_ASSISTANT_TOOLBAR_TRIGGER_ID} from '../../common/utils/constants';
 import applyFieldValues from '../utils/applyFieldValues';
 import getFieldValues from '../utils/getFieldValues';
 import {toMomentDate} from './ScheduleField';
@@ -258,21 +259,18 @@ export default function ContentEditorToolbar({
 			title={headerTitle}
 		>
 			{Liferay.FeatureFlags['LPD-62272'] && (
-				<>
-					<Toolbar.Item>
-						<AIAssistantTriggerButton
-							context={{groupId}}
-							enableFreeFormCategorization
-							getContext={getContext}
-							hideLabel
-							instructionDefinitionScope="cms"
-							presentation="dropdown"
-							round
-						/>
-					</Toolbar.Item>
-
-					<div className="ai-assistant__separator" />
-				</>
+				<Toolbar.Item className="nav-divider-end">
+					<AIAssistantTriggerButton
+						context={{groupId}}
+						enableFreeFormCategorization
+						getContext={getContext}
+						hideLabel
+						instructionDefinitionScope="cms"
+						presentation="dropdown"
+						round
+						triggerId={AI_ASSISTANT_TOOLBAR_TRIGGER_ID}
+					/>
+				</Toolbar.Item>
 			)}
 
 			<Toolbar.Item className="nav-divider-end">

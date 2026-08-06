@@ -8,10 +8,12 @@ package com.liferay.jenkins.results.parser.monitor;
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
 import com.liferay.jenkins.results.parser.RandomTestUtil;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.mockito.MockedStatic;
@@ -21,6 +23,29 @@ import org.mockito.Mockito;
  * @author Brittney Nguyen
  */
 public class MonitorEngineTest extends com.liferay.jenkins.results.parser.Test {
+
+	@Test
+	public void testMonitorEngineDuplicateIds() {
+		MonitorResultStore monitorResultStore = new MonitorResultStore();
+
+		new MonitorEngine(
+			monitorResultStore,
+			Arrays.<Monitor>asList(
+				new TestMonitor(_newMonitorConfig("a")),
+				new TestMonitor(_newMonitorConfig("b"))));
+
+		try {
+			new MonitorEngine(
+				monitorResultStore,
+				Arrays.<Monitor>asList(
+					new TestMonitor(_newMonitorConfig("a")),
+					new TestMonitor(_newMonitorConfig("a"))));
+
+			Assert.fail("Expected IllegalArgumentException");
+		}
+		catch (IllegalArgumentException illegalArgumentException) {
+		}
+	}
 
 	@Test(timeout = 10000)
 	public void testRunCycle() {
@@ -151,6 +176,28 @@ public class MonitorEngineTest extends com.liferay.jenkins.results.parser.Test {
 
 			testEquals(2, monitorResults.size());
 		}
+	}
+
+	@Test(timeout = 10000)
+	public void testRunCycleIgnoresMonitorsAddedAfterConstruction() {
+		List<Monitor> monitors = new ArrayList<>();
+
+		monitors.add(new TestMonitor(_newMonitorConfig("a", 0, 0)));
+
+		MonitorEngine monitorEngine = new MonitorEngine(
+			new MonitorResultStore(), monitors);
+
+		monitors.add(new TestMonitor(_newMonitorConfig("b", 0, 0)));
+
+		Map<Monitor, MonitorResult> monitorResultsMap =
+			monitorEngine.runCycle();
+
+		testEquals(1, monitorResultsMap.size());
+	}
+
+	private MonitorConfig _newMonitorConfig(String id) {
+		return _newMonitorConfig(
+			id, RandomTestUtil.randomLong(), RandomTestUtil.randomLong());
 	}
 
 	private MonitorConfig _newMonitorConfig(

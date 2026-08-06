@@ -32,7 +32,11 @@ import {
 	withReferencedObjectsProvider,
 } from './context/referencedObjects';
 import {SegmentEnabledSequentialCard} from 'segment/components/SegmentEnabledSequentialCard';
-import {SegmentStates, SegmentTypes} from 'shared/util/constants';
+import {
+	SegmentCategories,
+	SegmentStates,
+	SegmentTypes,
+} from 'shared/util/constants';
 import {v4 as uuidv4} from 'uuid';
 
 /**
@@ -69,6 +73,7 @@ const CriteriaBuilderForm = withField(
 		channelId,
 		field: {name, value},
 		groupId,
+		segmentCategory,
 		segmentType,
 		sequential,
 		...fieldProps
@@ -76,6 +81,7 @@ const CriteriaBuilderForm = withField(
 		channelId: string;
 		field: {name: string; value: any};
 		groupId: string;
+		segmentCategory: SegmentCategories;
 		segmentType: SegmentTypes;
 		[key: string]: any;
 	}) => {
@@ -94,6 +100,7 @@ const CriteriaBuilderForm = withField(
 				criteria={value}
 				groupId={groupId}
 				onChange={handleChange}
+				segmentCategory={segmentCategory}
 				segmentType={segmentType}
 				sequential={sequential}
 			/>
@@ -121,6 +128,7 @@ interface ISegmentEditorProps {
 	) => void;
 	propertyGroupsIList: List<PropertyGroup>;
 	segment: Segment;
+	segmentCategory: SegmentCategories;
 	type: SegmentTypes;
 }
 
@@ -159,6 +167,7 @@ class SegmentEditor extends React.Component<ISegmentEditorProps> {
 			channelId,
 			groupId,
 			segment: {id},
+			segmentCategory,
 			type,
 		} = this.props;
 
@@ -175,6 +184,7 @@ class SegmentEditor extends React.Component<ISegmentEditorProps> {
 			id,
 			includeAnonymousUsers,
 			name: name.trim(),
+			segmentCategory,
 			segmentType: type,
 			sequential,
 		};
@@ -231,6 +241,7 @@ class SegmentEditor extends React.Component<ISegmentEditorProps> {
 					sequential,
 					state: segmentState,
 				},
+				segmentCategory,
 				type,
 			},
 		} = this;
@@ -313,6 +324,7 @@ class SegmentEditor extends React.Component<ISegmentEditorProps> {
 										includeAnonymousUsers={
 											includeAnonymousUsers
 										}
+										segmentCategory={segmentCategory}
 										segmentType={type}
 										valid={isValid && hasChanges}
 									/>
@@ -419,6 +431,9 @@ class SegmentEditor extends React.Component<ISegmentEditorProps> {
 															groupId={groupId}
 															id={id}
 															name="criteria"
+															segmentCategory={
+																segmentCategory
+															}
 															segmentType={type}
 															sequential={
 																sequential

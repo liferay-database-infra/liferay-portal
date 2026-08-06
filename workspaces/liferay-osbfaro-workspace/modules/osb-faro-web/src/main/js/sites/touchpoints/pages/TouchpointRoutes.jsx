@@ -91,7 +91,7 @@ function TouchpointRoutes({className, router}) {
 	const accountDropdown = LDPEnabled && (
 		<AccountDropdown
 			assetType='page'
-			className='mr-2'
+			className='mr-3'
 			initialAccountId={accountId}
 			initialAccountName={accountName}
 			onFilterChange={setAccount}
@@ -100,7 +100,7 @@ function TouchpointRoutes({className, router}) {
 
 	const segmentDropdown = LDPEnabled && (
 		<SegmentDropdown
-			className='mr-2'
+			className='mr-3'
 			initialSegmentId={segmentId}
 			initialSegmentName={segmentName}
 			onFilterChange={setSegment}
@@ -208,6 +208,12 @@ function TouchpointRoutes({className, router}) {
 							url={decodedTouchpoint}
 						/>
 					</div>
+				</BasePage.SubHeader>
+			)}
+
+			{matchedRoute === Routes.SITES_TOUCHPOINTS_ACCOUNTS && (
+				<BasePage.SubHeader>
+					{segmentDropdown}
 				</BasePage.SubHeader>
 			)}
 

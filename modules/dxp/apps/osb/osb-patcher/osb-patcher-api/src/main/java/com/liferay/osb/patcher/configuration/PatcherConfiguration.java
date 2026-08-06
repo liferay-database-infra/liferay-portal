@@ -25,9 +25,6 @@ public interface PatcherConfiguration {
 	public String githubURL();
 
 	@Meta.AD(deflt = "", required = false)
-	public String googleCloudHotfixBucket();
-
-	@Meta.AD(deflt = "", required = false)
 	public String helpCenterURL();
 
 	@Meta.AD(deflt = "", required = false)
@@ -57,8 +54,23 @@ public interface PatcherConfiguration {
 	@Meta.AD(deflt = "", required = false)
 	public String jenkinsURL();
 
+	@Meta.AD(deflt = "", required = false, type = Meta.Type.Password)
+	public String jiraAPIToken();
+
 	@Meta.AD(deflt = "", required = false)
-	public String jiraURL();
+	public String jiraAPIURL();
+
+	@Meta.AD(deflt = "", required = false)
+	public String jiraBrowseURL();
+
+	@Meta.AD(deflt = "", required = false)
+	public String jiraEmailAddress();
+
+	@Meta.AD(deflt = "", required = false)
+	public String jiraServiceManagementUserEmailAddress();
+
+	@Meta.AD(deflt = "", required = false, type = Meta.Type.Password)
+	public String jiraServiceManagementUserToken();
 
 	@Meta.AD(deflt = "", required = false)
 	public String lesaURL();
@@ -125,12 +137,6 @@ public interface PatcherConfiguration {
 
 	@Meta.AD(deflt = "", required = false, type = Meta.Type.Password)
 	public String supportLiferayAPIClientSecret();
-
-	@Meta.AD(deflt = "", required = false)
-	public String supportLiferayLFUURL();
-
-	@Meta.AD(deflt = "", required = false)
-	public String supportLiferayTicketAttachmentAPIEndpoint();
 
 	@Meta.AD(deflt = "", required = false)
 	public String supportLiferayURL();

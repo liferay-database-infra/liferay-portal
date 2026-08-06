@@ -23,6 +23,7 @@ BNDBreakingChangeCommitMessageCheck | .bnd | Checks that commit message should c
 [BNDSchemaVersionCheck](check/bnd_schema_version_check.md#bndschemaversioncheck) | .bnd | Checks for incorrect use of property `Liferay-Require-SchemaVersion`. |
 [BNDWebContextPathCheck](check/bnd_web_context_path_check.md#bndwebcontextpathcheck) | .bnd | Checks if the property value for `Web-ContextPath` matches the module directory. |
 BNDWebServiceTrackingCheck | .bnd | Finds missing `Web-ServiceTracking: false`. |
+BouncyCastleFIPSCheck | .gradle or .java | Finds non-FIPS BouncyCastle artifacts in `build.gradle` files. |
 CDNCheck | | Checks the URL in `artifact.properties` files. |
 CIMergeAndGitRepoFileCheck | .gitrepo or ci-merge | Checks that `ci-merge` and `.gitrepo` files can not be added or modified. |
 CQLKeywordCheck | .cql | Checks that Cassandra keywords are upper case. |
@@ -125,6 +126,7 @@ JavaLogClassNameCheck | .java | Checks the name of the class that is passed in `
 [JavaLogLevelCheck](check/java_log_level_check.md#javaloglevelcheck) | .java | Checks that the correct log messages are printed. |
 JavaMapBuilderGenericsCheck | .java | Finds missing or unnecessary generics on `*MapBuilder.put` calls. |
 [JavaMetaAnnotationsCheck](check/java_meta_annotations_check.md#javametaannotationscheck) | .java | Checks for correct use of attributes `description` and `name` in annotation `@aQute.bnd.annotation.metatype.Meta`. |
+JavaMetaOCDSecretFieldCheck | .java | Finds missing `type = Meta.Type.Password` on secret-bearing fields. |
 JavaMissingOverrideCheck | .java | Finds missing @Override annotations. |
 JavaMissingXMLPublicIdsCheck | .java | Finds missing public IDs for check XML files. |
 JavaModifiedServiceMethodCheck | .java | Finds missing empty lines before `removedService` or `addingService` calls. |

@@ -45,6 +45,7 @@ public class IndividualSegmentDisplay implements FaroEntityDisplay {
 	}
 
 	public IndividualSegmentDisplay(IndividualSegment individualSegment) {
+		_accountsCount = individualSegment.getAccountsCount();
 		_activeIndividualCount = individualSegment.getActiveIndividualCount();
 		_activitiesCount = individualSegment.getActivitiesCount();
 		_anonymousIndividualCount =
@@ -137,6 +138,7 @@ public class IndividualSegmentDisplay implements FaroEntityDisplay {
 		_lastMembershipUpdateDate =
 			individualSegment.getLastMembershipUpdateDate();
 		_name = individualSegment.getName();
+		_segmentCategory = individualSegment.getSegmentCategory();
 		_segmentType = individualSegment.getSegmentType();
 		_sequential = individualSegment.isSequential();
 		_state = individualSegment.getState();
@@ -222,6 +224,7 @@ public class IndividualSegmentDisplay implements FaroEntityDisplay {
 		_referencedObjects.put(name, objectsMap);
 	}
 
+	private long _accountsCount;
 	private long _activeIndividualCount;
 	private long _activitiesCount;
 	private long _anonymousIndividualCount;
@@ -250,6 +253,7 @@ public class IndividualSegmentDisplay implements FaroEntityDisplay {
 	private Date _lastMembershipUpdateDate;
 	private String _name;
 	private final Map<String, Object> _referencedObjects = new HashMap<>();
+	private String _segmentCategory;
 	private String _segmentType;
 	private boolean _sequential;
 	private String _state;

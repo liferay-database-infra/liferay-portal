@@ -13,6 +13,17 @@ rules:
         verbs:
             -   get
             -   list
+            -   patch
+            -   update
+            -   watch
+    -   apiGroups:
+            -   ""
+        resources:
+            -   persistentvolumeclaims
+        verbs:
+            -   create
+            -   get
+            -   list
             -   watch
     -   apiGroups:
             -   ""
@@ -20,6 +31,16 @@ rules:
             -   secrets
         verbs:
             -   create
+            -   get
+            -   list
+            -   patch
+            -   update
+            -   watch
+    -   apiGroups:
+            -   apps
+        resources:
+            -   statefulsets
+        verbs:
             -   get
             -   list
             -   patch

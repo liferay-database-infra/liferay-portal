@@ -20,9 +20,7 @@ export class PromptsPage extends FDSTablePage {
 	constructor(page: Page) {
 		super(page);
 
-		this.newPromptButton = page.getByRole('button', {
-			name: 'New Prompt',
-		});
+		this.newPromptButton = page.getByLabel('New Prompt');
 	}
 
 	async goto() {
@@ -37,6 +35,14 @@ export class PromptsPage extends FDSTablePage {
 
 	get nameInput(): Locator {
 		return this.page.locator('#promptName');
+	}
+
+	get identifierInput(): Locator {
+		return this.page.locator('#promptIdentifier');
+	}
+
+	get statusToggle(): Locator {
+		return this.page.locator('.toggle-switch-check');
 	}
 
 	get descriptionInput(): Locator {

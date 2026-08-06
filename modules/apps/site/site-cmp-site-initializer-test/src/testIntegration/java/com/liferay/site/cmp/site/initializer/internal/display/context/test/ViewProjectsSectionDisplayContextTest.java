@@ -13,7 +13,6 @@ import com.liferay.frontend.data.set.model.FDSActionDropdownItem;
 import com.liferay.frontend.data.set.test.util.FrontendDataSetTestUtil;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
-import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -51,6 +50,20 @@ public class ViewProjectsSectionDisplayContextTest
 		new AggregateTestRule(
 			new LiferayIntegrationTestRule(),
 			PermissionCheckerMethodTestRule.INSTANCE);
+
+	@Test
+	public void testGetAPIURL() throws Exception {
+		Assert.assertEquals(
+			StringBundler.concat(
+				"/o/search/v1.0/search?emptySearch=true&filter=",
+				"objectDefinitionId eq ",
+				objectDefinition.getObjectDefinitionId(),
+				"&nestedFields=embedded,",
+				"embedded.r_userToCMPProjectManager_user,",
+				"embedded.r_userToCMPProjectSponsor_user",
+				"&nestedFieldsDepth=2"),
+			getAPIURL(null));
+	}
 
 	@Test
 	public void testGetCreationMenu() throws Exception {
@@ -149,8 +162,5 @@ public class ViewProjectsSectionDisplayContextTest
 		filter = "component.name=com.liferay.site.cmp.site.initializer.internal.fragment.renderer.ViewProjectsJSPSectionFragmentRenderer"
 	)
 	private FragmentRenderer _fragmentRenderer;
-
-	@Inject
-	private ObjectDefinitionLocalService _objectDefinitionLocalService;
 
 }

@@ -27,6 +27,7 @@ Immutable.Record {
 
 exports[`Records should return a Segment Record 1`] = `
 Immutable.Record {
+  "accountsCount": 0,
   "activation": null,
   "activeIndividualCount": 0,
   "activitiesCount": 0,
@@ -49,6 +50,7 @@ Immutable.Record {
     "events": Immutable.Map {},
     "fieldMappings": Immutable.Map {},
   },
+  "segmentCategory": null,
   "segmentType": null,
   "sequential": false,
   "state": "",

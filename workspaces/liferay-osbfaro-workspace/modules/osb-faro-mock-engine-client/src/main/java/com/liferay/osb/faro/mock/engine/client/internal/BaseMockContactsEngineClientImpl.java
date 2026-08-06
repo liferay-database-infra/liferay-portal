@@ -53,6 +53,7 @@ import com.liferay.osb.faro.engine.client.model.IndividualSegmentMembershipChang
 import com.liferay.osb.faro.engine.client.model.IndividualSegmentRealTimeMembership;
 import com.liferay.osb.faro.engine.client.model.IndividualTransformation;
 import com.liferay.osb.faro.engine.client.model.Interest;
+import com.liferay.osb.faro.engine.client.model.Metric;
 import com.liferay.osb.faro.engine.client.model.PageExperience;
 import com.liferay.osb.faro.engine.client.model.PageVisited;
 import com.liferay.osb.faro.engine.client.model.Provider;
@@ -166,12 +167,13 @@ public abstract class BaseMockContactsEngineClientImpl
 	public IndividualSegment addIndividualSegment(
 		FaroProject faroProject, long userId, String channelId,
 		String externalReferenceCode, String filterString,
-		boolean includeAnonymousUsers, String name, String segmentType,
-		boolean sequential, String status) {
+		boolean includeAnonymousUsers, String name, String segmentCategory,
+		String segmentType, boolean sequential, String status) {
 
 		return contactsEngineClient.addIndividualSegment(
 			faroProject, userId, channelId, externalReferenceCode, filterString,
-			includeAnonymousUsers, name, segmentType, sequential, status);
+			includeAnonymousUsers, name, segmentCategory, segmentType,
+			sequential, status);
 	}
 
 	@Override
@@ -399,11 +401,12 @@ public abstract class BaseMockContactsEngineClientImpl
 
 	@Override
 	public List<AccountLifecycleStageMetric> getAccountLifecycleStageMetrics(
-			FaroProject faroProject, String country, String id, String industry)
+			FaroProject faroProject, String country, String id, String industry,
+			Long segmentId)
 		throws FaroEngineClientException {
 
 		return contactsEngineClient.getAccountLifecycleStageMetrics(
-			faroProject, country, id, industry);
+			faroProject, country, id, industry, segmentId);
 	}
 
 	@Override
@@ -434,6 +437,27 @@ public abstract class BaseMockContactsEngineClientImpl
 	}
 
 	@Override
+	public List<Metric> getAccountOverviewMetrics(
+			FaroProject faroProject, Long channelId, String id)
+		throws FaroEngineClientException {
+
+		return contactsEngineClient.getAccountOverviewMetrics(
+			faroProject, channelId, id);
+	}
+
+	@Override
+	public Results<Account> getAccounts(
+		FaroProject faroProject, String channelId, String filterString,
+		boolean includeAnonymousUsers, String query, String rangeEnd,
+		Integer rangeKey, String rangeStart, String segmentId, int cur,
+		int delta, String sortString) {
+
+		return contactsEngineClient.getAccounts(
+			faroProject, channelId, filterString, includeAnonymousUsers, query,
+			rangeEnd, rangeKey, rangeStart, segmentId, cur, delta, sortString);
+	}
+
+	@Override
 	public Results<Account> getAccounts(
 		FaroProject faroProject, String channelId, String filterString,
 		String query, int cur, int delta, String sortString) {
@@ -441,17 +465,6 @@ public abstract class BaseMockContactsEngineClientImpl
 		return contactsEngineClient.getAccounts(
 			faroProject, channelId, filterString, query, cur, delta,
 			sortString);
-	}
-
-	@Override
-	public Results<Account> getAccounts(
-		FaroProject faroProject, String channelId, String filterString,
-		String query, String rangeEnd, Integer rangeKey, String rangeStart,
-		int cur, int delta, String sortString) {
-
-		return contactsEngineClient.getAccounts(
-			faroProject, channelId, filterString, query, rangeEnd, rangeKey,
-			rangeStart, cur, delta, sortString);
 	}
 
 	@Override
@@ -628,12 +641,12 @@ public abstract class BaseMockContactsEngineClientImpl
 
 	@Override
 	public Results<CatalogField> getCatalogFields(
-			FaroProject faroProject, String query, String tableName, int cur,
-			int delta, String sortString)
+			FaroProject faroProject, String capability, String query,
+			String tableName, int cur, int delta, String sortString)
 		throws FaroEngineClientException {
 
 		return contactsEngineClient.getCatalogFields(
-			faroProject, query, tableName, cur, delta, sortString);
+			faroProject, capability, query, tableName, cur, delta, sortString);
 	}
 
 	@Override
@@ -1120,12 +1133,13 @@ public abstract class BaseMockContactsEngineClientImpl
 	public Results<IndividualSegment> getIndividualSegments(
 		FaroProject faroProject, String channelId, String dataSourceId,
 		String query, List<String> fields, String name,
-		List<String> segmentTypes, String state, String status, int cur,
-		int delta, List<OrderByField> orderByFields) {
+		List<String> segmentCategories, List<String> segmentTypes, String state,
+		String status, int cur, int delta, List<OrderByField> orderByFields) {
 
 		return contactsEngineClient.getIndividualSegments(
 			faroProject, channelId, dataSourceId, query, fields, name,
-			segmentTypes, state, status, cur, delta, orderByFields);
+			segmentCategories, segmentTypes, state, status, cur, delta,
+			orderByFields);
 	}
 
 	@Override

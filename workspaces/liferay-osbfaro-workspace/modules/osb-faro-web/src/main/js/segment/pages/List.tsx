@@ -14,7 +14,6 @@ import React, {useContext, useEffect, useRef, useState} from 'react';
 import RowActions from 'shared/components/RowActions';
 import SearchableEntityTable from 'shared/components/SearchableEntityTable';
 import SequentialEventOrderPopover from 'shared/components/SequentialEventOrderPopover';
-import ToThousandsCell from 'shared/components/table/cell-components/ToThousandsCell';
 import URLConstants from 'shared/util/url-constants';
 import UserCell from 'shared/components/table/cell-components/UserCell';
 import {
@@ -38,6 +37,7 @@ import {
 	INDIVIDUAL_COUNT,
 	LAST_MEMBERSHIP_UPDATE_DATE,
 	Routes,
+	SEGMENT_CATEGORY,
 	SEGMENT_STATE,
 	SEGMENT_TYPE,
 	SEGMENTS,
@@ -56,9 +56,15 @@ import {
 import {Link} from 'react-router-dom';
 import {OrderedMap} from 'immutable';
 import {OrderParams} from 'shared/util/records';
-import {SegmentStates, SegmentTypes, Sizes} from 'shared/util/constants';
+import {
+	SegmentCategories,
+	SegmentStates,
+	SegmentTypes,
+	Sizes,
+} from 'shared/util/constants';
 import {setUriQueryValues} from 'shared/util/router';
 import {sub} from 'shared/util/lang';
+import {toThousands} from 'shared/util/numbers';
 import {useChannelContext} from 'shared/context/channel';
 import {useCurrentUser} from 'shared/hooks/useCurrentUser';
 import {useQueryPagination} from 'shared/hooks/useQueryPagination';
@@ -98,6 +104,11 @@ interface IListProps extends PropsFromRedux {
 	history: any;
 }
 
+const SEGMENT_CATEGORIES_LABEL_MAP = {
+	[SegmentCategories.Account]: Liferay.Language.get('account'),
+	[SegmentCategories.Individual]: Liferay.Language.get('individual'),
+};
+
 const SEGMENT_TYPES_LABEL_MAP = {
 	[SegmentTypes.Batch]: Liferay.Language.get('batch'),
 	[SegmentTypes.RealTime]: Liferay.Language.get('real-time'),
@@ -105,8 +116,24 @@ const SEGMENT_TYPES_LABEL_MAP = {
 
 const FILTER_BY_OPTIONS = [
 	{
+		key: SEGMENT_CATEGORY,
+		label: Liferay.Language.get('type'),
+		values: [
+			{
+				label: SEGMENT_CATEGORIES_LABEL_MAP[SegmentCategories.Account],
+				value: SegmentCategories.Account,
+			},
+			{
+				label: SEGMENT_CATEGORIES_LABEL_MAP[
+					SegmentCategories.Individual
+				],
+				value: SegmentCategories.Individual,
+			},
+		],
+	},
+	{
 		key: SEGMENT_TYPE,
-		label: Liferay.Language.get('segment-type'),
+		label: Liferay.Language.get('sync-frequency'),
 		values: [
 			{
 				label: SEGMENT_TYPES_LABEL_MAP[SegmentTypes.Batch],
@@ -127,10 +154,14 @@ const ORDER_BY_OPTIONS = [
 	},
 	{
 		label: Liferay.Language.get('type'),
+		value: SEGMENT_CATEGORY,
+	},
+	{
+		label: Liferay.Language.get('sync-frequency'),
 		value: SEGMENT_TYPE,
 	},
 	{
-		label: Liferay.Language.get('segment-membership'),
+		label: Liferay.Language.get('membership'),
 		value: INDIVIDUAL_COUNT,
 	},
 	{
@@ -161,7 +192,7 @@ export const List: React.FC<IListProps> = ({
 
 	const {selectedItems, selectionDispatch} = useSelectionContext();
 	const {delta, filterBy, orderIOMap, page, query} = useQueryPagination({
-		filterFields: [SEGMENT_TYPE],
+		filterFields: [SEGMENT_CATEGORY, SEGMENT_TYPE],
 		initialDelta: paginationDefaults.delta,
 		initialOrderIOMap: createOrderIOMap(NAME, getDefaultSortOrder(NAME)),
 		initialPage: paginationDefaults.page,
@@ -189,6 +220,9 @@ export const List: React.FC<IListProps> = ({
 		};
 	}, []);
 
+	const selectedSegmentCategories =
+		filterBy?.get(SEGMENT_CATEGORY)?.toArray() || [];
+
 	const selectedSegmentTypes = filterBy?.get(SEGMENT_TYPE)?.toArray() || [];
 
 	const {data, error, loading, refetch} = useRequest({
@@ -200,6 +234,9 @@ export const List: React.FC<IListProps> = ({
 			orderIOMap,
 			page,
 			query,
+			segmentCategories: selectedSegmentCategories.length
+				? selectedSegmentCategories
+				: undefined,
 			segmentTypes: selectedSegmentTypes.length
 				? selectedSegmentTypes
 				: undefined,
@@ -430,29 +467,52 @@ export const List: React.FC<IListProps> = ({
 				<Nav>
 					<Nav.Item>
 						<div className="d-flex align-items-center">
-							{ENABLE_REAL_TIME_SEGMENTS ? (
-								<ClayDropDown
-									alignmentPosition={Align.BottomRight}
-									trigger={
-										<ClayButton
-											aria-label={
-												pageActionsLabel &&
-												Liferay.Language.get('menu')
-											}
-											className="button-root p-2 rounded-lg"
-											disabled={error || loading}
-											displayType="primary"
-											size="sm"
-										>
-											<>
-												<span>{pageActionsLabel}</span>
-												<ClayIcon
-													className="icon-root ml-2"
-													symbol="caret-bottom"
-												/>
-											</>
-										</ClayButton>
-									}
+							<ClayDropDown
+								alignmentPosition={Align.BottomRight}
+								trigger={
+									<ClayButton
+										aria-label={
+											pageActionsLabel &&
+											Liferay.Language.get('menu')
+										}
+										className="button-root p-2 rounded-lg"
+										disabled={error || loading}
+										displayType="primary"
+										size="sm"
+									>
+										<>
+											<span>{pageActionsLabel}</span>
+											<ClayIcon
+												className="icon-root ml-2"
+												symbol="caret-bottom"
+											/>
+										</>
+									</ClayButton>
+								}
+							>
+								<ClayDropDown.Group
+									header={Liferay.Language.get('account')}
+								>
+									<ClayDropDown.Item
+										data-testid="account-batch-segment-dropdown-item"
+										href={setUriQueryValues(
+											{
+												category:
+													SegmentCategories.Account,
+												type: SegmentTypes.Batch,
+											},
+											toRoute(
+												Routes.CONTACTS_SEGMENT_CREATE,
+												{channelId, groupId}
+											)
+										)}
+									>
+										{Liferay.Language.get('batch-segment')}
+									</ClayDropDown.Item>
+								</ClayDropDown.Group>
+
+								<ClayDropDown.Group
+									header={Liferay.Language.get('individual')}
 								>
 									<ClayDropDown.Item
 										data-testid="batch-segment-dropdown-item"
@@ -464,53 +524,27 @@ export const List: React.FC<IListProps> = ({
 											)
 										)}
 									>
-										<ClayIcon
-											className="mr-2"
-											symbol="diagram"
-										/>
-										{Liferay.Language.get('batch')}
+										{Liferay.Language.get('batch-segment')}
 									</ClayDropDown.Item>
 
-									<ClayDropDown.Item
-										data-testid="real-time-segment-dropdown-item"
-										href={setUriQueryValues(
-											{type: SegmentTypes.RealTime},
-											toRoute(
-												Routes.CONTACTS_SEGMENT_CREATE,
-												{channelId, groupId}
-											)
-										)}
-									>
-										<ClayIcon
-											className="mr-2"
-											symbol="bolt"
-										/>
-										{Liferay.Language.get('real-time')}
-									</ClayDropDown.Item>
-								</ClayDropDown>
-							) : (
-								<ClayButton
-									aria-label={pageActionsLabel}
-									className="button-root p-2 rounded-lg"
-									data-testid="batch-segment-button"
-									disabled={error || loading}
-									displayType="primary"
-									onClick={() =>
-										history.push(
-											setUriQueryValues(
-												{type: SegmentTypes.Batch},
+									{ENABLE_REAL_TIME_SEGMENTS && (
+										<ClayDropDown.Item
+											data-testid="real-time-segment-dropdown-item"
+											href={setUriQueryValues(
+												{type: SegmentTypes.RealTime},
 												toRoute(
 													Routes.CONTACTS_SEGMENT_CREATE,
 													{channelId, groupId}
 												)
-											)
-										)
-									}
-									size="sm"
-								>
-									{pageActionsLabel}
-								</ClayButton>
-							)}
+											)}
+										>
+											{Liferay.Language.get(
+												'real-time-segment'
+											)}
+										</ClayDropDown.Item>
+									)}
+								</ClayDropDown.Group>
+							</ClayDropDown>
 						</div>
 					</Nav.Item>
 				</Nav>
@@ -592,6 +626,23 @@ export const List: React.FC<IListProps> = ({
 									title: true,
 								},
 								{
+									accessor: 'segmentCategory',
+									cellRenderer: (item: {
+										data: {
+											segmentCategory: SegmentCategories;
+										};
+									}) => (
+										<td>
+											{
+												SEGMENT_CATEGORIES_LABEL_MAP[
+													item.data.segmentCategory
+												]
+											}
+										</td>
+									),
+									label: Liferay.Language.get('type'),
+								},
+								{
 									accessor: 'segmentType',
 									cellRenderer: (item: {
 										data: {
@@ -625,14 +676,51 @@ export const List: React.FC<IListProps> = ({
 											</td>
 										);
 									},
-									label: Liferay.Language.get('type'),
+									label: Liferay.Language.get(
+										'sync-frequency'
+									),
 								},
 								{
 									accessor: 'individualCount',
-									cellRenderer: ToThousandsCell,
-									label: Liferay.Language.get(
-										'segment-membership'
-									),
+									cellRenderer: (item: {
+										data: {
+											accountsCount: number;
+											individualCount: number;
+											segmentCategory: SegmentCategories;
+										};
+									}) => {
+										const {
+											accountsCount,
+											individualCount,
+											segmentCategory,
+										} = item.data;
+
+										const accountSegment =
+											segmentCategory ===
+											SegmentCategories.Account;
+
+										const count = accountSegment
+											? accountsCount
+											: individualCount;
+
+										const membershipLabel = accountSegment
+											? Liferay.Language.get('x-accounts')
+											: Liferay.Language.get(
+													'x-individuals'
+												);
+
+										return (
+											<td className="table-cell-expand">
+												<div className="text-truncate text-right">
+													{sub(
+														membershipLabel.toLowerCase(),
+														[toThousands(count)]
+													)}
+												</div>
+											</td>
+										);
+									},
+									label: Liferay.Language.get('membership'),
 								},
 								{
 									accessor: 'lastMembershipUpdateDate',
@@ -674,7 +762,10 @@ export const List: React.FC<IListProps> = ({
 							delta={delta}
 							filterBy={filterBy}
 							filterByOptions={FILTER_BY_OPTIONS}
-							filterEnabled={!!selectedSegmentTypes.length}
+							filterEnabled={
+								!!selectedSegmentCategories.length ||
+								!!selectedSegmentTypes.length
+							}
 							items={data?.items}
 							loading={loading}
 							noResultsRenderer={

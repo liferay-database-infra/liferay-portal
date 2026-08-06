@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,9 +24,13 @@ type LicenseStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:printcolumn:JSONPath=`.status.phase`,name="Phase",type=string
+// +kubebuilder:printcolumn:JSONPath=`.spec.workloadRef.name`,name="Workload",type=string
 // +kubebuilder:printcolumn:JSONPath=`.status.conditions[?(@.type=="Activated")].status`,name="Activated",type=string
-// +kubebuilder:printcolumn:JSONPath=`.metadata.creationTimestamp`,name="Age",type=date
+// +kubebuilder:printcolumn:JSONPath=`.status.license.maxClusterNodes`,name="Max",type=integer
+// +kubebuilder:printcolumn:JSONPath=`.status.license.validUntil`,name="Valid-Until",type=string
+// +kubebuilder:printcolumn:JSONPath=`.spec.desiredReplicas`,name="Desired",type=integer
+// +kubebuilder:printcolumn:JSONPath=`.status.effectiveReplicas`,name="Effective",type=integer
+// +kubebuilder:printcolumn:JSONPath=`.status.phase`,name="Phase",priority=1,type=string
 // +kubebuilder:printcolumn:JSONPath=`.status.environmentId`,name="Environment-ID",priority=1,type=string
 // +kubebuilder:printcolumn:JSONPath=`.status.activatedAt`,name="Activated-At",priority=1,type=date
 // +kubebuilder:resource:shortName=lenv
@@ -51,10 +56,16 @@ type LiferayEnvironmentSpec struct {
 	ActivationCodeSecretRef SecretKeyRef `json:"activationCodeSecretRef"`
 
 	// +optional
+	DesiredReplicas *int32 `json:"desiredReplicas,omitempty"`
+
+	// +optional
 	DxpVersion string `json:"dxpVersion,omitempty"`
 
 	// +optional
 	EnvironmentName string `json:"environmentName,omitempty"`
+
+	// +kubebuilder:validation:Required
+	MarketplaceVolume *MarketplaceVolumeSpec `json:"marketplaceVolume,omitempty"`
 
 	// +kubebuilder:validation:Required
 	WorkloadRef WorkloadRef `json:"workloadRef"`
@@ -70,6 +81,9 @@ type LiferayEnvironmentStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// +optional
+	EffectiveReplicas *int32 `json:"effectiveReplicas,omitempty"`
+
+	// +optional
 	EnvironmentID string `json:"environmentId,omitempty"`
 
 	// +optional
@@ -78,6 +92,17 @@ type LiferayEnvironmentStatus struct {
 	// +kubebuilder:validation:Enum=Degraded;Pending;Ready
 	// +optional
 	Phase string `json:"phase,omitempty"`
+}
+
+type MarketplaceVolumeSpec struct {
+	// +optional
+	ClaimName string `json:"claimName,omitempty"`
+
+	// +kubebuilder:validation:Required
+	Size resource.Quantity `json:"size"`
+
+	// +kubebuilder:validation:Required
+	StorageClassName string `json:"storageClassName"`
 }
 
 type SecretKeyRef struct {

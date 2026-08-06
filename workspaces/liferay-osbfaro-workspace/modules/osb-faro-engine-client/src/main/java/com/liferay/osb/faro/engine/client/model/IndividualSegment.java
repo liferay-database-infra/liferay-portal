@@ -16,6 +16,10 @@ import java.util.Map;
  */
 public class IndividualSegment {
 
+	public long getAccountsCount() {
+		return _accountsCount;
+	}
+
 	public long getActiveIndividualCount() {
 		return _activeIndividualCount;
 	}
@@ -110,6 +114,10 @@ public class IndividualSegment {
 		return _segmentActivation;
 	}
 
+	public String getSegmentCategory() {
+		return _segmentCategory;
+	}
+
 	public String getSegmentType() {
 		return _segmentType;
 	}
@@ -128,6 +136,10 @@ public class IndividualSegment {
 
 	public boolean isSequential() {
 		return _sequential;
+	}
+
+	public void setAccountsCount(long accountsCount) {
+		_accountsCount = accountsCount;
 	}
 
 	public void setActiveIndividualCount(long activeIndividualCount) {
@@ -219,6 +231,10 @@ public class IndividualSegment {
 		_segmentActivation = segmentActivation;
 	}
 
+	public void setSegmentCategory(String segmentCategory) {
+		_segmentCategory = segmentCategory;
+	}
+
 	public void setSegmentType(String segmentType) {
 		_segmentType = segmentType;
 	}
@@ -233,6 +249,12 @@ public class IndividualSegment {
 
 	public void setStatus(String status) {
 		_status = status;
+	}
+
+	public enum Category {
+
+		ACCOUNT, INDIVIDUAL
+
 	}
 
 	public enum Scope {
@@ -259,6 +281,7 @@ public class IndividualSegment {
 
 	}
 
+	private long _accountsCount;
 	private long _activeIndividualCount;
 	private long _activitiesCount;
 	private long _anonymousIndividualCount;
@@ -279,6 +302,7 @@ public class IndividualSegment {
 	private String _name;
 	private String _scope = Scope.PROJECT.name();
 	private SegmentActivation _segmentActivation;
+	private String _segmentCategory = Category.INDIVIDUAL.name();
 	private String _segmentType = Type.BATCH.name();
 	private boolean _sequential;
 	private String _state = State.READY.name();

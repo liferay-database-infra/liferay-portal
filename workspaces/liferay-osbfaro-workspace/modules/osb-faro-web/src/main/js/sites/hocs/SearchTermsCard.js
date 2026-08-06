@@ -1,6 +1,5 @@
 import BaseCard from 'shared/components/base-card';
 import Card from 'shared/components/Card';
-import ClayIcon from '@clayui/icon';
 import ClayLink from '@clayui/link';
 import React from 'react';
 import SearchTermsQuery from 'shared/queries/SearchTermsQuery';
@@ -62,7 +61,7 @@ const TableWithData = withTableData(withData, {
 	rowIdentifier: 'name',
 });
 
-const SearchTermsCard = (props) => {
+const SearchTermsCard = ({minHeight, ...props}) => {
 	const {channelId, groupId, id} = useParams();
 
 	return (
@@ -70,6 +69,7 @@ const SearchTermsCard = (props) => {
 			className="search-terms-card-root"
 			label={Liferay.Language.get('search-terms')}
 			legacyDropdownRangeKey={false}
+			minHeight={minHeight}
 			reportContainer={ReportContainer.SearchTermsCard}
 		>
 			{({accountId, rangeSelectors, segmentId}) => (
@@ -84,12 +84,15 @@ const SearchTermsCard = (props) => {
 						segmentId={segmentId}
 					/>
 
-					<Card.Footer>
+					<Card.Footer className="d-flex">
 						<ClayLink
+							aria-label={Liferay.Language.get(
+								'view-all-search-terms'
+							)}
 							borderless
 							button
-							className="button-root"
-							displayType="secondary"
+							className="ml-auto rounded-lg"
+							displayType="primary"
 							href={setUriQueryValues(
 								pickBy({
 									accountId,
@@ -103,12 +106,7 @@ const SearchTermsCard = (props) => {
 							)}
 							small
 						>
-							{Liferay.Language.get('all-search-terms')}
-
-							<ClayIcon
-								className="icon-root ml-2"
-								symbol="angle-right-small"
-							/>
+							{Liferay.Language.get('view-all')}
 						</ClayLink>
 					</Card.Footer>
 				</>
