@@ -13,6 +13,9 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -24,6 +27,7 @@ import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.After;
@@ -84,11 +88,12 @@ public class DataMaskWriterInterceptorTest {
 		Assert.assertEquals(
 			"The value is secret.",
 			HTTPTestUtil.invokeToString(
-				null, "test-data-mask/test", Http.Method.GET));
+				null, "test-data-mask/secret-text", Http.Method.GET));
+
 		Assert.assertEquals(
 			"The value is [REDACTED].",
 			HTTPTestUtil.invokeToString(
-				null, "test-data-mask/test",
+				null, "test-data-mask/secret-text",
 				HashMapBuilder.put(
 					"X-Liferay-Data-Masks",
 					() -> {
@@ -104,7 +109,7 @@ public class DataMaskWriterInterceptorTest {
 		Assert.assertEquals(
 			"The value is secret.",
 			HTTPTestUtil.invokeToString(
-				null, "test-data-mask/test",
+				null, "test-data-mask/secret-text",
 				HashMapBuilder.put(
 					"X-Liferay-Data-Masks", RandomTestUtil.randomString()
 				).build(),
@@ -116,7 +121,7 @@ public class DataMaskWriterInterceptorTest {
 		Assert.assertEquals(
 			"The value is [REDACTED].",
 			HTTPTestUtil.invokeToString(
-				null, "test-data-mask/test",
+				null, "test-data-mask/secret-text",
 				HashMapBuilder.put(
 					"X-Liferay-Data-Masks",
 					() -> {
@@ -129,6 +134,13 @@ public class DataMaskWriterInterceptorTest {
 					}
 				).build(),
 				Http.Method.GET));
+
+		_testAroundWriteToFails(
+			"(.*a){40}", "Redaction exceeded the timeout of",
+			"catastrophic-text");
+		_testAroundWriteToFails(
+			"(a|aa)+$", "Redaction overflowed the stack",
+			"stack-overflow-text");
 	}
 
 	@FeatureFlags(
@@ -139,7 +151,7 @@ public class DataMaskWriterInterceptorTest {
 		Assert.assertEquals(
 			"The value is secret.",
 			HTTPTestUtil.invokeToString(
-				null, "test-data-mask/test",
+				null, "test-data-mask/secret-text",
 				HashMapBuilder.put(
 					"X-Liferay-Data-Masks",
 					() -> {
@@ -156,18 +168,71 @@ public class DataMaskWriterInterceptorTest {
 
 	public static class TestApplication extends Application {
 
+		@GET
+		@Path("/catastrophic-text")
+		@Produces(MediaType.TEXT_PLAIN)
+		public String catastrophicText() {
+			return "a".repeat(60);
+		}
+
 		@Override
 		public Set<Object> getSingletons() {
 			return Collections.singleton(this);
 		}
 
 		@GET
-		@Path("/test")
+		@Path("/secret-text")
 		@Produces(MediaType.TEXT_PLAIN)
-		public String test() {
+		public String secretText() {
 			return "The value is secret.";
 		}
 
+		@GET
+		@Path("/stack-overflow-text")
+		@Produces(MediaType.TEXT_PLAIN)
+		public String stackOverflowText() {
+			return "a".repeat(100000) + "b";
+		}
+
+	}
+
+	private void _testAroundWriteToFails(
+			String detectionRegex, String expectedMessage, String path)
+		throws Exception {
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.headless.data.mask.internal.jaxrs.writer." +
+					"interceptor.DataMaskWriterInterceptor",
+				LoggerTestUtil.ERROR)) {
+
+			Assert.assertEquals(
+				"",
+				HTTPTestUtil.invokeToString(
+					null, "test-data-mask/" + path,
+					HashMapBuilder.put(
+						"X-Liferay-Data-Masks",
+						() -> {
+							ObjectEntry objectEntry =
+								DataMaskTestUtil.addDataMaskObjectEntry(
+									RandomTestUtil.randomString(),
+									detectionRegex,
+									RandomTestUtil.randomString());
+
+							return objectEntry.getExternalReferenceCode();
+						}
+					).build(),
+					Http.Method.GET));
+
+			List<LogEntry> logEntries = logCapture.getLogEntries();
+
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
+
+			LogEntry logEntry = logEntries.get(0);
+
+			String message = logEntry.getMessage();
+
+			Assert.assertTrue(message, message.contains(expectedMessage));
+		}
 	}
 
 	private ServiceRegistration<Application> _serviceRegistration;

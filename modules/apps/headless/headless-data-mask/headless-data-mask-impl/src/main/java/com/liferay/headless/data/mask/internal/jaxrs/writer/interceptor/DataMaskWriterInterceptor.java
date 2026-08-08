@@ -5,6 +5,7 @@
 
 package com.liferay.headless.data.mask.internal.jaxrs.writer.interceptor;
 
+import com.liferay.headless.data.mask.internal.engine.RedactException;
 import com.liferay.headless.data.mask.internal.engine.RedactUtil;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntry;
@@ -24,6 +25,7 @@ import com.liferay.portal.kernel.util.Validator;
 import jakarta.annotation.Priority;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.core.Context;
@@ -143,6 +145,15 @@ public class DataMaskWriterInterceptor implements WriterInterceptor {
 
 			outputStream.write(output.getBytes(charset));
 		}
+		catch (RedactException redactException) {
+			_log.error(redactException);
+
+			if (!_httpServletResponse.isCommitted()) {
+				_httpServletResponse.reset();
+				_httpServletResponse.setStatus(
+					HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			}
+		}
 		finally {
 			writerInterceptorContext.setOutputStream(outputStream);
 		}
@@ -165,6 +176,8 @@ public class DataMaskWriterInterceptor implements WriterInterceptor {
 	}
 
 	private String _redact(List<ObjectEntry> objectEntries, String text) {
+		long deadline = RedactUtil.newDeadline();
+
 		for (ObjectEntry objectEntry : objectEntries) {
 			Map<String, Serializable> values = objectEntry.getValues();
 
@@ -180,9 +193,17 @@ public class DataMaskWriterInterceptor implements WriterInterceptor {
 
 			try {
 				text = RedactUtil.redact(
-					detectionRegex,
+					deadline, detectionRegex,
 					MapUtil.getString(values, "replacementRegex"),
 					replacementValue, text);
+			}
+			catch (RedactException redactException) {
+				throw new RedactException(
+					StringBundler.concat(
+						"Unable to apply data mask \"",
+						MapUtil.getString(values, "name"), "\": ",
+						redactException.getMessage()),
+					redactException);
 			}
 			catch (RuntimeException runtimeException) {
 				if (_log.isWarnEnabled()) {
@@ -203,6 +224,9 @@ public class DataMaskWriterInterceptor implements WriterInterceptor {
 
 	@Context
 	private HttpServletRequest _httpServletRequest;
+
+	@Context
+	private HttpServletResponse _httpServletResponse;
 
 	@Reference
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;

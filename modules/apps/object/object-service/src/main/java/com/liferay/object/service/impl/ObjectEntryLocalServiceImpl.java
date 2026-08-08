@@ -348,6 +348,41 @@ public class ObjectEntryLocalServiceImpl
 			Map<String, Serializable> values)
 		throws PortalException {
 
+		values = new HashMap<>(values);
+
+		ObjectFieldBusinessType objectFieldBusinessType =
+			_objectFieldBusinessTypeRegistry.getObjectFieldBusinessType(
+				ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT);
+
+		for (ObjectField objectField :
+				_objectFieldLocalService.getObjectFields(
+					objectDefinition.getObjectDefinitionId())) {
+
+			if (!objectField.compareBusinessType(
+					ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT)) {
+
+				continue;
+			}
+
+			if (objectField.isLocalized()) {
+				Map<String, Object> localizedValues =
+					objectFieldBusinessType.getLocalizedValues(
+						objectField, userId, new HashMap<>(values));
+
+				if (localizedValues != null) {
+					values.put(
+						objectField.getI18nObjectFieldName(),
+						(Serializable)localizedValues);
+				}
+			}
+			else if (values.containsKey(objectField.getName())) {
+				values.put(
+					objectField.getName(),
+					(Serializable)objectFieldBusinessType.getValue(
+						groupId, objectField, userId, new HashMap<>(values)));
+			}
+		}
+
 		ObjectEntry objectEntry = _addObjectEntry(
 			externalReferenceCode, groupId, userId, headObjectEntryId,
 			objectDefinition.getObjectDefinitionId(), objectEntryFolderId,
@@ -2356,9 +2391,28 @@ public class ObjectEntryLocalServiceImpl
 		Date date = new Date();
 		Date displayDate = objectEntry.getDisplayDate();
 
+		ObjectDefinition objectDefinition =
+			_objectDefinitionPersistence.fetchByPrimaryKey(
+				objectEntry.getObjectDefinitionId());
+
+		boolean recordDisplayDate = false;
+
+		if ((status == WorkflowConstants.STATUS_APPROVED) &&
+			(displayDate == null) &&
+			objectDefinition.isEnableObjectEntrySchedule()) {
+
+			recordDisplayDate = true;
+		}
+
+		boolean skipStatusChangeSideEffects = false;
+
 		if ((objectEntry.getStatus() == status) &&
 			((displayDate == null) || displayDate.before(date))) {
 
+			skipStatusChangeSideEffects = true;
+		}
+
+		if (!recordDisplayDate && skipStatusChangeSideEffects) {
 			return objectEntry;
 		}
 
@@ -2370,7 +2424,8 @@ public class ObjectEntryLocalServiceImpl
 
 		Date expirationDate = objectEntry.getExpirationDate();
 
-		if ((status == WorkflowConstants.STATUS_APPROVED) &&
+		if (!skipStatusChangeSideEffects &&
+			(status == WorkflowConstants.STATUS_APPROVED) &&
 			(expirationDate != null) && expirationDate.before(date)) {
 
 			objectEntry.setExpirationDate(null);
@@ -2391,6 +2446,10 @@ public class ObjectEntryLocalServiceImpl
 
 		objectEntry.setStatusDate(serviceContext.getModifiedDate(null));
 
+		if (recordDisplayDate) {
+			objectEntry.setDisplayDate(objectEntry.getStatusDate());
+		}
+
 		if (_skipModelListeners.get()) {
 			while (objectEntry instanceof ModelWrapper) {
 				ModelWrapper<ObjectEntry> modelWrapper =
@@ -2404,10 +2463,6 @@ public class ObjectEntryLocalServiceImpl
 		else {
 			objectEntry = objectEntryPersistence.update(objectEntry);
 		}
-
-		ObjectDefinition objectDefinition =
-			_objectDefinitionPersistence.fetchByPrimaryKey(
-				objectEntry.getObjectDefinitionId());
 
 		if (serviceContext.isStrictAdd()) {
 			boolean indexingEnabled = serviceContext.isIndexingEnabled();
@@ -2446,12 +2501,14 @@ public class ObjectEntryLocalServiceImpl
 					userId, objectDefinition, objectEntry);
 			}
 		}
-		else if (!objectEntry.isInTrash() && !originalObjectEntry.isInTrash()) {
+		else if (!skipStatusChangeSideEffects && !objectEntry.isInTrash() &&
+				 !originalObjectEntry.isInTrash()) {
+
 			objectEntry = _addObjectEntryVersion(
 				userId, objectDefinition, objectEntry);
 		}
 
-		if (objectDefinition.isRootNode() &&
+		if (!skipStatusChangeSideEffects && objectDefinition.isRootNode() &&
 			(status != WorkflowConstants.STATUS_IN_TRASH) &&
 			!originalObjectEntry.isInTrash()) {
 
@@ -7146,9 +7203,17 @@ public class ObjectEntryLocalServiceImpl
 		objectEntry.setObjectEntryFolderId(objectEntryFolderId);
 
 		if (!move) {
-			_setDisplayDate(objectEntry, values);
-			_setExpirationDate(objectEntry, values);
-			_setReviewDate(objectEntry, values);
+			if (!partialUpdate || values.containsKey("displayDate")) {
+				_setDisplayDate(objectEntry, values);
+			}
+
+			if (!partialUpdate || values.containsKey("expirationDate")) {
+				_setExpirationDate(objectEntry, values);
+			}
+
+			if (!partialUpdate || values.containsKey("reviewDate")) {
+				_setReviewDate(objectEntry, values);
+			}
 		}
 
 		if ((workflowAction == WorkflowConstants.ACTION_SAVE_DRAFT) &&
