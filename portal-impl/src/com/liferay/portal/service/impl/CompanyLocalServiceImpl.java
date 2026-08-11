@@ -109,6 +109,7 @@ import com.liferay.portal.kernel.service.persistence.PortletPersistence;
 import com.liferay.portal.kernel.service.persistence.RolePersistence;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
 import com.liferay.portal.kernel.service.persistence.VirtualHostPersistence;
+import com.liferay.portal.kernel.spring.orm.LastSessionRecorderHelperUtil;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionCallbackUtil;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
@@ -328,13 +329,29 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			return updatedCompany;
 		};
 
+		if (PropsValues.DATABASE_PARTITION_ENABLED) {
+
+			// Pending writes must flush before this scope applies the new
+			// company, or they would execute against its partition
+
+			LastSessionRecorderHelperUtil.syncLastSessionState(false);
+		}
+
 		try (SafeCloseable safeCloseable =
 				CompanyThreadLocal.setRawCompanyIdWithSafeCloseable(
 					companyId)) {
 
 			if (PropsValues.DATABASE_PARTITION_ENABLED) {
-				return TransactionInvokerUtil.invoke(
+				Company addedCompany = TransactionInvokerUtil.invoke(
 					_transactionConfig, callable);
+
+				// Commit callbacks must flush before this scope restores the
+				// previous company, or they would execute against the
+				// caller's partition
+
+				LastSessionRecorderHelperUtil.syncLastSessionState(false);
+
+				return addedCompany;
 			}
 
 			return callable.call();

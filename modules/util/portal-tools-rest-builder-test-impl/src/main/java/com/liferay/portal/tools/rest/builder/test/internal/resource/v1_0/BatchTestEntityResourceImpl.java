@@ -301,11 +301,7 @@ public class BatchTestEntityResourceImpl
 	}
 
 	private BatchTestEntity _fetchBatchTestEntity(long id) {
-		if (_batchTestEntities.containsKey(id)) {
-			return _batchTestEntities.get(id);
-		}
-
-		return null;
+		return _batchTestEntities.get(id);
 	}
 
 	private BatchTestEntity _fetchBatchTestEntity(
@@ -410,9 +406,10 @@ public class BatchTestEntityResourceImpl
 					() -> NestedFieldsSupplier.supply(
 						"relatedCompanyTestEntity",
 						nestedField -> {
-							if (!_relationships.containsKey(
-									originalBatchTestEntity.getId())) {
+							Long companyTestEntityId = _relationships.get(
+								originalBatchTestEntity.getId());
 
+							if (companyTestEntityId == null) {
 								return null;
 							}
 
@@ -425,9 +422,7 @@ public class BatchTestEntityResourceImpl
 								).build();
 
 							return companyTestEntityResource.
-								getCompanyTestEntity(
-									_relationships.get(
-										originalBatchTestEntity.getId()));
+								getCompanyTestEntity(companyTestEntityId);
 						}));
 			}
 		};

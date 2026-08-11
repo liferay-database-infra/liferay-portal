@@ -8,10 +8,14 @@ package com.liferay.object.internal.site.provider;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
 import com.liferay.object.constants.ObjectDefinitionConstants;
+import com.liferay.object.constants.ObjectDefinitionSettingConstants;
+import com.liferay.object.definition.setting.util.ObjectDefinitionSettingUtil;
 import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.model.ObjectDefinitionSetting;
 import com.liferay.object.model.ObjectEntry;
 import com.liferay.object.model.ObjectEntryTable;
 import com.liferay.object.service.ObjectDefinitionLocalService;
+import com.liferay.object.service.ObjectDefinitionSettingLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.object.service.ObjectEntryService;
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
@@ -25,6 +29,7 @@ import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.SetUtil;
@@ -70,18 +75,9 @@ public class ObjectEntrySitemapURLProvider implements SitemapURLProvider {
 		List<Long> companyObjectDefinitionIds = new ArrayList<>();
 		List<Long> siteObjectDefinitionIds = new ArrayList<>();
 
-		Long[] objectDefinitionIds =
-			_sitemapConfigurationManager.getCompanySitemapObjectDefinitionIds(
-				companyId);
-
-		for (long objectDefinitionId : objectDefinitionIds) {
-			ObjectDefinition objectDefinition =
-				_objectDefinitionLocalService.fetchObjectDefinition(
-					objectDefinitionId);
-
-			if (objectDefinition == null) {
-				continue;
-			}
+		for (ObjectDefinition objectDefinition :
+				_sitemapConfigurationManager.getCompanySitemapObjectDefinitions(
+					companyId)) {
 
 			if (Objects.equals(
 					objectDefinition.getScope(),
@@ -120,22 +116,9 @@ public class ObjectEntrySitemapURLProvider implements SitemapURLProvider {
 	public boolean isInclude(long companyId, long groupId)
 		throws PortalException {
 
-		Long[] companySitemapObjectDefinitionIds =
-			_sitemapConfigurationManager.getCompanySitemapObjectDefinitionIds(
-				companyId);
-
-		for (Long companySitemapObjectDefinitionId :
-				companySitemapObjectDefinitionIds) {
-
-			if (_sitemapConfigurationManager.isObjectDefinitionCompanyIncluded(
-					companyId,
-					String.valueOf(companySitemapObjectDefinitionId))) {
-
-				return true;
-			}
-		}
-
-		return false;
+		return ListUtil.isNotEmpty(
+			_sitemapConfigurationManager.getCompanySitemapObjectDefinitions(
+				companyId));
 	}
 
 	@Override
@@ -157,10 +140,13 @@ public class ObjectEntrySitemapURLProvider implements SitemapURLProvider {
 			_getObjectDefinitionFromLayoutPageTemplateEntry(
 				themeDisplay.getCompanyId(), layout);
 
-		if ((objectDefinition == null) ||
+		if ((objectDefinition == null) || !objectDefinition.isActive() ||
 			!_sitemapConfigurationManager.isObjectDefinitionCompanyIncluded(
 				themeDisplay.getCompanyId(),
-				String.valueOf(objectDefinition.getObjectDefinitionId()))) {
+				String.valueOf(objectDefinition.getObjectDefinitionId())) ||
+			!ObjectDefinitionSettingUtil.isSitemapable(
+				objectDefinition,
+				_getObjectDefinitionSettingsMap(themeDisplay.getCompanyId()))) {
 
 			return;
 		}
@@ -174,14 +160,9 @@ public class ObjectEntrySitemapURLProvider implements SitemapURLProvider {
 			Element element, LayoutSet layoutSet, ThemeDisplay themeDisplay)
 		throws PortalException {
 
-		Long[] objectDefinitionIds =
-			_sitemapConfigurationManager.getCompanySitemapObjectDefinitionIds(
-				themeDisplay.getCompanyId());
-
-		for (long objectDefinitionId : objectDefinitionIds) {
-			ObjectDefinition objectDefinition =
-				_objectDefinitionLocalService.fetchObjectDefinition(
-					objectDefinitionId);
+		for (ObjectDefinition objectDefinition :
+				_sitemapConfigurationManager.getCompanySitemapObjectDefinitions(
+					themeDisplay.getCompanyId())) {
 
 			LayoutPageTemplateEntry layoutPageTemplateEntry =
 				_layoutPageTemplateEntryLocalService.
@@ -323,6 +304,14 @@ public class ObjectEntrySitemapURLProvider implements SitemapURLProvider {
 			_portal.getClassName(layoutPageTemplateEntry.getClassNameId()));
 	}
 
+	private Map<Long, ObjectDefinitionSetting> _getObjectDefinitionSettingsMap(
+		long companyId) {
+
+		return _objectDefinitionSettingLocalService.
+			getObjectDefinitionSettingsMap(
+				companyId, ObjectDefinitionSettingConstants.NAME_SITEMAPABLE);
+	}
+
 	private void _visitObjectEntries(
 			Element element, Layout layout, LayoutSet layoutSet,
 			ObjectDefinition objectDefinition, ThemeDisplay themeDisplay)
@@ -380,6 +369,10 @@ public class ObjectEntrySitemapURLProvider implements SitemapURLProvider {
 
 	@Reference
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;
+
+	@Reference
+	private ObjectDefinitionSettingLocalService
+		_objectDefinitionSettingLocalService;
 
 	@Reference
 	private ObjectEntryLocalService _objectEntryLocalService;

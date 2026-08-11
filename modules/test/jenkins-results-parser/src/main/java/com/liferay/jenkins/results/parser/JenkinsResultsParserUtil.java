@@ -104,7 +104,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -131,7 +130,9 @@ public class JenkinsResultsParserUtil {
 	public static boolean debug;
 
 	public static void addRedactToken(String token) {
-		if (isNullOrEmpty(token) || _forbiddenRedactTokens.contains(token)) {
+		Set<String> forbiddenRedactTokens = _getForbiddenRedactTokens();
+
+		if (isNullOrEmpty(token) || forbiddenRedactTokens.contains(token)) {
 			return;
 		}
 
@@ -4678,9 +4679,11 @@ public class JenkinsResultsParserUtil {
 			return string;
 		}
 
+		Set<String> forbiddenRedactTokens = _getForbiddenRedactTokens();
+
 		synchronized (_redactTokens) {
 			for (String redactToken : _redactTokens) {
-				if (_forbiddenRedactTokens.contains(redactToken)) {
+				if (forbiddenRedactTokens.contains(redactToken)) {
 					continue;
 				}
 
@@ -5734,10 +5737,7 @@ public class JenkinsResultsParserUtil {
 		for (String propertyName : propertyNames) {
 			sb.append(propertyName);
 			sb.append("=");
-
-			sb.append(
-				StringEscapeUtils.escapeJava(
-					getProperty(properties, propertyName)));
+			sb.append(getProperty(properties, propertyName));
 
 			sb.append("\n");
 		}
@@ -6392,6 +6392,16 @@ public class JenkinsResultsParserUtil {
 		}
 	}
 
+	private static Set<String> _getForbiddenRedactTokens() {
+		Set<String> forbiddenRedactTokens = _forbiddenRedactTokens;
+
+		if (forbiddenRedactTokens != null) {
+			return forbiddenRedactTokens;
+		}
+
+		return _loadForbiddenRedactTokens();
+	}
+
 	private static synchronized JSONArray _getGitDirectoriesJSONArray() {
 		if (_gitDirectoriesJSONArray != null) {
 			return _gitDirectoriesJSONArray;
@@ -6817,13 +6827,15 @@ public class JenkinsResultsParserUtil {
 				"Unable to get build properties", ioException);
 		}
 
+		Set<String> forbiddenRedactTokens = _getForbiddenRedactTokens();
+
 		for (int i = 1; properties.containsKey(_getRedactTokenKey(i)); i++) {
 			String key = _getRedactTokenKey(i);
 
 			String redactToken = getProperty(properties, key);
 
 			if (isNullOrEmpty(redactToken) ||
-				_forbiddenRedactTokens.contains(redactToken) ||
+				forbiddenRedactTokens.contains(redactToken) ||
 				redactToken.matches("^\\s*\\d{5}\\s*$")) {
 
 				continue;
@@ -6857,6 +6869,37 @@ public class JenkinsResultsParserUtil {
 		}
 
 		return true;
+	}
+
+	private static synchronized Set<String> _loadForbiddenRedactTokens() {
+		if (_forbiddenRedactTokens != null) {
+			return _forbiddenRedactTokens;
+		}
+
+		Set<String> forbiddenRedactTokens = new HashSet<>(
+			Arrays.asList("admin", "liferay", "test"));
+
+		try {
+			for (String forbiddenRedactToken :
+					getBuildPropertyAsList(
+						true,
+						"liferay.jenkins.plugin.op.connect.ignored.values")) {
+
+				forbiddenRedactToken = forbiddenRedactToken.trim();
+
+				if (!isNullOrEmpty(forbiddenRedactToken)) {
+					forbiddenRedactTokens.add(forbiddenRedactToken);
+				}
+			}
+		}
+		catch (IOException ioException) {
+			System.out.println(
+				"WARNING: Unable to get forbidden redact tokens");
+		}
+
+		_forbiddenRedactTokens = forbiddenRedactTokens;
+
+		return _forbiddenRedactTokens;
 	}
 
 	private static final long _BYTES_GIGA = 1024 * 1024 * 1024;
@@ -6931,8 +6974,7 @@ public class JenkinsResultsParserUtil {
 		"(?<ecrDockerImageName>((?<repository>[^/\\s]+)/)?" +
 			"(?<name>[^/:\\s]+)(:(?<version>[^@:\\s]+))?)" +
 				"(@sha256:[^\\s]+)?");
-	private static final List<String> _forbiddenRedactTokens = Arrays.asList(
-		"admin", "liferay", "test");
+	private static volatile Set<String> _forbiddenRedactTokens;
 	private static JSONArray _gitDirectoriesJSONArray;
 	private static final DateFormat _gitHubDateFormat;
 	private static final Pattern _gitSHAPattern = Pattern.compile(

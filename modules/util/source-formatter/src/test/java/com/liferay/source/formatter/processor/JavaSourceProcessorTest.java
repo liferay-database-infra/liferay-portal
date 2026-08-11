@@ -871,6 +871,41 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testRedundantContainsCalls() throws Exception {
+		test(
+			SourceProcessorTestParameters.create(
+				"RedundantContainsCalls.testjava"
+			).addExpectedMessage(
+				"Combine the \"containsKey\" check on \"map\" and the " +
+					"following \"put\" into a single \"putIfAbsent\" or \"" +
+						"computeIfAbsent\"",
+				20
+			).addExpectedMessage(
+				"Combine the \"containsKey\" check on \"map\" and the " +
+					"following \"get\" into a single \"get\" with a null check",
+				30
+			).addExpectedMessage(
+				"Combine the \"containsKey\" check on \"map\" and the " +
+					"following \"remove\" into a single \"remove\" with a " +
+						"null check",
+				38
+			).addExpectedMessage(
+				"Combine the \"contains\" check on \"set\" and the following " +
+					"\"add\" into the boolean result of a single \"add\"",
+				46
+			).addExpectedMessage(
+				"Combine the \"contains\" check on \"set\" and the following " +
+					"\"remove\" into the boolean result of a single \"remove\"",
+				52
+			).addExpectedMessage(
+				"Combine the \"contains\" check on \"list\" and the " +
+					"following \"remove\" into the boolean result of a " +
+						"single \"remove\"",
+				58
+			));
+	}
+
+	@Test
 	public void testRedundantLog() throws Exception {
 		test(
 			"RedundantLog.testjava",

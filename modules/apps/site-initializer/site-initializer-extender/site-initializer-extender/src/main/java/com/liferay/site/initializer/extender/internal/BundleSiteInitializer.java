@@ -1259,23 +1259,20 @@ public class BundleSiteInitializer implements SiteInitializer {
 			Map<String, String> stringUtilReplaceValues)
 		throws Exception {
 
-		List<String> serviceBuilderObjectDefinitionNames = new ArrayList<>();
+		List<String> serviceBuilderObjectDefinitionNames =
+			TransformUtil.transform(
+				_objectDefinitionLocalService.getObjectDefinitions(
+					serviceContext.getCompanyId(), true,
+					WorkflowConstants.STATUS_APPROVED),
+				serviceBuilderObjectDefinition -> {
+					_replaceObjectDefinitionValues(
+						serviceBuilderObjectDefinition.getClassName(),
+						serviceBuilderObjectDefinition.getShortName(),
+						serviceBuilderObjectDefinition.getObjectDefinitionId(),
+						stringUtilReplaceValues);
 
-		for (com.liferay.object.model.ObjectDefinition
-				serviceBuilderObjectDefinition :
-					_objectDefinitionLocalService.getObjectDefinitions(
-						serviceContext.getCompanyId(), true,
-						WorkflowConstants.STATUS_APPROVED)) {
-
-			_replaceObjectDefinitionValues(
-				serviceBuilderObjectDefinition.getClassName(),
-				serviceBuilderObjectDefinition.getShortName(),
-				serviceBuilderObjectDefinition.getObjectDefinitionId(),
-				stringUtilReplaceValues);
-
-			serviceBuilderObjectDefinitionNames.add(
-				serviceBuilderObjectDefinition.getName());
-		}
+					return serviceBuilderObjectDefinition.getName();
+				});
 
 		Set<String> resourcePaths = _servletContext.getResourcePaths(
 			"/site-initializer/object-definitions");
@@ -4444,6 +4441,8 @@ public class BundleSiteInitializer implements SiteInitializer {
 			return;
 		}
 
+		Locale siteDefaultLocale = _portal.getSiteDefaultLocale(groupId);
+
 		TaxonomyVocabularyResource.Builder taxonomyVocabularyResourceBuilder =
 			_taxonomyVocabularyResourceFactory.create();
 
@@ -4499,8 +4498,9 @@ public class BundleSiteInitializer implements SiteInitializer {
 
 			_addTaxonomyCategories(
 				StringUtil.replaceLast(resourcePath, ".json", "/"), null,
-				serviceContext, siteNavigationMenuItemSettingsBuilder,
-				stringUtilReplaceValues, taxonomyVocabulary.getId());
+				serviceContext, siteDefaultLocale,
+				siteNavigationMenuItemSettingsBuilder, stringUtilReplaceValues,
+				taxonomyVocabulary.getId());
 		}
 	}
 
@@ -4922,7 +4922,7 @@ public class BundleSiteInitializer implements SiteInitializer {
 
 	private void _addTaxonomyCategories(
 			String parentResourcePath, String parentTaxonomyCategoryId,
-			ServiceContext serviceContext,
+			ServiceContext serviceContext, Locale siteDefaultLocale,
 			SiteNavigationMenuItemSettingsBuilder
 				siteNavigationMenuItemSettingsBuilder,
 			Map<String, String> stringUtilReplaceValues,
@@ -4957,6 +4957,20 @@ public class BundleSiteInitializer implements SiteInitializer {
 				continue;
 			}
 
+			if (!GetterUtil.getBoolean(taxonomyCategory.getSystem())) {
+				Map<String, String> nameI18nMap = new HashMap<>();
+
+				if (taxonomyCategory.getName_i18n() != null) {
+					nameI18nMap.putAll(taxonomyCategory.getName_i18n());
+				}
+
+				nameI18nMap.putIfAbsent(
+					LocaleUtil.toLanguageId(siteDefaultLocale),
+					taxonomyCategory.getName());
+
+				taxonomyCategory.setName_i18n(() -> nameI18nMap);
+			}
+
 			if (parentTaxonomyCategoryId == null) {
 				taxonomyCategory =
 					_addOrUpdateTaxonomyVocabularyTaxonomyCategory(
@@ -4988,7 +5002,7 @@ public class BundleSiteInitializer implements SiteInitializer {
 
 			_addTaxonomyCategories(
 				StringUtil.replaceLast(resourcePath, ".json", "/"),
-				taxonomyCategory.getId(), serviceContext,
+				taxonomyCategory.getId(), serviceContext, siteDefaultLocale,
 				siteNavigationMenuItemSettingsBuilder, stringUtilReplaceValues,
 				taxonomyVocabularyId);
 		}
