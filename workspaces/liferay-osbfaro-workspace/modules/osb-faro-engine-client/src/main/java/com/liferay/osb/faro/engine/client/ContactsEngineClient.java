@@ -50,7 +50,6 @@ import com.liferay.osb.faro.engine.client.model.IndividualSegment;
 import com.liferay.osb.faro.engine.client.model.IndividualSegmentMembership;
 import com.liferay.osb.faro.engine.client.model.IndividualSegmentMembershipChange;
 import com.liferay.osb.faro.engine.client.model.IndividualSegmentMembershipChangeAggregation;
-import com.liferay.osb.faro.engine.client.model.IndividualSegmentRealTimeMembership;
 import com.liferay.osb.faro.engine.client.model.IndividualTransformation;
 import com.liferay.osb.faro.engine.client.model.Interest;
 import com.liferay.osb.faro.engine.client.model.Metric;
@@ -59,7 +58,6 @@ import com.liferay.osb.faro.engine.client.model.PageVisited;
 import com.liferay.osb.faro.engine.client.model.ProjectMetric;
 import com.liferay.osb.faro.engine.client.model.ProjectUsageMetric;
 import com.liferay.osb.faro.engine.client.model.Provider;
-import com.liferay.osb.faro.engine.client.model.RealTimeMembershipMetric;
 import com.liferay.osb.faro.engine.client.model.Results;
 import com.liferay.osb.faro.engine.client.model.SegmentActivation;
 import com.liferay.osb.faro.engine.client.model.provider.LiferayProvider;
@@ -305,9 +303,9 @@ public interface ContactsEngineClient {
 
 	public Results<AssetSummaryCategory> getAssetSummaryCategories(
 		FaroProject faroProject, String accountId, long channelId,
-		String keywords, String rangeEnd, int rangeKey, String rangeStart,
-		String selectedMetric, String sort, String vocabularyId, int cur,
-		int delta);
+		String individualId, String keywords, String rangeEnd, int rangeKey,
+		String rangeStart, String selectedMetric, String sort,
+		String vocabularyId, int cur, int delta);
 
 	public Results<AssetSummaryMimeType> getAssetSummaryMimeTypes(
 		FaroProject faroProject, long channelId, String rangeEnd, int rangeKey,
@@ -315,8 +313,9 @@ public interface ContactsEngineClient {
 
 	public Results<AssetSummaryTag> getAssetSummaryTags(
 		FaroProject faroProject, String accountId, long channelId,
-		String keywords, String rangeEnd, int rangeKey, String rangeStart,
-		String selectedMetric, String sort, int cur, int delta);
+		String individualId, String keywords, String rangeEnd, int rangeKey,
+		String rangeStart, String selectedMetric, String sort, int cur,
+		int delta);
 
 	public Results<AssetSummaryType> getAssetSummaryTypes(
 		FaroProject faroProject, long channelId, String rangeEnd, int rangeKey,
@@ -556,12 +555,6 @@ public interface ContactsEngineClient {
 		FaroProject faroProject, String individualSegmentId, int cur, int delta,
 		List<OrderByField> orderByFields);
 
-	public Results<IndividualSegmentRealTimeMembership>
-		getIndividualSegmentRealTimeMemberships(
-			FaroProject faroProject, String day, String individualSegmentId,
-			List<String> profileTypes, String query, List<String> types,
-			int cur, int delta, List<OrderByField> orderByFields);
-
 	public Results<IndividualSegment> getIndividualSegments(
 		FaroProject faroProject, String channelId, String dataSourceId,
 		String query, List<String> fields, String name,
@@ -601,9 +594,6 @@ public interface ContactsEngineClient {
 
 	public Results<ProjectUsageMetric> getProjectUsageMetrics(
 		FaroProject faroProject, Date sinceDate);
-
-	public RealTimeMembershipMetric getRealTimeMembershipMetric(
-		FaroProject faroProject, String individualSegmentId);
 
 	public long getReportsExportCSVCount(
 			FaroProject faroProject, String path,

@@ -46,8 +46,11 @@ import {
 	USER_NAME,
 } from 'shared/util/router';
 import {DateCell} from 'shared/components/table/cell-components';
-import {ENABLE_REAL_TIME_SEGMENTS} from 'shared/util/feature-flags';
-import {formatDateToTimeZone} from 'shared/util/date';
+import {
+	formatDateToTimeZone,
+	getCustomDateFormat,
+	getCustomDateTimeFormat,
+} from 'shared/util/date';
 import {
 	getDefaultSortOrder,
 	NAME,
@@ -527,22 +530,20 @@ export const List: React.FC<IListProps> = ({
 										{Liferay.Language.get('batch-segment')}
 									</ClayDropDown.Item>
 
-									{ENABLE_REAL_TIME_SEGMENTS && (
-										<ClayDropDown.Item
-											data-testid="real-time-segment-dropdown-item"
-											href={setUriQueryValues(
-												{type: SegmentTypes.RealTime},
-												toRoute(
-													Routes.CONTACTS_SEGMENT_CREATE,
-													{channelId, groupId}
-												)
-											)}
-										>
-											{Liferay.Language.get(
-												'real-time-segment'
-											)}
-										</ClayDropDown.Item>
-									)}
+									<ClayDropDown.Item
+										data-testid="real-time-segment-dropdown-item"
+										href={setUriQueryValues(
+											{type: SegmentTypes.RealTime},
+											toRoute(
+												Routes.CONTACTS_SEGMENT_CREATE,
+												{channelId, groupId}
+											)
+										)}
+									>
+										{Liferay.Language.get(
+											'real-time-segment'
+										)}
+									</ClayDropDown.Item>
 								</ClayDropDown.Group>
 							</ClayDropDown>
 						</div>
@@ -728,7 +729,11 @@ export const List: React.FC<IListProps> = ({
 									cellRendererProps: {
 										dateFormatter: (
 											date: string | number
-										) => formatDateToTimeZone(date, 'lll'),
+										) =>
+											formatDateToTimeZone(
+												date,
+												getCustomDateTimeFormat()
+											),
 										datePath: 'lastMembershipUpdateDate',
 									},
 									className: 'table-column-text-start',
@@ -749,7 +754,11 @@ export const List: React.FC<IListProps> = ({
 									cellRendererProps: {
 										dateFormatter: (
 											date: string | number
-										) => formatDateToTimeZone(date, 'll'),
+										) =>
+											formatDateToTimeZone(
+												date,
+												getCustomDateFormat()
+											),
 										datePath: 'dateModified',
 									},
 									className: 'table-column-text-start',

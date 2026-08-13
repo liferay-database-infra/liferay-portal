@@ -9,8 +9,8 @@ import {globalMenuPagesTest} from '../../../fixtures/globalMenuPagesTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {liferayConfig} from '../../../liferay.config';
 import {getRandomInt} from '../../../utils/getRandomInt';
-import {editCustomElementPageTest} from '../../client-extension-web/main/fixtures/editCustomElementPageTest';
-import {WaitAction} from '../../client-extension-web/main/pages/EditClientExtensionsPage';
+import {editCustomElementPageTest} from '../../client-extension-web/custom-element/fixtures/editCustomElementPageTest';
+import {WaitAction} from '../../client-extension-web/pages/EditClientExtensionsPage';
 import {componentsPageTest} from '../../configuration-admin-web/main/fixtures/ComponentsPageTest';
 
 export const test = mergeTests(

@@ -14,12 +14,15 @@ import com.liferay.layout.content.model.LayoutContentVersion;
 import com.liferay.layout.content.provider.LayoutContentVersionDataProvider;
 import com.liferay.layout.content.service.LayoutContentVersionLocalService;
 import com.liferay.layout.test.util.LayoutTestUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
@@ -33,6 +36,8 @@ import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
+
+import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -76,9 +81,21 @@ public class PageSpecificationVersionResourceTest
 
 	@Override
 	@Test
+	@TestInfo("LPD-90029")
+	public void testDeleteSiteSitePagePageSpecificationVersion()
+		throws Exception {
+
+		super.testDeleteSiteSitePagePageSpecificationVersion();
+
+		_testDeleteSiteSitePagePageSpecificationVersionLatestApproved();
+	}
+
+	@Override
+	@Test
 	public void testGetSiteSitePagePageSpecificationVersion() throws Exception {
 		super.testGetSiteSitePagePageSpecificationVersion();
 
+		_testGetSiteSitePagePageSpecificationVersionActions();
 		_testGetSiteSitePagePageSpecificationVersionMismatchedSitePage();
 		_testGetSiteSitePagePageSpecificationVersionPageSpecificationNestedField();
 	}
@@ -98,25 +115,26 @@ public class PageSpecificationVersionResourceTest
 
 	@Override
 	protected PageSpecificationVersion
+			testDeleteSiteSitePagePageSpecificationVersion_addPageSpecificationVersion()
+		throws Exception {
+
+		return _addPageSpecificationVersion(WorkflowConstants.STATUS_DRAFT);
+	}
+
+	@Override
+	protected String
+			testDeleteSiteSitePagePageSpecificationVersion_getSitePageExternalReferenceCode()
+		throws Exception {
+
+		return _testGroupLayout.getExternalReferenceCode();
+	}
+
+	@Override
+	protected PageSpecificationVersion
 			testGetSiteSitePagePageSpecificationVersion_addPageSpecificationVersion()
 		throws Exception {
 
-		Layout draftLayout = _testGroupLayout.fetchDraftLayout();
-
-		LayoutContentVersion layoutContentVersion =
-			_layoutContentVersionLocalService.addLayoutContentVersion(
-				null, TestPropsValues.getUserId(),
-				_layoutContentVersionDataProvider.getLayoutContentVersionData(
-					draftLayout,
-					ServiceContextTestUtil.getServiceContext(
-						testGroup.getGroupId())),
-				null, draftLayout.getPlid(), WorkflowConstants.STATUS_APPROVED);
-
-		return pageSpecificationVersionResource.
-			getSiteSitePagePageSpecificationVersion(
-				testGroup.getExternalReferenceCode(),
-				_testGroupLayout.getExternalReferenceCode(),
-				layoutContentVersion.getExternalReferenceCode());
+		return _addPageSpecificationVersion();
 	}
 
 	@Override
@@ -156,32 +174,53 @@ public class PageSpecificationVersionResourceTest
 		return _testGroupLayout.getExternalReferenceCode();
 	}
 
+	private PageSpecificationVersion _addPageSpecificationVersion()
+		throws Exception {
+
+		return _addPageSpecificationVersion(WorkflowConstants.STATUS_APPROVED);
+	}
+
 	private PageSpecificationVersion _addPageSpecificationVersion(
 			Group group, Layout layout,
 			PageSpecificationVersion pageSpecificationVersion)
+		throws Exception {
+
+		return _addPageSpecificationVersion(
+			pageSpecificationVersion.getExternalReferenceCode(), group, layout,
+			pageSpecificationVersion.getName(),
+			WorkflowConstants.STATUS_APPROVED);
+	}
+
+	private PageSpecificationVersion _addPageSpecificationVersion(int status)
+		throws Exception {
+
+		return _addPageSpecificationVersion(
+			RandomTestUtil.randomString(), testGroup, _testGroupLayout,
+			RandomTestUtil.randomString(), status);
+	}
+
+	private PageSpecificationVersion _addPageSpecificationVersion(
+			String externalReferenceCode, Group group, Layout layout,
+			String name, int status)
 		throws Exception {
 
 		Layout draftLayout = layout.fetchDraftLayout();
 
 		LayoutContentVersion layoutContentVersion =
 			_layoutContentVersionLocalService.addLayoutContentVersion(
-				pageSpecificationVersion.getExternalReferenceCode(),
-				TestPropsValues.getUserId(),
+				externalReferenceCode, TestPropsValues.getUserId(),
 				_layoutContentVersionDataProvider.getLayoutContentVersionData(
 					draftLayout,
 					ServiceContextTestUtil.getServiceContext(
 						group.getGroupId())),
 				HashMapBuilder.put(
-					LocaleUtil.getSiteDefault(),
-					pageSpecificationVersion.getName()
+					LocaleUtil.getSiteDefault(), name
 				).build(),
-				draftLayout.getPlid(), WorkflowConstants.STATUS_APPROVED);
+				draftLayout.getPlid(), status);
 
-		if (Validator.isNotNull(
-				pageSpecificationVersion.getExternalReferenceCode())) {
-
+		if (Validator.isNotNull(externalReferenceCode)) {
 			Assert.assertEquals(
-				pageSpecificationVersion.getExternalReferenceCode(),
+				externalReferenceCode,
 				layoutContentVersion.getExternalReferenceCode());
 		}
 
@@ -208,6 +247,27 @@ public class PageSpecificationVersionResourceTest
 			pageSpecificationVersion);
 	}
 
+	private void _assertActionHref(
+		PageSpecificationVersion pageSpecificationVersion, String... keys) {
+
+		Map<String, Map<String, String>> actions =
+			pageSpecificationVersion.getActions();
+
+		String content = StringBundler.concat(
+			"/sites/", testGroup.getExternalReferenceCode(), "/site-pages/",
+			_testGroupLayout.getExternalReferenceCode(),
+			"/page-specification-versions/",
+			pageSpecificationVersion.getExternalReferenceCode());
+
+		for (String key : keys) {
+			Map<String, String> action = actions.get(key);
+
+			String href = action.get("href");
+
+			Assert.assertTrue(key, href.contains(content));
+		}
+	}
+
 	private PageSpecificationVersionResource
 			_getPageSpecificationVersionResource()
 		throws Exception {
@@ -225,6 +285,76 @@ public class PageSpecificationVersionResourceTest
 		).parameters(
 			"nestedFields", "pageSpecification"
 		).build();
+	}
+
+	private void _testDeleteSiteSitePagePageSpecificationVersionLatestApproved()
+		throws Exception {
+
+		PageSpecificationVersion pageSpecificationVersion =
+			_addPageSpecificationVersion();
+
+		Problem.ProblemException problemException = Assert.assertThrows(
+			Problem.ProblemException.class,
+			() ->
+				pageSpecificationVersionResource.
+					deleteSiteSitePagePageSpecificationVersion(
+						testGroup.getExternalReferenceCode(),
+						_testGroupLayout.getExternalReferenceCode(),
+						pageSpecificationVersion.getExternalReferenceCode()));
+
+		Problem problem = problemException.getProblem();
+
+		Assert.assertEquals("CONFLICT", problem.getStatus());
+		Assert.assertEquals(
+			"The latest approved page specification version is required",
+			problem.getTitle());
+	}
+
+	private void _testGetSiteSitePagePageSpecificationVersionActions()
+		throws Exception {
+
+		PageSpecificationVersion firstPageSpecificationVersion =
+			_addPageSpecificationVersion();
+
+		firstPageSpecificationVersion =
+			pageSpecificationVersionResource.
+				getSiteSitePagePageSpecificationVersion(
+					testGroup.getExternalReferenceCode(),
+					_testGroupLayout.getExternalReferenceCode(),
+					firstPageSpecificationVersion.getExternalReferenceCode());
+
+		Map<String, Map<String, String>> firstActions =
+			firstPageSpecificationVersion.getActions();
+
+		Assert.assertNull(firstActions.get("delete"));
+
+		_assertActionHref(firstPageSpecificationVersion, "get");
+
+		PageSpecificationVersion secondPageSpecificationVersion =
+			_addPageSpecificationVersion();
+
+		firstPageSpecificationVersion =
+			pageSpecificationVersionResource.
+				getSiteSitePagePageSpecificationVersion(
+					testGroup.getExternalReferenceCode(),
+					_testGroupLayout.getExternalReferenceCode(),
+					firstPageSpecificationVersion.getExternalReferenceCode());
+
+		_assertActionHref(firstPageSpecificationVersion, "delete", "get");
+
+		secondPageSpecificationVersion =
+			pageSpecificationVersionResource.
+				getSiteSitePagePageSpecificationVersion(
+					testGroup.getExternalReferenceCode(),
+					_testGroupLayout.getExternalReferenceCode(),
+					secondPageSpecificationVersion.getExternalReferenceCode());
+
+		Map<String, Map<String, String>> secondActions =
+			secondPageSpecificationVersion.getActions();
+
+		Assert.assertNull(secondActions.get("delete"));
+
+		_assertActionHref(secondPageSpecificationVersion, "get");
 	}
 
 	private void _testGetSiteSitePagePageSpecificationVersionMismatchedSitePage()

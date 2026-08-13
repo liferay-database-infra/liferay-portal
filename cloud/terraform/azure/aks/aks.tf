@@ -30,6 +30,11 @@ resource "azurerm_kubernetes_cluster" "main" {
 		only_critical_addons_enabled=true
 		os_disk_type="Ephemeral"
 		temporary_name_for_rotation="systemtmp"
+		upgrade_settings {
+			drain_timeout_in_minutes=0
+			max_surge="10%"
+			node_soak_duration_in_minutes=0
+		}
 		vm_size=var.machine_type
 		vnet_subnet_id=azurerm_subnet.main.id
 	}
@@ -41,6 +46,13 @@ resource "azurerm_kubernetes_cluster" "main" {
 			authorized_ip_ranges=var.api_authorized_ip_ranges
 		}
 		for_each=!var.private_cluster && length(var.api_authorized_ip_ranges) > 0 ? [1] : []
+	}
+	dynamic "monitor_metrics" {
+		content {
+			annotations_allowed=var.observability_config.annotations_allowed
+			labels_allowed=var.observability_config.labels_allowed
+		}
+		for_each=var.observability_config.enabled ? [1] : []
 	}
 	identity {
 		identity_ids=[azurerm_user_assigned_identity.cluster.id]

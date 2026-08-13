@@ -17,6 +17,7 @@ import com.liferay.exportimport.rest.dto.v1_0.ImportProcessRequest;
 import com.liferay.exportimport.rest.dto.v1_0.ProcessProgress;
 import com.liferay.exportimport.rest.dto.v1_0.Status;
 import com.liferay.exportimport.rest.internal.util.BackgroundTaskUtil;
+import com.liferay.exportimport.rest.internal.util.GroupUtil;
 import com.liferay.exportimport.rest.internal.util.ParameterMapUtil;
 import com.liferay.exportimport.rest.internal.util.PermissionUtil;
 import com.liferay.exportimport.rest.resource.v1_0.ImportPreviewResource;
@@ -50,8 +51,8 @@ import com.liferay.portal.kernel.zip.ZipReader;
 import com.liferay.portal.kernel.zip.ZipReaderFactory;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
-import com.liferay.staging.StagingGroupHelper;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 
 import java.io.InputStream;
@@ -90,28 +91,16 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 	@Override
 	public Page<ImportProcess> getAssetLibraryImportProcessesPage(
 			String assetLibraryExternalReferenceCode, Long creatorId,
-			String search, Integer status, Pagination pagination, Sort[] sorts)
-		throws Exception {
-
-		Group group = _getAssetLibraryGroup(assetLibraryExternalReferenceCode);
-
-		return _getImportProcessesPage(
-			creatorId, group.getGroupId(), pagination, null, search, sorts,
-			status);
-	}
-
-	@Override
-	public Page<ImportProcess> getAssetLibraryPortletImportProcessesPage(
-			String assetLibraryExternalReferenceCode, String portletId,
-			Long creatorId, String search, Integer status,
+			String portletId, String search, Integer status,
 			Pagination pagination, Sort[] sorts)
 		throws Exception {
 
-		Group group = _getAssetLibraryGroup(assetLibraryExternalReferenceCode);
-
 		return _getImportProcessesPage(
-			creatorId, group.getGroupId(), pagination, portletId, search, sorts,
-			status);
+			creatorId,
+			GroupUtil.getAssetLibraryGroup(
+				contextCompany.getCompanyId(),
+				assetLibraryExternalReferenceCode),
+			pagination, portletId, search, sorts, status);
 	}
 
 	@Override
@@ -131,13 +120,13 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 
 	@Override
 	public Page<ImportProcess> getImportProcessesPage(
-			Long creatorId, String search, Integer status,
+			Long creatorId, String portletId, String search, Integer status,
 			Pagination pagination, Sort[] sorts)
 		throws Exception {
 
 		return _getImportProcessesPage(
-			creatorId, _getCompanyGroupId(), pagination, null, search, sorts,
-			status);
+			creatorId, GroupUtil.getCompanyGroup(contextCompany.getCompanyId()),
+			pagination, portletId, search, sorts, status);
 	}
 
 	@Override
@@ -163,97 +152,51 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 
 	@Override
 	public Page<ImportProcess> getSiteImportProcessesPage(
-			String siteExternalReferenceCode, Long creatorId, String search,
-			Integer status, Pagination pagination, Sort[] sorts)
-		throws Exception {
-
-		Group group = _getSiteGroup(siteExternalReferenceCode);
-
-		return _getImportProcessesPage(
-			creatorId, group.getGroupId(), pagination, null, search, sorts,
-			status);
-	}
-
-	@Override
-	public Page<ImportProcess> getSitePortletImportProcessesPage(
-			String siteExternalReferenceCode, String portletId, Long creatorId,
+			String siteExternalReferenceCode, Long creatorId, String portletId,
 			String search, Integer status, Pagination pagination, Sort[] sorts)
 		throws Exception {
 
-		Group group = _getSiteGroup(siteExternalReferenceCode);
-
 		return _getImportProcessesPage(
-			creatorId, group.getGroupId(), pagination, portletId, search, sorts,
-			status);
+			creatorId,
+			GroupUtil.getSiteGroup(
+				contextCompany.getCompanyId(), siteExternalReferenceCode),
+			pagination, portletId, search, sorts, status);
 	}
 
 	@Override
 	public ImportProcess postAssetLibraryImportProcess(
-			String assetLibraryExternalReferenceCode,
-			ImportProcessRequest importProcessRequest)
+			String assetLibraryExternalReferenceCode, Long plid,
+			String portletId, ImportProcessRequest importProcessRequest)
 		throws Exception {
 
-		return _postLayoutImportProcess(
-			_getAssetLibraryGroup(assetLibraryExternalReferenceCode),
-			importProcessRequest);
-	}
-
-	@Override
-	public ImportProcess postAssetLibraryPortletImportProcess(
-			String assetLibraryExternalReferenceCode, String portletId,
-			Long plid, ImportProcessRequest importProcessRequest)
-		throws Exception {
-
-		return _postPortletImportProcess(
-			_getAssetLibraryGroup(assetLibraryExternalReferenceCode),
+		return _postImportProcess(
+			GroupUtil.getAssetLibraryGroup(
+				contextCompany.getCompanyId(),
+				assetLibraryExternalReferenceCode),
 			importProcessRequest, GetterUtil.getLong(plid), portletId);
 	}
 
 	@Override
 	public ImportProcess postImportProcess(
+			Long plid, String portletId,
 			ImportProcessRequest importProcessRequest)
 		throws Exception {
 
-		Group group = _stagingGroupHelper.fetchCompanyGroup(
-			contextCompany.getCompanyId());
-
-		if (group == null) {
-			throw new NotFoundException();
-		}
-
-		return _postLayoutImportProcess(group, importProcessRequest);
+		return _postImportProcess(
+			GroupUtil.getCompanyGroup(contextCompany.getCompanyId()),
+			importProcessRequest, GetterUtil.getLong(plid), portletId);
 	}
 
 	@Override
 	public ImportProcess postSiteImportProcess(
-			String siteExternalReferenceCode,
+			String siteExternalReferenceCode, Long plid, String portletId,
 			ImportProcessRequest importProcessRequest)
 		throws Exception {
 
-		return _postLayoutImportProcess(
-			_getSiteGroup(siteExternalReferenceCode), importProcessRequest);
-	}
-
-	@Override
-	public ImportProcess postSitePortletImportProcess(
-			String siteExternalReferenceCode, String portletId, Long plid,
-			ImportProcessRequest importProcessRequest)
-		throws Exception {
-
-		return _postPortletImportProcess(
-			_getSiteGroup(siteExternalReferenceCode), importProcessRequest,
-			GetterUtil.getLong(plid), portletId);
-	}
-
-	private Group _getAssetLibraryGroup(String externalReferenceCode) {
-		Group group = groupLocalService.fetchGroupByExternalReferenceCode(
-			externalReferenceCode, contextCompany.getCompanyId());
-
-		if ((group == null) || !group.isDepot()) {
-			throw new NotFoundException();
-		}
-
-		return group;
+		return _postImportProcess(
+			GroupUtil.getSiteGroup(
+				contextCompany.getCompanyId(), siteExternalReferenceCode),
+			importProcessRequest, GetterUtil.getLong(plid), portletId);
 	}
 
 	private List<BackgroundTask> _getBackgroundTasks(
@@ -272,17 +215,6 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 		return _backgroundTaskLocalService.dynamicQuery(
 			dynamicQuery, pagination.getStartPosition(),
 			pagination.getEndPosition());
-	}
-
-	private long _getCompanyGroupId() {
-		Group group = _stagingGroupHelper.fetchCompanyGroup(
-			contextCompany.getCompanyId());
-
-		if (group == null) {
-			return 0L;
-		}
-
-		return group.getGroupId();
 	}
 
 	private DynamicQuery _getDynamicQuery(
@@ -330,9 +262,11 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 	}
 
 	private Page<ImportProcess> _getImportProcessesPage(
-			Long creatorId, long groupId, Pagination pagination,
+			Long creatorId, Group group, Pagination pagination,
 			String portletId, String search, Sort[] sorts, Integer status)
 		throws Exception {
+
+		long groupId = group.getGroupId();
 
 		return Page.of(
 			transform(
@@ -358,17 +292,6 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 		return fileEntry;
 	}
 
-	private Group _getSiteGroup(String externalReferenceCode) {
-		Group group = groupLocalService.fetchGroupByExternalReferenceCode(
-			externalReferenceCode, contextCompany.getCompanyId());
-
-		if ((group == null) || (!group.isCMS() && !group.isSite())) {
-			throw new NotFoundException();
-		}
-
-		return group;
-	}
-
 	private boolean _isPrivateLayout(FileEntry fileEntry) throws Exception {
 		try (InputStream inputStream = fileEntry.getContentStream();
 
@@ -388,6 +311,24 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 			return GetterUtil.getBoolean(
 				headerElement.attributeValue("private-layout"));
 		}
+	}
+
+	private ImportProcess _postImportProcess(
+			Group group, ImportProcessRequest importProcessRequest, long plid,
+			String portletId)
+		throws Exception {
+
+		if (Validator.isBlank(portletId)) {
+			return _postLayoutImportProcess(group, importProcessRequest);
+		}
+
+		if (plid <= 0) {
+			throw new BadRequestException(
+				"Importing the portlet " + portletId + " requires a PLID");
+		}
+
+		return _postPortletImportProcess(
+			group, importProcessRequest, plid, portletId);
 	}
 
 	private ImportProcess _postLayoutImportProcess(
@@ -614,9 +555,6 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 
 	@Reference
 	private Portal _portal;
-
-	@Reference
-	private StagingGroupHelper _stagingGroupHelper;
 
 	@Reference
 	private UserLocalService _userLocalService;

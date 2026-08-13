@@ -750,6 +750,108 @@ test(
 );
 
 test(
+	'Reflects the selected experience content in the preview and page element picker',
+	{tag: '@LPD-101994'},
+	async ({
+		apiHelpers,
+		audiencesPage,
+		elementVariationsPage,
+		pageEditorPage,
+		site,
+	}) => {
+
+		// Create an audience so element variations can be built
+
+		const audienceName = 'Audience ' + getRandomString();
+
+		await audiencesPage.goto();
+
+		await audiencesPage.createAudience({
+			attributeName: 'Language',
+			name: audienceName,
+			value: 'English (United States)',
+			valueType: 'select',
+		});
+
+		// Create a page with a Paragraph fragment in the default experience
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([
+				getFragmentDefinition({
+					id: getRandomString(),
+					key: 'BASIC_COMPONENT-paragraph',
+				}),
+			]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		// Create a second experience and add a Heading only to it
+
+		const experienceName = 'Experience ' + getRandomString();
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await pageEditorPage.createExperience(experienceName);
+
+		await pageEditorPage.addFragment('Basic Components', 'Heading');
+
+		// Open element variations from the second experience
+
+		await pageEditorPage.goToElementVariations();
+
+		const paragraphDefaultText =
+			'A paragraph is a self-contained unit of a discourse';
+
+		// The default experience preview excludes the heading, so it is neither
+		// rendered nor offered as a page element
+
+		await elementVariationsPage.selectExperience('Default');
+
+		await expect(
+			elementVariationsPage.preview.getByText(paragraphDefaultText)
+		).toBeVisible();
+
+		await expect(
+			elementVariationsPage.preview.getByText('Heading Example')
+		).not.toBeVisible();
+
+		await elementVariationsPage.startElementVariationDraft();
+
+		await elementVariationsPage.openPageElementPicker();
+
+		await expect(
+			elementVariationsPage.getPageElementOption(
+				'Paragraph (element-text)'
+			)
+		).toBeVisible();
+
+		await expect(
+			elementVariationsPage.getPageElementOption('Heading (element-text)')
+		).not.toBeVisible();
+
+		await elementVariationsPage.cancelElementVariationDraft();
+
+		// The second experience preview renders the heading and offers it as a
+		// page element
+
+		await elementVariationsPage.selectExperience(experienceName);
+
+		await expect(
+			elementVariationsPage.preview.getByText('Heading Example')
+		).toBeVisible();
+
+		await elementVariationsPage.startElementVariationDraft();
+
+		await elementVariationsPage.openPageElementPicker();
+
+		await expect(
+			elementVariationsPage.getPageElementOption('Heading (element-text)')
+		).toBeVisible();
+	}
+);
+
+test(
 	'Loads each page own variations when navigating between pages',
 	{tag: '@LPD-93951'},
 	async ({
@@ -872,5 +974,123 @@ test(
 		await expect(page.getByText(firstVariationText)).toBeVisible();
 
 		await expect(page.getByText(secondVariationText)).not.toBeVisible();
+	}
+);
+
+test(
+	'Does not serve the element variations of a page the guest cannot view',
+	{tag: '@LPD-101907'},
+	async ({
+		apiHelpers,
+		audiencesPage,
+		browser,
+		elementVariationsPage,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+
+		// Create an audience matching the browser language
+
+		const audienceName = 'Audience ' + getRandomString();
+
+		await audiencesPage.goto();
+
+		await audiencesPage.createAudience({
+			attributeName: 'Language',
+			name: audienceName,
+			value: 'English (United States)',
+			valueType: 'select',
+		});
+
+		// Create a page with a Heading fragment, replace its heading and
+		// publish
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([
+				getFragmentDefinition({
+					id: getRandomString(),
+					key: 'BASIC_COMPONENT-heading',
+				}),
+			]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await pageEditorPage.goToElementVariations();
+
+		await elementVariationsPage.createElementVariation({
+			audienceName,
+			html: `<span>Variation ${getRandomString()}</span>`,
+			name: 'Replace heading',
+			pageElementLabel: 'Heading (element-text)',
+		});
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await pageEditorPage.publishPage();
+
+		// Read the element variations URL from the published page
+
+		await page.goto(`/web${site.friendlyUrlPath}${layout.friendlyUrlPath}`);
+
+		const metaContent = await page
+			.locator('meta[name="audiences-variations"]')
+			.getAttribute('content');
+
+		const [plid, segmentsExperienceId, hash] = metaContent.split(':');
+
+		const variationsPath = `/o/audiences/${plid}/${segmentsExperienceId}/variations.(${hash}).js`;
+
+		// The variations of a page the guest can view are served and publicly
+		// cacheable
+
+		const guestContext = await browser.newContext({
+			storageState: {cookies: [], origins: []},
+		});
+
+		const allowedResponse = await guestContext.request.get(variationsPath);
+
+		expect(allowedResponse.status()).toBe(200);
+
+		expect(allowedResponse.headers()['cache-control']).toContain('public');
+
+		// Revoke the guest view permission on the page
+
+		const companyId = String(
+			await page.evaluate(() => Liferay.ThemeDisplay.getCompanyId())
+		);
+
+		const guestRole = await apiHelpers.jsonWebServicesRole.getRole(
+			companyId,
+			'Guest'
+		);
+
+		await apiHelpers.jsonWebServicesResourcePermissionApiHelper.removeResourcePermission(
+			'VIEW',
+			companyId,
+			String(site.id),
+			'com.liferay.portal.kernel.model.Layout',
+			plid,
+			String(guestRole.roleId),
+			'4'
+		);
+
+		// The guest is denied and the response is not cacheable
+
+		const deniedResponse = await guestContext.request.get(variationsPath);
+
+		expect(deniedResponse.status()).toBe(404);
+
+		const deniedCacheControl =
+			deniedResponse.headers()['cache-control'] ?? '';
+
+		expect(deniedCacheControl).not.toContain('max-age');
+
+		expect(deniedCacheControl).not.toContain('public');
+
+		await guestContext.close();
 	}
 );

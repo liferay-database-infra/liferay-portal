@@ -180,15 +180,18 @@ tests:
                 template: templates/application-crossplane.yaml
         it: Points the Crossplane application at the upstream chart
     -   asserts:
-            -   equal:
+            -   notExists:
                     path: spec.source.chart
-                    value: gateway-helm
+                template: templates/application-envoy-gateway.yaml
+            -   equal:
+                    path: spec.source.path
+                    value: .
                 template: templates/application-envoy-gateway.yaml
             -   equal:
                     path: spec.source.repoURL
-                    value: oci://docker.io/envoyproxy
+                    value: oci://docker.io/envoyproxy/gateway-helm
                 template: templates/application-envoy-gateway.yaml
-        it: Points the Envoy Gateway application at the OCI registry
+        it: Points the Envoy Gateway application at the full OCI chart path
     -   asserts:
             -   hasDocuments:
                     count: 1
@@ -209,17 +212,20 @@ tests:
                     path: spec.destination.namespace
                     value: ack-system
                 template: templates/application-ack-prometheusservice.yaml
-            -   equal:
+            -   notExists:
                     path: spec.source.chart
-                    value: prometheusservice-chart
                 template: templates/application-ack-prometheusservice.yaml
             -   equal:
                     path: spec.source.helm.valuesObject.aws.region
                     value: us-west-2
                 template: templates/application-ack-prometheusservice.yaml
             -   equal:
+                    path: spec.source.path
+                    value: .
+                template: templates/application-ack-prometheusservice.yaml
+            -   equal:
                     path: spec.source.repoURL
-                    value: oci://public.ecr.aws/aws-controllers-k8s
+                    value: oci://public.ecr.aws/aws-controllers-k8s/prometheusservice-chart
                 template: templates/application-ack-prometheusservice.yaml
         it: Renders the ACK Prometheus service controller when observability and the operator are enabled
         set:

@@ -9,6 +9,21 @@ func init() {
 	SchemeBuilder.Register(&LiferayEnvironment{}, &LiferayEnvironmentList{})
 }
 
+type AppStatus struct {
+	// +optional
+	Checksum string `json:"checksum,omitempty"`
+
+	// +optional
+	Name string `json:"name,omitempty"`
+
+	// +kubebuilder:validation:Enum=Downloaded;Failed
+	// +optional
+	State string `json:"state,omitempty"`
+
+	// +optional
+	VirtualEntryID int64 `json:"virtualEntryId,omitempty"`
+}
+
 type LicenseStatus struct {
 	// +optional
 	Checksum string `json:"checksum,omitempty"`
@@ -33,6 +48,7 @@ type LicenseStatus struct {
 // +kubebuilder:printcolumn:JSONPath=`.status.phase`,name="Phase",priority=1,type=string
 // +kubebuilder:printcolumn:JSONPath=`.status.environmentId`,name="Environment-ID",priority=1,type=string
 // +kubebuilder:printcolumn:JSONPath=`.status.activatedAt`,name="Activated-At",priority=1,type=date
+// +kubebuilder:printcolumn:JSONPath=`.status.unreachableSince`,name="Unreachable-Since",priority=1,type=date
 // +kubebuilder:resource:shortName=lenv
 // +kubebuilder:subresource:status
 type LiferayEnvironment struct {
@@ -75,6 +91,9 @@ type LiferayEnvironmentStatus struct {
 	// +optional
 	ActivatedAt *metav1.Time `json:"activatedAt,omitempty"`
 
+	// +optional
+	Apps []AppStatus `json:"apps,omitempty"`
+
 	// +listMapKey=type
 	// +listType=map
 	// +optional
@@ -95,11 +114,17 @@ type LiferayEnvironmentStatus struct {
 	// +kubebuilder:validation:Enum=Degraded;Pending;Ready
 	// +optional
 	Phase string `json:"phase,omitempty"`
+
+	// +optional
+	UnreachableSince *metav1.Time `json:"unreachableSince,omitempty"`
 }
 
 type MarketplaceVolumeSpec struct {
 	// +optional
 	ClaimName string `json:"claimName,omitempty"`
+
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
 
 	// +kubebuilder:validation:Required
 	Size resource.Quantity `json:"size"`

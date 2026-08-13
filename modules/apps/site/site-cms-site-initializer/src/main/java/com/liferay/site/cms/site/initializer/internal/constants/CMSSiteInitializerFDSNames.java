@@ -41,6 +41,10 @@ public class CMSSiteInitializerFDSNames {
 	public static final String CONTENTS_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-contentsSection";
 
+	public static final String EXPIRED_ASSETS_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-expiredAssetsSection";
+
 	public static final String FILES_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-filesSection";
 
@@ -55,6 +59,10 @@ public class CMSSiteInitializerFDSNames {
 	public static final String OVERDUE_REVIEWS_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
 			"-overdueReviewsSection";
+
+	public static final String PENDING_WORKFLOWS_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-pendingWorkflowsSection";
 
 	public static final String RECYCLE_BIN_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-recycleBinSection";

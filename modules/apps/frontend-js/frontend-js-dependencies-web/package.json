@@ -1,7 +1,7 @@
 {
 	"dependencies": {
-		"@liferay/js-api": "0.6.2",
-		"axe-core": "4.2.0",
+		"@liferay/js-api": "0.7.1",
+		"axe-core": "4.11.4",
 		"clipboard": "2.0.4",
 		"cropperjs": "1.5.11",
 		"dagre": "0.8.2",
@@ -23,7 +23,7 @@
 		"react-helmet": "^6.1.0",
 		"react-router": "7.13.0",
 		"react-text-mask": "5.4.3",
-		"react-transition-group": "4.4.1",
+		"react-transition-group": "4.4.5",
 		"text-mask-addons": "3.8.0",
 		"text-mask-core": "5.1.2",
 		"ua-parser-js": "2.0.9",

@@ -36,10 +36,6 @@ const cmpTask = 'cmp/tasks';
 let project;
 const tasks = [];
 let taskNames: string[] = [];
-let taskTags: string[] = [];
-
-const generateTaskTag = () =>
-	'L_CMP_TASK_' + Math.floor(Math.random() * 100000000);
 
 /**
  * Formats a date as its long month name and year.
@@ -50,7 +46,6 @@ const getMonthYearLabel = (date: Date): string =>
 
 test.beforeEach(async ({apiHelpers}) => {
 	taskNames = [getRandomString(), getRandomString(), getRandomString()];
-	taskTags = [];
 
 	project = await apiHelpers.objectEntry.postObjectEntry(
 		{
@@ -60,13 +55,8 @@ test.beforeEach(async ({apiHelpers}) => {
 	);
 
 	for (const taskName of taskNames) {
-		const taskTag = generateTaskTag();
-
-		taskTags.push(taskTag);
-
 		const task = await apiHelpers.objectEntry.postObjectEntry(
 			{
-				keywords: [taskTag],
 				r_cmpProjectToCMPTasks_c_cmpProjectId: project.id,
 				title: taskName,
 			},
@@ -99,6 +89,8 @@ test.afterEach(async ({apiHelpers}) => {
 		);
 	}
 });
+
+test.use({viewport: {height: 1080, width: 1920}});
 
 test(
 	'Bulk actions and selection are hidden for project members',
@@ -499,9 +491,9 @@ test(
 				year: 'numeric',
 			});
 
-			await expect(page.getByLabel('Due Date')).toHaveValue(
-				expectedDueDate
-			);
+			await expect(
+				page.getByLabel('Due Date', {exact: true})
+			).toHaveValue(expectedDueDate);
 		});
 
 		await test.step('Fill in the title and save', async () => {
@@ -530,7 +522,9 @@ test(
 				Liferay.ThemeDisplay.getBCP47LanguageId()
 			);
 
-			await expect(page.getByLabel('Due Date')).toHaveValue(
+			await expect(
+				page.getByLabel('Due Date', {exact: true})
+			).toHaveValue(
 				daySlotDate.toLocaleDateString(locale, {
 					day: '2-digit',
 					month: '2-digit',
@@ -670,7 +664,7 @@ test(
 		const taskTitleBase = getRandomString();
 
 		const taskTitles = Array.from(
-			{length: 3},
+			{length: 5},
 			(_, index) => `${taskTitleBase}-${index}`
 		);
 
@@ -794,10 +788,10 @@ test(
 			const dayCell = tasksPage.getCalendarDayCell(tomorrow);
 
 			await expect(
-				dayCell.getByText(taskTitles[1], {exact: true})
+				dayCell.getByText(taskTitles[3], {exact: true})
 			).toBeHidden();
 			await expect(
-				dayCell.getByText(taskTitles[2], {exact: true})
+				dayCell.getByText(taskTitles[4], {exact: true})
 			).toBeHidden();
 
 			await expect(calendarView.moreLinkButton).toBeVisible();
@@ -814,12 +808,12 @@ test(
 			});
 
 			await expect(
-				calendarView.moreLinkPopover.getByText(taskTitles[1], {
+				calendarView.moreLinkPopover.getByText(taskTitles[3], {
 					exact: true,
 				})
 			).toBeVisible();
 			await expect(
-				calendarView.moreLinkPopover.getByText(taskTitles[2], {
+				calendarView.moreLinkPopover.getByText(taskTitles[4], {
 					exact: true,
 				})
 			).toBeVisible();
@@ -827,13 +821,13 @@ test(
 
 		await test.step('Clicking a task in the more popover opens its view page', async () => {
 			await calendarView.moreLinkPopover
-				.getByText(taskTitles[1], {exact: true})
+				.getByText(taskTitles[3], {exact: true})
 				.click();
 
 			await expect(page).toHaveURL(/\/e\/task\//);
 
 			await expect(
-				page.getByText(taskTitles[1], {exact: true})
+				page.getByText(taskTitles[3], {exact: true})
 			).toBeVisible();
 
 			await page.goBack();
@@ -1230,7 +1224,6 @@ test(
 
 		await apiHelpers.objectEntry.postObjectEntry(
 			{
-				keywords: [taskTags[0]],
 				objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
 				title: blogTitle,
 			},
@@ -1256,69 +1249,6 @@ test(
 			page.getByRole('button', {name: 'Update State'})
 		).toBeDisabled();
 		await expect(page.getByRole('button', {name: 'Delete'})).toBeDisabled();
-	}
-);
-
-test(
-	'Kanban View Task creation generates a tag',
-	{tag: ['@LPD-80545']},
-	async ({apiHelpers, page, tasksPage}) => {
-		const cmpProjectApplicationName = 'cmp/projects';
-		const cmpTaskApplicationName = 'cmp/tasks';
-
-		const project = await apiHelpers.objectEntry.postObjectEntry(
-			{
-				title: getRandomString(),
-			},
-			cmpProjectApplicationName
-		);
-
-		await apiHelpers.objectEntry.postObjectEntry(
-			{
-				r_cmpProjectToCMPTasks_c_cmpProjectId: project.id,
-				title: getRandomString(),
-			},
-			cmpTaskApplicationName,
-			project.scopeKey
-		);
-
-		const taskTitle = getRandomString();
-
-		await test.step('Go to tasks page and switch to kanban view', async () => {
-			await tasksPage.goto();
-
-			await tasksPage.projectTasksTab.click();
-
-			await tasksPage.tableViewButton.click();
-
-			await tasksPage.dropdownKanbanViewButton.click();
-		});
-
-		await test.step('Add a new task', async () => {
-			await tasksPage.addTaskKanbanButton.click();
-
-			await tasksPage.titleInput.fill(taskTitle);
-
-			await tasksPage.projectTitleButton.click();
-
-			await page.getByRole('option', {name: project.title}).click();
-
-			await tasksPage.saveButton.click();
-		});
-
-		await test.step('Go to tasks page and select the created task', async () => {
-			await tasksPage.kanbanViewButton.click();
-
-			await tasksPage.dropdownTableViewButton.click();
-
-			await page.getByRole('link', {name: taskTitle}).click();
-		});
-
-		await test.step("Check if the created task's AssetTagName follows the pattern", async () => {
-			await expect(tasksPage.assetTagNameField).toContainText(
-				'L_CMP_TASK_'
-			);
-		});
 	}
 );
 
@@ -1472,7 +1402,6 @@ test(
 		await test.step('Create two CMS Blog entries; both generate KaleoTaskInstanceTokens', async () => {
 			await apiHelpers.objectEntry.postObjectEntry(
 				{
-					keywords: [taskTags[0]],
 					objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
 					title: assignedBlogTitle,
 				},
@@ -1482,7 +1411,6 @@ test(
 
 			await apiHelpers.objectEntry.postObjectEntry(
 				{
-					keywords: [taskTags[0]],
 					objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
 					title: unassignedBlogTitle,
 				},
@@ -1566,7 +1494,6 @@ test(
 
 		await apiHelpers.objectEntry.postObjectEntry(
 			{
-				keywords: [taskTags[0]],
 				objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
 				title: blogTitle,
 			},
@@ -1750,7 +1677,13 @@ test(
 
 			await page.getByRole('menuitem', {name: 'Edit'}).click();
 
-			await page.getByRole('textbox', {name: 'Due Date'}).fill(todayDate);
+			await page.getByTestId('date-button').click();
+
+			await page
+				.getByRole('button', {name: 'Select Current Date'})
+				.click();
+
+			await page.keyboard.press('Escape');
 
 			await tasksPage.saveButton.click();
 

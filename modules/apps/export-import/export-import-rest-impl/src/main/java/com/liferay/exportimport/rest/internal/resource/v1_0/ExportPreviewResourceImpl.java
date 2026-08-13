@@ -16,6 +16,7 @@ import com.liferay.exportimport.portlet.data.handler.provider.PortletDataHandler
 import com.liferay.exportimport.rest.dto.v1_0.ExportPreview;
 import com.liferay.exportimport.rest.dto.v1_0.PreviewPortletDataHandler;
 import com.liferay.exportimport.rest.internal.util.DateRangeUtil;
+import com.liferay.exportimport.rest.internal.util.GroupUtil;
 import com.liferay.exportimport.rest.internal.util.PermissionUtil;
 import com.liferay.exportimport.rest.internal.util.PreviewPortletDataHandlerUtil;
 import com.liferay.exportimport.rest.resource.v1_0.ExportPreviewResource;
@@ -27,9 +28,6 @@ import com.liferay.portal.kernel.util.DateRange;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.staging.StagingGroupHelper;
-
-import jakarta.ws.rs.NotFoundException;
 
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -52,72 +50,39 @@ public class ExportPreviewResourceImpl extends BaseExportPreviewResourceImpl {
 
 	@Override
 	public ExportPreview getAssetLibraryExportPreview(
-			String assetLibraryExternalReferenceCode, Date endDate,
-			Date startDate)
+			String assetLibraryExternalReferenceCode, Date endDate, Long plid,
+			String portletId, Date startDate)
 		throws Exception {
-
-		Group group = _getAssetLibraryGroup(assetLibraryExternalReferenceCode);
-
-		return _getExportPreview(endDate, group, 0, null, startDate);
-	}
-
-	@Override
-	public ExportPreview getAssetLibraryPortletExportPreview(
-			String assetLibraryExternalReferenceCode, String portletId,
-			Date endDate, Long plid, Date startDate)
-		throws Exception {
-
-		Group group = _getAssetLibraryGroup(assetLibraryExternalReferenceCode);
 
 		return _getExportPreview(
-			endDate, group, GetterUtil.getLong(plid), portletId, startDate);
+			endDate,
+			GroupUtil.getAssetLibraryGroup(
+				contextCompany.getCompanyId(),
+				assetLibraryExternalReferenceCode),
+			GetterUtil.getLong(plid), portletId, startDate);
 	}
 
 	@Override
-	public ExportPreview getExportPreview(Date endDate, Date startDate)
+	public ExportPreview getExportPreview(
+			Date endDate, Long plid, String portletId, Date startDate)
 		throws Exception {
 
-		Group group = _stagingGroupHelper.fetchCompanyGroup(
-			contextCompany.getCompanyId());
-
-		if (group == null) {
-			throw new NotFoundException();
-		}
-
-		return _getExportPreview(endDate, group, 0, null, startDate);
+		return _getExportPreview(
+			endDate, GroupUtil.getCompanyGroup(contextCompany.getCompanyId()),
+			GetterUtil.getLong(plid), portletId, startDate);
 	}
 
 	@Override
 	public ExportPreview getSiteExportPreview(
-			String siteExternalReferenceCode, Date endDate, Date startDate)
+			String siteExternalReferenceCode, Date endDate, Long plid,
+			String portletId, Date startDate)
 		throws Exception {
-
-		Group group = _getSiteGroup(siteExternalReferenceCode);
-
-		return _getExportPreview(endDate, group, 0, null, startDate);
-	}
-
-	@Override
-	public ExportPreview getSitePortletExportPreview(
-			String siteExternalReferenceCode, String portletId, Date endDate,
-			Long plid, Date startDate)
-		throws Exception {
-
-		Group group = _getSiteGroup(siteExternalReferenceCode);
 
 		return _getExportPreview(
-			endDate, group, GetterUtil.getLong(plid), portletId, startDate);
-	}
-
-	private Group _getAssetLibraryGroup(String externalReferenceCode) {
-		Group group = groupLocalService.fetchGroupByExternalReferenceCode(
-			externalReferenceCode, contextCompany.getCompanyId());
-
-		if ((group == null) || !group.isDepot()) {
-			throw new NotFoundException();
-		}
-
-		return group;
+			endDate,
+			GroupUtil.getSiteGroup(
+				contextCompany.getCompanyId(), siteExternalReferenceCode),
+			GetterUtil.getLong(plid), portletId, startDate);
 	}
 
 	private ExportPreview _getExportPreview(
@@ -259,17 +224,6 @@ public class ExportPreviewResourceImpl extends BaseExportPreviewResourceImpl {
 		};
 	}
 
-	private Group _getSiteGroup(String externalReferenceCode) {
-		Group group = groupLocalService.fetchGroupByExternalReferenceCode(
-			externalReferenceCode, contextCompany.getCompanyId());
-
-		if ((group == null) || (!group.isCMS() && !group.isSite())) {
-			throw new NotFoundException();
-		}
-
-		return group;
-	}
-
 	@Reference
 	private DeletionSystemEventExporter _deletionSystemEventExporter;
 
@@ -284,8 +238,5 @@ public class ExportPreviewResourceImpl extends BaseExportPreviewResourceImpl {
 
 	@Reference
 	private PortletLocalService _portletLocalService;
-
-	@Reference
-	private StagingGroupHelper _stagingGroupHelper;
 
 }

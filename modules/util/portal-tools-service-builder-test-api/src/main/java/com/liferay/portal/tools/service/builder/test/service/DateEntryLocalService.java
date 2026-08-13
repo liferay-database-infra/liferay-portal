@@ -10,6 +10,7 @@ import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Projection;
+import com.liferay.portal.kernel.dao.orm.Type;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.PersistedModel;
@@ -26,6 +27,7 @@ import com.liferay.portal.tools.service.builder.test.model.DateEntry;
 
 import java.io.Serializable;
 
+import java.util.Date;
 import java.util.List;
 
 import org.osgi.annotation.versioning.ProviderType;
@@ -197,7 +199,13 @@ public interface DateEntryLocalService
 	public DateEntry fetchDateEntry(long dateEntryId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public DateEntry fetchDateEntry(long companyId, Date snapshotDate);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ActionableDynamicQuery getActionableDynamicQuery();
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<DateEntry> getDateEntries(Date snapshotDate);
 
 	/**
 	 * Returns a range of all the date entries.
@@ -212,6 +220,9 @@ public interface DateEntryLocalService
 	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<DateEntry> getDateEntries(int start, int end);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<Object[]> getDateEntriesBySQLQuery(long companyId, Type type);
 
 	/**
 	 * Returns the number of date entries.
@@ -233,6 +244,10 @@ public interface DateEntryLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery();
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<Object> getMaxSnapshotDatesBySQLQuery(
+		long companyId, Type type);
 
 	/**
 	 * Returns the OSGi service identifier.
@@ -263,4 +278,4 @@ public interface DateEntryLocalService
 	public DateEntry updateDateEntry(DateEntry dateEntry);
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:661459682
+// LIFERAY-SERVICE-BUILDER-HASH:-2068685968

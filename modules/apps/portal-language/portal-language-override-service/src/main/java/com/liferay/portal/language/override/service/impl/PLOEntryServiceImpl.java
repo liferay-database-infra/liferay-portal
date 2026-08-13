@@ -49,7 +49,7 @@ public class PLOEntryServiceImpl extends PLOEntryServiceBaseImpl {
 
 		return ploEntryLocalService.addOrUpdatePLOEntry(
 			externalReferenceCode, permissionChecker.getCompanyId(),
-			permissionChecker.getUserId(), key, languageId, value);
+			getUserId(), key, languageId, value);
 	}
 
 	@Override
@@ -177,8 +177,8 @@ public class PLOEntryServiceImpl extends PLOEntryServiceBaseImpl {
 			permissionChecker, PLOActionKeys.MANAGE_LANGUAGE_OVERRIDES);
 
 		ploEntryLocalService.importPLOEntries(
-			permissionChecker.getCompanyId(), permissionChecker.getUserId(),
-			languageId, properties);
+			permissionChecker.getCompanyId(), getUserId(), languageId,
+			properties);
 	}
 
 	@Override
@@ -191,8 +191,8 @@ public class PLOEntryServiceImpl extends PLOEntryServiceBaseImpl {
 			permissionChecker, PLOActionKeys.MANAGE_LANGUAGE_OVERRIDES);
 
 		ploEntryLocalService.setPLOEntries(
-			permissionChecker.getCompanyId(), permissionChecker.getUserId(),
-			key, localizationMap);
+			permissionChecker.getCompanyId(), getUserId(), key,
+			localizationMap);
 	}
 
 }

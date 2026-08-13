@@ -24,6 +24,7 @@
 		<!-- Other fields -->
 
 		<column name="defaultStyleBookEntry" type="boolean" />
+		<column name="frontendTokenDefinition" type="String" />
 		<column name="frontendTokensValues" type="String" />
 		<column name="name" type="String" />
 		<column name="previewFileEntryId" type="long" />
@@ -73,9 +74,11 @@
 		</finder>
 	</entity>
 	<exceptions>
+		<exception>DuplicateStyleBookEntryFrontendToken</exception>
 		<exception>DuplicateStyleBookEntryKey</exception>
 		<exception>DuplicateStyleBookEntryName</exception>
 		<exception>StyleBookEntryFile</exception>
+		<exception>StyleBookEntryFrontendTokenDefinition</exception>
 		<exception>StyleBookEntryName</exception>
 		<exception>StyleBookEntryThemeId</exception>
 	</exceptions>

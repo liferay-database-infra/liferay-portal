@@ -4,15 +4,18 @@
  */
 
 import '@testing-library/jest-dom';
-import {fireEvent, render, waitFor} from '@testing-library/react';
+import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
+import {getEmptyImage} from 'react-dnd-html5-backend';
 
 import Task from '../../js/components/props_transformer/views/kanban_view/components/Task';
+import TaskDragLayer from '../../js/components/props_transformer/views/kanban_view/components/TaskDragLayer';
 import {KanbanViewContext} from '../../js/components/props_transformer/views/kanban_view/context';
 import {mockNavigate} from '../../tests/js/__mocks__/frontend-js-web';
 
 const mockGetUserAccount = jest.fn();
 const mockPatchTaskById = jest.fn();
+const mockConnectDragPreview = jest.fn();
 const mockDeleteTaskById = jest.fn();
 const mockDisplayAssignSuccessToast = jest.fn();
 const mockDisplayDeleteSuccessToast = jest.fn();
@@ -22,8 +25,21 @@ const mockLoadData = jest.fn();
 const mockPostSubscribeTaskByExternalReferenceCode = jest.fn();
 const mockPostUnsubscribeTaskByExternalReferenceCode = jest.fn();
 
+let capturedDragSpec: any;
+let mockDragLayerState: any = {isDragging: false};
+let mockIsDragging = false;
+
 jest.mock('react-dnd', () => ({
-	useDrag: () => [{isDragging: false}, jest.fn()],
+	useDrag: (spec: any) => {
+		capturedDragSpec = spec;
+
+		return [
+			{isDragging: mockIsDragging},
+			jest.fn(),
+			mockConnectDragPreview,
+		];
+	},
+	useDragLayer: () => mockDragLayerState,
 }));
 
 jest.mock('@clayui/drop-down', () => ({
@@ -83,6 +99,9 @@ jest.mock('@liferay/site-cms-site-initializer', () => ({
 
 afterEach(() => {
 	jest.clearAllMocks();
+
+	mockDragLayerState = {isDragging: false};
+	mockIsDragging = false;
 });
 
 describe('Kanban Task', () => {
@@ -105,9 +124,9 @@ describe('Kanban Task', () => {
 		},
 	} as any;
 
-	const renderTask = (
-		itemsActions: any[] = [],
-		cmpProjectObjectEntryId = ''
+	const renderWithKanbanViewContext = (
+		children: React.ReactElement,
+		contextOverrides: any = {}
 	) =>
 		render(
 			<KanbanViewContext.Provider
@@ -115,15 +134,25 @@ describe('Kanban Task', () => {
 					boardData: {},
 					changeTaskStatus: jest.fn(),
 					cmpProjectObjectDefinitionId: 123,
-					cmpProjectObjectEntryId,
+					cmpProjectObjectEntryId: '',
 					hasAddTaskPermission: true,
-					itemsActions,
+					itemsActions: [],
 					loadData: mockLoadData,
+					...contextOverrides,
 				}}
 			>
-				<Task {...task} />
+				{children}
 			</KanbanViewContext.Provider>
 		);
+
+	const renderTask = (
+		itemsActions: any[] = [],
+		cmpProjectObjectEntryId = ''
+	) =>
+		renderWithKanbanViewContext(<Task {...task} />, {
+			cmpProjectObjectEntryId,
+			itemsActions,
+		});
 
 	it('assigns task to current user successfully', async () => {
 		mockGetUserAccount.mockResolvedValue({
@@ -144,6 +173,16 @@ describe('Kanban Task', () => {
 				'Current User'
 			);
 		});
+	});
+
+	it('dims the original card while it is being dragged', () => {
+		mockIsDragging = true;
+
+		renderTask();
+
+		expect(
+			screen.getByText('Task title').closest('.lfr__kaban-task-card')
+		).toHaveClass('lfr__kaban-task-card-dragging');
 	});
 
 	it('hides other items actions when task only has view permissions', () => {
@@ -220,6 +259,16 @@ describe('Kanban Task', () => {
 		expect(mockOpenCMPModal).toHaveBeenCalledTimes(1);
 	});
 
+	it('publishes the card width and task in the drag item', () => {
+		renderTask();
+
+		expect(capturedDragSpec.begin()).toEqual({
+			cardWidth: 0,
+			task,
+			type: 'KANBAN_TASK',
+		});
+	});
+
 	it('renders due date when projectId is provided', () => {
 		const taskWithDueDate = {
 			...task,
@@ -283,6 +332,42 @@ describe('Kanban Task', () => {
 
 		await waitFor(() => {
 			expect(mockDisplayErrorToast).toHaveBeenCalledWith('error');
+		});
+	});
+
+	it('suppresses the native drag image with an empty drag preview', () => {
+		renderTask();
+
+		expect(mockConnectDragPreview).toHaveBeenCalledWith(getEmptyImage(), {
+			captureDraggingState: true,
+		});
+	});
+
+	describe('drag layer', () => {
+		it('renders nothing while no task drag is in progress', () => {
+			renderWithKanbanViewContext(<TaskDragLayer />);
+
+			expect(screen.queryByText('Task title')).not.toBeInTheDocument();
+		});
+
+		it('renders the reduced card keeping the grab point under the cursor', () => {
+			mockDragLayerState = {
+				cardWidth: 300,
+				clientOffset: {x: 200, y: 200},
+				initialClientOffset: {x: 100, y: 100},
+				initialSourceClientOffset: {x: 90, y: 80},
+				isDragging: true,
+				task,
+			};
+
+			renderWithKanbanViewContext(<TaskDragLayer />);
+
+			expect(
+				screen.getByText('Task title').closest('[style]')
+			).toHaveStyle({
+				transform: 'translate(193px, 186px) scale(0.7)',
+				width: '300px',
+			});
 		});
 	});
 

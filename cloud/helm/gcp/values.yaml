@@ -129,12 +129,10 @@ liferay-default:
                 name: liferay-init-scripts-gcp
     license:
         enabled: true
-    lpkg:
-        enabled: true
     marketplace:
         enabled: true
         size: 10Gi
-        storageClassName: standard-rwx
+        storageClassName: filestore-sc
     network:
         enabled: true
         hostnames: []
@@ -145,6 +143,8 @@ liferay-default:
         copy: []
         enabled: false
         type: gcs
+    persistence:
+        defaultStorageClassName: standard-rwo
     podSecurityContext:
         fsGroup: 1000
         runAsNonRoot: true
@@ -188,4 +188,3 @@ liferay-default:
                 resources:
                     requests:
                         storage: 10Gi
-                storageClassName: standard-rwo

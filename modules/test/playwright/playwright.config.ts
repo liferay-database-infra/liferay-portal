@@ -33,7 +33,17 @@ import {config as captchaWebConfig} from './tests/captcha-web/main/config';
 import {config as changeTrackingWebLocalePrependConfig} from './tests/change-tracking-web/main-locale-prepend/config';
 import {config as changeTrackingWebConfig} from './tests/change-tracking-web/main/config';
 import {config as clientExtensionWebClusterConfig} from './tests/client-extension-web/cluster/config';
+import {config as clientExtensionWebCSSConfig} from './tests/client-extension-web/css/config';
+import {config as clientExtensionWebCustomElementConfig} from './tests/client-extension-web/custom-element/config';
+import {config as clientExtensionWebEditorConfigContributorConfig} from './tests/client-extension-web/editor-config-contributor/config';
+import {config as clientExtensionWebFrontendDataSetConfig} from './tests/client-extension-web/frontend-data-set/config';
+import {config as clientExtensionWebIFrameConfig} from './tests/client-extension-web/iframe/config';
+import {config as clientExtensionWebJSImportMapsEntryConfig} from './tests/client-extension-web/js-import-maps-entry/config';
+import {config as clientExtensionWebJSConfig} from './tests/client-extension-web/js/config';
 import {config as clientExtensionWebConfig} from './tests/client-extension-web/main/config';
+import {config as clientExtensionWebThemeCSSConfig} from './tests/client-extension-web/theme-css/config';
+import {config as clientExtensionWebThemeFaviconConfig} from './tests/client-extension-web/theme-favicon/config';
+import {config as clientExtensionWebThemeSpritemapConfig} from './tests/client-extension-web/theme-spritemap/config';
 import {config as commerceAccountWebConfig} from './tests/commerce/commerce-account-web/main/config';
 import {config as commerceCartContentWebConfig} from './tests/commerce/commerce-cart-content-web/main/config';
 import {config as commerceCatalogWebConfig} from './tests/commerce/commerce-catalog-web/main/config';
@@ -164,6 +174,7 @@ import {config as passwordPoliciesAdminWebSetupAdminConfig} from './tests/passwo
 import {config as portalDefaultPermissionsWebConfig} from './tests/portal-default-permissions-web/main/config';
 import {config as portalImplMainConfig} from './tests/portal-impl/main/config';
 import {config as portalImplPortletConfig} from './tests/portal-impl/portlet/config';
+import {config as portalLanguageOverrideWebClientExtensionConfig} from './tests/portal-language-override-web/client-extension/config';
 import {config as portalLanguageOverrideWebConfig} from './tests/portal-language-override-web/main/config';
 import {config as portalSearchAdminWebConfig} from './tests/portal-search-admin-web/main/config';
 import {config as portalSearchWebConfig} from './tests/portal-search-web/main/config';
@@ -282,6 +293,16 @@ export default defineConfig({
 		changeTrackingWebLocalePrependConfig,
 		clientExtensionWebConfig,
 		clientExtensionWebClusterConfig,
+		clientExtensionWebCSSConfig,
+		clientExtensionWebCustomElementConfig,
+		clientExtensionWebEditorConfigContributorConfig,
+		clientExtensionWebFrontendDataSetConfig,
+		clientExtensionWebIFrameConfig,
+		clientExtensionWebJSConfig,
+		clientExtensionWebJSImportMapsEntryConfig,
+		clientExtensionWebThemeCSSConfig,
+		clientExtensionWebThemeFaviconConfig,
+		clientExtensionWebThemeSpritemapConfig,
 		commerceAccountWebConfig,
 		commerceCartContentWebConfig,
 		commerceCatalogWebConfig,
@@ -414,6 +435,7 @@ export default defineConfig({
 		portalDefaultPermissionsWebConfig,
 		portalImplMainConfig,
 		portalImplPortletConfig,
+		portalLanguageOverrideWebClientExtensionConfig,
 		portalLanguageOverrideWebConfig,
 		portalSearchAdminWebConfig,
 		portalSearchWebConfig,

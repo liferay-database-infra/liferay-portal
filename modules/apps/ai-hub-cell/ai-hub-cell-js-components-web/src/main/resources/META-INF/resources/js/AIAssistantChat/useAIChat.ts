@@ -21,8 +21,10 @@ import {
 } from './api';
 import {ContentType} from './components/ContentTypeSelectorMessageBalloon';
 import {subscribeToServerEvents} from './serverEvents';
+import {getSpaces} from './services/getSpaces';
 import {ChatMessageSentData, Message} from './types';
 import buildAssistantMessage from './utils/buildAssistantMessage';
+import buildContentTypeMessage from './utils/buildContentTypeMessage';
 
 export interface AIChatReportContext {
 	agentDefinitionExternalReferenceCodes: string[];
@@ -42,9 +44,11 @@ export interface AIChat {
 	messagesEndRef: React.RefObject<HTMLDivElement>;
 	reportContext: AIChatReportContext | null;
 	runtimeContextRef: React.MutableRefObject<ChatContext>;
+	scrollToBottom: () => void;
 	sendMessage: (text: string) => void;
 	setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>;
 	setMessage: (message: string) => void;
+	setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 	setReportContext: (reportContext: AIChatReportContext | null) => void;
 	sourceLanguageIdRef: React.MutableRefObject<string>;
 }
@@ -133,9 +137,13 @@ export default function useAIChat({
 			: '[data-ai-assistant-field-id]';
 	}, [triggerRef]);
 
-	useEffect(() => {
+	const scrollToBottom = useCallback(() => {
 		messagesEndRef.current?.scrollIntoView({behavior: 'smooth'});
-	}, [messages]);
+	}, []);
+
+	useEffect(() => {
+		scrollToBottom();
+	}, [messages, scrollToBottom]);
 
 	useEffect(() => {
 		const onLocaleChanged = ({languageId}: {languageId: string}) => {
@@ -380,20 +388,59 @@ export default function useAIChat({
 			}
 
 			if (payload?.contentTypes?.length) {
+				const contentTypes = payload.contentTypes;
+
+				const askForContentType = () =>
+					setMessages((previousMessages) => [
+						...previousMessages,
+						buildContentTypeMessage(contentTypes),
+					]);
+
 				setMessages((previousMessages) => [
 					...previousMessages,
 					{
 						sender: 'user',
 						text: Liferay.Language.get('generate-content'),
 					},
-					{
-						contentTypes: payload.contentTypes,
-						sender: 'assistant',
-						text: Liferay.Language.get(
-							'what-type-of-content-do-you-want-to-generate'
-						),
-					},
 				]);
+
+				getSpaces()
+					.then((spaces) => {
+						if (spaces.length > 1) {
+							setMessages((previousMessages) => [
+								...previousMessages,
+								{
+									contentTypes,
+									sender: 'assistant',
+									spaces,
+									text: Liferay.Language.get(
+										'in-which-space-do-you-want-to-generate-the-content'
+									),
+								},
+							]);
+
+							return;
+						}
+
+						if (spaces.length === 1) {
+							runtimeContextRef.current = {
+								...runtimeContextRef.current,
+								spaceId: String(spaces[0].siteId),
+							};
+						}
+
+						askForContentType();
+					})
+					.catch(() => {
+						Liferay.Util.openToast({
+							message: Liferay.Language.get(
+								'the-spaces-could-not-be-loaded'
+							),
+							type: 'danger',
+						});
+
+						askForContentType();
+					});
 			}
 			else if (payload?.message) {
 				sendMessage(payload.message);
@@ -457,9 +504,11 @@ export default function useAIChat({
 		messagesEndRef,
 		reportContext,
 		runtimeContextRef,
+		scrollToBottom,
 		sendMessage,
 		setIsGenerating,
 		setMessage,
+		setMessages,
 		setReportContext,
 		sourceLanguageIdRef,
 	};
