@@ -254,7 +254,8 @@ export class VirtualInstancesPage {
 
 		await Promise.all([
 			this.page.waitForResponse(
-				(response) => response.url().includes('copy_instance'),
+				(response) =>
+					response.url().includes('copy_db_partition_company'),
 				{timeout}
 			),
 			this.copyInstanceSubmitButton.click(),

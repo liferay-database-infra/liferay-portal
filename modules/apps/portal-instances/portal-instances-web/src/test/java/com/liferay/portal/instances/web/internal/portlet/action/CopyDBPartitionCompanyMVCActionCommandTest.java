@@ -47,7 +47,7 @@ import org.mockito.Mockito;
 /**
  * @author Jorge Avalos
  */
-public class CopyInstanceMVCActionCommandTest {
+public class CopyDBPartitionCompanyMVCActionCommandTest {
 
 	@ClassRule
 	public static LiferayUnitTestRule liferayUnitTestRule =
@@ -113,11 +113,10 @@ public class CopyInstanceMVCActionCommandTest {
 			SessionMessages.class);
 
 		ReflectionTestUtil.setFieldValue(
-			_copyInstanceMVCActionCommand, "_companyService", _companyService);
+			_mvcActionCommand, "_companyService", _companyService);
 		ReflectionTestUtil.setFieldValue(
-			_copyInstanceMVCActionCommand, "_language", _language);
-		ReflectionTestUtil.setFieldValue(
-			_copyInstanceMVCActionCommand, "_portal", _portal);
+			_mvcActionCommand, "_language", _language);
+		ReflectionTestUtil.setFieldValue(_mvcActionCommand, "_portal", _portal);
 	}
 
 	@After
@@ -329,7 +328,7 @@ public class CopyInstanceMVCActionCommandTest {
 
 		Assert.assertThrows(
 			UnsupportedOperationException.class,
-			() -> _copyInstanceMVCActionCommand.doProcessAction(
+			() -> _mvcActionCommand.doProcessAction(
 				_getMockActionRequest(), new MockActionResponse()));
 
 		Mockito.verifyNoInteractions(_companyService);
@@ -347,7 +346,7 @@ public class CopyInstanceMVCActionCommandTest {
 			_company
 		);
 
-		_copyInstanceMVCActionCommand.doProcessAction(
+		_mvcActionCommand.doProcessAction(
 			mockActionRequest, new MockActionResponse());
 
 		Assert.assertEquals(_COMPANY_ID, _jsonObject.getLong("companyId"));
@@ -380,7 +379,7 @@ public class CopyInstanceMVCActionCommandTest {
 
 		_hideDefaultSuccessMessageCount = 0;
 
-		_copyInstanceMVCActionCommand.doProcessAction(
+		_mvcActionCommand.doProcessAction(
 			mockActionRequest, new MockActionResponse());
 
 		Assert.assertEquals(expectedError, _jsonObject.getString("error"));
@@ -449,9 +448,16 @@ public class CopyInstanceMVCActionCommandTest {
 	private final Company _company = Mockito.mock(Company.class);
 	private final CompanyService _companyService = Mockito.mock(
 		CompanyService.class);
+	private MockedStatic<FeatureFlagManagerUtil>
+		_featureFlagManagerUtilMockedStatic;
+	private int _hideDefaultSuccessMessageCount;
+	private JSONObject _jsonObject;
+	private MockedStatic<JSONPortletResponseUtil>
+		_jsonPortletResponseUtilMockedStatic;
+	private final Language _language = Mockito.mock(Language.class);
 
-	private final CopyInstanceMVCActionCommand _copyInstanceMVCActionCommand =
-		new CopyInstanceMVCActionCommand() {
+	private final CopyDBPartitionCompanyMVCActionCommand _mvcActionCommand =
+		new CopyDBPartitionCompanyMVCActionCommand() {
 
 			@Override
 			protected void hideDefaultSuccessMessage(
@@ -462,13 +468,6 @@ public class CopyInstanceMVCActionCommandTest {
 
 		};
 
-	private MockedStatic<FeatureFlagManagerUtil>
-		_featureFlagManagerUtilMockedStatic;
-	private int _hideDefaultSuccessMessageCount;
-	private JSONObject _jsonObject;
-	private MockedStatic<JSONPortletResponseUtil>
-		_jsonPortletResponseUtilMockedStatic;
-	private final Language _language = Mockito.mock(Language.class);
 	private final PermissionChecker _permissionChecker = Mockito.mock(
 		PermissionChecker.class);
 	private final Portal _portal = Mockito.mock(Portal.class);
