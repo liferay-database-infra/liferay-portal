@@ -7,13 +7,13 @@
 
 <%@ include file="/init.jsp" %>
 
-<portlet:actionURL name="/portal_instances/copy_instance" var="copyInstanceURL" />
+<portlet:actionURL name="/portal_instances/copy_db_partition_company" var="copyDBPartitionCompanyURL" />
 
 <div class="copy-instance-alert-container"></div>
 
 <clay:container-fluid>
 	<liferay-frontend:edit-form
-		action="<%= copyInstanceURL %>"
+		action="<%= copyDBPartitionCompanyURL %>"
 		method="post"
 		name="fm"
 		onSubmit="event.preventDefault();"
@@ -46,5 +46,5 @@
 </clay:container-fluid>
 
 <liferay-frontend:component
-	module="{CopyInstance} from portal-instances-web"
+	module="{CopyDBPartitionCompany} from portal-instances-web"
 />

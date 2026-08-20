@@ -74,7 +74,7 @@ public class CompanyActionDropdownItems {
 								PortletURLBuilder.createRenderURL(
 									_liferayPortletResponse
 								).setMVCPath(
-									"/copy_instance.jsp"
+									"/copy_db_partition_company.jsp"
 								).setRedirect(
 									PortalUtil.getCurrentURL(
 										_httpServletRequest)
