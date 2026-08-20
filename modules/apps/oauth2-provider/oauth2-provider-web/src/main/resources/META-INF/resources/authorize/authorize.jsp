@@ -53,7 +53,7 @@ if (Validator.isNotNull(replyTo) && !replyTo.startsWith(PortalUtil.getPortalURL(
 						</c:when>
 						<c:otherwise>
 							<h1>
-								<%= LanguageUtil.format(request, "authorize-x", new String[] {oAuth2Application.getName()}) %>
+								<%= LanguageUtil.format(request, "authorize-x", new String[] {HtmlUtil.escape(oAuth2Application.getName())}) %>
 							</h1>
 
 							<p class="application-wants-permissions text-truncate">
@@ -79,7 +79,7 @@ if (Validator.isNotNull(replyTo) && !replyTo.startsWith(PortalUtil.getPortalURL(
 										messageArguments[0] = LanguageUtil.format(request, "x,-y", messageArguments);
 									}
 
-									messageArguments[1] = messageArguments[0];
+									messageArguments[1] = HtmlUtil.escape(messageArguments[0]);
 									messageArguments[0] = HtmlUtil.escape(assignableScopes.getApplicationDescription(applicationName));
 								%>
 

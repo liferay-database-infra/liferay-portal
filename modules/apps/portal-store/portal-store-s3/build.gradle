@@ -60,7 +60,7 @@ dependencies {
 	compileInclude group: "com.ibm.cos", name: "ibm-cos-java-sdk-core", version: "2.14.0"
 	compileInclude group: "com.ibm.cos", name: "ibm-cos-java-sdk-kms", version: "2.14.0"
 	compileInclude group: "com.ibm.cos", name: "ibm-cos-java-sdk-s3", version: "2.14.0"
-	compileInclude group: "com.liferay", name: "org.apache.commons.logging", version: "1.2.LIFERAY-PATCHED-3"
+	compileInclude group: "com.liferay", name: "org.apache.commons.logging", version: "1.2.LIFERAY-PATCHED-2"
 	compileInclude group: "software.amazon.awssdk", name: "annotations", version: "2.39.6"
 	compileInclude group: "software.amazon.awssdk", name: "arns", version: "2.39.6"
 	compileInclude group: "software.amazon.awssdk", name: "auth", version: "2.39.6"
@@ -111,7 +111,7 @@ dependencies {
 	compileOnly project(":core:petra:petra-function")
 	compileOnly project(":core:petra:petra-io")
 	compileOnly project(":core:petra:petra-string")
-	testImplementation group: "io.netty", name: "netty-codec-http2", version: "4.1.135.Final"
-	testImplementation group: "io.netty", name: "netty-transport", version: "4.1.135.Final"
+	testImplementation group: "io.netty", name: "netty-codec-http2", version: "4.1.137.Final"
+	testImplementation group: "io.netty", name: "netty-transport", version: "4.1.137.Final"
 	testImplementation group: "org.littleshoot", name: "littleproxy", version: "1.1.1"
 }

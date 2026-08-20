@@ -5,31 +5,53 @@
 
 import {addParams} from 'frontend-js-web';
 
+import {ProfileDataMask} from '../types';
 import {toODataStringLiteral} from '../utils';
 import ApiHelper, {RequestResult} from './ApiHelper';
 import {PROFILE_DATA_MASKS_URL} from './constants';
+import {fetchAllItems} from './fetchAllItems';
 
-export interface ProfileDataMaskAssociation {
+export interface ProfileDataMaskFilters {
 	dataMaskExternalReferenceCode?: string;
 	mcpServerProfileExternalReferenceCode?: string;
 }
 
 export function getProfileDataMasks(
-	dataMaskExternalReferenceCode?: string
-): Promise<
-	RequestResult<{items: ProfileDataMaskAssociation[]; totalCount: number}>
-> {
-	const params: Record<string, string> = {};
-
-	if (dataMaskExternalReferenceCode) {
-		params.filter = `dataMaskExternalReferenceCode eq ${toODataStringLiteral(
-			dataMaskExternalReferenceCode
-		)}`;
-		params.pageSize = '1';
+	filters: ProfileDataMaskFilters = {}
+): Promise<RequestResult<{items: ProfileDataMask[]; totalCount: number}>> {
+	if (filters.dataMaskExternalReferenceCode) {
+		return ApiHelper.get<{items: ProfileDataMask[]; totalCount: number}>(
+			addParams(
+				{
+					filter: `dataMaskExternalReferenceCode eq ${toODataStringLiteral(
+						filters.dataMaskExternalReferenceCode
+					)}`,
+					pageSize: '1',
+				},
+				PROFILE_DATA_MASKS_URL
+			)
+		);
 	}
 
-	return ApiHelper.get<{
-		items: ProfileDataMaskAssociation[];
-		totalCount: number;
-	}>(addParams(params, PROFILE_DATA_MASKS_URL));
+	if (filters.mcpServerProfileExternalReferenceCode) {
+		const filter = `mcpServerProfileExternalReferenceCode eq ${toODataStringLiteral(
+			filters.mcpServerProfileExternalReferenceCode
+		)}`;
+
+		return fetchAllItems<ProfileDataMask>((page, pageSize) =>
+			addParams(
+				{
+					filter,
+					page: String(page),
+					pageSize: String(pageSize),
+					sort: 'executionOrder:asc',
+				},
+				PROFILE_DATA_MASKS_URL
+			)
+		);
+	}
+
+	return ApiHelper.get<{items: ProfileDataMask[]; totalCount: number}>(
+		addParams({}, PROFILE_DATA_MASKS_URL)
+	);
 }

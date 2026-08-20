@@ -12,7 +12,30 @@ tests:
     -   asserts:
             -   contains:
                     content:
-                        name: clusterIdentity.deploymentName
+                        name: deploymentName
+                        value: liferay-test
+                    path: spec.sources[0].helm.parameters
+                template: templates/application-infrastructure-provider.yaml
+            -   contains:
+                    content:
+                        name: global.projectId
+                        value: "{{path[2]}}"
+                    path: spec.template.spec.sources[0].helm.parameters
+                template: templates/applicationset-liferay.yaml
+        it: Appends no extra parameters when none are passed
+        set:
+            deploymentContext:
+                deploymentName: liferay-test
+            infrastructureProvider:
+                parameters: null
+                repoURL: oci://example-registry/liferay-aws-infrastructure-provider
+            liferay:
+                parameters: null
+                repoURL: oci://example-registry/liferay-aws
+    -   asserts:
+            -   contains:
+                    content:
+                        name: deploymentContext.deploymentName
                         value: liferay-test
                     path: spec.sources[0].helm.parameters
                 template: templates/application-infrastructure-provider.yaml
@@ -22,9 +45,9 @@ tests:
                         value: vpc-0123456789
                     path: spec.sources[0].helm.parameters
                 template: templates/application-infrastructure-provider.yaml
-        it: Appends the passed parameters after the cluster identity
+        it: Appends the passed parameters after the deployment context
         set:
-            clusterIdentity:
+            deploymentContext:
                 deploymentName: liferay-test
             infrastructureProvider:
                 parameters:
@@ -58,7 +81,7 @@ tests:
                 template: templates/applicationset-resources.yaml
         it: Appends the passed parameters to both applications rendering the infrastructure chart
         set:
-            clusterIdentity:
+            deploymentContext:
                 deploymentName: liferay-test
             infrastructure:
                 parameters:
@@ -132,7 +155,7 @@ tests:
                         value: http://argocd.liferay.test
                     path: spec.sources[0].helm.parameters
                 template: templates/application-observability.yaml
-        it: Derives the observability ArgoCD URL from a plaintext gateway
+        it: Derives the observability ArgoCD URL from a plain HTTP gateway
         set:
             argocd:
                 gateway:
@@ -149,26 +172,3 @@ tests:
         set:
             observability:
                 enabled: true
-    -   asserts:
-            -   contains:
-                    content:
-                        name: deploymentName
-                        value: liferay-test
-                    path: spec.sources[0].helm.parameters
-                template: templates/application-infrastructure-provider.yaml
-            -   contains:
-                    content:
-                        name: global.projectId
-                        value: "{{path[2]}}"
-                    path: spec.template.spec.sources[0].helm.parameters
-                template: templates/applicationset-liferay.yaml
-        it: Renders the applications when no parameters are passed
-        set:
-            clusterIdentity:
-                deploymentName: liferay-test
-            infrastructureProvider:
-                parameters: null
-                repoURL: oci://example-registry/liferay-aws-infrastructure-provider
-            liferay:
-                parameters: null
-                repoURL: oci://example-registry/liferay-aws

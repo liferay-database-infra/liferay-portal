@@ -36,6 +36,7 @@ resource "helm_release" "argocd" {
 							"resource.customizations.ignoreDifferences.all"=yamlencode(
 								{
 									managedFieldsManagers=[
+										"admissionsenforcer",
 										"apiextensions.crossplane.io/composite",
 										"crossplane",
 										"kube-controller-manager",
@@ -54,6 +55,7 @@ resource "helm_release" "argocd" {
 								])
 						}
 						params={
+							"controller.sync.timeout.seconds"="900"
 							"server.insecure"="true"
 						}
 					}

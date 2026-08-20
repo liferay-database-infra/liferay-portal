@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -14,9 +13,18 @@ type AppStatus struct {
 	Checksum string `json:"checksum,omitempty"`
 
 	// +optional
+	ConsecutiveFailures int32 `json:"consecutiveFailures,omitempty"`
+
+	// +optional
+	Message string `json:"message,omitempty"`
+
+	// +optional
 	Name string `json:"name,omitempty"`
 
-	// +kubebuilder:validation:Enum=Downloaded;Failed
+	// +optional
+	NextRetry *metav1.Time `json:"nextRetry,omitempty"`
+
+	// +kubebuilder:validation:Enum=Downloaded;Downloading;Failed;Orphaned
 	// +optional
 	State string `json:"state,omitempty"`
 
@@ -32,7 +40,7 @@ type LicenseStatus struct {
 	LastVerified *metav1.Time `json:"lastVerified,omitempty"`
 
 	// +optional
-	MaxClusterNodes int32 `json:"maxClusterNodes,omitempty"`
+	MaxClusterNodes *int32 `json:"maxClusterNodes,omitempty"`
 
 	// +optional
 	ValidUntil *metav1.Time `json:"validUntil,omitempty"`
@@ -41,6 +49,7 @@ type LicenseStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=`.spec.workloadRef.name`,name="Workload",type=string
 // +kubebuilder:printcolumn:JSONPath=`.status.conditions[?(@.type=="Activated")].status`,name="Activated",type=string
+// +kubebuilder:printcolumn:JSONPath=`.status.conditions[?(@.type=="AddOnsReady")].status`,name="Add-Ons",type=string
 // +kubebuilder:printcolumn:JSONPath=`.status.license.maxClusterNodes`,name="Max",type=integer
 // +kubebuilder:printcolumn:JSONPath=`.status.license.validUntil`,name="Valid-Until",type=string
 // +kubebuilder:printcolumn:JSONPath=`.spec.desiredReplicas`,name="Desired",type=integer
@@ -80,8 +89,11 @@ type LiferayEnvironmentSpec struct {
 	// +optional
 	EnvironmentName string `json:"environmentName,omitempty"`
 
-	// +kubebuilder:validation:Required
-	MarketplaceVolume *MarketplaceVolumeSpec `json:"marketplaceVolume,omitempty"`
+	// +optional
+	Offline bool `json:"offline,omitempty"`
+
+	// +optional
+	OfflineActivationBundle string `json:"offlineActivationBundle,omitempty"`
 
 	// +kubebuilder:validation:Required
 	WorkloadRef WorkloadRef `json:"workloadRef"`
@@ -117,20 +129,6 @@ type LiferayEnvironmentStatus struct {
 
 	// +optional
 	UnreachableSince *metav1.Time `json:"unreachableSince,omitempty"`
-}
-
-type MarketplaceVolumeSpec struct {
-	// +optional
-	ClaimName string `json:"claimName,omitempty"`
-
-	// +optional
-	Enabled bool `json:"enabled,omitempty"`
-
-	// +kubebuilder:validation:Required
-	Size resource.Quantity `json:"size"`
-
-	// +kubebuilder:validation:Required
-	StorageClassName string `json:"storageClassName"`
 }
 
 type SecretKeyRef struct {

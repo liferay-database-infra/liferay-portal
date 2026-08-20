@@ -90,6 +90,17 @@ const RESTORABLE_VERSIONS = [
 	VERSIONS[1],
 ];
 
+const RESTORABLE_DELETABLE_VERSIONS = [
+	{
+		...VERSIONS[0],
+		actions: {
+			delete: {href: '/delete/HOME_V_2', method: 'DELETE'},
+			restore: {href: '/restore/HOME_V_2', method: 'POST'},
+		},
+	},
+	VERSIONS[1],
+];
+
 const mockFetch = fetch as jest.Mock;
 const mockHideProductMenu = hideProductMenuIfPresent as jest.Mock;
 const mockOpenConfirmModal = openConfirmModal as jest.Mock;
@@ -513,6 +524,22 @@ describe('VersionHistory', () => {
 		expect(screen.getByText('no-results-found')).toBeInTheDocument();
 	});
 
+	it('filters the versions by version number', async () => {
+		mockLargeScreen();
+		mockVersions(VERSIONS);
+
+		renderComponent();
+
+		await waitFor(() =>
+			expect(screen.getAllByRole('option')).toHaveLength(3)
+		);
+
+		await userEvent.type(screen.getByLabelText('search-form'), '2');
+
+		expect(screen.getAllByRole('option')).toHaveLength(1);
+		expect(screen.getByText('Home Halloween')).toBeInTheDocument();
+	});
+
 	it('only renders the actions menu for versions with a delete action', async () => {
 		mockLargeScreen();
 		mockVersions(DELETABLE_VERSIONS);
@@ -608,11 +635,37 @@ describe('VersionHistory', () => {
 		).not.toBeInTheDocument();
 	});
 
+	it('offers the restore action before the delete action, split by a divider', async () => {
+		mockLargeScreen();
+		mockVersions(RESTORABLE_DELETABLE_VERSIONS);
+
+		renderComponent();
+
+		await waitFor(() =>
+			expect(screen.getAllByRole('option')).toHaveLength(3)
+		);
+
+		const [, version] = screen.getAllByRole('option');
+
+		await openActions(version);
+
+		const [restore, remove] = screen.getAllByRole('menuitem');
+
+		expect(restore).toHaveTextContent('restore-version');
+		expect(remove).toHaveTextContent('delete-version');
+
+		expect(
+			restore.querySelector('.lexicon-icon-restore')
+		).toBeInTheDocument();
+
+		expect(screen.getByRole('separator')).toBeInTheDocument();
+	});
+
 	it('restores the version once the confirmation is accepted', async () => {
 		mockLargeScreen();
 		mockVersions(RESTORABLE_VERSIONS);
 
-		renderComponent();
+		renderComponent({hasDraft: true});
 
 		await waitFor(() =>
 			expect(screen.getAllByRole('option')).toHaveLength(3)
@@ -636,12 +689,40 @@ describe('VersionHistory', () => {
 		);
 	});
 
+	it('restores the version without confirmation when there is no draft', async () => {
+		mockLargeScreen();
+		mockVersions(RESTORABLE_VERSIONS);
+
+		renderComponent();
+
+		await waitFor(() =>
+			expect(screen.getAllByRole('option')).toHaveLength(3)
+		);
+
+		const [, restorable] = screen.getAllByRole('option');
+
+		await openActions(restorable);
+
+		await userEvent.click(
+			screen.getByRole('menuitem', {name: 'restore-version'})
+		);
+
+		await waitFor(() =>
+			expect(mockFetch).toHaveBeenCalledWith(
+				'/restore/HOME_V_2',
+				expect.objectContaining({method: 'POST'})
+			)
+		);
+
+		expect(mockOpenConfirmModal).not.toHaveBeenCalled();
+	});
+
 	it('does not restore the version when the confirmation is dismissed', async () => {
 		mockLargeScreen();
 		mockVersions(RESTORABLE_VERSIONS);
 		mockOpenConfirmModal.mockResolvedValue(false);
 
-		renderComponent();
+		renderComponent({hasDraft: true});
 
 		await waitFor(() =>
 			expect(screen.getAllByRole('option')).toHaveLength(3)

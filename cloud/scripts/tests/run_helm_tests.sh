@@ -24,11 +24,13 @@ function main {
 		aws-infrastructure
 		aws-infrastructure-provider
 		aws-marketplace
+		azure-infrastructure-provider
 		default
 		dxp-operator
 		gcp
 		gcp-infrastructure
 		gcp-infrastructure-provider
+		infrastructure
 		observability
 		platform
 		platform-components

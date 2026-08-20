@@ -56,6 +56,10 @@ public abstract class BaseExportPreviewResourceImpl
 			),
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "dateRangeType"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
 				name = "endDate"
 			),
 			@io.swagger.v3.oas.annotations.Parameter(
@@ -89,6 +93,9 @@ public abstract class BaseExportPreviewResourceImpl
 			@jakarta.ws.rs.PathParam("assetLibraryExternalReferenceCode")
 			String assetLibraryExternalReferenceCode,
 			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@jakarta.ws.rs.QueryParam("dateRangeType")
+			String dateRangeType,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
 			@jakarta.ws.rs.QueryParam("endDate")
 			Date endDate,
 			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
@@ -112,6 +119,10 @@ public abstract class BaseExportPreviewResourceImpl
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "dateRangeType"
+			),
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
 				name = "endDate"
@@ -141,6 +152,9 @@ public abstract class BaseExportPreviewResourceImpl
 	@Override
 	public ExportPreview getExportPreview(
 			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@jakarta.ws.rs.QueryParam("dateRangeType")
+			String dateRangeType,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
 			@jakarta.ws.rs.QueryParam("endDate")
 			Date endDate,
 			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
@@ -167,6 +181,10 @@ public abstract class BaseExportPreviewResourceImpl
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
 				name = "siteExternalReferenceCode"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "dateRangeType"
 			),
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
@@ -200,6 +218,9 @@ public abstract class BaseExportPreviewResourceImpl
 			@jakarta.validation.constraints.NotNull
 			@jakarta.ws.rs.PathParam("siteExternalReferenceCode")
 			String siteExternalReferenceCode,
+			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+			@jakarta.ws.rs.QueryParam("dateRangeType")
+			String dateRangeType,
 			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
 			@jakarta.ws.rs.QueryParam("endDate")
 			Date endDate,
@@ -662,4 +683,4 @@ public abstract class BaseExportPreviewResourceImpl
 		LogFactoryUtil.getLog(BaseExportPreviewResourceImpl.class);
 
 }
-// LIFERAY-REST-BUILDER-HASH:-1472463750
+// LIFERAY-REST-BUILDER-HASH:-443313810

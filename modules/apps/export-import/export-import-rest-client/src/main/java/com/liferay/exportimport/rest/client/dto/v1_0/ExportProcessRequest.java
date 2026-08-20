@@ -47,6 +47,35 @@ public class ExportProcessRequest implements Cloneable, Serializable {
 
 	protected Boolean comments;
 
+	public DateRangeType getDateRangeType() {
+		return dateRangeType;
+	}
+
+	public String getDateRangeTypeAsString() {
+		if (dateRangeType == null) {
+			return null;
+		}
+
+		return dateRangeType.toString();
+	}
+
+	public void setDateRangeType(DateRangeType dateRangeType) {
+		this.dateRangeType = dateRangeType;
+	}
+
+	public void setDateRangeType(
+		UnsafeSupplier<DateRangeType, Exception> dateRangeTypeUnsafeSupplier) {
+
+		try {
+			dateRangeType = dateRangeTypeUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected DateRangeType dateRangeType;
+
 	public Boolean getDeletions() {
 		return deletions;
 	}
@@ -310,5 +339,38 @@ public class ExportProcessRequest implements Cloneable, Serializable {
 		return ExportProcessRequestSerDes.toJSON(this);
 	}
 
+	public static enum DateRangeType {
+
+		ALL("ALL"), DATE_RANGE("DATE_RANGE"), LAST("LAST");
+
+		public static DateRangeType create(String value) {
+			for (DateRangeType dateRangeType : values()) {
+				if (Objects.equals(dateRangeType.getValue(), value) ||
+					Objects.equals(dateRangeType.name(), value)) {
+
+					return dateRangeType;
+				}
+			}
+
+			return null;
+		}
+
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private DateRangeType(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
+	}
+
 }
-// LIFERAY-REST-BUILDER-HASH:828206440
+// LIFERAY-REST-BUILDER-HASH:-773468954

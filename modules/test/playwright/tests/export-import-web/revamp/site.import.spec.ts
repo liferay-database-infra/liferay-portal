@@ -10,6 +10,7 @@ import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {globalMenuPagesTest} from '../../../fixtures/globalMenuPagesTest';
 import {isolatedSiteTest} from '../../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../../fixtures/loginTest';
+import {DataApiHelpers} from '../../../helpers/ApiHelpers';
 import getRandomString from '../../../utils/getRandomString';
 import {normalizeRestPath} from '../../../utils/normalizeRestPath';
 import {exportImportPagesTest} from './fixtures/exportImportPagesTest';
@@ -24,6 +25,35 @@ export const test = mergeTests(
 	isolatedSiteTest,
 	loginTest()
 );
+
+const testWithWiki = mergeTests(
+	test,
+	featureFlagsTest({
+		'LPD-35013': {enabled: true},
+		'LPD-57655': {enabled: true},
+	})
+);
+
+async function addWidgetPageTemplate(apiHelpers: DataApiHelpers, site: Site) {
+	const layoutPageTemplateCollection =
+		await apiHelpers.jsonWebServicesLayoutPageTemplateCollection.addLayoutPageTemplateCollection(
+			{
+				groupId: String(site.id),
+				name: getRandomString(),
+			}
+		);
+
+	await apiHelpers.jsonWebServicesLayoutPageTemplateEntry.addLayoutPageTemplateEntry(
+		{
+			groupId: String(site.id),
+			layoutPageTemplateCollectionId: String(
+				layoutPageTemplateCollection.layoutPageTemplateCollectionId
+			),
+			name: getRandomString(),
+			type: 'widget-page',
+		}
+	);
+}
 
 test(
 	'Cannot import an instance scoped lar file',
@@ -75,6 +105,77 @@ test(
 		await exportImportPage.expectUploadError(
 			folderPath,
 			'The LAR file contains one or more entities with a different scope.'
+		);
+	}
+);
+
+testWithWiki(
+	'Does not export wiki nodes when they are not selected',
+	{tag: '@LPD-40988'},
+	async ({
+		apiHelpers,
+		exportImportDataSelectionPage,
+		exportImportPage,
+		page,
+		site,
+	}) => {
+		let folderPath: string;
+
+		const name = `MyExport-${getRandomString()}`;
+
+		await testWithWiki.step(
+			'Add a wiki node and a widget page template',
+			async () => {
+				await apiHelpers.headlessDelivery.postWikiNode(site.id);
+
+				await addWidgetPageTemplate(apiHelpers, site);
+			}
+		);
+
+		await testWithWiki.step(
+			'Export the site with the wiki content deselected',
+			async () => {
+				await exportImportPage.goToExport(site.friendlyUrlPath);
+
+				await exportImportPage.clickNew();
+
+				await exportImportDataSelectionPage.uncheckItem(
+					'Content & Data',
+					'Wiki'
+				);
+
+				await exportImportPage.nameInput.fill(name);
+
+				await exportImportPage.exportButton.click();
+
+				await expect(
+					exportImportPage.taskStatusLabel(name)
+				).toBeVisible();
+
+				folderPath = await exportImportPage.download(name);
+			}
+		);
+
+		await testWithWiki.step(
+			'Assert the import wizard offers no wiki content',
+			async () => {
+				await exportImportPage.goToImport(site.friendlyUrlPath);
+
+				await exportImportPage.newButton.click();
+
+				await exportImportPage.goToImportDataSelection({
+					folderPath,
+					name,
+				});
+
+				await expect(
+					page.getByLabel('Page Templates', {exact: true}).first()
+				).toBeAttached();
+
+				await expect(
+					page.getByLabel('Wiki', {exact: true})
+				).not.toBeAttached();
+			}
 		);
 	}
 );

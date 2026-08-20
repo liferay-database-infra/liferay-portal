@@ -4,11 +4,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-_SCRIPTS_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-
-_ROOT_CLOUD_DIR=$(cd "${_SCRIPTS_DIR}/.." && pwd)
-
-readonly _ROOT_CLOUD_DIR _SCRIPTS_DIR
+source "$(dirname "${BASH_SOURCE[0]}")/_azure_common.sh"
 
 function main {
 	if [ ${#} -eq 0 ]
@@ -20,38 +16,22 @@ function main {
 		exit 1
 	fi
 
-	_check_utils az helm jq terraform
+	check_utils az helm jq terraform
 
-	_validate_config_json "${1}"
+	validate_config_json "${1}"
 
-	_generate_tfvars "${1}" "aks"
+	generate_tfvars "${1}" "aks"
 
-	_generate_tfvars "${1}" "platform"
+	generate_tfvars "${1}" "platform"
 
-	local subscription_id
-
-	subscription_id="$(jq --raw-output '.subscription_id' "${1}")"
-
-	export ARM_SUBSCRIPTION_ID="${subscription_id}"
-
-	local tenant_id
-
-	tenant_id="$(jq --raw-output '.tenant_id' "${1}")"
-
-	export ARM_TENANT_ID="${tenant_id}"
-
-	echo "Attempting to login to your Azure account."
-
-	AZURE_CORE_LOGIN_EXPERIENCE_V2=off az login --output none --tenant "${tenant_id}"
-
-	az account set --subscription "${subscription_id}"
+	az_login "${1}"
 
 	local terraform_args=()
 
 	while IFS= read -r terraform_arg
 	do
 		terraform_args+=("${terraform_arg}")
-	done < <(_get_terraform_apply_args "${1}")
+	done < <(get_terraform_args "${1}")
 
 	if jq --exit-status '.tfstate | objects' "${1}" &> /dev/null
 	then
@@ -62,35 +42,25 @@ function main {
 		local storage_account_name
 
 		container_name="$(jq --raw-output '.tfstate.container_name' "${1}")"
-		deployment_name="$(jq --raw-output '.terraform.platform.deployment_name' "${1}")"
-		region="$(jq --raw-output '.terraform.platform.region' "${1}")"
+		deployment_name="$(jq --raw-output '.terraform.common.deployment_name' "${1}")"
+		region="$(jq --raw-output '.terraform.common.region' "${1}")"
 		resource_group_name="$(jq --raw-output '.tfstate.resource_group_name' "${1}")"
 		storage_account_name="$(jq --raw-output '.tfstate.storage_account_name' "${1}")"
 
 		_create_tfstate_storage "${container_name}" "${region}" "${resource_group_name}" "${storage_account_name}"
 
-		_generate_remote_backend_overrides "${container_name}" "${deployment_name}" "${region}" "${resource_group_name}" "${storage_account_name}"
+		generate_remote_backend_overrides "${container_name}" "${deployment_name}" "${region}" "${resource_group_name}" "${storage_account_name}"
 	else
-		_generate_local_backend_overrides
+		generate_local_backend_overrides
 	fi
 
 	_set_up_azure_aks "${terraform_args[@]}"
 
+	connect_to_cluster
+
 	_set_up_azure_platform "${terraform_args[@]}"
 
 	_install_liferay_platform_chart "${1}"
-}
-
-function _check_utils {
-	for util in "${@}"
-	do
-		if (! command -v "${util}" &> /dev/null)
-		then
-			echo "The utility ${util} is not installed."
-
-			exit 1
-		fi
-	done
 }
 
 function _configure_storage_account {
@@ -110,6 +80,23 @@ function _configure_storage_account {
 		--enable-delete-retention true \
 		--enable-versioning true \
 		--resource-group "${resource_group_name}" \
+		--output none
+}
+
+function _create_storage_account {
+	local region="${1}"
+	local resource_group_name="${2}"
+	local storage_account_name="${3}"
+
+	az storage account create \
+		--allow-blob-public-access false \
+		--encryption-services blob \
+		--kind StorageV2 \
+		--location "${region}" \
+		--min-tls-version TLS1_2 \
+		--name "${storage_account_name}" \
+		--resource-group "${resource_group_name}" \
+		--sku Standard_LRS \
 		--output none
 }
 
@@ -167,103 +154,6 @@ function _create_tfstate_storage {
 	fi
 }
 
-function _create_storage_account {
-	local region="${1}"
-	local resource_group_name="${2}"
-	local storage_account_name="${3}"
-
-	az storage account create \
-		--allow-blob-public-access false \
-		--encryption-services blob \
-		--kind StorageV2 \
-		--location "${region}" \
-		--min-tls-version TLS1_2 \
-		--name "${storage_account_name}" \
-		--resource-group "${resource_group_name}" \
-		--sku Standard_LRS \
-		--output none
-}
-
-function _generate_local_backend_overrides {
-	local directory
-
-	for directory in aks platform
-	do
-		cat > "${_ROOT_CLOUD_DIR}/terraform/azure/${directory}/backend_override.tf" <<EOF
-terraform {
-	backend "local" {}
-}
-EOF
-	done
-}
-
-function _generate_remote_backend_overrides {
-	local container_name="${1}"
-	local deployment_name="${2}"
-	local region="${3}"
-	local resource_group_name="${4}"
-	local storage_account_name="${5}"
-
-	local directory
-
-	for directory in aks platform
-	do
-		cat > "${_ROOT_CLOUD_DIR}/terraform/azure/${directory}/backend_override.tf" <<EOF
-terraform {
-	backend "azurerm" {
-		container_name="${container_name}"
-		key="${deployment_name}/${region}/${directory}/terraform.tfstate"
-		resource_group_name="${resource_group_name}"
-		storage_account_name="${storage_account_name}"
-		use_azuread_auth=true
-	}
-}
-EOF
-	done
-}
-
-function _generate_tfvars {
-	local configuration_json_file="${1}"
-	local module="${2}"
-
-	local tfvars_file="${_ROOT_CLOUD_DIR}/terraform/azure/${module}/config.auto.tfvars.json"
-
-	echo "Generating ${tfvars_file} from ${configuration_json_file}."
-
-	jq --arg module "${module}" '.terraform[$module]' "${configuration_json_file}" > "${tfvars_file}"
-
-	echo "${tfvars_file} was generated successfully."
-}
-
-function _get_terraform_apply_args {
-	local configuration_json_file="${1}"
-
-	local auto_approve
-
-	auto_approve=$(jq --raw-output '.options.auto_approve // false' "${configuration_json_file}")
-
-	local apply_args=()
-
-	if [[ ${auto_approve} == true ]]
-	then
-		apply_args+=("-auto-approve")
-	fi
-
-	local parallelism
-
-	parallelism=$(jq --raw-output '.options.parallelism | numbers' "${configuration_json_file}")
-
-	if [[ -n ${parallelism} ]]
-	then
-		apply_args+=("-parallelism=${parallelism}")
-	fi
-
-	if [ ${#apply_args[@]} -gt 0 ]
-	then
-		printf '%s\n' "${apply_args[@]}"
-	fi
-}
-
 function _install_liferay_platform_chart {
 	local configuration_json_file="${1}"
 
@@ -271,29 +161,49 @@ function _install_liferay_platform_chart {
 	local platform_target_revision
 
 	platform_repo_url=$(jq --raw-output '.platform.repoURL // "oci://us-central1-docker.pkg.dev/external-assets-prd/liferay-helm-chart/liferay-platform"' "${configuration_json_file}")
-	platform_target_revision=$(jq --raw-output --slurpfile chart_versions "${_SCRIPTS_DIR}/chart_versions.json" '.platform.targetRevision // $chart_versions[0]."liferay-platform"' "${configuration_json_file}")
+	platform_target_revision=$(jq --raw-output --slurpfile chart_versions "${SCRIPTS_DIR}/chart_versions.json" '.platform.targetRevision // $chart_versions[0]."liferay-platform"' "${configuration_json_file}")
 
 	echo "Applying the Liferay platform root application."
 
+	local aks_outputs
+
+	push_directory "${ROOT_CLOUD_DIR}/terraform/azure/aks"
+
+	aks_outputs=$(terraform output -json)
+
+	pop_directory
+
 	local terraform_outputs
 
-	_pushd "${_ROOT_CLOUD_DIR}/terraform/azure/platform"
+	push_directory "${ROOT_CLOUD_DIR}/terraform/azure/platform"
 
 	terraform_outputs=$(terraform output -json)
 
-	_popd
+	pop_directory
+
+	local tenant_id
+
+	tenant_id=$(jq --raw-output '.tenant_id' "${configuration_json_file}")
+
+	local observability_parameters
+
+	observability_parameters=$(get_observability_parameters "${aks_outputs}" "${tenant_id}")
 
 	jq \
+		--argjson observability_parameters "${observability_parameters}" \
 		--argjson terraform_outputs "${terraform_outputs}" \
 		--null-input \
 		--slurpfile configuration "${configuration_json_file}" \
 		'($configuration[0].platform.values // {}) * {
 			platformComponents: {
 				values: (($configuration[0].platformComponents.values // {}) * {
-					clusterIdentity: $terraform_outputs.cluster_identity.value,
 					clusterSecretStore: {
 						enabled: true,
 						provider: $terraform_outputs.cluster_secret_store_provider.value
+					},
+					deploymentContext: $terraform_outputs.deployment_context.value,
+					observability: {
+						parameters: ($observability_parameters + ($configuration[0].platformComponents.values.observability.parameters // []))
 					},
 					operatorApplications: {
 						externalSecrets: {
@@ -323,16 +233,8 @@ function _log {
 	echo "[Tfstate storage configuration] ${1}"
 }
 
-function _popd {
-	popd > /dev/null
-}
-
-function _pushd {
-	pushd "${1}" > /dev/null
-}
-
 function _set_up_azure_aks {
-	_pushd "${_ROOT_CLOUD_DIR}/terraform/azure/aks"
+	push_directory "${ROOT_CLOUD_DIR}/terraform/azure/aks"
 
 	echo "Setting up the Azure AKS cluster."
 
@@ -340,20 +242,13 @@ function _set_up_azure_aks {
 
 	terraform apply -input=false "${@}"
 
-	export KUBE_CONFIG_PATH="${HOME}/.kube/config"
-
-	az aks get-credentials \
-		--name "$(terraform output -raw cluster_name)" \
-		--overwrite-existing \
-		--resource-group "$(terraform output -raw resource_group_name)"
-
 	echo "Azure AKS cluster setup complete."
 
-	_popd
+	pop_directory
 }
 
 function _set_up_azure_platform {
-	_pushd "${_ROOT_CLOUD_DIR}/terraform/azure/platform"
+	push_directory "${ROOT_CLOUD_DIR}/terraform/azure/platform"
 
 	echo "Setting up the Liferay platform."
 
@@ -363,53 +258,7 @@ function _set_up_azure_platform {
 
 	echo "Liferay platform setup complete."
 
-	_popd
-}
-
-function _validate_config_json {
-	local configuration_json_file="${1}"
-
-	if [[ ! -f ${configuration_json_file} ]]
-	then
-		echo "Configuration JSON file ${configuration_json_file} does not exist." >&2
-
-		exit 1
-	fi
-
-	if ! jq empty "${configuration_json_file}" &> /dev/null
-	then
-		echo "Configuration JSON file ${configuration_json_file} is not valid JSON." >&2
-
-		exit 1
-	fi
-
-	local required_keys=(
-		".subscription_id"
-		".tenant_id"
-	)
-
-	if jq --exit-status '.tfstate | objects' "${configuration_json_file}" &> /dev/null
-	then
-		required_keys+=(
-			".terraform.platform.deployment_name"
-			".terraform.platform.region"
-			".tfstate.container_name"
-			".tfstate.resource_group_name"
-			".tfstate.storage_account_name"
-		)
-	fi
-
-	local required_key
-
-	for required_key in "${required_keys[@]}"
-	do
-		if ! jq --exit-status "${required_key}" "${configuration_json_file}" &> /dev/null
-		then
-			echo "The configuration JSON file must contain a key named \"${required_key#.}\"." >&2
-
-			exit 1
-		fi
-	done
+	pop_directory
 }
 
 main "${@}"

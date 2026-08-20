@@ -13,6 +13,7 @@ import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.service.DepotEntryGroupRelLocalService;
 import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
+import com.liferay.document.library.text.DLFileEntryTextProvider;
 import com.liferay.exportimport.kernel.empty.model.EmptyModelManager;
 import com.liferay.exportimport.kernel.empty.model.EmptyModelManagerUtil;
 import com.liferay.fragment.cache.FragmentEntryLinkCache;
@@ -154,6 +155,7 @@ import com.liferay.portal.kernel.portlet.FriendlyURLResolver;
 import com.liferay.portal.kernel.portlet.FriendlyURLResolverRegistryUtil;
 import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
+import com.liferay.portal.kernel.security.RandomUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
@@ -1076,10 +1078,10 @@ public class ObjectDefinitionLocalServiceImpl
 			_accountEntryLocalService, _accountEntryOrganizationRelLocalService,
 			_assetEntryLocalService, _bundleContext,
 			_depotEntryGroupRelLocalService, _depotEntryLocalService,
-			_dlFileEntryLocalService, _groupLocalService,
-			_kaleoDefinitionLocalService, _listTypeLocalService,
-			_objectActionLocalService, objectDefinitionLocalService,
-			_objectDefinitionSettingLocalService,
+			_dlFileEntryLocalService, _dlFileEntryTextProvider,
+			_groupLocalService, _kaleoDefinitionLocalService,
+			_listTypeLocalService, _objectActionLocalService,
+			objectDefinitionLocalService, _objectDefinitionSettingLocalService,
 			_objectEntryFolderLocalService, _objectEntryLocalService,
 			_objectEntryService, _objectFieldBusinessTypeRegistry,
 			_objectFieldLocalService, _objectFolderLocalService,
@@ -1220,7 +1222,7 @@ public class ObjectDefinitionLocalServiceImpl
 		ObjectDefinition objectDefinition =
 			objectDefinitionPersistence.findByPrimaryKey(objectDefinitionId);
 
-		String className = _getClassName(
+		String className = _getUniqueClassName(
 			objectDefinition.getClassName(), objectDefinition.isModifiable(),
 			objectDefinition.isSystem());
 
@@ -1591,7 +1593,7 @@ public class ObjectDefinitionLocalServiceImpl
 		objectDefinition.setActive(
 			_isUnmodifiableSystemObject(modifiable, system));
 		objectDefinition.setClassName(
-			_getClassName(className, modifiable, system));
+			_getUniqueClassName(className, modifiable, system));
 		objectDefinition.setDBTableName(dbTableName);
 		objectDefinition.setEnableCategorization(enableCategorization);
 		objectDefinition.setEnableComments(enableComments);
@@ -2278,31 +2280,6 @@ public class ObjectDefinitionLocalServiceImpl
 		runSQL("DROP_TABLE_IF_EXISTS(" + dbTableName + ")");
 	}
 
-	private String _getClassName(
-		String className, boolean modifiable, boolean system) {
-
-		if (_isUnmodifiableSystemObject(modifiable, system)) {
-			return className;
-		}
-
-		if (Validator.isNotNull(className)) {
-			int count = _getObjectDefinitionsCountByClassName(className);
-
-			if (count == 0) {
-				return className;
-			}
-		}
-
-		while (true) {
-			String randomClassName =
-				ObjectDefinitionUtil.generateRandomClassName();
-
-			if (_getObjectDefinitionsCountByClassName(randomClassName) == 0) {
-				return randomClassName;
-			}
-		}
-	}
-
 	private Set<Long> _getClassNameIds(String className) {
 		Set<Long> classNameIds = new HashSet<>();
 
@@ -2380,11 +2357,20 @@ public class ObjectDefinitionLocalServiceImpl
 	}
 
 	private int _getObjectDefinitionsCountByClassName(String className) {
-		AtomicInteger atomicInteger = new AtomicInteger(0);
+		long currentCompanyId = CompanyThreadLocal.getCompanyId();
+
+		AtomicInteger atomicInteger = new AtomicInteger(
+			objectDefinitionPersistence.countByClassName(className));
 
 		_companyLocalService.forEachCompanyId(
-			companyId -> atomicInteger.addAndGet(
-				objectDefinitionPersistence.countByClassName(className)));
+			companyId -> {
+				if (companyId == currentCompanyId) {
+					return;
+				}
+
+				atomicInteger.addAndGet(
+					objectDefinitionPersistence.countByClassName(className));
+			});
 
 		return atomicInteger.get();
 	}
@@ -2443,6 +2429,36 @@ public class ObjectDefinitionLocalServiceImpl
 		}
 
 		return "c_" + pkObjectFieldName;
+	}
+
+	private String _getUniqueClassName(
+		String className, boolean modifiable, boolean system) {
+
+		if (_isUnmodifiableSystemObject(modifiable, system)) {
+			return className;
+		}
+
+		if (Validator.isNotNull(className)) {
+			int count = _getObjectDefinitionsCountByClassName(className);
+
+			if (count == 0) {
+				return className;
+			}
+		}
+
+		while (true) {
+			String randomClassName = StringBundler.concat(
+				ObjectDefinitionConstants.
+					CLASS_NAME_PREFIX_CUSTOM_OBJECT_DEFINITION,
+				StringUtil.toUpperCase(StringUtil.randomId(1)),
+				RandomUtil.nextInt(10),
+				StringUtil.toUpperCase(StringUtil.randomId(1)),
+				RandomUtil.nextInt(10));
+
+			if (_getObjectDefinitionsCountByClassName(randomClassName) == 0) {
+				return randomClassName;
+			}
+		}
 	}
 
 	private <E extends Exception> void _handleException(
@@ -2823,7 +2839,7 @@ public class ObjectDefinitionLocalServiceImpl
 
 		if (Validator.isNull(oldClassName)) {
 			objectDefinition.setClassName(
-				_getClassName(
+				_getUniqueClassName(
 					className, objectDefinition.isModifiable(),
 					objectDefinition.isSystem()));
 		}
@@ -4055,6 +4071,9 @@ public class ObjectDefinitionLocalServiceImpl
 
 	@Reference
 	private DLFileEntryLocalService _dlFileEntryLocalService;
+
+	@Reference
+	private DLFileEntryTextProvider _dlFileEntryTextProvider;
 
 	@Reference
 	private EmptyModelManager _emptyModelManager;

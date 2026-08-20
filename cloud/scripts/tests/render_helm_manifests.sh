@@ -20,11 +20,13 @@ function main {
 		aws-infrastructure
 		aws-infrastructure-provider
 		aws-marketplace
+		azure-infrastructure-provider
 		default
 		dxp-operator
 		gcp
 		gcp-infrastructure
 		gcp-infrastructure-provider
+		infrastructure
 		observability
 		platform
 		platform-components
@@ -56,7 +58,7 @@ function main {
 		helm template liferay "${cloud_dir}/helm/${chart}" "${helm_template_args[@]}" | kubeconform \
 			--schema-location default \
 			--schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-			--skip ClusterProviderConfig,LiferayEnvironment,LiferayInfrastructure \
+			--skip ClusterProviderConfig,LiferayEnvironment,LiferayInfrastructure,PrivateDNSZone,PrivateDNSZoneVirtualNetworkLink,Subnet \
 			--strict \
 			--summary
 	done

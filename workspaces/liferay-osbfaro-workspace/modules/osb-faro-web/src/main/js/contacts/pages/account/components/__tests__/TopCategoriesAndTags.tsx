@@ -1,10 +1,11 @@
 import BasePage from 'shared/components/base-page';
 import mockStore from 'test/mock-store';
 import React from 'react';
-import TopCategoriesAndTags, {
+import TopCategoriesAndTags from '../TopCategoriesAndTags';
+import {
 	ITopCategory,
 	ITopTag,
-} from '../TopCategoriesAndTags';
+} from 'shared/components/TopCategoriesAndTagsBaseCard';
 import {
 	cleanup,
 	fireEvent,
@@ -64,6 +65,22 @@ const renderTopCategoriesAndTags = () =>
 						mocks={[mockTimeRangeReq(), mockPreferenceReq()]}
 					>
 						<TopCategoriesAndTags account={ACCOUNT} />
+					</MockedProvider>
+				</MemoryRouter>
+			</BasePage.Context.Provider>
+		</Provider>
+	);
+
+const renderTopCategoriesAndTagsWithoutAccount = () =>
+	render(
+		<Provider store={mockStore()}>
+			<BasePage.Context.Provider value={MOCK_CONTEXT}>
+				<MemoryRouter>
+					<MockedProvider
+						addTypename={false}
+						mocks={[mockTimeRangeReq(), mockPreferenceReq()]}
+					>
+						<TopCategoriesAndTags />
 					</MockedProvider>
 				</MemoryRouter>
 			</BasePage.Context.Provider>
@@ -433,6 +450,21 @@ describe('TopCategoriesAndTags', () => {
 			).toBeInTheDocument();
 		});
 
+		it('should stop loading when there is no account to scope by', () => {
+			mockUseRequestWith({loading: true});
+
+			const {container} = renderTopCategoriesAndTagsWithoutAccount();
+
+			const tabPanel = container.querySelector(
+				'.tab-pane'
+			) as HTMLElement;
+
+			expect(tabPanel.querySelector('.loading-root')).toBeNull();
+			expect(
+				within(tabPanel).getAllByText('No Categories Available').length
+			).toBeGreaterThan(0);
+		});
+
 		it('should not render rows while loading', () => {
 			mockUseRequestWith({loading: true});
 
@@ -517,6 +549,28 @@ describe('TopCategoriesAndTags', () => {
 			) as HTMLElement;
 
 			expect(within(tabPanel).getAllByText('999').length).toBe(1);
+		});
+
+		it('should show a zero when the item carries no selected metric', () => {
+			mockUseRequestWith({
+				data: {
+					items: [
+						buildCategory({
+							id: 'c-metricless',
+							impressionsMetric: undefined,
+							name: 'Metricless',
+						}),
+					],
+				},
+			});
+
+			const {container} = renderTopCategoriesAndTags();
+
+			const tabPanel = container.querySelector(
+				'.tab-pane'
+			) as HTMLElement;
+
+			expect(within(tabPanel).getAllByText('0').length).toBe(1);
 		});
 	});
 });

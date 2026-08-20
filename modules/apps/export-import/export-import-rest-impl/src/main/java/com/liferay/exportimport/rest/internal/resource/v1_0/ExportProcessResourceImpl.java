@@ -18,7 +18,6 @@ import com.liferay.exportimport.rest.dto.v1_0.ExportProcessRequest;
 import com.liferay.exportimport.rest.dto.v1_0.ProcessProgress;
 import com.liferay.exportimport.rest.dto.v1_0.Status;
 import com.liferay.exportimport.rest.internal.util.BackgroundTaskUtil;
-import com.liferay.exportimport.rest.internal.util.DateRangeUtil;
 import com.liferay.exportimport.rest.internal.util.GroupUtil;
 import com.liferay.exportimport.rest.internal.util.ParameterMapUtil;
 import com.liferay.exportimport.rest.internal.util.PermissionUtil;
@@ -30,7 +29,6 @@ import com.liferay.portal.background.task.model.BackgroundTask;
 import com.liferay.portal.background.task.service.BackgroundTaskLocalService;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
-import com.liferay.portal.kernel.dao.orm.OrderFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.NoSuchBackgroundTaskException;
 import com.liferay.portal.kernel.json.JSONFactory;
@@ -42,7 +40,7 @@ import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.service.PortletLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
-import com.liferay.portal.kernel.util.DateRange;
+import com.liferay.portal.kernel.servlet.ContentDispositionUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -53,6 +51,7 @@ import com.liferay.portal.vulcan.pagination.Pagination;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import java.io.Serializable;
@@ -140,8 +139,9 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 		return Response.ok(
 			fileEntry.getContentStream()
 		).header(
-			"Content-Disposition",
-			"attachment; filename=\"" + fileEntry.getTitle() + "\""
+			HttpHeaders.CONTENT_DISPOSITION,
+			ContentDispositionUtil.getContentDispositionHeaderValue(
+				fileEntry.getTitle())
 		).build();
 	}
 
@@ -281,7 +281,7 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 		DynamicQuery dynamicQuery = _getDynamicQuery(
 			creatorId, groupId, portletId, search, status);
 
-		_setSorts(dynamicQuery, sorts);
+		BackgroundTaskUtil.addOrders(dynamicQuery, sorts);
 
 		return _backgroundTaskLocalService.dynamicQuery(
 			dynamicQuery, pagination.getStartPosition(),
@@ -378,8 +378,13 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 		PermissionUtil.checkExportPermission(
 			contextCompany.getCompanyId(), groupId);
 
-		Map<String, String[]> parameterMap = ParameterMapUtil.toParameterMap(
-			exportProcessRequest, false);
+		Map<String, String[]> parameterMap =
+			ParameterMapUtil.putDateRangeParameters(
+				exportProcessRequest.getDateRangeTypeAsString(),
+				exportProcessRequest.getStartDate(),
+				exportProcessRequest.getEndDate(),
+				ParameterMapUtil.toParameterMap(exportProcessRequest, false),
+				contextUser);
 
 		boolean privateLayout = parameterMap.containsKey(
 			PreviewPortletDataHandlerUtil.PRIVATE_PAGES_CONTROL_NAME);
@@ -388,7 +393,7 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 
 		if (privateLayout && publicLayout) {
 			throw new BadRequestException(
-				"Cannot request both private and public pages");
+				"Unable to request both private and public pages");
 		}
 
 		if (privateLayout && !group.isPrivateLayoutsEnabled()) {
@@ -418,8 +423,6 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 					contextUser.getUserId(), groupId, privateLayout, layoutIds,
 					parameterMap, contextAcceptLanguage.getPreferredLocale(),
 					contextUser.getTimeZone());
-
-		_putDateRange(exportProcessRequest, settingsMap);
 
 		ExportImportConfiguration exportImportConfiguration =
 			_exportImportConfigurationLocalService.
@@ -458,8 +461,13 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 			fileName += ".lar";
 		}
 
-		Map<String, String[]> parameterMap = ParameterMapUtil.toParameterMap(
-			exportProcessRequest, true);
+		Map<String, String[]> parameterMap =
+			ParameterMapUtil.putDateRangeParameters(
+				exportProcessRequest.getDateRangeTypeAsString(),
+				exportProcessRequest.getStartDate(),
+				exportProcessRequest.getEndDate(),
+				ParameterMapUtil.toParameterMap(exportProcessRequest, true),
+				contextUser);
 
 		Map<String, Serializable> settingsMap =
 			_exportImportConfigurationSettingsMapFactory.
@@ -467,8 +475,6 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 					contextUser.getUserId(), plid, groupId, portletId,
 					parameterMap, contextAcceptLanguage.getPreferredLocale(),
 					contextUser.getTimeZone(), fileName);
-
-		_putDateRange(exportProcessRequest, settingsMap);
 
 		settingsMap.put("name", exportProcessRequest.getName());
 
@@ -485,59 +491,6 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 
 		return _toExportProcess(
 			_backgroundTaskLocalService.getBackgroundTask(backgroundTaskId));
-	}
-
-	private void _putDateRange(
-		ExportProcessRequest exportProcessRequest,
-		Map<String, Serializable> settingsMap) {
-
-		DateRange dateRange = DateRangeUtil.toDateRange(
-			exportProcessRequest.getStartDate(),
-			exportProcessRequest.getEndDate());
-
-		if (dateRange == null) {
-			return;
-		}
-
-		settingsMap.put("endDate", dateRange.getEndDate());
-		settingsMap.put("startDate", dateRange.getStartDate());
-	}
-
-	private void _setSorts(DynamicQuery dynamicQuery, Sort[] sorts) {
-		if (sorts == null) {
-			dynamicQuery.addOrder(OrderFactoryUtil.desc("createDate"));
-
-			return;
-		}
-
-		for (Sort sort : sorts) {
-			String fieldName = sort.getFieldName();
-
-			fieldName = StringUtil.removeSubstring(fieldName, "_sortable");
-
-			if (fieldName.equals("creator")) {
-				fieldName = "userName";
-			}
-			else if (fieldName.equals("dateCompleted")) {
-				fieldName = "completionDate";
-			}
-			else if (fieldName.equals("dateCreated")) {
-				fieldName = "createDate";
-			}
-			else if (fieldName.equals("dateModified")) {
-				fieldName = "modifiedDate";
-			}
-			else if (fieldName.equals("id")) {
-				fieldName = "backgroundTaskId";
-			}
-
-			if (sort.isReverse()) {
-				dynamicQuery.addOrder(OrderFactoryUtil.desc(fieldName));
-			}
-			else {
-				dynamicQuery.addOrder(OrderFactoryUtil.asc(fieldName));
-			}
-		}
 	}
 
 	private ExportProcess _toExportProcess(BackgroundTask backgroundTask) {

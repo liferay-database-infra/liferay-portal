@@ -12,6 +12,18 @@ import {databaseMigrationPagesTest} from './fixtures/databaseMigrationPagesTest'
 export const test = mergeTests(databaseMigrationPagesTest, loginTest());
 
 test(
+	'LPD-102471 - The database migration section states what the export produces.',
+	{tag: '@LPD-102471'},
+	async ({databaseMigrationPage}) => {
+		await databaseMigrationPage.goto();
+
+		await expect(databaseMigrationPage.description).toContainText(
+			'Exports the current database schema as SQL files for use with the DB Migration Importer Tool.'
+		);
+	}
+);
+
+test(
 	'LPD-92611 - Exporting the database schema to a writable path shows a success message.',
 	{tag: '@LPD-92611'},
 	async ({databaseMigrationPage}) => {

@@ -11,6 +11,7 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.lang.ThreadContextClassLoaderUtil;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.CharPool;
+import com.liferay.portal.dao.orm.common.SQLTransformer;
 import com.liferay.portal.internal.change.tracking.hibernate.CTSQLInterceptor;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
@@ -138,6 +139,8 @@ public class PortalHibernateConfiguration
 
 		Configuration configuration = new Configuration(
 			new MetadataSources(bootstrapServiceRegistryBuilder.build()));
+
+		SQLTransformer.populateSQLFunctions(configuration);
 
 		if (_mvccEnabled) {
 			configuration.setInterceptor(new CTSQLInterceptor());

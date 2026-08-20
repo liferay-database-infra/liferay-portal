@@ -174,7 +174,9 @@ public class AnalyticsCloudClient {
 		options.addPart("name", company.getName());
 		options.addPart("oAuthClientId", oAuth2Application.getClientId());
 		options.addPart(
-			"oAuthClientSecret", oAuth2Application.getClientSecret());
+			"oAuthClientSecret",
+			_oAuth2ApplicationLocalService.getPlaintextClientSecret(
+				oAuth2Application));
 		options.addPart("portalURL", company.getPortalURL(0));
 		options.addPart("token", jsonObject.getString("token"));
 		options.setLocation(url);
@@ -343,7 +345,7 @@ public class AnalyticsCloudClient {
 	}
 
 	public AnalyticsChannel updateAnalyticsChannel(
-			String analyticsChannelId, Group[] commerceChannelGroups,
+			String analyticsChannelId,
 			AnalyticsConfiguration analyticsConfiguration, String dataSourceId,
 			Locale locale, Group[] siteGroups)
 		throws Exception {
@@ -360,9 +362,6 @@ public class AnalyticsCloudClient {
 			options.addHeader("Content-Type", ContentTypes.APPLICATION_JSON);
 			options.setBody(
 				JSONUtil.put(
-					"commerceChannels",
-					_getGroupsJSONArray(commerceChannelGroups, locale)
-				).put(
 					"dataSourceId", dataSourceId
 				).put(
 					"groups", _getGroupsJSONArray(siteGroups, locale)

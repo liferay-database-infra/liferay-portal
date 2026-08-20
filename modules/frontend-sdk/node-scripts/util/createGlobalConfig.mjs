@@ -5,12 +5,12 @@
 
 import crypto from 'crypto';
 
-import getProjectDirs from './getProjectDirs.mjs';
+import getBuildableProjectDirs from './getBuildableProjectDirs.mjs';
 import objectSF from './objectSF.mjs';
 import projectScopeRequire from './projectScopeRequire.mjs';
 
 export default async function createGlobalConfig() {
-	const projectDirs = await getProjectDirs();
+	const projectDirs = await getBuildableProjectDirs();
 
 	let allDependencies = {};
 	let allSymbols = {};
@@ -37,7 +37,12 @@ export default async function createGlobalConfig() {
 		}
 
 		allDependencies = {...allDependencies, ...dependencies};
-		allImports[name] = exports;
+
+		// Copy the array because 'exports' belongs to the cached
+		// 'node-scripts.config.js' module and appending the submodules to it
+		// would leak them into every later read of that project's exports.
+
+		allImports[name] = [...exports];
 
 		if (submodules) {
 			allImports[name].push(
@@ -52,8 +57,12 @@ export default async function createGlobalConfig() {
 
 	const sha256 = crypto.createHash('sha256');
 
+	// Hash the serialized form instead of the objects themselves because
+	// objectSF() sorts keys, which keeps the hash independent of the order in
+	// which the projects were discovered.
+
 	const hash = sha256
-		.update(JSON.stringify(allImports) + JSON.stringify(allSymbols))
+		.update(objectSF(allImports) + objectSF(allSymbols))
 		.digest('hex');
 
 	return {

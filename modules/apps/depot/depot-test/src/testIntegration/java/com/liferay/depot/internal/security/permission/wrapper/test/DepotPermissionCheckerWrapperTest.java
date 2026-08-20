@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.RoleTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -283,6 +284,43 @@ public class DepotPermissionCheckerWrapperTest {
 						depotEntry.getGroup(), Group.class.getName(),
 						depotEntry.getGroupId(), ActionKeys.VIEW_MEMBERS));
 			});
+	}
+
+	@Test
+	public void testHasPermissionWithUserAndAssetLibraryAdministrator()
+		throws Exception {
+
+		_user = UserTestUtil.addUser();
+
+		DepotEntry depotEntry = _addDepotEntry(TestPropsValues.getUserId());
+
+		DepotTestUtil.withAssetLibraryMember(
+			depotEntry,
+			assetLibraryMemberUser ->
+				DepotTestUtil.withAssetLibraryAdministrator(
+					depotEntry,
+					user -> {
+						PermissionChecker permissionChecker =
+							_permissionCheckerFactory.create(user);
+
+						Assert.assertFalse(
+							permissionChecker.hasPermission(
+								null, User.class.getName(), _user.getUserId(),
+								ActionKeys.DELETE));
+						Assert.assertFalse(
+							permissionChecker.hasPermission(
+								null, User.class.getName(), _user.getUserId(),
+								ActionKeys.IMPERSONATE));
+						Assert.assertFalse(
+							permissionChecker.hasPermission(
+								null, User.class.getName(), _user.getUserId(),
+								ActionKeys.UPDATE));
+						Assert.assertTrue(
+							permissionChecker.hasPermission(
+								null, User.class.getName(),
+								assetLibraryMemberUser.getUserId(),
+								ActionKeys.VIEW));
+					}));
 	}
 
 	@Test
@@ -975,6 +1013,9 @@ public class DepotPermissionCheckerWrapperTest {
 
 	@Inject
 	private RoleLocalService _roleLocalService;
+
+	@DeleteAfterTestRun
+	private User _user;
 
 	@Inject
 	private UserLocalService _userLocalService;

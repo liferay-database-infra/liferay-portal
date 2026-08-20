@@ -6,6 +6,7 @@
 package com.liferay.mcp.server.rest.test.util;
 
 import com.liferay.batch.engine.test.util.BatchEngineTestUtil;
+import com.liferay.batch.engine.unit.BatchEngineUnitThreadLocal;
 import com.liferay.object.constants.ObjectEntryFolderConstants;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntry;
@@ -16,14 +17,17 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.security.audit.event.generators.constants.EventTypes;
 import com.liferay.portal.security.audit.storage.model.AuditEvent;
 import com.liferay.portal.security.audit.storage.service.AuditEventLocalServiceUtil;
 
 import java.io.Serializable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Jose Luis Navarro
@@ -139,6 +143,45 @@ public class MCPServerTestUtil {
 			ServiceContextTestUtil.getServiceContext());
 	}
 
+	public static ObjectEntry addSystemDataMaskObjectEntry(
+			String detectionRegex, String externalReferenceCode, String name,
+			String replacementValue)
+		throws Exception {
+
+		ObjectDefinition objectDefinition =
+			ObjectDefinitionLocalServiceUtil.
+				fetchObjectDefinitionByExternalReferenceCode(
+					"L_DATA_MASK", TestPropsValues.getCompanyId());
+
+		String fileName = BatchEngineUnitThreadLocal.getFileName();
+
+		BatchEngineUnitThreadLocal.setFileName(_DATA_MASK_BATCH_FILE_NAME);
+
+		try {
+			return ObjectEntryLocalServiceUtil.addObjectEntry(
+				0, TestPropsValues.getUserId(),
+				objectDefinition.getObjectDefinitionId(),
+				ObjectEntryFolderConstants.
+					PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
+				null,
+				HashMapBuilder.<String, Serializable>put(
+					"detectionRegex", detectionRegex
+				).put(
+					"externalReferenceCode", externalReferenceCode
+				).put(
+					"maskType", "system"
+				).put(
+					"name", name
+				).put(
+					"replacementValue", replacementValue
+				).build(),
+				ServiceContextTestUtil.getServiceContext());
+		}
+		finally {
+			BatchEngineUnitThreadLocal.setFileName(fileName);
+		}
+	}
+
 	public static void deleteMCPServerProfileDataMaskObjectEntry(
 			String deleteReason, ObjectEntry objectEntry)
 		throws Exception {
@@ -154,6 +197,22 @@ public class MCPServerTestUtil {
 
 		ObjectEntryLocalServiceUtil.deleteObjectEntry(
 			objectEntry.getObjectEntryId());
+	}
+
+	public static void deleteSystemDataMaskObjectEntry(ObjectEntry objectEntry)
+		throws Exception {
+
+		String fileName = BatchEngineUnitThreadLocal.getFileName();
+
+		BatchEngineUnitThreadLocal.setFileName(_DATA_MASK_BATCH_FILE_NAME);
+
+		try {
+			ObjectEntryLocalServiceUtil.deleteObjectEntry(
+				objectEntry.getObjectEntryId());
+		}
+		finally {
+			BatchEngineUnitThreadLocal.setFileName(fileName);
+		}
 	}
 
 	public static ObjectEntry fetchDataMaskObjectEntry(String name)
@@ -191,17 +250,62 @@ public class MCPServerTestUtil {
 		);
 	}
 
+	public static int getMCPServerProfileDataMaskExecutionOrder(
+			String dataMaskExternalReferenceCode,
+			String mcpServerProfileExternalReferenceCode)
+		throws Exception {
+
+		for (ObjectEntry mcpServerProfileDataMaskObjectEntry :
+				getMCPServerProfileDataMaskObjectEntries(
+					mcpServerProfileExternalReferenceCode)) {
+
+			Map<String, Serializable> values =
+				mcpServerProfileDataMaskObjectEntry.getValues();
+
+			if (Objects.equals(
+					dataMaskExternalReferenceCode,
+					values.get("dataMaskExternalReferenceCode"))) {
+
+				return MapUtil.getInteger(values, "executionOrder");
+			}
+		}
+
+		return -1;
+	}
+
+	public static List<ObjectEntry> getMCPServerProfileDataMaskObjectEntries(
+			String mcpServerProfileExternalReferenceCode)
+		throws Exception {
+
+		List<ObjectEntry> mcpServerProfileDataMaskObjectEntries =
+			new ArrayList<>();
+
+		ObjectDefinition objectDefinition =
+			ObjectDefinitionLocalServiceUtil.
+				fetchObjectDefinitionByExternalReferenceCode(
+					"L_MCP_SERVER_PROFILE_DATA_MASK",
+					TestPropsValues.getCompanyId());
+
+		for (ObjectEntry objectEntry :
+				ObjectEntryLocalServiceUtil.getObjectEntries(
+					0, objectDefinition.getObjectDefinitionId(),
+					QueryUtil.ALL_POS, QueryUtil.ALL_POS)) {
+
+			Map<String, Serializable> values = objectEntry.getValues();
+
+			if (Objects.equals(
+					mcpServerProfileExternalReferenceCode,
+					values.get("mcpServerProfileExternalReferenceCode"))) {
+
+				mcpServerProfileDataMaskObjectEntries.add(objectEntry);
+			}
+		}
+
+		return mcpServerProfileDataMaskObjectEntries;
+	}
+
 	public static void processBatchEngineUnits() {
-		String prefix = ".com.liferay.headless.data.mask.internal.batch.";
-
-		BatchEngineTestUtil.processBatchEngineUnits(
-			"com.liferay.headless.data.mask.impl", MCPServerTestUtil.class,
-			new String[] {
-				prefix + "01.list.type.definition",
-				prefix + "02.object.definition", prefix + "03.object.entry"
-			});
-
-		prefix = ".com.liferay.mcp.server.rest.internal.batch.";
+		String prefix = ".com.liferay.mcp.server.rest.internal.batch.";
 
 		BatchEngineTestUtil.processBatchEngineUnits(
 			"com.liferay.mcp.server.rest.impl", MCPServerTestUtil.class,
@@ -210,6 +314,15 @@ public class MCPServerTestUtil {
 				prefix + "01.object.definition",
 				prefix + "02.object.definition",
 				prefix + "03.object.definition", prefix + "04.object.entry"
+			});
+
+		prefix = ".com.liferay.headless.data.mask.internal.batch.";
+
+		BatchEngineTestUtil.processBatchEngineUnits(
+			"com.liferay.headless.data.mask.impl", MCPServerTestUtil.class,
+			new String[] {
+				prefix + "01.list.type.definition",
+				prefix + "02.object.definition", prefix + "03.object.entry"
 			});
 	}
 
@@ -241,5 +354,8 @@ public class MCPServerTestUtil {
 
 		return null;
 	}
+
+	private static final String _DATA_MASK_BATCH_FILE_NAME =
+		"com.liferay.headless.data.mask.impl_test";
 
 }

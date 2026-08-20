@@ -3,14 +3,19 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {IFrontendDataSetProps} from '@liferay/frontend-data-set-web';
+import {
+	IBulkActionItem,
+	IFrontendDataSetProps,
+} from '@liferay/frontend-data-set-web';
 import {openModal} from 'frontend-js-components-web';
-import {navigate, sub} from 'frontend-js-web';
+import {navigate} from 'frontend-js-web';
 import React from 'react';
 
 import {TableCellContentType} from '../constants';
 import CreateDesignLibraryModal from '../modal/CreateDesignLibraryModal';
-import confirmAndDeleteEntryAction from './actions/confirmAndDeleteEntryAction';
+import {ActionItem, DesignLibrary} from '../types';
+import confirmAndDeleteEntriesAction from './actions/confirmAndDeleteEntriesAction';
+import getDesignLibrariesConfirmationMessage from './actions/getDesignLibrariesConfirmationMessage';
 import {
 	AuthorRenderer,
 	FromNowDateTimeRenderer,
@@ -20,6 +25,7 @@ import {
 
 export default function DesignLibraryAdminFDSPropsTransformer({
 	additionalProps: {canAddDesignLibrary, entryIdKey, redirectURL},
+	bulkActions,
 	id,
 	...props
 }: {
@@ -29,6 +35,7 @@ export default function DesignLibraryAdminFDSPropsTransformer({
 		redirectURL: string;
 	};
 
+	bulkActions?: Array<IBulkActionItem>;
 	id: string;
 	props: Record<string, unknown>;
 }): IFrontendDataSetProps {
@@ -56,6 +63,19 @@ export default function DesignLibraryAdminFDSPropsTransformer({
 
 	return {
 		...props,
+		bulkActions: bulkActions?.map((bulkAction): IBulkActionItem => {
+			if (bulkAction.data?.id !== 'delete') {
+				return bulkAction;
+			}
+
+			return {
+				...bulkAction,
+				isDisabled: ({allItemsSelectedActive, selectedItems}) =>
+					allItemsSelectedActive ||
+					!selectedItems?.length ||
+					selectedItems.some((item) => !item.actions?.delete),
+			};
+		}),
 		creationMenu,
 		customRenderers: {
 			tableCell: [
@@ -89,41 +109,42 @@ export default function DesignLibraryAdminFDSPropsTransformer({
 			event,
 			itemData,
 		}: {
-			action: {
-				data: {
-					id: string;
-				};
-			};
+			action: ActionItem;
 			event: Event;
-			itemData: {
-				actions: {
-					delete: {href: string; method: string};
-				};
-				name: string;
-			};
+			itemData: DesignLibrary;
 		}) => {
 			if (action.data.id === 'delete') {
 				event?.preventDefault();
 
-				confirmAndDeleteEntryAction({
-					bodyHTML: `
-						<p>${Liferay.Language.get('delete-design-library-confirmation-body-main')}</p>
-						<p>${Liferay.Language.get('delete-design-library-confirmation-body-warning')}</p>
-					`,
-					deleteAction: itemData.actions.delete,
+				confirmAndDeleteEntriesAction({
+					confirmationMessage: getDesignLibrariesConfirmationMessage([
+						itemData,
+					]),
+					items: [itemData],
 					loadData: () => {
 						navigate(window.location.href);
 					},
-					successMessage: sub(
-						Liferay.Language.get('x-was-successfully-deleted'),
-						`<strong>${Liferay.Util.escapeHTML(itemData.name)}</strong>`
+				});
+			}
+		},
+		onBulkActionItemClick: ({
+			action,
+			loadData,
+			selectedData,
+		}: {
+			action: ActionItem;
+			loadData: () => void;
+			selectedData: {
+				items: Array<DesignLibrary>;
+			};
+		}) => {
+			if (action.data.id === 'delete') {
+				confirmAndDeleteEntriesAction({
+					confirmationMessage: getDesignLibrariesConfirmationMessage(
+						selectedData.items
 					),
-					title: sub(
-						Liferay.Language.get(
-							'delete-design-library-confirmation-title'
-						),
-						itemData.name
-					),
+					items: selectedData.items,
+					loadData,
 				});
 			}
 		},

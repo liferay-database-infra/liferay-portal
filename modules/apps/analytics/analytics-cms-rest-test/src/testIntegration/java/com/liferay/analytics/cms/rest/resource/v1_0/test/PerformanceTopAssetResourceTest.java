@@ -8,17 +8,15 @@ package com.liferay.analytics.cms.rest.resource.v1_0.test;
 import com.liferay.analytics.cms.rest.dto.v1_0.PerformanceTopAsset;
 import com.liferay.analytics.cms.rest.dto.v1_0.Trend;
 import com.liferay.analytics.cms.rest.resource.v1_0.PerformanceTopAssetResource;
-import com.liferay.analytics.settings.configuration.AnalyticsConfiguration;
+import com.liferay.analytics.test.util.AnalyticsCompanyConfigurationTemporarySwapper;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
-import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
@@ -67,24 +65,14 @@ public class PerformanceTopAssetResourceTest
 	@Override
 	@Test
 	public void testGetPerformanceTopAssetExport() throws Exception {
+		_testGetPerformanceTopAssetExportWithAnalyticsCloudNotConnected();
+
 		String dataSourceId = RandomTestUtil.randomString();
 
-		try (CompanyConfigurationTemporarySwapper
-				companyConfigurationTemporarySwapper =
-					new CompanyConfigurationTemporarySwapper(
-						testCompany.getCompanyId(),
-						AnalyticsConfiguration.class.getName(),
-						HashMapDictionaryBuilder.<String, Object>put(
-							"liferayAnalyticsDataSourceId", dataSourceId
-						).put(
-							"liferayAnalyticsEnableAllGroupIds", true
-						).put(
-							"liferayAnalyticsFaroBackendSecuritySignature",
-							RandomTestUtil.randomString()
-						).put(
-							"liferayAnalyticsFaroBackendURL",
-							"http://" + RandomTestUtil.randomString()
-						).build())) {
+		try (AnalyticsCompanyConfigurationTemporarySwapper
+				analyticsCompanyConfigurationTemporarySwapper =
+					new AnalyticsCompanyConfigurationTemporarySwapper(
+						testCompany.getCompanyId(), dataSourceId)) {
 
 			_testGetPerformanceTopAssetExportResponse();
 			_testGetPerformanceTopAssetExportURL(dataSourceId);
@@ -95,36 +83,17 @@ public class PerformanceTopAssetResourceTest
 		}
 	}
 
-	@Test
-	public void testGetPerformanceTopAssetExportWithAnalyticsCloudNotConnected() {
-		Assert.assertThrows(
-			ForbiddenException.class,
-			() -> _performanceTopAssetResource.getPerformanceTopAssetExport(
-				null, RandomTestUtil.nextInt(), RandomTestUtil.randomString(),
-				null, null));
-	}
-
 	@Override
 	@Test
 	public void testGetPerformanceTopAssetPage() throws Exception {
+		_testGetPerformanceTopAssetPageWithAnalyticsCloudNotConnected();
+
 		String dataSourceId = RandomTestUtil.randomString();
 
-		try (CompanyConfigurationTemporarySwapper
-				companyConfigurationTemporarySwapper =
-					new CompanyConfigurationTemporarySwapper(
-						testCompany.getCompanyId(),
-						AnalyticsConfiguration.class.getName(),
-						HashMapDictionaryBuilder.<String, Object>put(
-							"liferayAnalyticsDataSourceId", dataSourceId
-						).put(
-							"liferayAnalyticsEnableAllGroupIds", true
-						).put(
-							"liferayAnalyticsFaroBackendSecuritySignature",
-							RandomTestUtil.randomString()
-						).put(
-							"liferayAnalyticsFaroBackendURL",
-							"http://" + RandomTestUtil.randomString()
-						).build())) {
+		try (AnalyticsCompanyConfigurationTemporarySwapper
+				analyticsCompanyConfigurationTemporarySwapper =
+					new AnalyticsCompanyConfigurationTemporarySwapper(
+						testCompany.getCompanyId(), dataSourceId)) {
 
 			_testGetPerformanceTopAssetPageResponse();
 			_testGetPerformanceTopAssetPageURL(dataSourceId);
@@ -135,37 +104,16 @@ public class PerformanceTopAssetResourceTest
 		}
 	}
 
-	@Test
-	public void testGetPerformanceTopAssetPageWithAnalyticsCloudNotConnected() {
-		Assert.assertThrows(
-			ForbiddenException.class,
-			() -> _performanceTopAssetResource.getPerformanceTopAssetPage(
-				null, RandomTestUtil.nextInt(), RandomTestUtil.randomString(),
-				null, Pagination.of(1, 10), null));
-	}
-
 	@Override
 	@Test
 	public void testGetPerformanceTopAssetPageWithPagination()
 		throws Exception {
 
-		try (CompanyConfigurationTemporarySwapper
-				companyConfigurationTemporarySwapper =
-					new CompanyConfigurationTemporarySwapper(
+		try (AnalyticsCompanyConfigurationTemporarySwapper
+				analyticsCompanyConfigurationTemporarySwapper =
+					new AnalyticsCompanyConfigurationTemporarySwapper(
 						testCompany.getCompanyId(),
-						AnalyticsConfiguration.class.getName(),
-						HashMapDictionaryBuilder.<String, Object>put(
-							"liferayAnalyticsDataSourceId",
-							RandomTestUtil.randomString()
-						).put(
-							"liferayAnalyticsEnableAllGroupIds", true
-						).put(
-							"liferayAnalyticsFaroBackendSecuritySignature",
-							RandomTestUtil.randomString()
-						).put(
-							"liferayAnalyticsFaroBackendURL",
-							"http://" + RandomTestUtil.randomString()
-						).build())) {
+						RandomTestUtil.randomString())) {
 
 			RecordingMockHttp recordingMockHttp = _setUpRecordingMockHttp(
 				"{}", "/api/1.0/asset-metric/objectEntry/summaries");
@@ -301,6 +249,14 @@ public class PerformanceTopAssetResourceTest
 		_assertParameter(sb.toString(), "sort", location);
 	}
 
+	private void _testGetPerformanceTopAssetExportWithAnalyticsCloudNotConnected() {
+		Assert.assertThrows(
+			ForbiddenException.class,
+			() -> _performanceTopAssetResource.getPerformanceTopAssetExport(
+				null, RandomTestUtil.nextInt(), RandomTestUtil.randomString(),
+				null, null));
+	}
+
 	private void _testGetPerformanceTopAssetPageResponse() throws Exception {
 		String assetId = RandomTestUtil.randomString();
 		String assetTitle = RandomTestUtil.randomString();
@@ -429,6 +385,14 @@ public class PerformanceTopAssetResourceTest
 		}
 
 		_assertParameter(sb.toString(), "sort", location);
+	}
+
+	private void _testGetPerformanceTopAssetPageWithAnalyticsCloudNotConnected() {
+		Assert.assertThrows(
+			ForbiddenException.class,
+			() -> _performanceTopAssetResource.getPerformanceTopAssetPage(
+				null, RandomTestUtil.nextInt(), RandomTestUtil.randomString(),
+				null, Pagination.of(1, 10), null));
 	}
 
 	@Inject

@@ -22,6 +22,15 @@ func (statefulSetScaleValidator *StatefulSetScaleValidator) Handle(
 ) admission.Response {
 	logger := logf.FromContext(context)
 
+	if statefulSetScaleValidator.ServiceAccount != "" &&
+		request.UserInfo.Username == statefulSetScaleValidator.ServiceAccount {
+
+		return admission.Allowed(
+			"the licensing operator enforces the replica ceiling itself and is " +
+				"exempt from this webhook",
+		)
+	}
+
 	requestedReplicas, workloadName, error := statefulSetScaleValidator.getRequestedReplicas(
 		request,
 	)
@@ -52,7 +61,7 @@ func (statefulSetScaleValidator *StatefulSetScaleValidator) Handle(
 		return admission.Allowed("not a licensed Liferay workload")
 	}
 
-	if maxClusterNodes <= 0 {
+	if maxClusterNodes == nil {
 		return admission.Allowed(
 			fmt.Sprintf(
 				"licensed maxClusterNodes for StatefulSet %q is not yet available; "+
@@ -62,11 +71,11 @@ func (statefulSetScaleValidator *StatefulSetScaleValidator) Handle(
 		)
 	}
 
-	if requestedReplicas > maxClusterNodes {
+	if requestedReplicas > *maxClusterNodes {
 		return admission.Denied(
 			fmt.Sprintf(
 				"replicas %d exceeds licensed maxClusterNodes %d for StatefulSet %q",
-				requestedReplicas, maxClusterNodes, workloadName,
+				requestedReplicas, *maxClusterNodes, workloadName,
 			),
 		)
 	}
@@ -78,13 +87,13 @@ func (statefulSetScaleValidator *StatefulSetScaleValidator) getMaxClusterNodes(
 	context context.Context,
 	namespace string,
 	workloadName string,
-) (int32, bool, error) {
+) (*int32, bool, error) {
 	liferayEnvironmentList := &licensingv1alpha1.LiferayEnvironmentList{}
 
 	if error := statefulSetScaleValidator.Client.List(
 		context, liferayEnvironmentList, client.InNamespace(namespace),
 	); error != nil {
-		return 0, false, error
+		return nil, false, error
 	}
 
 	for _, liferayEnvironment := range liferayEnvironmentList.Items {
@@ -93,7 +102,7 @@ func (statefulSetScaleValidator *StatefulSetScaleValidator) getMaxClusterNodes(
 		}
 	}
 
-	return 0, false, nil
+	return nil, false, nil
 }
 
 func (statefulSetScaleValidator *StatefulSetScaleValidator) getRequestedReplicas(
@@ -125,6 +134,7 @@ func (statefulSetScaleValidator *StatefulSetScaleValidator) getRequestedReplicas
 }
 
 type StatefulSetScaleValidator struct {
-	Client  client.Client
-	Decoder admission.Decoder
+	Client         client.Client
+	Decoder        admission.Decoder
+	ServiceAccount string
 }

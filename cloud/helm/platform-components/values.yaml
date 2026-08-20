@@ -21,12 +21,16 @@ clusterBootstrap:
         requests:
             cpu: 1m
             memory: 8Mi
-clusterIdentity:
-    deploymentName: ""
-    region: ""
 clusterSecretStore:
     enabled: false
     provider: {}
+deploymentContext:
+    deploymentName: ""
+    region: ""
+gateway:
+    envoyProxy:
+        podAnnotations: {}
+        serviceAnnotations: {}
 gitops:
     infrastructureRepository:
         credentialsSecretName: liferay-credentials-gitops
@@ -226,6 +230,13 @@ operatorApplications:
                 readOnlyRootFilesystem: true
                 runAsGroup: 65532
                 runAsUser: 65532
+    dxpOperator:
+        enabled: true
+        namespace: dxp-operator-system
+        repoURL: oci://us-central1-docker.pkg.dev/external-assets-prd/liferay-helm-chart/liferay-dxp-operator
+        targetRevision: 0.0.1
+        values:
+            fullnameOverride: dxp-operator
     eckOperator:
         chart: eck-operator
         enabled: true
@@ -274,7 +285,7 @@ operatorApplications:
         enabled: true
         namespace: external-secrets-system
         repoURL: https://charts.external-secrets.io
-        targetRevision: 1.0.0
+        targetRevision: 2.9.0
         values:
             certController:
                 resources:

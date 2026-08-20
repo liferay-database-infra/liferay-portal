@@ -36,6 +36,7 @@ import getFragmentDefinition from '../../layout-content-page-editor-web/main/uti
 import getPageDefinition from '../../layout-content-page-editor-web/main/utils/getPageDefinition';
 import {localizationPagesTest} from '../../site-admin-web/main/fixtures/localizationPagesTest';
 import {generateObjectFields} from '../utils/generateObjectFields';
+import {getFreshObjectRelationshipName} from '../utils/getFreshObjectRelationshipName';
 
 const test = mergeTests(
 	collectionsPagesTest,
@@ -597,8 +598,13 @@ test.describe('Manage object definitions through Model Builder', () => {
 
 		const objectRelationshipLabel =
 			'objectRelationshipLabel' + getRandomInt();
-		const objectRelationshipName =
-			'objectRelationshipName' + Math.floor(Math.random() * 99);
+		const objectRelationshipName = await getFreshObjectRelationshipName(
+			apiHelpers,
+			[
+				objectDefinition1.externalReferenceCode!,
+				objectDefinition2.externalReferenceCode!,
+			]
+		);
 
 		const objectRelationshipAPIClient = await apiHelpers.buildRestClient(
 			ObjectRelationshipAPI
@@ -1119,7 +1125,10 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 					label: {
 						en_US: 'objectRelationshipLabel' + getRandomInt(),
 					},
-					name: 'objectRelationshipName' + getRandomInt(),
+					name: await getFreshObjectRelationshipName(apiHelpers, [
+						'L_ACCOUNT',
+						objectDefinition.externalReferenceCode!,
+					]),
 					objectDefinitionExternalReferenceCode1: 'L_ACCOUNT',
 					objectDefinitionExternalReferenceCode2:
 						objectDefinition.externalReferenceCode,
@@ -1177,6 +1186,8 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 
 		await editObjectDetailsPage.goToDetailsTab();
 
+		await editObjectDetailsPage.waitForDetailsFormLoaded();
+
 		await editObjectDetailsPage.labelInput.fill(label);
 
 		await editObjectDetailsPage.publishButton.click();
@@ -1211,6 +1222,8 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 		await editObjectDetailsPage.goto(objectDefinition.label['en_US']);
 
 		await editObjectDetailsPage.goToDetailsTab();
+
+		await editObjectDetailsPage.waitForDetailsFormLoaded();
 
 		await editObjectDetailsPage.selectLabelLanguage('pt_BR');
 
@@ -1247,6 +1260,11 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 
 			await editObjectDetailsPage.goToDetailsTab();
 
+			const originalEntryTitleField =
+				(
+					await editObjectDetailsPage.entryTitleField.textContent()
+				)?.trim() ?? '';
+
 			await editObjectDetailsPage.entryTitleField.click();
 
 			await page
@@ -1262,6 +1280,23 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 			await expect(editObjectDetailsPage.entryTitleField).toContainText(
 				'Screen Name'
 			);
+
+			// User is a system object shared by the whole run, so put its title
+			// field back the way it was found. Left on Screen Name, a later
+			// execution opens the dropdown with that option already selected and
+			// waits on it until the test times out, so the test can otherwise
+			// only pass once per environment.
+
+			await editObjectDetailsPage.entryTitleField.click();
+
+			await page
+				.getByRole('option', {
+					exact: true,
+					name: originalEntryTitleField,
+				})
+				.click();
+
+			await editObjectDetailsPage.saveObjectDefinition();
 		}
 	);
 
@@ -1292,6 +1327,8 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 		await editObjectDetailsPage.goto(objectDefinition.label['en_US']);
 
 		await editObjectDetailsPage.goToDetailsTab();
+
+		await editObjectDetailsPage.waitForDetailsFormLoaded();
 
 		await expect(editObjectDetailsPage.nameInput).toBeDisabled();
 		await expect(editObjectDetailsPage.scopeCombobox).toBeDisabled();
@@ -1350,6 +1387,8 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 		await editObjectDetailsPage.goto(objectDefinition.label['en_US']);
 
 		await editObjectDetailsPage.goToDetailsTab();
+
+		await editObjectDetailsPage.waitForDetailsFormLoaded();
 
 		await editObjectDetailsPage.labelInput.fill(label);
 		await editObjectDetailsPage.pluralLabelInput.fill(pluralLabel);
@@ -1485,6 +1524,8 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 		await editObjectDetailsPage.goto(objectDefinition.label['en_US']);
 
 		await editObjectDetailsPage.goToDetailsTab();
+
+		await editObjectDetailsPage.waitForDetailsFormLoaded();
 
 		const label = 'UpdatedLabel' + getRandomInt();
 
@@ -1875,7 +1916,11 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 					await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
 				relationshipLabel = 'Relationship';
-				relationshipName = 'relationship' + getRandomInt();
+				relationshipName = await getFreshObjectRelationshipName(
+					apiHelpers,
+					['L_ACCOUNT', objectDefinition.externalReferenceCode!],
+					'relationship'
+				);
 
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
 					'L_ACCOUNT',
@@ -1991,6 +2036,8 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 			await editObjectDetailsPage.goto(objectDefinition.label['en_US']);
 
 			await editObjectDetailsPage.goToDetailsTab();
+
+			await editObjectDetailsPage.waitForDetailsFormLoaded();
 
 			await editObjectDetailsPage.labelInput.fill(newLabel);
 			await editObjectDetailsPage.pluralLabelInput.fill(newPluralLabel);
@@ -2390,7 +2437,7 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 				objectDefinition.name
 			);
 
-			expect(
+			await expect(
 				page.getByRole('switch', {name: 'Activate Object'})
 			).not.toBeChecked();
 

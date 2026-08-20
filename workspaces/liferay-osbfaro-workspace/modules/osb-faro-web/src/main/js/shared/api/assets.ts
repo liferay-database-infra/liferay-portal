@@ -1,30 +1,26 @@
 import sendRequest from 'shared/util/request';
+import {AssetObjectTypes} from 'shared/util/constants';
 
 export type TopAssetMetric =
 	| 'downloadsMetric'
 	| 'impressionsMetric'
 	| 'viewsMetric';
 
-export type TopAssetObjectType = 'content' | 'file';
-
 export interface ITopAsset {
 	assetTitle: string;
 	assetType?: string;
-	downloadsMetric: {value: number};
+	downloadsMetric?: {value: number};
 	id: string;
-	impressionsMetric: {value: number};
+	impressionsMetric?: {value: number};
 	mimeType?: string;
-	viewsMetric: {value: number};
+	viewsMetric?: {value: number};
 }
 
 interface IFetchAccountTopAssets {
 	accountId: string;
 	channelId: string;
 	groupId: string;
-
-	// TODO(LPD-91217): confirm `objectType` query param name once backend lands.
-
-	objectType?: TopAssetObjectType;
+	objectType?: AssetObjectTypes;
 	rangeEnd?: string | null;
 	rangeKey?: number | null;
 	rangeStart?: string | null;
@@ -45,6 +41,49 @@ export async function fetchAccountTopAssets({
 		data: {
 			channelId,
 			filter: `accountIds in ('${accountId}')`,
+			pageSize: 5,
+			selectedMetric,
+			sort: `${selectedMetric},desc`,
+			...(objectType && {objectType}),
+			...(rangeKey ? {rangeKey} : {}),
+			...(rangeEnd && rangeStart ? {rangeEnd, rangeStart} : {}),
+		},
+		method: 'GET',
+		path: `contacts/${groupId}/asset-summary`,
+	});
+}
+
+interface IFetchIndividualTopAssets {
+	channelId: string;
+	groupId: string;
+	individualId: string;
+	objectType?: AssetObjectTypes;
+	rangeEnd?: string | null;
+	rangeKey?: number | null;
+	rangeStart?: string | null;
+	selectedMetric: TopAssetMetric;
+}
+
+/**
+ * The individual scope travels in the same `filter` string
+ * `fetchAccountTopAssets` uses for `accountIds`, because the engine resolves
+ * `individualIds` there rather than through a query parameter of its own.
+ */
+
+export async function fetchIndividualTopAssets({
+	channelId,
+	groupId,
+	individualId,
+	objectType,
+	rangeEnd,
+	rangeKey,
+	rangeStart,
+	selectedMetric,
+}: IFetchIndividualTopAssets): Promise<{items: ITopAsset[]}> {
+	return sendRequest({
+		data: {
+			channelId,
+			filter: `individualIds in ('${individualId}')`,
 			pageSize: 5,
 			selectedMetric,
 			sort: `${selectedMetric},desc`,

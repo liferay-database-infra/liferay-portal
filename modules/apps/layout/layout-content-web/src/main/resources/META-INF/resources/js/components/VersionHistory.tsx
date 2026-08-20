@@ -120,18 +120,20 @@ export default function VersionHistory({config}: Props) {
 			return;
 		}
 
-		const confirmed = await openConfirmModal({
-			buttonLabel: Liferay.Language.get('restore'),
-			center: true,
-			status: 'warning',
-			text: Liferay.Language.get(
-				'you-are-about-to-restore-an-older-version-of-the-page.-all-your-unsaved-changes-will-be-lost'
-			),
-			title: Liferay.Language.get('restore-version'),
-		});
+		if (config.layout.status === 'draft') {
+			const confirmed = await openConfirmModal({
+				buttonLabel: Liferay.Language.get('restore'),
+				center: true,
+				status: 'warning',
+				text: Liferay.Language.get(
+					'you-are-about-to-restore-an-older-version-of-the-page.-all-your-unsaved-changes-will-be-lost'
+				),
+				title: Liferay.Language.get('restore-version'),
+			});
 
-		if (!confirmed) {
-			return;
+			if (!confirmed) {
+				return;
+			}
 		}
 
 		const {error} = await PageVersionService.restorePageVersion(
@@ -157,7 +159,9 @@ export default function VersionHistory({config}: Props) {
 			? [{key: CURRENT_KEY, ...config.layout}]
 			: []),
 		...versions
-			.filter(({creator, name}) => matches(name, creator?.name))
+			.filter(({creator, name, version}) =>
+				matches(name, creator?.name, String(version))
+			)
 			.map((version) => ({
 				key: version.externalReferenceCode,
 				name: version.name,

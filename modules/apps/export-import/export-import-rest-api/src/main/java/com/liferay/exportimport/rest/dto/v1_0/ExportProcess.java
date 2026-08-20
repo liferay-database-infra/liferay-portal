@@ -222,7 +222,9 @@ public class ExportProcess implements Serializable {
 	@JsonIgnore
 	private Supplier<Date> _dateModifiedSupplier;
 
-	@io.swagger.v3.oas.annotations.media.Schema
+	@io.swagger.v3.oas.annotations.media.Schema(
+		description = "The export process's error message when it did not end successfully."
+	)
 	public String getErrorMessage() {
 		if (_errorMessageSupplier != null) {
 			errorMessage = _errorMessageSupplier.get();
@@ -256,7 +258,9 @@ public class ExportProcess implements Serializable {
 		};
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The export process's error message when it did not end successfully."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String errorMessage;
 
@@ -636,4 +640,4 @@ public class ExportProcess implements Serializable {
 	private Map<String, Serializable> _extendedProperties;
 
 }
-// LIFERAY-REST-BUILDER-HASH:-524014116
+// LIFERAY-REST-BUILDER-HASH:-1765162398

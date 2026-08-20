@@ -31,6 +31,7 @@ import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.encryptor.EncryptorException;
 import com.liferay.portal.kernel.encryptor.EncryptorUtil;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
@@ -52,6 +53,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.async.Async;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.CompanyConstants;
+import com.liferay.portal.kernel.model.CompanyInfo;
 import com.liferay.portal.kernel.model.Contact;
 import com.liferay.portal.kernel.model.ContactConstants;
 import com.liferay.portal.kernel.model.Group;
@@ -191,9 +193,11 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 	@Override
 	public Company addCompany(Company company) {
+		company = super.addCompany(company);
+
 		_companyInfoPersistence.update(company.getCompanyInfo());
 
-		return super.addCompany(company);
+		return company;
 	}
 
 	/**
@@ -408,7 +412,11 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 							company.setName(name);
 
+							CompanyInfo companyInfo = company.getCompanyInfo();
+
 							company = companyPersistence.update(company);
+
+							_companyInfoPersistence.update(companyInfo);
 						}
 
 						String lowerCaseVirtualHostname =
@@ -646,10 +654,14 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 						company.setName(name);
 						company.setNew(true);
 
+						CompanyInfo companyInfo = company.getCompanyInfo();
+
 						company = companyPersistence.update(company);
 
 						company = updateVirtualHostname(
 							company.getCompanyId(), lowerCaseVirtualHostname);
+
+						_companyInfoPersistence.update(companyInfo);
 
 						return _addDBPartitionCompany(company);
 					});
@@ -1127,9 +1139,13 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 	@Override
 	public Company updateCompany(Company company) {
-		_companyInfoPersistence.update(company.getCompanyInfo());
+		CompanyInfo companyInfo = company.getCompanyInfo();
 
-		return super.updateCompany(company);
+		company = super.updateCompany(company);
+
+		_companyInfoPersistence.update(companyInfo);
+
+		return company;
 	}
 
 	/**
@@ -1168,7 +1184,9 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		validateMaxUsers(maxUsers);
 
-		if (PropsValues.COMPANY_MX_UPDATE) {
+		if (PropsValues.COMPANY_MX_UPDATE &&
+			!DBPartition.isCurrentCompanyRestricted()) {
+
 			validateMx(companyId, mx);
 
 			company.setMx(mx);
@@ -1218,8 +1236,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			String tickerSymbol, String industry, String type, String size)
 		throws PortalException {
 
-		// Company
-
 		virtualHostname = StringUtil.toLowerCase(
 			StringUtil.trim(virtualHostname));
 
@@ -1227,13 +1243,13 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		validateVirtualHost(company.getWebId(), virtualHostname);
 
-		if (PropsValues.COMPANY_MX_UPDATE) {
-			validateMx(companyId, mx);
-		}
-
 		validateName(companyId, name);
 
-		if (PropsValues.COMPANY_MX_UPDATE) {
+		if (PropsValues.COMPANY_MX_UPDATE &&
+			!DBPartition.isCurrentCompanyRestricted()) {
+
+			validateMx(companyId, mx);
+
 			company.setMx(mx);
 		}
 
@@ -1252,11 +1268,15 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		company.setType(type);
 		company.setSize(size);
 
+		CompanyInfo companyInfo = company.getCompanyInfo();
+
 		companyPersistence.update(company);
 
-		// Virtual host
+		company = updateVirtualHostname(companyId, virtualHostname);
 
-		return updateVirtualHostname(companyId, virtualHostname);
+		_companyInfoPersistence.update(companyInfo);
+
+		return company;
 	}
 
 	/**
@@ -1349,7 +1369,9 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		company.setIndexNameNext(indexNameNext);
 
-		return companyPersistence.update(company);
+		_companyInfoPersistence.update(company.getCompanyInfo());
+
+		return company;
 	}
 
 	@Override
@@ -1362,7 +1384,9 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		company.setIndexNameCurrent(indexNameCurrent);
 		company.setIndexNameNext(indexNameNext);
 
-		return companyPersistence.update(company);
+		_companyInfoPersistence.update(company.getCompanyInfo());
+
+		return company;
 	}
 
 	/**
@@ -1582,7 +1606,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 			company.setLogoId(logoId);
 
-			company = companyPersistence.update(company);
+			_companyInfoPersistence.update(company.getCompanyInfo());
 		}
 
 		return company;

@@ -30,7 +30,44 @@ export class ExportImportDataSelectionPage {
 		});
 	}
 
+	async getExportableItems() {
+		await this.waitForContent();
+
+		const exportableItems = new Map<string, number>();
+
+		const labels = await this.section.locator('label').all();
+
+		for (const label of labels) {
+			const countLabel = label
+				.locator('xpath=..')
+				.getByText(/^\d+ Items?$/);
+
+			if ((await countLabel.count()) === 0) {
+				continue;
+			}
+
+			const name = await label.textContent();
+			const count = await countLabel.textContent();
+
+			if (name && count) {
+				exportableItems.set(name.trim(), parseInt(count, 10));
+			}
+		}
+
+		return exportableItems;
+	}
+
+	async uncheckItem(sectionName: string, label: string) {
+		await this.expandSection(sectionName);
+
+		await this.section
+			.getByRole('checkbox', {exact: true, name: label})
+			.uncheck();
+	}
+
 	async selectOnlyObjectDefinition(label: string) {
+		await this.waitForContent();
+
 		const checkboxes = await this.section.getByRole('checkbox').all();
 
 		for (const checkbox of checkboxes) {
@@ -40,5 +77,9 @@ export class ExportImportDataSelectionPage {
 		await this.expandSection('Objects');
 
 		await this.section.getByRole('checkbox', {name: label}).check();
+	}
+
+	async waitForContent() {
+		await this.section.getByRole('checkbox').first().waitFor();
 	}
 }

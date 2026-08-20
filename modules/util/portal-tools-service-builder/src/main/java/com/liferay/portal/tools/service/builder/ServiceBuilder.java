@@ -7321,6 +7321,20 @@ public class ServiceBuilder {
 							alias + "." + column.getDBName());
 					}
 					else {
+						String dbName = column.getDBName();
+
+						if (!name.equals(dbName) &&
+							!_containSpecialCharacter(dbName) &&
+							finderWhere.matches(".*\\b" + dbName + "\\b.*")) {
+
+							throw new IllegalArgumentException(
+								StringBundler.concat(
+									"Finder \"", finderName, "\" of entity \"",
+									entityName, "\" must use \"", name,
+									"\" instead of \"", dbName,
+									"\" in its where clause"));
+						}
+
 						finderWhere = finderWhere.replaceAll(
 							"\\b" + name + "\\b", alias + "." + name);
 						finderDBWhere = finderDBWhere.replaceAll(

@@ -16,21 +16,52 @@ mock_provider "azurerm" {
 		}
 	}
 }
+mock_provider "kubernetes" {}
 override_module {
 	target=module.argocd
 }
-run "should_assemble_the_cluster_identity" {
+run "should_align_the_karpenter_node_pool_with_the_system_machine_type" {
 	assert {
-		condition=join(",", keys(local.cluster_identity)) == "crossplaneDataClientId,crossplaneIamClientId,deploymentName,oidcIssuerUrl,region,resourceGroupName,subscriptionId,tenantId"
-		error_message="The cluster identity must carry exactly the keys the infrastructure provider consumes"
+		condition=one([for requirement in kubernetes_manifest.karpenter_node_pool.manifest.spec.template.spec.requirements : requirement.values if requirement.key == "karpenter.azure.com/sku-name"]) == ["Standard_D16s_v3"]
+		error_message="The Karpenter node pool must use the specified machine type"
 	}
 	assert {
-		condition=local.cluster_identity.deploymentName == "liferay-test"
-		error_message="The cluster identity must carry the deployment name"
+		condition=kubernetes_manifest.karpenter_node_pool.manifest.spec.weight > 0
+		error_message="The Karpenter node pool must have high priority"
 	}
 	assert {
-		condition=local.cluster_identity.region == "eastus"
-		error_message="The cluster identity must carry the deployment region"
+		condition=try(kubernetes_manifest.karpenter_node_pool.manifest.spec.disruption.consolidateAfter, "") != ""
+		error_message="The Karpenter node pool must set a consolidateAfter"
+	}
+	assert {
+		condition=kubernetes_manifest.karpenter_node_pool.manifest.spec.template.spec.nodeClassRef.name == kubernetes_manifest.karpenter_node_class.manifest.metadata.name
+		error_message="The Karpenter node pool must reference the node class this module declares"
+	}
+	command=plan
+	override_data {
+		target=data.azurerm_kubernetes_cluster.aks
+		values={
+			agent_pool_profile=[
+				{
+					name="system"
+					vm_size="Standard_D16s_v3"
+				},
+			]
+		}
+	}
+}
+run "should_assemble_the_deployment_context" {
+	assert {
+		condition=join(",", keys(local.deployment_context)) == "crossplaneDataClientId,crossplaneIamClientId,deploymentName,oidcIssuerUrl,region,resourceGroupName,subscriptionId,tenantId"
+		error_message="The deployment context must carry exactly the keys the infrastructure provider consumes"
+	}
+	assert {
+		condition=local.deployment_context.deploymentName == "liferay-test"
+		error_message="The deployment context must carry the deployment name"
+	}
+	assert {
+		condition=local.deployment_context.region == "eastus"
+		error_message="The deployment context must carry the deployment region"
 	}
 	command=plan
 }
@@ -181,20 +212,20 @@ run "should_wire_the_platform_identities" {
 		error_message="The federated credentials must trust the cluster OIDC issuer"
 	}
 	assert {
-		condition=local.cluster_identity.crossplaneDataClientId == azurerm_user_assigned_identity.crossplane_data.client_id
-		error_message="The cluster identity must carry the Crossplane data identity client ID"
+		condition=local.deployment_context.crossplaneDataClientId == azurerm_user_assigned_identity.crossplane_data.client_id
+		error_message="The deployment context must carry the Crossplane data identity client ID"
 	}
 	assert {
-		condition=local.cluster_identity.crossplaneIamClientId == azurerm_user_assigned_identity.crossplane_iam.client_id
-		error_message="The cluster identity must carry the Crossplane IAM identity client ID"
+		condition=local.deployment_context.crossplaneIamClientId == azurerm_user_assigned_identity.crossplane_iam.client_id
+		error_message="The deployment context must carry the Crossplane IAM identity client ID"
 	}
 	assert {
 		condition=output.external_secrets_client_id == azurerm_user_assigned_identity.external_secrets.client_id
 		error_message="The External Secrets client ID must be published so the bootstrap can annotate the service account"
 	}
 	assert {
-		condition=output.cluster_identity == local.cluster_identity
-		error_message="The cluster identity must be published for the bootstrap to place under clusterIdentity"
+		condition=output.deployment_context == local.deployment_context
+		error_message="The deployment context must be published for the bootstrap to place under deploymentContext"
 	}
 	assert {
 		condition=output.cluster_secret_store_provider == local.cluster_secret_store_provider
@@ -213,11 +244,11 @@ run "should_wire_the_platform_identities" {
 		error_message="The Crossplane IAM identity must hold Role Based Access Control Administrator on the resource group"
 	}
 	assert {
-		condition=data.azurerm_role_definition.key_vault_crypto_service_encryption_user.name == "Key Vault Crypto Service Encryption User" && data.azurerm_role_definition.storage_blob_data_contributor.name == "Storage Blob Data Contributor"
+		condition=data.azurerm_role_definition.key_vault_crypto_service_encryption_user.name == "Key Vault Crypto Service Encryption User" && data.azurerm_role_definition.storage_blob_data_contributor.name == "Storage Blob Data Contributor" && data.azurerm_role_definition.storage_blob_data_reader.name == "Storage Blob Data Reader"
 		error_message="The grantable role allowlist must resolve the intended built in roles by name"
 	}
 	assert {
-		condition=strcontains(azurerm_role_assignment.crossplane_iam_rbac_administrator.condition, basename(data.azurerm_role_definition.key_vault_crypto_service_encryption_user.role_definition_id)) && strcontains(azurerm_role_assignment.crossplane_iam_rbac_administrator.condition, basename(data.azurerm_role_definition.storage_blob_data_contributor.role_definition_id))
+		condition=strcontains(azurerm_role_assignment.crossplane_iam_rbac_administrator.condition, basename(data.azurerm_role_definition.key_vault_crypto_service_encryption_user.role_definition_id)) && strcontains(azurerm_role_assignment.crossplane_iam_rbac_administrator.condition, basename(data.azurerm_role_definition.storage_blob_data_contributor.role_definition_id)) && strcontains(azurerm_role_assignment.crossplane_iam_rbac_administrator.condition, basename(data.azurerm_role_definition.storage_blob_data_reader.role_definition_id))
 		error_message="The role assignment condition must restrict grantable roles to the allowlist"
 	}
 	assert {

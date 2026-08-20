@@ -223,12 +223,6 @@
 		},
 		{
 			"properties": {
-				"commerceSyncEnabledAnalyticsChannelIds": {
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				},
 				"contentRecommenderMostPopularItemsEnabled": {
 					"type": "boolean"
 				},
@@ -278,12 +272,6 @@
 				"pid": {
 					"const": "com.liferay.analytics.settings.configuration.AnalyticsConfiguration"
 				},
-				"previousCommerceSyncEnabledAnalyticsChannelIds": {
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				},
 				"previousContentRecommenderMostPopularItemsEnabled": {
 					"type": "boolean"
 				},
@@ -308,31 +296,19 @@
 					},
 					"type": "array"
 				},
-				"previousSyncedCommerceChannelIds": {
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				},
 				"previousSyncedContactFieldNames": {
 					"items": {
 						"type": "string"
 					},
 					"type": "array"
 				},
-				"previousSyncedOrderFieldNames": {
+				"previousSyncedGroupIds": {
 					"items": {
 						"type": "string"
 					},
 					"type": "array"
 				},
 				"previousSyncedOrganizationIds": {
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				},
-				"previousSyncedProductFieldNames": {
 					"items": {
 						"type": "string"
 					},
@@ -374,18 +350,6 @@
 					},
 					"type": "array"
 				},
-				"syncedCategoryFieldNames": {
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				},
-				"syncedCommerceChannelIds": {
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				},
 				"syncedContactFieldNames": {
 					"items": {
 						"type": "string"
@@ -398,31 +362,7 @@
 					},
 					"type": "array"
 				},
-				"syncedOrderFieldNames": {
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				},
-				"syncedOrderItemFieldNames": {
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				},
 				"syncedOrganizationIds": {
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				},
-				"syncedProductChannelFieldNames": {
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				},
-				"syncedProductFieldNames": {
 					"items": {
 						"type": "string"
 					},
@@ -584,6 +524,20 @@
 		},
 		{
 			"properties": {
+				"callbackURLHostsAllowed": {
+					"description": "List the host names that batch engine task callbacks may request. Leave the list blank for any host. A host that resolves to a local network address also requires local network access.",
+					"items": {
+						"type": "string"
+					},
+					"title": "Callback URL Hosts Allowed",
+					"type": "array"
+				},
+				"callbackURLLocalNetworkAccessEnabled": {
+					"default": false,
+					"description": "Send batch engine task callbacks to a URL that resolves to a local network address. Leave this disabled unless the callbacks require it, because it lets an attacker use the portal to reach services on the internal network.",
+					"title": "Callback URL Local Network Access Enabled",
+					"type": "boolean"
+				},
 				"csvFileColumnDelimiter": {
 					"default": ",",
 					"title": "CSV File Column Delimiter",
@@ -1520,6 +1474,10 @@
 				},
 				"environment": {
 					"type": "string"
+				},
+				"httpTimeout": {
+					"default": 60000,
+					"type": "number"
 				},
 				"integrationKey": {
 					"type": "string"

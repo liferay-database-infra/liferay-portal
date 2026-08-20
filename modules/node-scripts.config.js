@@ -10,7 +10,7 @@
  */
 
 module.exports = {
-	hash: 'e3d7258305f78c43f0207a60292428f2aa54e6dbbb8b8fd60cd9bbefba097241',
+	hash: '24aa43ec5dabe28f0554d2074fa6511856dca3b3251e2c15c8709fb794b3e064',
 	imports: {
 		'@liferay/accessibility-menu-web': [],
 		'@liferay/accessibility-settings-state-web': [],
@@ -230,7 +230,6 @@ module.exports = {
 		'@liferay/layout-type-controller-panel': [],
 		'@liferay/layout-utility-page-terms-of-use': [],
 		'@liferay/liferay-cms-theme': [],
-		'@liferay/liferay-prism-theme': [],
 		'@liferay/locked-items-web': [],
 		'@liferay/login-web': [],
 		'@liferay/map-common': [],
@@ -591,5 +590,6 @@ module.exports = {
 		],
 		'prop-types': ['*', 'bigint', 'default'],
 		'qrcode': ['create', 'toCanvas', 'toString', 'toDataURL'],
+		'ua-parser-js': ['UAParser'],
 	},
 };

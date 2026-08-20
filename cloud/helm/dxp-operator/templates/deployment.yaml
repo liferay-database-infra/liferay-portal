@@ -27,12 +27,18 @@ spec:
                 -   env:
                         -   name: DEBUG
                             value: {{ .Values.debug | quote }}
+                        -   name: DOWNLOAD_POLL_INTERVAL
+                            value: {{ .Values.downloadPollInterval | quote }}
                         -   name: GRACE_PERIOD
                             value: {{ .Values.gracePeriod | quote }}
                         -   name: HEARTBEAT_INTERVAL
                             value: {{ .Values.heartbeatInterval | quote }}
+                        -   name: MARKETPLACE_MOUNT_PATH
+                            value: {{ .Values.marketplace.mountPath | quote }}
                         -   name: METRICS_ADDRESS
                             value: {{ printf ":%d" (int .Values.metrics.port) | quote }}
+                        -   name: OPERATOR_SERVICE_ACCOUNT
+                            value: {{ printf "system:serviceaccount:%s:%s" .Release.Namespace (include "dxp-operator.serviceAccountName" .) | quote }}
                         -   name: PROBE_ADDRESS
                             value: {{ printf ":%d" (int .Values.probes.port) | quote }}
                         -   name: PROVISIONING_BASE_URL
@@ -73,6 +79,10 @@ spec:
                         {{- toYaml . | nindent 24 }}
                     {{- end }}
                     volumeMounts:
+                        {{- if .Values.marketplace.enabled }}
+                        -   mountPath: {{ .Values.marketplace.mountPath }}
+                            name: marketplace
+                        {{- end }}
                         -   mountPath: /tmp/k8s-webhook-server/serving-certs
                             name: webhook-certs
                             readOnly: true
@@ -94,6 +104,11 @@ spec:
                 {{- toYaml . | nindent 16 }}
             {{- end }}
             volumes:
+                {{- if .Values.marketplace.enabled }}
+                -   name: marketplace
+                    persistentVolumeClaim:
+                        claimName: {{ .Values.marketplace.claimName }}
+                {{- end }}
                 -   name: webhook-certs
                     secret:
                         secretName: {{ include "dxp-operator.webhookServiceName" . }}

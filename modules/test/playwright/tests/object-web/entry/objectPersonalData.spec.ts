@@ -13,6 +13,7 @@ import {objectPagesTest} from '../../../fixtures/objectPagesTest';
 import {usersAndOrganizationsPagesTest} from '../../../fixtures/usersAndOrganizationsPagesTest';
 import {getRandomInt} from '../../../utils/getRandomInt';
 import {performUserSwitch, userData} from '../../../utils/performLogin';
+import {waitForAlert} from '../../../utils/waitForAlert';
 import {generateObjectFields} from '../utils/generateObjectFields';
 
 const test = mergeTests(
@@ -108,6 +109,14 @@ test('can anonymize object entries', async ({
 	await personalDataErasurePage.anonymizeMenuItem.click();
 
 	await personalDataErasurePage.anonymizeButton.click();
+
+	// The anonymize confirmation submits through the same queued form
+	// submission as the delete, so leaving for the users list here can kill
+	// it before it commits. The success alerts render after its redirect, one
+	// per anonymized application, so waiting for the first proves the
+	// anonymize reached the server.
+
+	await waitForAlert(page, undefined, {first: true});
 
 	await usersAndOrganizationsPage.goToUsers();
 
@@ -264,6 +273,14 @@ test('can delete object entries via personal data management', async ({
 	await personalDataErasurePage.allSelectedButton.click();
 
 	await personalDataErasurePage.deleteMenuItem.click();
+
+	// The delete confirmation submits its form through a loader that only
+	// queues the submission, so the click resolves while the delete has not
+	// been sent yet, and navigating away here kills it before it commits.
+	// The success alert renders after the delete's own redirect, so waiting
+	// for it proves the delete reached the server.
+
+	await waitForAlert(page);
 
 	await usersAndOrganizationsPage.goToUsers(true);
 

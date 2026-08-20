@@ -88,10 +88,25 @@ public class PIMLinkUtil {
 				companyId);
 	}
 
+	public static List<Map<String, Serializable>> getValuesList(
+			long companyId, FilterFactory<Predicate> filterFactory,
+			String filterString, long groupId)
+		throws PortalException {
+
+		ObjectDefinition objectDefinition = getPIMLinkObjectDefinition(
+			companyId);
+
+		return ObjectEntryLocalServiceUtil.getValuesList(
+			groupId, companyId, 0, objectDefinition.getObjectDefinitionId(),
+			filterFactory.create(filterString, objectDefinition), null,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+	}
+
 	public static List<Map<String, Serializable>>
-			getValuesListByClusterKeyAndType(
-				String clusterKey, long companyId, long groupId, String type,
-				FilterFactory<Predicate> filterFactory)
+			getValuesListByClassExternalReferenceCode(
+				String classExternalReferenceCode, String className,
+				long companyId, FilterFactory<Predicate> filterFactory,
+				long groupId)
 		throws PortalException {
 
 		ObjectDefinition objectDefinition = getPIMLinkObjectDefinition(
@@ -101,8 +116,12 @@ public class PIMLinkUtil {
 			groupId, companyId, 0, objectDefinition.getObjectDefinitionId(),
 			filterFactory.create(
 				StringBundler.concat(
-					"clusterKey eq '", clusterKey, "' and type eq '", type,
-					"'"),
+					"(sourceClassExternalReferenceCode eq '",
+					classExternalReferenceCode, "' and sourceClassName eq '",
+					className, "') or (",
+					"targetClassExternalReferenceCode eq '",
+					classExternalReferenceCode, "' and targetClassName eq '",
+					className, "')"),
 				objectDefinition),
 			null, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
 	}

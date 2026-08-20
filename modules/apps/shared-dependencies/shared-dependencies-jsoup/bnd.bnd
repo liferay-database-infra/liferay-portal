@@ -13,3 +13,4 @@ Import-Package:\
 	org.jsoup.parser,\
 	org.jsoup.safety,\
 	org.jsoup.select
+-fixupmessages: "^Classes found in the wrong directory: \\\\{META-INF/versions/11/";is:=warning

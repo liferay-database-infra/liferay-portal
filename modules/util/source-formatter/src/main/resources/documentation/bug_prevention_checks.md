@@ -70,6 +70,8 @@ IllegalTaglibsCheck | .ftl, .jsp, .jspf, .jspx, .tag, .tpl, or .vm | Finds cases
 [IncorrectFileLocationCheck](check/incorrect_file_location_check.md#incorrectfilelocationcheck) | | Checks that `/src/*/java/` only contains `.java` files. |
 IncorrectFilePathCheck | | Checks that file path contains illegal characters. |
 InnerExceptionClassCheck | .java | Checks that classes that should have either public constructors or inner classes. |
+JDKDynamicAgentLoadingCheck | .action, .eslintignore, .expect, .function, .jelly, .jrxml, .macro, .pom, .prettierignore, .project, .properties, .qti, .sh, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, .xsd, .yaml, or .yml | Checks that dynamic loading of agents is not used. |
+JDKPreviewFeaturesCheck | .action, .eslintignore, .expect, .function, .jelly, .jrxml, .macro, .pom, .prettierignore, .project, .properties, .qti, .sh, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, .xsd, .yaml, or .yml | Checks that preview features are not used. |
 JSCompatibilityCheck | | Checks for JavaScript compatibility. |
 [JSLodashDependencyCheck](check/js_lodash_dependency_check.md#jslodashdependencycheck) | .js or .jsx | Finds incorrect use of `AUI._`. |
 [JSONDeprecatedPackagesCheck](check/json_deprecated_packages_check.md#jsondeprecatedpackagescheck) | .ipynb, .json, or .npmbridgerc | Finds incorrect use of deprecated packages in `package.json` files. |
@@ -153,6 +155,7 @@ JavaReleaseInfoCheck | .java | Validates information in `ReleaseInfo.java`. |
 JavaSQLStatementCheck | .java | Perform several checks in SQL statements. |
 [JavaSeeAnnotationCheck](check/java_see_annotation_check.md#javaseeannotationcheck) | .java | Checks for nested annotations inside `@see`. |
 JavaServiceImplCheck | .java | Ensures that `afterPropertiesSet` and `destroy` methods in `*ServiceImpl` always call the method with the same name in the superclass. |
+JavaServiceImplGetFetchCheck | .java | Flags a get-prefixed service method that returns a nullable fetch result, violating the non-null promise its name implies. |
 [JavaServiceUtilCheck](check/java_service_util_check.md#javaserviceutilcheck) | .java | Checks that there are no calls to `*ServiceImpl` from a `*ServiceUtil` class. |
 JavaSnapshotClassNameCheck | .java | Checks the name of the class that is passed to `Snapshot` constructor. |
 JavaStagedModelDataHandlerCheck | .java | Finds missing method `setMvccVersion` in class extending `BaseStagedModelDataHandler` in module that has `mvcc-enabled=true` in `service.xml`. |
@@ -178,7 +181,6 @@ JavaUpgradeMissingTestCheck | .java | Finds missing integration tests for upgrad
 JavaUpgradeVersionCheck | .java | Verifies that the correct upgrade versions are used in classes that implement `UpgradeStepRegistrator`. |
 JavaVariableTypeCheck | .java | Performs several checks on the modifiers on variables. |
 JavaVerifyUpgradeConnectionCheck | .java | Finds cases where `DataAccess.getConnection` is used (instead of using the available global variable `connection`). |
-JavaVirtualThreadsCheck | .java | Checks that virtual threads are not used (e.g., Executors.newVirtualThreadPerTaskExecutor(), Thread.ofVirtual(), Thread.startVirtualThread()). |
 LFRBuildContentCheck | .lfrbuild-* | Finds `.lfrbuild*` files that are not empty. |
 LPS42924Check | .java | Finds cases where `PortalUtil.getClassName*` (instead of calling `classNameLocalService` directly). |
 LanguageKeysCheck | .java, .js, or .jsx | Finds missing language keys in `Language.properties`. |
@@ -190,6 +192,7 @@ MissingDiamondOperatorCheck | .java, .jsp, .jspf, .jspx, .tag, .tpl, or .vm | Ch
 MissingModifierCheck | .java | Verifies that a method or global variable has a modifier specified. |
 [ModelSetCallWithCompanyIdCheck](check/model_set_call_with_company_id_check.md#modelsetcallwithcompanyidcheck) | .java | Checks for inserting the companyId as part of a varchar field in the database. |
 ModifiedMethodCheck | .java | Checks for incorrect `modified` method with `@Modified` annotation. |
+ModifiedServiceMethodCheck | .java | Checks for incorrect delegation to a sequence of `removedService()` and `addingService()` calls within `modifiedService()`. |
 NestedFieldAnnotationCheck | .java | Checks for `nested.field.support` in the `property` attribute of the `Component` annotation. |
 [NullAssertionInIfStatementCheck](check/null_assertion_in_if_statement_check.md#nullassertioninifstatementcheck) | .java | Verifies that null check should always be first in if-statement. |
 OSGiCommandsCheck | .java | Perform several checks on `*OSGiCommands` classes. |
@@ -249,6 +252,7 @@ URLInputStreamCheck | .java | Checks usages of `URL.openStream()`. |
 UnparameterizedClassCheck | .java, .jsp, .jspf, .jspx, .tag, .tpl, or .vm | Finds `Class` instantiation without generic type. |
 UnwrappedVariableInfoCheck | .java | Finds cases where the variable should be wrapped into an inner class in order to defer array elements initialization. |
 ValidatorIsNullCheck | .java, .jsp, .jspf, .jspx, .tag, .tpl, or .vm | Ensures that only variable of type `Long`, `Serializable` or `String` is passed to method `com.liferay.portal.kernel.util.Validator.isNull`. |
+VirtualThreadsCheck | .java | Checks that virtual threads are not used (e.g., Executors.newVirtualThreadPerTaskExecutor(), Thread.ofVirtual(), Thread.startVirtualThread()). |
 XMLBuildFileCheck | .action, .function, .jelly, .jrxml, .macro, .pom, .project, .properties, .qti, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, or .xsd | Performs several checks on `build.xml`. |
 XMLCheckstyleFileCheck | .action, .function, .jelly, .jrxml, .macro, .pom, .project, .properties, .qti, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, or .xsd | Performs several checks on `checkstyle.xml` file. |
 XMLLiferayWebFileCheck | .action, .function, .jelly, .jrxml, .macro, .pom, .project, .properties, .qti, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, or .xsd | Performs several checks on `liferay-web.xml` file. |
@@ -259,6 +263,7 @@ XMLProjectElementCheck | .action, .function, .jelly, .jrxml, .macro, .pom, .proj
 XMLServiceAutoImportDefaultReferencesCheck | .action, .function, .jelly, .jrxml, .macro, .pom, .project, .properties, .qti, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, or .xsd | Checks that the `auto-import-default-references` in `service.xml` does not equal `false`. |
 [XMLServiceEntityNameCheck](check/xml_service_entity_name_check.md#xmlserviceentitynamecheck) | .action, .function, .jelly, .jrxml, .macro, .pom, .project, .properties, .qti, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, or .xsd | Checks that the `entity name` in `service.xml` does not equal the `package name`. |
 [XMLServiceFinderNameCheck](check/xml_service_finder_name_check.md#xmlservicefindernamecheck) | .action, .function, .jelly, .jrxml, .macro, .pom, .project, .properties, .qti, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, or .xsd | Checks that the `finder name` in `service.xml`. |
+[XMLServiceFinderWhereClauseCheck](check/xml_service_finder_where_clause_check.md#xmlservicefinderwhereclausecheck) | .action, .function, .jelly, .jrxml, .macro, .pom, .project, .properties, .qti, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, or .xsd | Checks that a `finder` `where` clause in `service.xml` uses the entity property name instead of the database column name. |
 XMLServiceMVCCEnabledCheck | .action, .function, .jelly, .jrxml, .macro, .pom, .project, .properties, .qti, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, or .xsd | Checks that the `mvcc-enabled` attribute is always set in `service.xml`. |
 XMLServiceMissingCompanyIdCheck | .action, .function, .jelly, .jrxml, .macro, .pom, .project, .properties, .qti, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, or .xsd | Finds missing `companyId` column in `service.xml`. |
 XMLServiceOrderCheck | .action, .function, .jelly, .jrxml, .macro, .pom, .project, .properties, .qti, .svg, .testcase, .toggle, .tpl, .wsdl, .xlf, .xml, or .xsd | Performs several checks on `service.xml` file. |

@@ -63,6 +63,18 @@ public class ExportProcessRequestSerDes {
 			sb.append(exportProcessRequest.getComments());
 		}
 
+		if (exportProcessRequest.getDateRangeType() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"dateRangeType\": ");
+
+			sb.append("\"");
+			sb.append(exportProcessRequest.getDateRangeType());
+			sb.append("\"");
+		}
+
 		if (exportProcessRequest.getDeletions() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -241,6 +253,15 @@ public class ExportProcessRequestSerDes {
 				"comments", String.valueOf(exportProcessRequest.getComments()));
 		}
 
+		if (exportProcessRequest.getDateRangeType() == null) {
+			map.put("dateRangeType", null);
+		}
+		else {
+			map.put(
+				"dateRangeType",
+				String.valueOf(exportProcessRequest.getDateRangeType()));
+		}
+
 		if (exportProcessRequest.getDeletions() == null) {
 			map.put("deletions", null);
 		}
@@ -359,6 +380,9 @@ public class ExportProcessRequestSerDes {
 			if (Objects.equals(jsonParserFieldName, "comments")) {
 				return false;
 			}
+			else if (Objects.equals(jsonParserFieldName, "dateRangeType")) {
+				return false;
+			}
 			else if (Objects.equals(jsonParserFieldName, "deletions")) {
 				return false;
 			}
@@ -409,6 +433,13 @@ public class ExportProcessRequestSerDes {
 				if (jsonParserFieldValue != null) {
 					exportProcessRequest.setComments(
 						(Boolean)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "dateRangeType")) {
+				if (jsonParserFieldValue != null) {
+					exportProcessRequest.setDateRangeType(
+						ExportProcessRequest.DateRangeType.create(
+							(String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "deletions")) {
@@ -576,4 +607,4 @@ public class ExportProcessRequestSerDes {
 	}
 
 }
-// LIFERAY-REST-BUILDER-HASH:111588564
+// LIFERAY-REST-BUILDER-HASH:-994403164

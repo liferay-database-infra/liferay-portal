@@ -365,13 +365,11 @@ public class AssetLibraryResourceImpl extends BaseAssetLibraryResourceImpl {
 				group = _groupLocalService.updateGroup(group);
 			}
 
-			_updateDLSizeLimitConfiguration(
-				assetLibrary, group.getGroupId(), mimeTypeSizeLimits);
-
 			DepotEntry updatedDepotEntry = _depotEntryService.updateDepotEntry(
 				depotEntry.getDepotEntryId(), nameMap, descriptionMap,
 				_getDepotAppCustomizationMap(
 					depotEntry.getCompanyId(), externalReferenceCode),
+				assetLibrary.getFriendlyURL(),
 				UnicodePropertiesBuilder.create(
 					group.getTypeSettingsProperties(), true
 				).putAll(
@@ -379,7 +377,8 @@ public class AssetLibraryResourceImpl extends BaseAssetLibraryResourceImpl {
 				).build(),
 				serviceContext);
 
-			_updateFriendlyURL(assetLibrary, group.getGroupId());
+			_updateDLSizeLimitConfiguration(
+				assetLibrary, group.getGroupId(), mimeTypeSizeLimits);
 
 			return updatedDepotEntry;
 		}

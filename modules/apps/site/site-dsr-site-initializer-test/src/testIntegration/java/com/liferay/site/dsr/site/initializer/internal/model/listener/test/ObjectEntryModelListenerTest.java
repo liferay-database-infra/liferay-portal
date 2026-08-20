@@ -533,10 +533,8 @@ public class ObjectEntryModelListenerTest {
 		}
 
 		@Override
-		public Long[] getCommerceChannelIds(
-			String analyticsChannelId, long companyId) {
-
-			return new Long[0];
+		public long[] getCommerceChannelIds(long companyId, long[] groupIds) {
+			return new long[0];
 		}
 
 		@Override
@@ -564,14 +562,6 @@ public class ObjectEntryModelListenerTest {
 		@Override
 		public boolean syncedContactSettingsEnabled(long companyId) {
 			return false;
-		}
-
-		@Override
-		public String[] updateCommerceChannelIds(
-			String analyticsChannelId, long companyId,
-			Long[] dataSourceCommerceChannelIds) {
-
-			return new String[0];
 		}
 
 		@Override

@@ -10,9 +10,8 @@ import com.liferay.analytics.reports.rest.dto.v1_0.AssetMetric;
 import com.liferay.analytics.reports.rest.dto.v1_0.Metric;
 import com.liferay.analytics.reports.rest.dto.v1_0.Trend;
 import com.liferay.analytics.reports.rest.resource.v1_0.AssetMetricResource;
-import com.liferay.analytics.settings.configuration.AnalyticsConfiguration;
+import com.liferay.analytics.test.util.AnalyticsCompanyConfigurationTemporarySwapper;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.GroupLocalService;
@@ -21,12 +20,13 @@ import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.MockHttp;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
-import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
+
+import jakarta.ws.rs.ForbiddenException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,6 +56,8 @@ public class AssetMetricResourceTest extends BaseAssetMetricResourceTestCase {
 	@Before
 	@Override
 	public void setUp() throws Exception {
+		super.setUp();
+
 		Group group = _groupLocalService.getGroup(TestPropsValues.getGroupId());
 
 		UnicodeProperties unicodeProperties = group.getTypeSettingsProperties();
@@ -71,6 +73,8 @@ public class AssetMetricResourceTest extends BaseAssetMetricResourceTestCase {
 	@After
 	@Override
 	public void tearDown() throws Exception {
+		super.tearDown();
+
 		UnicodeProperties unicodeProperties =
 			_group.getTypeSettingsProperties();
 
@@ -82,23 +86,22 @@ public class AssetMetricResourceTest extends BaseAssetMetricResourceTestCase {
 	@Override
 	@Test
 	public void testGetGroupAssetMetric() throws Exception {
-		try (CompanyConfigurationTemporarySwapper
-				companyConfigurationTemporarySwapper =
-					new CompanyConfigurationTemporarySwapper(
-						TestPropsValues.getCompanyId(),
-						AnalyticsConfiguration.class.getName(),
-						HashMapDictionaryBuilder.<String, Object>put(
-							"liferayAnalyticsDataSourceId",
-							RandomTestUtil.nextLong()
-						).put(
-							"liferayAnalyticsEnableAllGroupIds", true
-						).put(
-							"liferayAnalyticsFaroBackendSecuritySignature",
-							RandomTestUtil.randomString()
-						).put(
-							"liferayAnalyticsFaroBackendURL",
-							"http://" + RandomTestUtil.randomString()
-						).build())) {
+		_testGetGroupAssetMetric();
+		_testGetGroupAssetMetricWithAnalyticsCloudNotConnected();
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLGetGroupAssetMetric() throws Exception {
+		super.testGraphQLGetGroupAssetMetric();
+	}
+
+	private void _testGetGroupAssetMetric() throws Exception {
+		try (AnalyticsCompanyConfigurationTemporarySwapper
+				analyticsCompanyConfigurationTemporarySwapper =
+					new AnalyticsCompanyConfigurationTemporarySwapper(
+						TestPropsValues.getCompanyId())) {
 
 			ReflectionTestUtil.setFieldValue(
 				_assetMetricResource, "_http",
@@ -186,11 +189,12 @@ public class AssetMetricResourceTest extends BaseAssetMetricResourceTestCase {
 		}
 	}
 
-	@Ignore
-	@Override
-	@Test
-	public void testGraphQLGetGroupAssetMetric() throws Exception {
-		super.testGraphQLGetGroupAssetMetric();
+	private void _testGetGroupAssetMetricWithAnalyticsCloudNotConnected() {
+		Assert.assertThrows(
+			ForbiddenException.class,
+			() -> _assetMetricResource.getGroupAssetMetric(
+				TestPropsValues.getGroupId(), "blog", "1", "ALL", 30,
+				new String[] {"viewsMetric"}));
 	}
 
 	@Inject

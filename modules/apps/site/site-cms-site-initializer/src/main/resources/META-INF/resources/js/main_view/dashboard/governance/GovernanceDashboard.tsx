@@ -8,13 +8,26 @@ import React from 'react';
 import {GovernanceContextProvider} from './GovernanceContext';
 import {AttentionRequired} from './components/AttentionRequired';
 import {Filters} from './components/Filters';
+import {GovernanceHealth} from './components/GovernanceHealth';
+import {NeedsReview} from './components/NeedsReview';
+import {GovernanceAdditionalProps} from './types';
 
-export default function GovernanceDashboard() {
+import '../../../../css/dashboard/GovernanceDashboard.scss';
+
+export default function GovernanceDashboard({
+	additionalProps,
+}: {
+	additionalProps: GovernanceAdditionalProps;
+}) {
 	return (
 		<GovernanceContextProvider>
 			<Filters />
 
+			<GovernanceHealth />
+
 			<AttentionRequired />
+
+			<NeedsReview additionalProps={additionalProps} />
 		</GovernanceContextProvider>
 	);
 }

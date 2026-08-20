@@ -95,6 +95,10 @@ public class ProvisioningClientImpl implements ProvisioningClient {
 			throw new NoSuchProductPurchaseException();
 		}
 
+		if (!_isConsumableProductPurchase(productPurchase)) {
+			return;
+		}
+
 		productConsumption.setEndDate(productPurchase.getEndDate());
 		productConsumption.setExternalLinks(
 			new ExternalLink[] {_createExternalLink(date, groupId)});
@@ -234,23 +238,23 @@ public class ProvisioningClientImpl implements ProvisioningClient {
 
 				if (corpProjectUuid.endsWith("BusinessLXCTest")) {
 					osbOfferingEntry.setProductEntryId(
-						ProductConstants.LXC_BUSINESS_PRODUCT_ENTRY_ID);
+						ProductConstants.PRODUCT_ENTRY_ID_LXC_BUSINESS);
 				}
 				else if (corpProjectUuid.endsWith("BusinessTest")) {
 					osbOfferingEntry.setProductEntryId(
-						ProductConstants.BUSINESS_PRODUCT_ENTRY_ID);
+						ProductConstants.PRODUCT_ENTRY_ID_BUSINESS);
 				}
 				else if (corpProjectUuid.endsWith("EnterpriseLXCTest")) {
 					osbOfferingEntry.setProductEntryId(
-						ProductConstants.LXC_ENTERPRISE_PRODUCT_ENTRY_ID);
+						ProductConstants.PRODUCT_ENTRY_ID_LXC_ENTERPRISE);
 				}
 				else if (corpProjectUuid.endsWith("EnterpriseTest")) {
 					osbOfferingEntry.setProductEntryId(
-						ProductConstants.ENTERPRISE_PRODUCT_ENTRY_ID);
+						ProductConstants.PRODUCT_ENTRY_ID_ENTERPRISE);
 				}
 				else if (corpProjectUuid.endsWith("ProLXCTest")) {
 					osbOfferingEntry.setProductEntryId(
-						ProductConstants.LXC_PRO_PRODUCT_ENTRY_ID);
+						ProductConstants.PRODUCT_ENTRY_ID_LXC_PRO);
 				}
 
 				osbOfferingEntry.setQuantity(1);
@@ -270,20 +274,20 @@ public class ProvisioningClientImpl implements ProvisioningClient {
 
 						contactsOSBOfferingEntry.setProductEntryId(
 							ProductConstants.
-								BUSINESS_CONTACTS_PRODUCT_ENTRY_ID);
+								PRODUCT_ENTRY_ID_BUSINESS_CONTACTS);
 						trackedPagesOSBOfferingEntry.setProductEntryId(
 							ProductConstants.
-								BUSINESS_TRACKED_PAGES_PRODUCT_ENTRY_ID);
+								PRODUCT_ENTRY_ID_BUSINESS_TRACKED_PAGES);
 					}
 					else if (corpProjectUuid.endsWith("EnterpriseLXCTest") ||
 							 corpProjectUuid.endsWith("EnterpriseTest")) {
 
 						contactsOSBOfferingEntry.setProductEntryId(
 							ProductConstants.
-								ENTERPRISE_CONTACTS_PRODUCT_ENTRY_ID);
+								PRODUCT_ENTRY_ID_ENTERPRISE_CONTACTS);
 						trackedPagesOSBOfferingEntry.setProductEntryId(
 							ProductConstants.
-								ENTERPRISE_TRACKED_PAGES_PRODUCT_ENTRY_ID);
+								PRODUCT_ENTRY_ID_ENTERPRISE_TRACKED_PAGES);
 					}
 
 					contactsOSBOfferingEntry.setQuantity(1);
@@ -312,6 +316,10 @@ public class ProvisioningClientImpl implements ProvisioningClient {
 
 		if (productPurchase == null) {
 			throw new NoSuchProductPurchaseException();
+		}
+
+		if (!_isConsumableProductPurchase(productPurchase)) {
+			return true;
 		}
 
 		List<ProductConsumption> productConsumptions =
@@ -488,6 +496,14 @@ public class ProvisioningClientImpl implements ProvisioningClient {
 		}
 
 		return false;
+	}
+
+	private boolean _isConsumableProductPurchase(
+		ProductPurchase productPurchase) {
+
+		return !Objects.equals(
+			productPurchase.getProductKey(),
+			ProductConstants.PRODUCT_ENTRY_ID_DIGITAL_SALES_ROOM);
 	}
 
 	@Reference

@@ -26,6 +26,7 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	property = {
+		"frontend.data.set.name=" + PIMFDSNames.PRODUCT_RELATIONSHIP_SELECTOR,
 		"frontend.data.set.name=" + PIMFDSNames.PRODUCTS,
 		"service.ranking:Integer=100"
 	},

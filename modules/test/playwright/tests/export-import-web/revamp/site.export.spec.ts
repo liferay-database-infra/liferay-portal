@@ -42,6 +42,68 @@ test(
 );
 
 test(
+	'Can manage an export process from the processes list',
+	{tag: '@LPD-100541'},
+	async ({exportImportPage, page, site}) => {
+		await exportImportPage.goToExport(site.friendlyUrlPath);
+
+		const name = `MyExport-${getRandomString()}`;
+
+		await exportImportPage.export(name);
+
+		await expect(exportImportPage.taskStatusLabel(name)).toBeVisible();
+
+		await exportImportPage.actionsButton(name).click();
+
+		await expect(exportImportPage.relaunchMenuItem).toBeVisible();
+		await expect(exportImportPage.downloadMenuItem).toBeVisible();
+		await expect(exportImportPage.clearMenuItem).toBeVisible();
+
+		let confirmationMessage = '';
+
+		page.once('dialog', async (dialog) => {
+			confirmationMessage = dialog.message();
+
+			await dialog.accept();
+		});
+
+		await exportImportPage.clearMenuItem.click();
+
+		await expect(page.getByRole('row', {name})).toBeHidden();
+
+		expect(confirmationMessage).toContain('Are you sure');
+	}
+);
+
+test(
+	'Can sort the export processes list by title',
+	{tag: ['@LPD-100541', '@LRQA-28935']},
+	async ({exportImportPage, site}) => {
+		await exportImportPage.goToExport(site.friendlyUrlPath);
+
+		const name1 = `MyExport-${getRandomString()}`;
+
+		await exportImportPage.export(name1);
+
+		await expect(exportImportPage.taskStatusLabel(name1)).toBeVisible();
+
+		const name2 = `MyExport-${getRandomString()}`;
+
+		await exportImportPage.export(name2);
+
+		await expect(exportImportPage.taskStatusLabel(name2)).toBeVisible();
+
+		await exportImportPage.sortBy('Title');
+		let values = await exportImportPage.getColumnValues('Title');
+		expect(values).toEqual([...values].sort((a, b) => a.localeCompare(b)));
+
+		await exportImportPage.sortBy('Title');
+		values = await exportImportPage.getColumnValues('Title');
+		expect(values).toEqual([...values].sort((a, b) => b.localeCompare(a)));
+	}
+);
+
+test(
 	'Can select comments and ratings at site level',
 	{tag: '@LPD-57655'},
 	async ({

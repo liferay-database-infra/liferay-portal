@@ -22,6 +22,7 @@ import {getRandomInt} from '../../../utils/getRandomInt';
 import getRandomString from '../../../utils/getRandomString';
 import {waitForAlert} from '../../../utils/waitForAlert';
 import {generateObjectFields} from '../utils/generateObjectFields';
+import {getFreshObjectRelationshipName} from '../utils/getFreshObjectRelationshipName';
 
 export const test = mergeTests(
 	dataApiHelpersTest,
@@ -42,8 +43,12 @@ test.describe('Manage object relationships through Model Builder', () => {
 			apiHelpers,
 			modelBuilderDiagramPage,
 			page,
-			viewObjectDefinitionsPage,
 		}) => {
+			const objectFolder =
+				await apiHelpers.objectAdmin.postRandomObjectFolder();
+
+			apiHelpers.data.push({id: objectFolder.id, type: 'objectFolder'});
+
 			const objectDefinitionAPIClient =
 				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
 
@@ -57,6 +62,8 @@ test.describe('Manage object relationships through Model Builder', () => {
 					},
 					name: 'Address',
 					objectFields: [],
+					objectFolderExternalReferenceCode:
+						objectFolder.externalReferenceCode,
 					pluralLabel: {
 						en_US: 'Custom Postal Addresses',
 					},
@@ -72,17 +79,22 @@ test.describe('Manage object relationships through Model Builder', () => {
 				type: 'objectDefinition',
 			});
 
-			const {body: commerceOrderDefinition} =
-				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
-					'L_COMMERCE_ORDER'
-				);
+			const partnerObjectDefinition =
+				await apiHelpers.objectAdmin.postRandomObjectDefinition({
+					objectFolderExternalReferenceCode:
+						objectFolder.externalReferenceCode,
+					status: {code: 0},
+				});
+
+			apiHelpers.data.push({
+				id: partnerObjectDefinition.id,
+				type: 'objectDefinition',
+			});
 
 			await test.step('navigate to model builder and display all nodes', async () => {
-				await viewObjectDefinitionsPage.goto();
-
-				await viewObjectDefinitionsPage.openObjectFolder('Default');
-
-				await viewObjectDefinitionsPage.viewInModelBuilderButton.click();
+				await modelBuilderDiagramPage.goto({
+					objectFolderName: objectFolder.name,
+				});
 
 				await modelBuilderDiagramPage.toggleSidebarsButton.click();
 
@@ -92,10 +104,10 @@ test.describe('Manage object relationships through Model Builder', () => {
 			await test.step('assert that creating a relationship with a custom object named Address as the source node is allowed', async () => {
 				await modelBuilderDiagramPage.connectObjectDefinitionsNodeHandles(
 					customPostalAddressDefinition.id,
-					commerceOrderDefinition.id
+					partnerObjectDefinition.id
 				);
 
-				expect(
+				await expect(
 					addNewObjectRelationshipModalPage.modalHeader
 				).toBeVisible();
 			});
@@ -104,11 +116,11 @@ test.describe('Manage object relationships through Model Builder', () => {
 				await page.getByRole('button', {name: 'Cancel'}).click();
 
 				await modelBuilderDiagramPage.connectObjectDefinitionsNodeHandles(
-					commerceOrderDefinition.id,
+					partnerObjectDefinition.id,
 					customPostalAddressDefinition.id
 				);
 
-				expect(
+				await expect(
 					addNewObjectRelationshipModalPage.modalHeader
 				).toBeVisible();
 			});
@@ -151,7 +163,10 @@ test.describe('Manage object relationships through Model Builder', () => {
 			label: {
 				en_US: 'objectRelationshipLabel' + getRandomInt(),
 			},
-			name: 'objectRelationshipName' + Math.floor(Math.random() * 99),
+			name: await getFreshObjectRelationshipName(apiHelpers, [
+				objectDefinition1.externalReferenceCode!,
+				objectDefinition2.externalReferenceCode!,
+			]),
 			objectDefinitionExternalReferenceCode1:
 				objectDefinition1.externalReferenceCode,
 			objectDefinitionExternalReferenceCode2:
@@ -257,15 +272,29 @@ test.describe('Manage object relationships through Model Builder', () => {
 			type: 'One to Many',
 		});
 
-		await page.waitForTimeout(500);
+		// The badge showing the relationship count is rebuilt from a refetch
+		// the second relationship's save schedules, so right after the save the
+		// diagram still shows the single relationship's edge. That edge's label
+		// is random digits, so filtering edges by the text 2 matches it whenever
+		// the label contains a 2, and the click opens the sidebar instead of the
+		// menu, which only a click on the badge itself renders. Match the badge
+		// by its exact text, which the label cannot equal, and wait for it: the
+		// badge appearing is the save's rebuild finishing.
 
-		await modelBuilderDiagramPage.clickObjectRelationshipEdge('2');
+		const manyRelationshipsEdge =
+			modelBuilderDiagramPage.objectRelationshipEdges.filter({
+				has: page.getByText('2', {exact: true}),
+			});
 
-		expect(
+		await expect(manyRelationshipsEdge).toBeVisible();
+
+		await manyRelationshipsEdge.click();
+
+		await expect(
 			page.getByRole('menuitem', {name: objectRelationship1Label})
 		).toBeVisible();
 
-		expect(
+		await expect(
 			page.getByRole('menuitem', {name: objectRelationship2Label})
 		).toBeVisible();
 	});
@@ -319,8 +348,13 @@ test.describe('Manage object relationships through Model Builder', () => {
 
 		const objectRelationshipLabel =
 			'objectRelationshipLabel' + getRandomInt();
-		const objectRelationshipName =
-			'objectRelationshipName' + Math.floor(Math.random() * 99);
+		const objectRelationshipName = await getFreshObjectRelationshipName(
+			apiHelpers,
+			[
+				objectDefinition1.externalReferenceCode!,
+				objectDefinition2.externalReferenceCode!,
+			]
+		);
 
 		const objectRelationshipData: Partial<ObjectRelationship> = {
 			label: {
@@ -682,8 +716,10 @@ test.describe('Manage object relationships through Model Builder', () => {
 		];
 
 		for (const {label, type} of objectRelationshipDetails) {
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[objectDefinition.externalReferenceCode!]
+			);
 			const objectRelationshipData: Partial<ObjectRelationship> = {
 				label: {
 					en_US: label,
@@ -784,8 +820,13 @@ test.describe('Manage object relationships through Model Builder', () => {
 
 		const objectRelationshipLabel =
 			'objectRelationshipLabel' + getRandomInt();
-		const objectRelationshipName =
-			'objectRelationshipName' + Math.floor(Math.random() * 99);
+		const objectRelationshipName = await getFreshObjectRelationshipName(
+			apiHelpers,
+			[
+				objectDefinition1.externalReferenceCode!,
+				objectDefinition2.externalReferenceCode!,
+			]
+		);
 
 		const objectRelationshipAPIClient = await apiHelpers.buildRestClient(
 			ObjectRelationshipAPI
@@ -902,8 +943,13 @@ test.describe('Manage object relationships through Model Builder', () => {
 
 		const objectRelationshipLabel =
 			'objectRelationshipLabel' + getRandomInt();
-		const objectRelationshipName =
-			'objectRelationshipName' + Math.floor(Math.random() * 99);
+		const objectRelationshipName = await getFreshObjectRelationshipName(
+			apiHelpers,
+			[
+				objectDefinition1.externalReferenceCode!,
+				objectDefinition2.externalReferenceCode!,
+			]
+		);
 
 		const objectRelationshipData: Partial<ObjectRelationship> = {
 			label: {
@@ -1012,9 +1058,10 @@ test.describe('Manage object relationships through Model Builder', () => {
 						label: {
 							en_US: 'objectRelationshipLabel' + getRandomInt(),
 						},
-						name:
-							'objectRelationshipName' +
-							Math.floor(Math.random() * 99),
+						name: await getFreshObjectRelationshipName(apiHelpers, [
+							objectDefinition1.externalReferenceCode!,
+							objectDefinition2.externalReferenceCode!,
+						]),
 						objectDefinitionExternalReferenceCode1:
 							objectDefinition1.externalReferenceCode,
 						objectDefinitionExternalReferenceCode2:
@@ -1102,8 +1149,13 @@ test.describe('Manage object relationships through Model Builder', () => {
 
 			const objectRelationshipLabel =
 				'objectRelationshipLabel' + getRandomInt();
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[
+					objectDefinition1.externalReferenceCode!,
+					objectDefinition2.externalReferenceCode!,
+				]
+			);
 
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
@@ -1219,8 +1271,13 @@ test.describe('Manage object relationships through Model Builder', () => {
 
 		const objectRelationshipLabel =
 			'objectRelationshipLabel' + getRandomInt();
-		const objectRelationshipName =
-			'objectRelationshipName' + Math.floor(Math.random() * 99);
+		const objectRelationshipName = await getFreshObjectRelationshipName(
+			apiHelpers,
+			[
+				objectDefinition1.externalReferenceCode!,
+				objectDefinition2.externalReferenceCode!,
+			]
+		);
 
 		const objectRelationshipAPIClient = await apiHelpers.buildRestClient(
 			ObjectRelationshipAPI
@@ -1409,7 +1466,14 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 						'L_ACCOUNT',
 						{
 							label: {en_US: 'Relationship Account'},
-							name: 'relationshipAccount' + getRandomInt(),
+							name: await getFreshObjectRelationshipName(
+								apiHelpers,
+								[
+									'L_ACCOUNT',
+									objectDefinition.externalReferenceCode!,
+								],
+								'relationshipAccount'
+							),
 							objectDefinitionExternalReferenceCode1: 'L_ACCOUNT',
 							objectDefinitionExternalReferenceCode2:
 								objectDefinition.externalReferenceCode,
@@ -1581,7 +1645,10 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 			label: {
 				en_US: 'objectRelationshipLabel' + getRandomInt(),
 			},
-			name: 'objectRelationshipName' + Math.floor(Math.random() * 99),
+			name: await getFreshObjectRelationshipName(apiHelpers, [
+				'L_ACCOUNT',
+				objectDefinition.externalReferenceCode!,
+			]),
 			objectDefinitionExternalReferenceCode2:
 				objectDefinition.externalReferenceCode,
 			type: 'oneToMany',
@@ -1724,7 +1791,14 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 			});
 
 			const relationshipLabel = `Relationship${getRandomInt()}`;
-			const relationshipName = `relationship${getRandomInt()}`;
+			const relationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[
+					objectDefinition1.externalReferenceCode!,
+					objectDefinition2.externalReferenceCode!,
+				],
+				'relationship'
+			);
 
 			await (
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI)
@@ -1793,7 +1867,14 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 					objectDefinition1.externalReferenceCode,
 					{
 						label: {en_US: relationshipLabel},
-						name: `relationship${getRandomInt()}`,
+						name: await getFreshObjectRelationshipName(
+							apiHelpers,
+							[
+								objectDefinition1.externalReferenceCode!,
+								objectDefinition2.externalReferenceCode!,
+							],
+							'relationship'
+						),
 						objectDefinitionExternalReferenceCode2:
 							objectDefinition2.externalReferenceCode,
 						objectDefinitionId2: objectDefinition2.id,
@@ -1864,7 +1945,14 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 					objectDefinition1.externalReferenceCode,
 					{
 						label: {en_US: relationshipLabel},
-						name: `viewRelationship${getRandomInt()}`,
+						name: await getFreshObjectRelationshipName(
+							apiHelpers,
+							[
+								objectDefinition1.externalReferenceCode!,
+								objectDefinition2.externalReferenceCode!,
+							],
+							'viewRelationship'
+						),
 						objectDefinitionExternalReferenceCode2:
 							objectDefinition2.externalReferenceCode,
 						objectDefinitionId2: objectDefinition2.id,
@@ -1916,7 +2004,14 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
 			const relationshipLabel = `Relationship${getRandomInt()}`;
-			const relationshipName = `relationship${getRandomInt()}`;
+			const relationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[
+					objectDefinition1.externalReferenceCode!,
+					objectDefinition2.externalReferenceCode!,
+				],
+				'relationship'
+			);
 
 			const {body: objectRelationship} =
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
@@ -2020,7 +2115,11 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 					objectDefinition.externalReferenceCode,
 					{
 						label: {en_US: `Relationship${getRandomInt()}`},
-						name: `relationship${getRandomInt()}`,
+						name: await getFreshObjectRelationshipName(
+							apiHelpers,
+							[objectDefinition.externalReferenceCode!],
+							'relationship'
+						),
 						objectDefinitionExternalReferenceCode1:
 							objectDefinition.externalReferenceCode,
 						objectDefinitionExternalReferenceCode2:
@@ -2223,7 +2322,14 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-			const relationshipName = `relationship${getRandomInt()}`;
+			const relationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[
+					objectDefinition1.externalReferenceCode!,
+					objectDefinition2.externalReferenceCode!,
+				],
+				'relationship'
+			);
 
 			await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
 				objectDefinition1.externalReferenceCode,
@@ -2428,7 +2534,14 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 					objectDefinition1.externalReferenceCode,
 					{
 						label: {en_US: `Relationship${getRandomInt()}`},
-						name: `relationship${getRandomInt()}`,
+						name: await getFreshObjectRelationshipName(
+							apiHelpers,
+							[
+								objectDefinition1.externalReferenceCode!,
+								objectDefinition2.externalReferenceCode!,
+							],
+							'relationship'
+						),
 						objectDefinitionExternalReferenceCode2:
 							objectDefinition2.externalReferenceCode,
 						objectDefinitionId2: objectDefinition2.id,
@@ -2544,7 +2657,14 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 					objectDefinition1.externalReferenceCode,
 					{
 						label: {en_US: `Relationship${getRandomInt()}`},
-						name: `relationship${getRandomInt()}`,
+						name: await getFreshObjectRelationshipName(
+							apiHelpers,
+							[
+								objectDefinition1.externalReferenceCode!,
+								objectDefinition2.externalReferenceCode!,
+							],
+							'relationship'
+						),
 						objectDefinitionExternalReferenceCode2:
 							objectDefinition2.externalReferenceCode,
 						objectDefinitionId2: objectDefinition2.id,
@@ -2615,7 +2735,14 @@ test.describe('Manage object relationships through Objects Admin UI', () => {
 				const objectRelationshipAPIClient =
 					await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-				relationshipName = 'relationship' + getRandomInt();
+				relationshipName = await getFreshObjectRelationshipName(
+					apiHelpers,
+					[
+						objectDefinition1.externalReferenceCode!,
+						objectDefinition2.externalReferenceCode!,
+					],
+					'relationship'
+				);
 
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
 					objectDefinition1.externalReferenceCode!,
@@ -2739,8 +2866,10 @@ test.describe('Manage object relationships with system objects', () => {
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[objectDefinition.externalReferenceCode!, 'L_USER']
+			);
 
 			const {body: objectRelationship} =
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
@@ -2797,21 +2926,8 @@ test.describe('Manage object relationships with system objects', () => {
 			);
 			await objectLayoutsPage.setObjectLayoutAsDefault();
 
-			const saveButton = page
-				.frameLocator('iframe')
-				.getByRole('button', {name: 'Save'})
-				.first();
-
-			await expect(saveButton).toBeVisible();
-
-			const layoutSavedPromise = page.waitForResponse(
-				(response) =>
-					response.url().includes('/object-layouts/') &&
-					response.request().method() === 'PUT'
-			);
-
-			await saveButton.dispatchEvent('click');
-			await layoutSavedPromise;
+			const {reload} =
+				await objectLayoutsPage.saveObjectLayoutReturningReload();
 
 			const restPath = `c/${objectDefinition.name.toLowerCase()}s`;
 
@@ -2824,6 +2940,11 @@ test.describe('Manage object relationships with system objects', () => {
 				{[textFieldName]: 'Entry B'},
 				restPath
 			);
+
+			// The layout save's reload has had the entry seeding to land in;
+			// consume it before the first navigation.
+
+			await reload;
 
 			const relateEntryToBothUsers = async (entryLabel: string) => {
 				await viewObjectEntriesPage.goto(objectEntriesClassName);
@@ -2929,7 +3050,11 @@ test.describe('Manage object relationships with system objects', () => {
 					await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
 				relationshipLabel = 'Relationship' + getRandomInt();
-				relationshipName = 'relationship' + getRandomInt();
+				relationshipName = await getFreshObjectRelationshipName(
+					apiHelpers,
+					['L_USER', objectDefinition.externalReferenceCode!],
+					'relationship'
+				);
 
 				const {body: objectRelationship} =
 					await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
@@ -3030,8 +3155,10 @@ test.describe('Manage object relationships with system objects', () => {
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[objectDefinition.externalReferenceCode!, 'L_USER']
+			);
 
 			const {body: objectRelationship} =
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
@@ -3118,6 +3245,17 @@ test.describe('Manage object relationships with system objects', () => {
 				await relationshipTab.click();
 			};
 
+			const getRelatedUserRow = (userAccount: TUserAccount) =>
+				page
+					.getByRole('row')
+					.filter({
+						hasText: new RegExp(
+							`${userAccount.givenName}|${userAccount.id}`,
+							'i'
+						),
+					})
+					.first();
+
 			const selectExistingRelationshipEntry = async (
 				userAccount: TUserAccount
 			) => {
@@ -3130,18 +3268,19 @@ test.describe('Manage object relationships with system objects', () => {
 
 				await expect(relationshipEntry).toBeVisible();
 				await relationshipEntry.click();
-			};
 
-			const getRelatedUserRow = (userAccount: TUserAccount) =>
-				page
-					.getByRole('row')
-					.filter({
-						hasText: new RegExp(
-							`${userAccount.givenName}|${userAccount.id}`,
-							'i'
-						),
-					})
-					.first();
+				// Selecting relates the user and closes the picker, and the
+				// relating is still in flight when the click resolves. The next
+				// step opens the tab with a goto, which tears down the frame the
+				// post belongs to and cancels it. Wait for the picker to go and
+				// the row to appear.
+
+				await expect(
+					page.locator('iframe[title="Select"]')
+				).toBeHidden();
+
+				await expect(getRelatedUserRow(userAccount)).toBeVisible();
+			};
 
 			for (const entryLabel of ['Entry A', 'Entry B']) {
 				await openEntryRelationshipTab(entryLabel);
@@ -3191,7 +3330,11 @@ test.describe('Manage object relationships with system objects', () => {
 					'L_USER',
 					{
 						label: {en_US: relationshipLabel},
-						name: 'relationship' + getRandomInt(),
+						name: await getFreshObjectRelationshipName(
+							apiHelpers,
+							['L_USER', objectDefinition.externalReferenceCode!],
+							'relationship'
+						),
 						objectDefinitionExternalReferenceCode2:
 							objectDefinition.externalReferenceCode,
 						objectDefinitionId2: objectDefinition.id,
@@ -3272,7 +3415,14 @@ test.describe('Manage object relationship entries', () => {
 						objectDefinition1.externalReferenceCode,
 						{
 							label: {en_US: 'Relationship'},
-							name: 'relationship' + getRandomInt(),
+							name: await getFreshObjectRelationshipName(
+								apiHelpers,
+								[
+									objectDefinition1.externalReferenceCode!,
+									objectDefinition2.externalReferenceCode!,
+								],
+								'relationship'
+							),
 							objectDefinitionExternalReferenceCode1:
 								objectDefinition1.externalReferenceCode,
 							objectDefinitionExternalReferenceCode2:
@@ -3323,18 +3473,10 @@ test.describe('Manage object relationship entries', () => {
 						'Relationship'
 					);
 
-					const saveButton = objectLayoutsPage.iframeLocator
-						.getByRole('button', {name: 'Save'})
-						.first();
+					const {reload} =
+						await objectLayoutsPage.saveObjectLayoutReturningReload();
 
-					await expect(saveButton).toBeVisible();
-
-					await saveButton.dispatchEvent('click');
-
-					await waitForAlert(
-						page,
-						'Success:The object layout was updated successfully'
-					);
+					await reload;
 				};
 
 				await setupLayout(objectDefinition1, 'textField');
@@ -3473,8 +3615,13 @@ test.describe('Manage object relationship entries', () => {
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[
+					objectDefinition1.externalReferenceCode!,
+					objectDefinition2.externalReferenceCode!,
+				]
+			);
 
 			const {body: objectRelationship} =
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
@@ -3520,16 +3667,8 @@ test.describe('Manage object relationship entries', () => {
 				'Relationship'
 			);
 
-			const saveButton = objectLayoutsPage.iframeLocator
-				.getByRole('button', {name: 'Save'})
-				.first();
-
-			await expect(saveButton).toBeVisible();
-			await saveButton.dispatchEvent('click');
-			await waitForAlert(
-				page,
-				'Success:The object layout was updated successfully'
-			);
+			const {reload} =
+				await objectLayoutsPage.saveObjectLayoutReturningReload();
 
 			const restPath1 = `c/${objectDefinition1.name.toLowerCase()}s`;
 			const restPath2 = `c/${objectDefinition2.name.toLowerCase()}s`;
@@ -3552,6 +3691,11 @@ test.describe('Manage object relationship entries', () => {
 					relatedExternalReferenceCode: entryB.externalReferenceCode,
 				}
 			);
+
+			// The layout save's reload has had the entry seeding to land in;
+			// consume it before the first navigation.
+
+			await reload;
 
 			const openObjectEntry = async (
 				className: string,
@@ -3635,8 +3779,10 @@ test.describe('Manage object relationship entries', () => {
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[objectDefinition.externalReferenceCode!]
+			);
 
 			const {body: objectRelationship} =
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
@@ -3685,17 +3831,8 @@ test.describe('Manage object relationship entries', () => {
 				'Relationship'
 			);
 
-			const saveButton = page
-				.frameLocator('iframe')
-				.getByRole('button', {name: 'Save'})
-				.first();
-
-			await expect(saveButton).toBeVisible();
-			await saveButton.dispatchEvent('click');
-			await waitForAlert(
-				page,
-				'Success:The object layout was updated successfully'
-			);
+			const {reload} =
+				await objectLayoutsPage.saveObjectLayoutReturningReload();
 
 			const restPath = `c/${objectDefinition.name.toLowerCase()}s`;
 
@@ -3708,6 +3845,11 @@ test.describe('Manage object relationship entries', () => {
 				{[textFieldName]: 'Entry B'},
 				restPath
 			);
+
+			// The layout save's reload has had the entry seeding to land in;
+			// consume it before the first navigation.
+
+			await reload;
 
 			const openEntryRelationshipTab = async (entryLabel: string) => {
 				await viewObjectEntriesPage.goto(objectDefinition.className);
@@ -3747,6 +3889,21 @@ test.describe('Manage object relationship entries', () => {
 
 				await expect(relationshipEntry).toBeVisible();
 				await relationshipEntry.click();
+
+				// Selecting relates the entry and closes the picker, and the
+				// relating is still in flight when the click resolves. The next
+				// step asks for another address, which tears down the frame the
+				// request belongs to and cancels it, so one of the two
+				// relationships is never made. Wait for the picker to go and
+				// the related row to show.
+
+				await expect(
+					page.locator('iframe[title="Select"]')
+				).toBeHidden();
+
+				await expect(
+					page.getByRole('row').filter({hasText: entryLabel}).first()
+				).toBeVisible();
 			};
 
 			await openEntryRelationshipTab('Entry A');
@@ -3801,8 +3958,10 @@ test.describe('Manage object relationship entries', () => {
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[objectDefinition.externalReferenceCode!]
+			);
 
 			const {body: objectRelationship} =
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
@@ -3845,12 +4004,8 @@ test.describe('Manage object relationship entries', () => {
 			);
 			await objectLayoutsPage.setObjectLayoutAsDefault();
 
-			const saveButton = objectLayoutsPage.iframeLocator
-				.getByRole('button', {name: 'Save'})
-				.first();
-
-			await expect(saveButton).toBeVisible();
-			await saveButton.dispatchEvent('click');
+			const {reload} =
+				await objectLayoutsPage.saveObjectLayoutReturningReload();
 
 			const restPath = `c/${objectDefinition.name.toLowerCase()}s`;
 
@@ -3887,6 +4042,11 @@ test.describe('Manage object relationship entries', () => {
 				await relationshipTab.click();
 			};
 
+			// The layout save's reload has had the entry seeding to land in;
+			// consume it before the first navigation.
+
+			await reload;
+
 			await openEntryRelationshipTab('Entry Test A');
 
 			await page.getByLabel('Select Existing One').first().click();
@@ -3898,6 +4058,19 @@ test.describe('Manage object relationship entries', () => {
 
 			await expect(relationshipEntry).toBeVisible();
 			await relationshipEntry.click();
+
+			// Selecting relates the entry and closes the picker, and the
+			// relating is still in flight when the click resolves. The next step
+			// asks for another address, which tears down the frame the request
+			// belongs to and cancels it, so the relationship is never made and
+			// the row below never arrives. Wait for the picker to go and the
+			// relationship to show.
+
+			await expect(page.locator('iframe[title="Select"]')).toBeHidden();
+
+			await expect(
+				page.getByRole('row').filter({hasText: 'Entry Test B'}).first()
+			).toBeVisible();
 
 			await openEntryRelationshipTab('Entry Test A');
 
@@ -3933,7 +4106,11 @@ test.describe('Manage object relationship entries', () => {
 						objectDefinition.externalReferenceCode,
 						{
 							label: {en_US: 'Relationship'},
-							name: 'relationship' + getRandomInt(),
+							name: await getFreshObjectRelationshipName(
+								apiHelpers,
+								[objectDefinition.externalReferenceCode!],
+								'relationship'
+							),
 							objectDefinitionExternalReferenceCode1:
 								objectDefinition.externalReferenceCode,
 							objectDefinitionExternalReferenceCode2:
@@ -4006,7 +4183,11 @@ test.describe('Manage object relationship entries', () => {
 						objectDefinition.externalReferenceCode,
 						{
 							label: {en_US: 'Relationship'},
-							name: 'relationship' + getRandomInt(),
+							name: await getFreshObjectRelationshipName(
+								apiHelpers,
+								[objectDefinition.externalReferenceCode!],
+								'relationship'
+							),
 							objectDefinitionExternalReferenceCode1:
 								objectDefinition.externalReferenceCode,
 							objectDefinitionExternalReferenceCode2:
@@ -4049,18 +4230,10 @@ test.describe('Manage object relationship entries', () => {
 					'Relationship'
 				);
 
-				const saveButton = objectLayoutsPage.iframeLocator
-					.getByRole('button', {name: 'Save'})
-					.first();
+				const {reload} =
+					await objectLayoutsPage.saveObjectLayoutReturningReload();
 
-				await expect(saveButton).toBeVisible();
-
-				await saveButton.dispatchEvent('click');
-
-				await waitForAlert(
-					page,
-					'Success:The object layout was updated successfully'
-				);
+				await reload;
 
 				restPath = `c/${objectDefinition.name.toLowerCase()}s`;
 			});
@@ -4209,17 +4382,8 @@ test.describe('Manage object relationship entries', () => {
 				'Relationship'
 			);
 
-			const saveButton = page
-				.frameLocator('iframe')
-				.getByRole('button', {name: 'Save'})
-				.first();
-
-			await expect(saveButton).toBeVisible();
-			await saveButton.dispatchEvent('click');
-			await waitForAlert(
-				page,
-				'Success:The object layout was updated successfully'
-			);
+			const {reload} =
+				await objectLayoutsPage.saveObjectLayoutReturningReload();
 
 			const restPath = `c/${objectDefinition.name.toLowerCase()}s`;
 
@@ -4227,6 +4391,11 @@ test.describe('Manage object relationship entries', () => {
 				{[textFieldName]: 'Entry Test'},
 				restPath
 			);
+
+			// The layout save's reload has had the entry seeding to land in;
+			// consume it before the first navigation.
+
+			await reload;
 
 			const openEntryRelationshipTab = async (entryLabel: string) => {
 				await viewObjectEntriesPage.goto(objectDefinition.className);
@@ -4280,8 +4449,10 @@ test.describe('Manage object relationship entries', () => {
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[objectDefinition.externalReferenceCode!]
+			);
 
 			const {body: objectRelationship} =
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
@@ -4366,7 +4537,14 @@ test.describe('Manage object relationship entries', () => {
 						{
 							deletionType: 'disassociate',
 							label: {en_US: 'Relationship'},
-							name: 'relationship' + getRandomInt(),
+							name: await getFreshObjectRelationshipName(
+								apiHelpers,
+								[
+									objectDefinition1.externalReferenceCode!,
+									objectDefinition2.externalReferenceCode!,
+								],
+								'relationship'
+							),
 							objectDefinitionExternalReferenceCode1:
 								objectDefinition1.externalReferenceCode,
 							objectDefinitionExternalReferenceCode2:
@@ -4409,18 +4587,10 @@ test.describe('Manage object relationship entries', () => {
 					'Relationship'
 				);
 
-				const saveButton = objectLayoutsPage.iframeLocator
-					.getByRole('button', {name: 'Save'})
-					.first();
+				const {reload} =
+					await objectLayoutsPage.saveObjectLayoutReturningReload();
 
-				await expect(saveButton).toBeVisible();
-
-				await saveButton.dispatchEvent('click');
-
-				await waitForAlert(
-					page,
-					'Success:The object layout was updated successfully'
-				);
+				await reload;
 			});
 
 			await test.step('create entries A and B and associate entry B to entry A', async () => {
@@ -4534,7 +4704,14 @@ test.describe('Manage object relationship entries', () => {
 						objectDefinition1.externalReferenceCode,
 						{
 							label: {en_US: 'Relationship' + getRandomInt()},
-							name: 'relationship' + getRandomInt(),
+							name: await getFreshObjectRelationshipName(
+								apiHelpers,
+								[
+									objectDefinition1.externalReferenceCode!,
+									objectDefinition2.externalReferenceCode!,
+								],
+								'relationship'
+							),
 							objectDefinitionExternalReferenceCode1:
 								objectDefinition1.externalReferenceCode,
 							objectDefinitionExternalReferenceCode2:
@@ -4604,18 +4781,10 @@ test.describe('Manage object relationship entries', () => {
 						'Relationship'
 					);
 
-					const saveButton = objectLayoutsPage.iframeLocator
-						.getByRole('button', {name: 'Save'})
-						.first();
+					const {reload} =
+						await objectLayoutsPage.saveObjectLayoutReturningReload();
 
-					await expect(saveButton).toBeVisible();
-
-					await saveButton.dispatchEvent('click');
-
-					await waitForAlert(
-						page,
-						'Success:The object layout was updated successfully'
-					);
+					await reload;
 				};
 
 				await setupLayout(objectDefinition1, 'textField');
@@ -4671,6 +4840,23 @@ test.describe('Manage object relationship entries', () => {
 					await expect(entry).toBeVisible();
 
 					await entry.click();
+
+					// Selecting relates the entry and closes the picker, and the
+					// relating is still in flight when the click resolves. The
+					// next step navigates away, so returning here lets that
+					// navigation race the save and the entry is never related.
+					// Wait for the picker to go and the row to appear.
+
+					await expect(
+						page.locator('iframe[title="Select"]')
+					).toBeHidden();
+
+					await expect(
+						page
+							.getByRole('row')
+							.filter({hasText: entryLabel})
+							.first()
+					).toBeVisible();
 				};
 
 				await openRelationshipTab(
@@ -4775,7 +4961,14 @@ test.describe('Manage object relationship entries', () => {
 					objectDefinition1.externalReferenceCode,
 					{
 						label: {en_US: 'Relationship' + getRandomInt()},
-						name: 'relationship' + getRandomInt(),
+						name: await getFreshObjectRelationshipName(
+							apiHelpers,
+							[
+								objectDefinition1.externalReferenceCode!,
+								objectDefinition2.externalReferenceCode!,
+							],
+							'relationship'
+						),
 						objectDefinitionExternalReferenceCode1:
 							objectDefinition1.externalReferenceCode,
 						objectDefinitionExternalReferenceCode2:
@@ -4883,7 +5076,14 @@ test.describe('Manage object relationship entries', () => {
 					objectDefinition1.externalReferenceCode,
 					{
 						label: {en_US: 'Relationship'},
-						name: 'relationship' + getRandomInt(),
+						name: await getFreshObjectRelationshipName(
+							apiHelpers,
+							[
+								objectDefinition1.externalReferenceCode!,
+								objectDefinition2.externalReferenceCode!,
+							],
+							'relationship'
+						),
 						objectDefinitionExternalReferenceCode1:
 							objectDefinition1.externalReferenceCode,
 						objectDefinitionExternalReferenceCode2:
@@ -4930,18 +5130,10 @@ test.describe('Manage object relationship entries', () => {
 					'Relationship'
 				);
 
-				const saveButton = objectLayoutsPage.iframeLocator
-					.getByRole('button', {name: 'Save'})
-					.first();
+				const {reload} =
+					await objectLayoutsPage.saveObjectLayoutReturningReload();
 
-				await expect(saveButton).toBeVisible();
-
-				await saveButton.dispatchEvent('click');
-
-				await waitForAlert(
-					page,
-					'Success:The object layout was updated successfully'
-				);
+				await reload;
 			};
 
 			await setupLayout(objectDefinition1, 'textField');
@@ -5054,7 +5246,14 @@ test.describe('Manage object relationship entries', () => {
 					objectDefinition1.externalReferenceCode,
 					{
 						label: {en_US: 'Relationship'},
-						name: 'relationship' + getRandomInt(),
+						name: await getFreshObjectRelationshipName(
+							apiHelpers,
+							[
+								objectDefinition1.externalReferenceCode!,
+								objectDefinition2.externalReferenceCode!,
+							],
+							'relationship'
+						),
 						objectDefinitionExternalReferenceCode1:
 							objectDefinition1.externalReferenceCode,
 						objectDefinitionExternalReferenceCode2:
@@ -5095,18 +5294,8 @@ test.describe('Manage object relationship entries', () => {
 				'Relationship'
 			);
 
-			const saveButton = objectLayoutsPage.iframeLocator
-				.getByRole('button', {name: 'Save'})
-				.first();
-
-			await expect(saveButton).toBeVisible();
-
-			await saveButton.dispatchEvent('click');
-
-			await waitForAlert(
-				page,
-				'Success:The object layout was updated successfully'
-			);
+			const {reload} =
+				await objectLayoutsPage.saveObjectLayoutReturningReload();
 
 			const applicationName1 = `c/${objectDefinition1.name.toLowerCase()}s`;
 
@@ -5114,6 +5303,11 @@ test.describe('Manage object relationship entries', () => {
 				{['textField']: 'Entry 1'},
 				applicationName1
 			);
+
+			// The layout save's reload has had the entry seeding to land in;
+			// consume it before the first navigation.
+
+			await reload;
 
 			const openEntry1Details = async () => {
 				await viewObjectEntriesPage.goto(objectDefinition1.className);
@@ -5272,8 +5466,10 @@ test.describe('View relationship hierarchy labels', () => {
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				[objectDefinition.externalReferenceCode!]
+			);
 
 			const {body: objectRelationship} =
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(

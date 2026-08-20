@@ -8,7 +8,7 @@ package com.liferay.analytics.cms.rest.resource.v1_0.test;
 import com.liferay.analytics.cms.rest.dto.v1_0.Metric;
 import com.liferay.analytics.cms.rest.dto.v1_0.PerformanceMetric;
 import com.liferay.analytics.cms.rest.resource.v1_0.PerformanceMetricResource;
-import com.liferay.analytics.settings.configuration.AnalyticsConfiguration;
+import com.liferay.analytics.test.util.AnalyticsCompanyConfigurationTemporarySwapper;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.model.DepotEntry;
@@ -17,7 +17,6 @@ import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -26,7 +25,6 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -36,7 +34,8 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 
-import jakarta.ws.rs.BadRequestException;
+import jakarta.validation.ValidationException;
+
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -139,27 +138,15 @@ public class PerformanceMetricResourceTest
 	}
 
 	private PerformanceMetric _getPerformanceMetric(
-			long dataSourceId, String metricsJSON, String metricType,
+			String dataSourceId, String metricsJSON, String metricType,
 			String path, int rangeKey,
 			UnsafeFunction<Long[], PerformanceMetric, Exception> unsafeFunction)
 		throws Exception {
 
-		try (CompanyConfigurationTemporarySwapper
-				companyConfigurationTemporarySwapper =
-					new CompanyConfigurationTemporarySwapper(
-						testCompany.getCompanyId(),
-						AnalyticsConfiguration.class.getName(),
-						HashMapDictionaryBuilder.<String, Object>put(
-							"liferayAnalyticsDataSourceId", dataSourceId
-						).put(
-							"liferayAnalyticsEnableAllGroupIds", true
-						).put(
-							"liferayAnalyticsFaroBackendSecuritySignature",
-							RandomTestUtil.randomString()
-						).put(
-							"liferayAnalyticsFaroBackendURL",
-							"http://" + RandomTestUtil.randomString()
-						).build())) {
+		try (AnalyticsCompanyConfigurationTemporarySwapper
+				analyticsCompanyConfigurationTemporarySwapper =
+					new AnalyticsCompanyConfigurationTemporarySwapper(
+						testCompany.getCompanyId(), dataSourceId)) {
 
 			RecordingMockHttp recordingMockHttp = new RecordingMockHttp(
 				Collections.singletonMap(path, () -> metricsJSON));
@@ -196,7 +183,7 @@ public class PerformanceMetricResourceTest
 			String groupBy, String metricType, String path)
 		throws Exception {
 
-		long dataSourceId = RandomTestUtil.nextLong();
+		String dataSourceId = RandomTestUtil.randomString();
 		int rangeKey = RandomTestUtil.nextInt();
 		int value1 = RandomTestUtil.nextInt();
 		int value2 = RandomTestUtil.nextInt();
@@ -239,24 +226,12 @@ public class PerformanceMetricResourceTest
 			String groupBy, String metricType, String path)
 		throws Exception {
 
-		long dataSourceId = RandomTestUtil.nextLong();
+		String dataSourceId = RandomTestUtil.randomString();
 
-		try (CompanyConfigurationTemporarySwapper
-				companyConfigurationTemporarySwapper =
-					new CompanyConfigurationTemporarySwapper(
-						testCompany.getCompanyId(),
-						AnalyticsConfiguration.class.getName(),
-						HashMapDictionaryBuilder.<String, Object>put(
-							"liferayAnalyticsDataSourceId", dataSourceId
-						).put(
-							"liferayAnalyticsEnableAllGroupIds", true
-						).put(
-							"liferayAnalyticsFaroBackendSecuritySignature",
-							RandomTestUtil.randomString()
-						).put(
-							"liferayAnalyticsFaroBackendURL",
-							"http://" + RandomTestUtil.randomString()
-						).build())) {
+		try (AnalyticsCompanyConfigurationTemporarySwapper
+				analyticsCompanyConfigurationTemporarySwapper =
+					new AnalyticsCompanyConfigurationTemporarySwapper(
+						testCompany.getCompanyId(), dataSourceId)) {
 
 			String value = RandomTestUtil.randomString();
 
@@ -321,7 +296,7 @@ public class PerformanceMetricResourceTest
 
 	private void _testGetPerformanceMetricExportWithInvalidMetricType() {
 		Assert.assertThrows(
-			BadRequestException.class,
+			ValidationException.class,
 			() -> _performanceMetricResource.getPerformanceMetricExport(
 				TransformUtil.transformToArray(
 					_depotEntries, DepotEntry::getDepotEntryId, Long.class),
@@ -340,7 +315,7 @@ public class PerformanceMetricResourceTest
 
 	private void _testGetPerformanceMetricWithInvalidMetricType() {
 		Assert.assertThrows(
-			BadRequestException.class,
+			ValidationException.class,
 			() -> _performanceMetricResource.getPerformanceMetric(
 				TransformUtil.transformToArray(
 					_depotEntries, DepotEntry::getDepotEntryId, Long.class),
@@ -353,7 +328,7 @@ public class PerformanceMetricResourceTest
 		int rangeKey = RandomTestUtil.nextInt();
 
 		PerformanceMetric performanceMetric = _getPerformanceMetric(
-			RandomTestUtil.nextLong(),
+			RandomTestUtil.randomString(),
 			JSONUtil.put(
 				"metricName", metricType
 			).put(

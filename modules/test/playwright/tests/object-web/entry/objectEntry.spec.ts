@@ -50,6 +50,7 @@ import {
 import {createFile, deleteFile} from '../utils/fileHelpers';
 import {generateObjectEntryValues} from '../utils/generateObjectEntry';
 import {generateObjectFields} from '../utils/generateObjectFields';
+import {getFreshObjectRelationshipName} from '../utils/getFreshObjectRelationshipName';
 import evaluateKeepCheckingAfterFound from '../utils/keepCheckingAfterFound';
 import {pasteFile} from '../utils/pasteFile';
 import {postListTypeDefinitionListTypeEntries} from '../utils/postListTypeDefinitionListTypeEntries';
@@ -2700,7 +2701,14 @@ test.describe('Manage object entries through View Object Entries', () => {
 			objectDefinition2.externalReferenceCode!,
 			{
 				label: {en_US: 'Relationship'},
-				name: 'relationship' + Math.floor(Math.random() * 99),
+				name: await getFreshObjectRelationshipName(
+					apiHelpers,
+					[
+						objectDefinition2.externalReferenceCode!,
+						objectDefinition1.externalReferenceCode!,
+					],
+					'relationship'
+				),
 				objectDefinitionExternalReferenceCode2:
 					objectDefinition1.externalReferenceCode,
 				objectDefinitionId2: objectDefinition1.id,
@@ -3504,8 +3512,13 @@ test.describe('Manage object entries through View Object Entries', () => {
 
 		const objectRelationshipLabel =
 			'objectRelationshipLabel' + getRandomInt();
-		const objectRelationshipName =
-			'objectRelationshipName' + getRandomInt();
+		const objectRelationshipName = await getFreshObjectRelationshipName(
+			apiHelpers,
+			[
+				objectDefinition1.externalReferenceCode!,
+				objectDefinition2.externalReferenceCode!,
+			]
+		);
 
 		const objectRelationshipAPIClient = await apiHelpers.buildRestClient(
 			ObjectRelationshipAPI
@@ -3658,8 +3671,10 @@ test.describe('Manage object entries through View Object Entries', () => {
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				['L_USER', objectDefinition.externalReferenceCode!]
+			);
 
 			const {body: objectRelationship} =
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
@@ -3730,8 +3745,10 @@ test.describe('Manage object entries through View Object Entries', () => {
 			const objectRelationshipAPIClient =
 				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
 
-			const objectRelationshipName =
-				'objectRelationshipName' + Math.floor(Math.random() * 99);
+			const objectRelationshipName = await getFreshObjectRelationshipName(
+				apiHelpers,
+				['L_USER', objectDefinition.externalReferenceCode!]
+			);
 
 			const {body: objectRelationship} =
 				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
@@ -3862,7 +3879,10 @@ test.describe('Manage object entries through View Object Entries', () => {
 					label: {
 						en_US: 'objectRelationshipLabel' + getRandomInt(),
 					},
-					name: 'objectRelationshipName' + getRandomInt(),
+					name: await getFreshObjectRelationshipName(apiHelpers, [
+						'L_ACCOUNT',
+						objectDefinition.externalReferenceCode!,
+					]),
 					objectDefinitionExternalReferenceCode1: 'L_ACCOUNT',
 					objectDefinitionExternalReferenceCode2:
 						objectDefinition.externalReferenceCode,
@@ -4041,7 +4061,10 @@ test.describe('Manage object entries through View Object Entries', () => {
 						label: {
 							en_US: 'objectRelationshipLabel' + getRandomInt(),
 						},
-						name: 'objectRelationshipName' + getRandomInt(),
+						name: await getFreshObjectRelationshipName(apiHelpers, [
+							'L_ORGANIZATION',
+							objectDefinition.externalReferenceCode!,
+						]),
 						objectDefinitionExternalReferenceCode1:
 							'L_ORGANIZATION',
 						objectDefinitionExternalReferenceCode2:
@@ -4194,7 +4217,10 @@ test.describe('Manage object entries through View Object Entries', () => {
 						label: {
 							en_US: 'objectRelationshipLabel' + getRandomInt(),
 						},
-						name: 'objectRelationshipName' + getRandomInt(),
+						name: await getFreshObjectRelationshipName(apiHelpers, [
+							'L_ORGANIZATION',
+							objectDefinition.externalReferenceCode!,
+						]),
 						objectDefinitionExternalReferenceCode1:
 							'L_ORGANIZATION',
 						objectDefinitionExternalReferenceCode2:
@@ -4554,12 +4580,8 @@ test.describe('Manage object entries through View Object Entries', () => {
 			.getByPlaceholder('Create an expression.')
 			.fill(textFieldName);
 
-		await objectFieldsPage.editFieldSaveButton.click();
-
-		await waitForAlert(
-			page,
-			'Success:The object field was updated successfully'
-		);
+		const {navigation} =
+			await objectFieldsPage.saveObjectFieldReturningNavigation();
 
 		const applicationName =
 			'c/' + objectDefinition.name.toLowerCase() + 's';
@@ -4570,6 +4592,11 @@ test.describe('Manage object entries through View Object Entries', () => {
 			{[textFieldName]: firstItemName},
 			applicationName
 		);
+
+		// The save's navigation has had the entry seeding to land in; consume
+		// it before the next address is asked for, or the two collide.
+
+		await navigation;
 
 		await viewObjectEntriesPage.goto(objectDefinition.className);
 
@@ -4663,8 +4690,13 @@ test.describe('Manage object entries through View Object Entries', () => {
 
 		const objectRelationshipLabel =
 			'objectRelationshipLabel' + getRandomInt();
-		const objectRelationshipName =
-			'objectRelationshipName' + Math.floor(Math.random() * 99);
+		const objectRelationshipName = await getFreshObjectRelationshipName(
+			apiHelpers,
+			[
+				objectDefinition1.externalReferenceCode!,
+				objectDefinition2.externalReferenceCode!,
+			]
+		);
 
 		const objectRelationshipAPIClient = await apiHelpers.buildRestClient(
 			ObjectRelationshipAPI
@@ -5268,6 +5300,17 @@ test.describe('Manage object entries through View Object Entries', () => {
 
 			await expect(viewObjectEntriesPage.successMessage).toBeVisible();
 
+			// The save fires its toast before it navigates to the saved entry,
+			// and the remounted relationship field publishes an empty hidden
+			// input until its option fetch resolves, so a read taken here can
+			// see the render before the save or the field before its value.
+			// Land on the saved entry and reload so the read is the persisted
+			// value.
+
+			await page.waitForURL(/externalReferenceCode=/);
+
+			await page.reload();
+
 			const fieldContainer = page.locator(
 				'[data-field-name="r_objectRelationshipName_CProductId"]'
 			);
@@ -5287,6 +5330,17 @@ test.describe('Manage object entries through View Object Entries', () => {
 			await viewObjectEntriesPage.saveObjectEntryButton.click();
 
 			await expect(viewObjectEntriesPage.successMessage).toBeVisible();
+
+			// The save fires its toast before it navigates to the saved entry,
+			// and the remounted relationship field publishes an empty hidden
+			// input until its option fetch resolves, so a read taken here can
+			// see the render before the save or the field before its value.
+			// Land on the saved entry and reload so the read is the persisted
+			// value.
+
+			await page.waitForURL(/externalReferenceCode=/);
+
+			await page.reload();
 
 			await expect(relationshipInput).not.toHaveValue('');
 
@@ -5947,7 +6001,10 @@ test.describe('Manage object entries through View Object Entries', () => {
 				label: {
 					en_US: 'objectRelationshipLabel' + getRandomInt(),
 				},
-				name: 'objectRelationshipName' + getRandomInt(),
+				name: await getFreshObjectRelationshipName(apiHelpers, [
+					'L_ACCOUNT',
+					objectDefinition.externalReferenceCode!,
+				]),
 				objectDefinitionExternalReferenceCode1: 'L_ACCOUNT',
 				objectDefinitionExternalReferenceCode2:
 					objectDefinition.externalReferenceCode,

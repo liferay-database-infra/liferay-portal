@@ -9,6 +9,7 @@ import {ServerAdministrationPage} from '../../../../pages/server-admin-web/Serve
 import {waitForPageToBeLoaded} from '../../../../utils/waitForPageToBeLoaded';
 
 export class DatabaseMigrationPage {
+	readonly description: Locator;
 	readonly errorAlert: Locator;
 	readonly exportButton: Locator;
 	readonly exportFilesPathInput: Locator;
@@ -20,7 +21,8 @@ export class DatabaseMigrationPage {
 	constructor(page: Page) {
 		this.page = page;
 
-		this.errorAlert = page.locator('.alert-danger');
+		this.description = page.locator('.sheet-text');
+		this.errorAlert = page.locator('.alert-danger[role="alert"]');
 		this.exportButton = page.getByRole('button', {
 			exact: true,
 			name: 'Export',

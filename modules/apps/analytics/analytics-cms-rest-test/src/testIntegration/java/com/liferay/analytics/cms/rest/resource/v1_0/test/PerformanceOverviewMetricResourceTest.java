@@ -9,12 +9,11 @@ import com.liferay.analytics.cms.rest.dto.v1_0.Metric;
 import com.liferay.analytics.cms.rest.dto.v1_0.PerformanceOverviewMetric;
 import com.liferay.analytics.cms.rest.dto.v1_0.Trend;
 import com.liferay.analytics.cms.rest.resource.v1_0.PerformanceOverviewMetricResource;
-import com.liferay.analytics.settings.configuration.AnalyticsConfiguration;
+import com.liferay.analytics.test.util.AnalyticsCompanyConfigurationTemporarySwapper;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.service.DepotEntryLocalService;
-import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -23,7 +22,6 @@ import com.liferay.portal.kernel.test.util.MockHttp;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
-import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.test.rule.Inject;
@@ -73,23 +71,31 @@ public class PerformanceOverviewMetricResourceTest
 	@Override
 	@Test
 	public void testGetPerformanceOverviewMetric() throws Exception {
-		try (CompanyConfigurationTemporarySwapper
-				companyConfigurationTemporarySwapper =
-					new CompanyConfigurationTemporarySwapper(
-						testCompany.getCompanyId(),
-						AnalyticsConfiguration.class.getName(),
-						HashMapDictionaryBuilder.<String, Object>put(
-							"liferayAnalyticsDataSourceId",
-							RandomTestUtil.nextLong()
-						).put(
-							"liferayAnalyticsEnableAllGroupIds", true
-						).put(
-							"liferayAnalyticsFaroBackendSecuritySignature",
-							RandomTestUtil.randomString()
-						).put(
-							"liferayAnalyticsFaroBackendURL",
-							"http://" + RandomTestUtil.randomString()
-						).build())) {
+		_testGetPerformanceOverviewMetric();
+		_testGetPerformanceOverviewMetricWithAnalyticsCloudNotConnected();
+	}
+
+	private void _assertMetric(
+		Metric metric, String metricType, double previousValue, double value,
+		Trend.Classification classification, double percentage) {
+
+		Assert.assertEquals(metricType, metric.getMetricType());
+		Assert.assertEquals(previousValue, metric.getPreviousValue(), 0);
+		Assert.assertEquals(value, metric.getValue(), 0);
+
+		Trend trend = metric.getTrend();
+
+		Assert.assertEquals(
+			classification.toString(),
+			String.valueOf(trend.getClassification()));
+		Assert.assertEquals(percentage, trend.getPercentage(), 0);
+	}
+
+	private void _testGetPerformanceOverviewMetric() throws Exception {
+		try (AnalyticsCompanyConfigurationTemporarySwapper
+				analyticsCompanyConfigurationTemporarySwapper =
+					new AnalyticsCompanyConfigurationTemporarySwapper(
+						testCompany.getCompanyId())) {
 
 			ReflectionTestUtil.setFieldValue(
 				_performanceOverviewMetricResource, "_http",
@@ -180,30 +186,13 @@ public class PerformanceOverviewMetricResourceTest
 		}
 	}
 
-	@Test
-	public void testGetPerformanceOverviewMetricWithAnalyticsCloudNotConnected() {
+	private void _testGetPerformanceOverviewMetricWithAnalyticsCloudNotConnected() {
 		Assert.assertThrows(
 			ForbiddenException.class,
 			() ->
 				_performanceOverviewMetricResource.getPerformanceOverviewMetric(
 					new Long[] {_depotEntry.getDepotEntryId()},
 					RandomTestUtil.nextInt()));
-	}
-
-	private void _assertMetric(
-		Metric metric, String metricType, double previousValue, double value,
-		Trend.Classification classification, double percentage) {
-
-		Assert.assertEquals(metricType, metric.getMetricType());
-		Assert.assertEquals(previousValue, metric.getPreviousValue(), 0);
-		Assert.assertEquals(value, metric.getValue(), 0);
-
-		Trend trend = metric.getTrend();
-
-		Assert.assertEquals(
-			classification.toString(),
-			String.valueOf(trend.getClassification()));
-		Assert.assertEquals(percentage, trend.getPercentage(), 0);
 	}
 
 	@DeleteAfterTestRun

@@ -11,6 +11,7 @@ import com.liferay.dynamic.data.mapping.service.DDMFieldLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalService;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.test.util.JournalTestUtil;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DBInspector;
@@ -19,6 +20,7 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DataGuard;
+import com.liferay.portal.kernel.test.util.DataCleanupTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
@@ -35,7 +37,9 @@ import java.sql.ResultSet;
 
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,6 +57,17 @@ public class DDMStorageLinkDataCleanupPreupgradeProcessTest
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
 		new LiferayIntegrationTestRule();
+
+	@Before
+	public void setUp() throws Exception {
+		_classNamesSavepointSafeCloseable =
+			DataCleanupTestUtil.getClassNamesSavepointSafeCloseable();
+	}
+
+	@After
+	public void tearDown() throws Exception {
+		_classNamesSavepointSafeCloseable.close();
+	}
 
 	@Test
 	public void testUpgrade() throws Exception {
@@ -213,6 +228,8 @@ public class DDMStorageLinkDataCleanupPreupgradeProcessTest
 			}
 		}
 	}
+
+	private SafeCloseable _classNamesSavepointSafeCloseable;
 
 	@Inject
 	private DDMFieldLocalService _ddmFieldLocalService;

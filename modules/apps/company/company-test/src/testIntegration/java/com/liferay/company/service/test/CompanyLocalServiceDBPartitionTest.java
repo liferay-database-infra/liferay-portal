@@ -27,6 +27,7 @@ import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBType;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.ClassName;
@@ -937,6 +938,111 @@ public class CompanyLocalServiceDBPartitionTest
 			companyIds::add, new long[] {companyId});
 
 		Assert.assertEquals(Collections.singletonList(companyId), companyIds);
+	}
+
+	@Test
+	public void testIsCurrentCompanyRestricted() throws Exception {
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					_defaultCompanyId)) {
+
+			Assert.assertFalse(DBPartition.isCurrentCompanyRestricted());
+		}
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					CompanyConstants.SYSTEM)) {
+
+			Assert.assertFalse(DBPartition.isCurrentCompanyRestricted());
+		}
+
+		_company1 = CompanyTestUtil.addCompany();
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					_company1.getCompanyId())) {
+
+			Assert.assertTrue(DBPartition.isCurrentCompanyRestricted());
+		}
+	}
+
+	@Test
+	public void testUpdateCompanyMx() throws Exception {
+		_company1 = CompanyTestUtil.addCompany();
+
+		String mx = _company1.getMx();
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					_company1.getCompanyId())) {
+
+			companyLocalService.updateCompany(
+				_company1.getCompanyId(), _company1.getVirtualHostname(),
+				StringUtil.toLowerCase(RandomTestUtil.randomString()) + ".com",
+				_company1.getMaxUsers(), _company1.isActive());
+		}
+
+		Company company = companyLocalService.getCompany(
+			_company1.getCompanyId());
+
+		Assert.assertEquals(mx, company.getMx());
+
+		String updatedMx =
+			StringUtil.toLowerCase(RandomTestUtil.randomString()) + ".com";
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					_defaultCompanyId)) {
+
+			companyLocalService.updateCompany(
+				_company1.getCompanyId(), _company1.getVirtualHostname(),
+				updatedMx, _company1.getMaxUsers(), _company1.isActive());
+		}
+
+		company = companyLocalService.getCompany(_company1.getCompanyId());
+
+		Assert.assertEquals(updatedMx, company.getMx());
+
+		String legalName = RandomTestUtil.randomString();
+		String name = RandomTestUtil.randomString();
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					_company1.getCompanyId())) {
+
+			companyLocalService.updateCompany(
+				_company1.getCompanyId(), _company1.getVirtualHostname(),
+				StringUtil.toLowerCase(RandomTestUtil.randomString()) + ".com",
+				company.getHomeURL(), false, null, name, legalName,
+				company.getLegalId(), company.getLegalType(),
+				company.getSicCode(), company.getTickerSymbol(),
+				company.getIndustry(), company.getType(), company.getSize());
+		}
+
+		company = companyLocalService.getCompany(_company1.getCompanyId());
+
+		Assert.assertEquals(legalName, company.getLegalName());
+		Assert.assertEquals(updatedMx, company.getMx());
+		Assert.assertEquals(name, company.getName());
+
+		updatedMx =
+			StringUtil.toLowerCase(RandomTestUtil.randomString()) + ".com";
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					_defaultCompanyId)) {
+
+			companyLocalService.updateCompany(
+				_company1.getCompanyId(), _company1.getVirtualHostname(),
+				updatedMx, company.getHomeURL(), false, null, name, legalName,
+				company.getLegalId(), company.getLegalType(),
+				company.getSicCode(), company.getTickerSymbol(),
+				company.getIndustry(), company.getType(), company.getSize());
+		}
+
+		company = companyLocalService.getCompany(_company1.getCompanyId());
+
+		Assert.assertEquals(updatedMx, company.getMx());
 	}
 
 	private void _addCopyDBPartitionCompanyCache(long companyId) {

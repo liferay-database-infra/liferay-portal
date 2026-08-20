@@ -23,6 +23,7 @@ import {
 } from '../../common/types/AssetType';
 import {
 	CMSSiteInitializerFDSNames,
+	NO_VALUE,
 	OBJECT_ENTRY_CLASS_NAME,
 	OBJECT_ENTRY_FOLDER_CLASS_NAME,
 } from '../../common/utils/constants';
@@ -62,6 +63,10 @@ import SimpleActionLinkRenderer from './cell_renderers/SimpleActionLinkRenderer'
 import SpaceRendererWithCache from './cell_renderers/SpaceRendererWithCache';
 import TypeRenderer from './cell_renderers/TypeRenderer';
 import addOnClickToCreationMenuItems from './utils/addOnClickToCreationMenuItems';
+import {
+	isScheduleDateActionId,
+	openScheduleDateModal,
+} from './utils/createScheduleDateModalOpener';
 import {executeAsyncItemAction} from './utils/executeAsyncItemAction';
 import transformFDSBulkActions from './utils/transformFDSBulkActions';
 import transformViewsItemsProps from './utils/transformViewsItemProps';
@@ -357,7 +362,7 @@ export default function AssetsFDSPropsTransformer({
 							itemData?.entryClassName ===
 							OBJECT_ENTRY_FOLDER_CLASS_NAME
 						) {
-							return '--';
+							return NO_VALUE;
 						}
 
 						return (
@@ -464,7 +469,17 @@ export default function AssetsFDSPropsTransformer({
 			items: any;
 			loadData: () => {};
 		}) {
-			if (action?.data?.id === 'addToLaunch') {
+			if (isScheduleDateActionId(action?.data?.id)) {
+				event?.preventDefault();
+
+				openScheduleDateModal({
+					actionId: action.data.id,
+					apiURL: bulkActionAPIURL,
+					dataSetId: otherProps.id,
+					itemData,
+				});
+			}
+			else if (action?.data?.id === 'addToLaunch') {
 				event?.preventDefault();
 
 				if (!itemData.embedded?.systemProperties?.version) {
@@ -689,7 +704,15 @@ export default function AssetsFDSPropsTransformer({
 			action: any;
 			selectedData: any;
 		}) => {
-			if (action?.data?.id === 'add-assets-to-project') {
+			if (isScheduleDateActionId(action?.data?.id)) {
+				openScheduleDateModal({
+					actionId: action.data.id,
+					apiURL: bulkActionAPIURL,
+					dataSetId: otherProps.id,
+					selectedData,
+				});
+			}
+			else if (action?.data?.id === 'add-assets-to-project') {
 				openCMSModal({
 					center: true,
 					containerProps: {

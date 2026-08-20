@@ -14,6 +14,7 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
@@ -21,6 +22,8 @@ import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,6 +47,52 @@ public class DataMaskObjectEntryModelListenerTest {
 	@Before
 	public void setUp() {
 		MCPServerTestUtil.processBatchEngineUnits();
+	}
+
+	@Test
+	public void testOnAfterCreate() throws Exception {
+		ObjectEntry defaultMCPServerProfileObjectEntry =
+			MCPServerTestUtil.fetchMCPServerProfileObjectEntry("default");
+
+		String defaultMCPServerProfileExternalReferenceCode =
+			defaultMCPServerProfileObjectEntry.getExternalReferenceCode();
+
+		List<ObjectEntry> mcpServerProfileDataMaskObjectEntries =
+			MCPServerTestUtil.getMCPServerProfileDataMaskObjectEntries(
+				defaultMCPServerProfileExternalReferenceCode);
+
+		int mcpServerProfileDataMaskObjectEntriesCount =
+			mcpServerProfileDataMaskObjectEntries.size();
+
+		_customDataMaskObjectEntry = MCPServerTestUtil.addDataMaskObjectEntry(
+			"\\d{4}", RandomTestUtil.randomString(), "[REDACTED]");
+
+		mcpServerProfileDataMaskObjectEntries =
+			MCPServerTestUtil.getMCPServerProfileDataMaskObjectEntries(
+				defaultMCPServerProfileExternalReferenceCode);
+
+		Assert.assertEquals(
+			mcpServerProfileDataMaskObjectEntries.toString(),
+			mcpServerProfileDataMaskObjectEntriesCount,
+			mcpServerProfileDataMaskObjectEntries.size());
+
+		String dataMaskExternalReferenceCode = RandomTestUtil.randomString();
+
+		ObjectEntry systemDataMaskObjectEntry =
+			MCPServerTestUtil.addSystemDataMaskObjectEntry(
+				"\\d{4}", dataMaskExternalReferenceCode,
+				RandomTestUtil.randomString(), "[REDACTED]");
+
+		try {
+			Assert.assertEquals(
+				mcpServerProfileDataMaskObjectEntriesCount + 1,
+				MCPServerTestUtil.getMCPServerProfileDataMaskExecutionOrder(
+					dataMaskExternalReferenceCode,
+					defaultMCPServerProfileExternalReferenceCode));
+		}
+		finally {
+			_deleteSystemDataMaskObjectEntry(systemDataMaskObjectEntry);
+		}
 	}
 
 	@Test
@@ -99,6 +148,27 @@ public class DataMaskObjectEntryModelListenerTest {
 					mcpServerProfileDataMaskObjectEntry.getObjectEntryId()));
 		}
 	}
+
+	private void _deleteSystemDataMaskObjectEntry(ObjectEntry objectEntry)
+		throws Exception {
+
+		PermissionChecker originalPermissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		try {
+			PermissionThreadLocal.setPermissionChecker(
+				PermissionCheckerFactoryUtil.create(TestPropsValues.getUser()));
+
+			MCPServerTestUtil.deleteSystemDataMaskObjectEntry(objectEntry);
+		}
+		finally {
+			PermissionThreadLocal.setPermissionChecker(
+				originalPermissionChecker);
+		}
+	}
+
+	@DeleteAfterTestRun
+	private ObjectEntry _customDataMaskObjectEntry;
 
 	@Inject
 	private ObjectEntryLocalService _objectEntryLocalService;

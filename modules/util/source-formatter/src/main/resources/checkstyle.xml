@@ -662,6 +662,12 @@
 			<property name="enabled" value="false" />
 			<message key="modified.method.incorrect" value="Remove method &quot;modified&quot; as it only calls &quot;deactivate&quot; and then &quot;activate&quot;" />
 		</module>
+		<module name="com.liferay.source.formatter.checkstyle.check.ModifiedServiceMethodCheck">
+			<property name="category" value="Bug Prevention" />
+			<property name="description" value="Checks for incorrect delegation to a sequence of `removedService()` and `addingService()` calls within `modifiedService()`." />
+			<property name="enabled" value="false" />
+			<message key="method.declaration.incorrect" value="Do not simply delegate to a sequence call of &quot;removedService()&quot; and &quot;addingService()&quot; in &quot;modifiedService()&quot;, see LPD-66061" />
+		</module>
 		<module name="com.liferay.source.formatter.checkstyle.check.MVCCommandNameCheck">
 			<property name="category" value="Naming Conventions" />
 			<property name="description" value="Checks for consistent naming for values of `mvc.command.name`." />
@@ -1118,6 +1124,11 @@
 			<message key="variable.name.incorrect.for.statement" value="Use format &quot;curVariableName&quot; for variable &quot;{0}&quot;" />
 			<message key="variable.rename" value="Rename variable &quot;{0}&quot; to &quot;{1}&quot;" />
 			<message key="variable.typo" value="Typo in variable &quot;{0}&quot;, expected variable name &quot;{1}&quot;" />
+		</module>
+		<module name="com.liferay.source.formatter.checkstyle.check.VirtualThreadsCheck">
+			<property name="category" value="Bug Prevention" />
+			<property name="description" value="Checks that virtual threads are not used (e.g., Executors.newVirtualThreadPerTaskExecutor(), Thread.ofVirtual(), Thread.startVirtualThread())." />
+			<message key="virtual.threads.avoid" value="Do not use virtual threads (e.g., Executors.newVirtualThreadPerTaskExecutor(), Thread.ofVirtual(), Thread.startVirtualThread()" />
 		</module>
 	</module>
 </module>

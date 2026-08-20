@@ -9,6 +9,7 @@ import ClayIcon from '@clayui/icon';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import ClaySticker from '@clayui/sticker';
 import {TrendClassification} from '@liferay/analytics-reports-js-components-web';
+import {isNullOrUndefined} from '@liferay/layout-js-components-web';
 import classNames from 'classnames';
 import React from 'react';
 
@@ -40,7 +41,6 @@ type Props = {
 	active?: boolean;
 	color: MetricColor;
 	description?: string;
-	hoverContent?: React.ReactNode;
 	icon: string;
 	loading?: boolean;
 	onClick?: () => void;
@@ -56,7 +56,6 @@ export default function InteractiveCard({
 	active = false,
 	color,
 	description,
-	hoverContent,
 	icon,
 	loading = false,
 	onClick,
@@ -73,7 +72,11 @@ export default function InteractiveCard({
 			displayType="unstyled"
 			onClick={onClick}
 		>
-			<div className="align-items-center d-flex">
+			<div
+				className={classNames('align-items-center d-flex', {
+					'mb-1': description,
+				})}
+			>
 				<div className="flex-grow-1">
 					<Text size={4} weight="semi-bold">
 						{title}
@@ -95,27 +98,19 @@ export default function InteractiveCard({
 				</Text>
 			) : null}
 
-			<div className="mt-2 position-relative">
+			<div className="mt-2">
 				<div className="cms-dashboard__interactive-card__metric d-flex flex-column justify-content-center">
 					{loading ? (
 						<ClayLoadingIndicator size="sm" />
-					) : (
-						trend && (
-							<MetricValue
-								textWeight="bold"
-								trend={trend}
-								value={value}
-								valueClassName="text-lowercase"
-							/>
-						)
-					)}
+					) : !isNullOrUndefined(value) ? (
+						<MetricValue
+							textWeight="bold"
+							trend={trend}
+							value={value}
+							valueClassName="text-lowercase"
+						/>
+					) : null}
 				</div>
-
-				{hoverContent ? (
-					<div className="cms-dashboard__interactive-card__hover-content position-absolute">
-						{hoverContent}
-					</div>
-				) : null}
 			</div>
 		</ClayButton>
 	);

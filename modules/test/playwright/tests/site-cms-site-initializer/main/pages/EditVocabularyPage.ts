@@ -58,7 +58,9 @@ export class EditVocabularyPage {
 			name: 'Make this vocabulary available in all spaces',
 		});
 		this.spaceSelector = this.page.getByLabel('Space Selector');
-		this.visibilitySelector = this.page.getByLabel('Visibility');
+		this.visibilitySelector = this.page.getByLabel('Visibility', {
+			exact: true,
+		});
 	}
 
 	async goto() {
@@ -117,6 +119,22 @@ export class EditVocabularyPage {
 		await this.nameInput.fill(name);
 	}
 
+	async openProjectSelector() {
+		await expect(async () => {
+			if (await this.projectCheckbox.isChecked({timeout: 1000})) {
+				await this.projectCheckbox.click({timeout: 1000});
+			}
+
+			await expect(this.projectCheckbox).not.toBeChecked({
+				timeout: 1000,
+			});
+
+			await expect(this.projectSelector).toBeEnabled({timeout: 1000});
+		}).toPass();
+
+		await this.projectSelector.click();
+	}
+
 	async selectAssetTypes(assetType: string) {
 		if (await this.assetTypeCheckbox.isChecked()) {
 			await this.assetTypeCheckbox.click();
@@ -130,13 +148,7 @@ export class EditVocabularyPage {
 	}
 
 	async selectProjects(projectName: string) {
-		if (await this.projectCheckbox.isChecked()) {
-			await this.projectCheckbox.click();
-
-			await expect(this.projectCheckbox).not.toBeChecked();
-		}
-
-		await this.projectSelector.click();
+		await this.openProjectSelector();
 
 		const option = this.page
 			.getByRole('option')

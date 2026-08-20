@@ -23,6 +23,7 @@ import com.liferay.portal.search.hits.SearchHits;
 import com.liferay.portal.search.index.IndexNameBuilder;
 import com.liferay.portal.search.query.BooleanQuery;
 import com.liferay.portal.search.query.QueriesUtil;
+import com.liferay.portal.search.spi.reindexer.IndexReindexer;
 import com.liferay.portal.workflow.metrics.internal.background.task.WorkflowMetricsSLAProcessBackgroundTaskHelper;
 import com.liferay.portal.workflow.metrics.internal.search.index.SLAInstanceResultWorkflowMetricsIndexer;
 import com.liferay.portal.workflow.metrics.search.index.constants.WorkflowMetricsIndexNameConstants;
@@ -34,9 +35,9 @@ import org.osgi.service.component.annotations.Reference;
 /**
  * @author Rafael Praxedes
  */
-@Component(service = WorkflowMetricsReindexer.class)
+@Component(service = {IndexReindexer.class, WorkflowMetricsReindexer.class})
 public class SLAInstanceResultWorkflowMetricsReindexer
-	implements WorkflowMetricsReindexer {
+	implements IndexReindexer, WorkflowMetricsReindexer {
 
 	@Override
 	public String getKey() {
@@ -45,7 +46,7 @@ public class SLAInstanceResultWorkflowMetricsReindexer
 
 	@Override
 	public void reindex(long companyId) throws PortalException {
-		_creatDefaultDocuments(companyId);
+		_createDefaultDocuments(companyId);
 
 		WorkflowMetricsSLAProcessBackgroundTaskHelper
 			workflowMetricsSLAProcessBackgroundTaskHelper =
@@ -57,10 +58,14 @@ public class SLAInstanceResultWorkflowMetricsReindexer
 		}
 	}
 
-	@Reference
-	protected SearchEngineAdapter searchEngineAdapter;
+	@Override
+	public void reindex(long companyId, ExecutionMode executionMode)
+		throws Exception {
 
-	private void _creatDefaultDocuments(long companyId) {
+		reindex(companyId);
+	}
+
+	private void _createDefaultDocuments(long companyId) {
 		if (!_searchCapabilities.isWorkflowMetricsSupported() ||
 			!_hasIndex(
 				_indexNameBuilder.getIndexName(companyId) +
@@ -85,8 +90,8 @@ public class SLAInstanceResultWorkflowMetricsReindexer
 
 		searchSearchRequest.setSize(10000);
 
-		SearchSearchResponse searchSearchResponse = searchEngineAdapter.execute(
-			searchSearchRequest);
+		SearchSearchResponse searchSearchResponse =
+			_searchEngineAdapter.execute(searchSearchRequest);
 
 		SearchHits searchHits = searchSearchResponse.getSearchHits();
 
@@ -104,7 +109,7 @@ public class SLAInstanceResultWorkflowMetricsReindexer
 					_slaInstanceResultWorkflowMetricsIndexer.getIndexName(
 						companyId),
 					_slaInstanceResultWorkflowMetricsIndexer.
-						creatDefaultDocument(
+						createDefaultDocument(
 							companyId, document.getLong("processId"))));
 		}
 
@@ -115,7 +120,7 @@ public class SLAInstanceResultWorkflowMetricsReindexer
 				bulkDocumentRequest.setRefresh(true);
 			}
 
-			searchEngineAdapter.execute(bulkDocumentRequest);
+			_searchEngineAdapter.execute(bulkDocumentRequest);
 		}
 	}
 
@@ -124,7 +129,7 @@ public class SLAInstanceResultWorkflowMetricsReindexer
 			new IndicesExistsIndexRequest(indexName);
 
 		IndicesExistsIndexResponse indicesExistsIndexResponse =
-			searchEngineAdapter.execute(indicesExistsIndexRequest);
+			_searchEngineAdapter.execute(indicesExistsIndexRequest);
 
 		return indicesExistsIndexResponse.isExists();
 	}
@@ -139,6 +144,9 @@ public class SLAInstanceResultWorkflowMetricsReindexer
 
 	@Reference
 	private SearchCapabilities _searchCapabilities;
+
+	@Reference
+	private SearchEngineAdapter _searchEngineAdapter;
 
 	@Reference
 	private SLAInstanceResultWorkflowMetricsIndexer

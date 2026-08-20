@@ -6,26 +6,19 @@
 package com.liferay.site.pim.site.initializer.internal.engine.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.model.DepotEntry;
-import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.object.constants.ObjectDefinitionConstants;
-import com.liferay.object.constants.ObjectEntryFolderConstants;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntry;
-import com.liferay.object.model.ObjectEntryFolder;
 import com.liferay.object.rest.filter.factory.FilterFactory;
 import com.liferay.object.service.ObjectDefinitionLocalService;
-import com.liferay.object.service.ObjectEntryFolderLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.petra.sql.dsl.expression.Predicate;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
-import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
-import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
@@ -33,20 +26,32 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.site.pim.site.initializer.constants.PIMObjectDefinitionConstants;
 import com.liferay.site.pim.site.initializer.engine.PIMLinkEngine;
+import com.liferay.site.pim.site.initializer.link.PIMLinkRelatedEntry;
+import com.liferay.site.pim.site.initializer.link.PIMLinkType;
+import com.liferay.site.pim.site.initializer.test.util.PIMBaseSKUTestUtil;
 import com.liferay.site.pim.site.initializer.test.util.PIMTestUtil;
+import com.liferay.site.pim.site.initializer.test.util.link.TestPIMLinkType;
 
 import java.io.Serializable;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * @author Stefano Motta
@@ -65,6 +70,18 @@ public class PIMLinkEngineTest {
 	@Before
 	public void setUp() throws Exception {
 		PIMTestUtil.getOrAddGroup();
+
+		Bundle bundle = FrameworkUtil.getBundle(PIMLinkEngineTest.class);
+
+		BundleContext bundleContext = bundle.getBundleContext();
+
+		_serviceRegistration = bundleContext.registerService(
+			PIMLinkType.class, new TestPIMLinkType(), null);
+	}
+
+	@After
+	public void tearDown() {
+		_serviceRegistration.unregister();
 	}
 
 	@Test
@@ -77,10 +94,12 @@ public class PIMLinkEngineTest {
 
 	@Test
 	public void testDeletePIMLink() throws Exception {
-		long groupId = _addSpaceDepotEntryGroupId();
+		DepotEntry depotEntry = PIMTestUtil.addSpaceDepotEntry();
 
-		ObjectEntry objectEntry1 = _addPIMBaseSKUObjectEntry(groupId);
-		ObjectEntry objectEntry2 = _addPIMBaseSKUObjectEntry(groupId);
+		ObjectEntry objectEntry1 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry.getGroupId());
+		ObjectEntry objectEntry2 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry.getGroupId());
 
 		_pimLinkEngine.addPIMLinks(
 			objectEntry1, Collections.singletonList(objectEntry2), _TYPE);
@@ -93,44 +112,103 @@ public class PIMLinkEngineTest {
 		Assert.assertNull(_getClusterKey(objectEntry2));
 	}
 
-	private ObjectEntry _addPIMBaseSKUObjectEntry(long groupId)
-		throws Exception {
+	@Test
+	public void testGetPIMLinks() throws Exception {
+		DepotEntry depotEntry = PIMTestUtil.addSpaceDepotEntry();
 
-		ObjectDefinition objectDefinition =
-			_objectDefinitionLocalService.
-				fetchObjectDefinitionByExternalReferenceCode(
-					PIMObjectDefinitionConstants.
-						EXTERNAL_REFERENCE_CODE_BASE_SKU,
-					TestPropsValues.getCompanyId());
+		ObjectEntry sourceObjectEntry =
+			PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+				depotEntry.getGroupId());
 
-		ObjectEntryFolder objectEntryFolder =
-			_objectEntryFolderLocalService.
-				fetchObjectEntryFolderByExternalReferenceCode(
-					ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS,
-					groupId, TestPropsValues.getCompanyId());
+		List<PIMLinkRelatedEntry> pimLinkRelatedEntries =
+			_pimLinkEngine.getPIMLinkRelatedEntries(null, sourceObjectEntry);
 
-		return _objectEntryLocalService.addObjectEntry(
-			groupId, TestPropsValues.getUserId(),
-			objectDefinition.getObjectDefinitionId(),
-			objectEntryFolder.getObjectEntryFolderId(), null,
-			HashMapBuilder.<String, Serializable>put(
-				"code", RandomTestUtil.randomString()
-			).put(
-				"name", RandomTestUtil.randomString()
-			).build(),
-			ServiceContextTestUtil.getServiceContext(groupId));
+		Assert.assertTrue(pimLinkRelatedEntries.isEmpty());
+
+		ObjectEntry targetObjectEntry1 =
+			PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+				depotEntry.getGroupId());
+		ObjectEntry targetObjectEntry2 =
+			PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+				depotEntry.getGroupId());
+
+		_pimLinkEngine.addPIMLinks(
+			sourceObjectEntry,
+			Arrays.asList(targetObjectEntry1, targetObjectEntry2), _TYPE);
+
+		pimLinkRelatedEntries = _pimLinkEngine.getPIMLinkRelatedEntries(
+			null, sourceObjectEntry);
+
+		Assert.assertEquals(
+			pimLinkRelatedEntries.toString(), 2, pimLinkRelatedEntries.size());
+		Assert.assertFalse(
+			_containsPIMLink(pimLinkRelatedEntries, sourceObjectEntry));
+		Assert.assertTrue(
+			_containsPIMLink(pimLinkRelatedEntries, targetObjectEntry1));
+		Assert.assertTrue(
+			_containsPIMLink(pimLinkRelatedEntries, targetObjectEntry2));
+
+		pimLinkRelatedEntries = _pimLinkEngine.getPIMLinkRelatedEntries(
+			"type in ('" + _TYPE + "')", sourceObjectEntry);
+
+		Assert.assertEquals(
+			pimLinkRelatedEntries.toString(), 2, pimLinkRelatedEntries.size());
+
+		pimLinkRelatedEntries = _pimLinkEngine.getPIMLinkRelatedEntries(
+			"type in ('" + RandomTestUtil.randomString() + "')",
+			sourceObjectEntry);
+
+		Assert.assertTrue(pimLinkRelatedEntries.isEmpty());
+
+		ObjectEntry targetObjectEntry3 =
+			PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+				depotEntry.getGroupId());
+
+		_pimLinkEngine.addPIMLinks(
+			sourceObjectEntry, Collections.singletonList(targetObjectEntry3),
+			TestPIMLinkType.TYPE);
+
+		pimLinkRelatedEntries = _pimLinkEngine.getPIMLinkRelatedEntries(
+			null, sourceObjectEntry);
+
+		Assert.assertEquals(
+			pimLinkRelatedEntries.toString(), 3, pimLinkRelatedEntries.size());
+
+		pimLinkRelatedEntries = _pimLinkEngine.getPIMLinkRelatedEntries(
+			"type in ('" + _TYPE + "')", sourceObjectEntry);
+
+		Assert.assertEquals(
+			pimLinkRelatedEntries.toString(), 2, pimLinkRelatedEntries.size());
+		Assert.assertTrue(
+			_containsPIMLink(pimLinkRelatedEntries, targetObjectEntry1));
+		Assert.assertFalse(
+			_containsPIMLink(pimLinkRelatedEntries, targetObjectEntry3));
+
+		pimLinkRelatedEntries = _pimLinkEngine.getPIMLinkRelatedEntries(
+			"not (type in ('" + _TYPE + "'))", sourceObjectEntry);
+
+		Assert.assertEquals(
+			pimLinkRelatedEntries.toString(), 1, pimLinkRelatedEntries.size());
+		Assert.assertFalse(
+			_containsPIMLink(pimLinkRelatedEntries, targetObjectEntry1));
+		Assert.assertTrue(
+			_containsPIMLink(pimLinkRelatedEntries, targetObjectEntry3));
 	}
 
-	private long _addSpaceDepotEntryGroupId() throws Exception {
-		DepotEntry depotEntry = _depotEntryLocalService.addDepotEntry(
-			Collections.singletonMap(
-				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
-			Collections.singletonMap(
-				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
-			DepotConstants.TYPE_SPACE,
-			ServiceContextTestUtil.getServiceContext());
+	private boolean _containsPIMLink(
+		List<PIMLinkRelatedEntry> pimLinkRelatedEntries,
+		ObjectEntry objectEntry) {
 
-		return depotEntry.getGroupId();
+		return ListUtil.exists(
+			pimLinkRelatedEntries,
+			pimLinkRelatedEntry -> {
+				ObjectEntry pimLinkObjectEntry =
+					pimLinkRelatedEntry.getObjectEntry();
+
+				return Objects.equals(
+					pimLinkObjectEntry.getExternalReferenceCode(),
+					objectEntry.getExternalReferenceCode());
+			});
 	}
 
 	private String _getClusterKey(ObjectEntry objectEntry) throws Exception {
@@ -160,10 +238,12 @@ public class PIMLinkEngineTest {
 	}
 
 	private void _testAddPIMLinks() throws Exception {
-		long groupId = _addSpaceDepotEntryGroupId();
+		DepotEntry depotEntry = PIMTestUtil.addSpaceDepotEntry();
 
-		ObjectEntry objectEntry1 = _addPIMBaseSKUObjectEntry(groupId);
-		ObjectEntry objectEntry2 = _addPIMBaseSKUObjectEntry(groupId);
+		ObjectEntry objectEntry1 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry.getGroupId());
+		ObjectEntry objectEntry2 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry.getGroupId());
 
 		_pimLinkEngine.addPIMLinks(
 			objectEntry1, Collections.singletonList(objectEntry2), _TYPE);
@@ -175,16 +255,20 @@ public class PIMLinkEngineTest {
 	}
 
 	private void _testAddPIMLinksWithExistingCluster() throws Exception {
-		long groupId = _addSpaceDepotEntryGroupId();
+		DepotEntry depotEntry = PIMTestUtil.addSpaceDepotEntry();
 
-		ObjectEntry objectEntry1 = _addPIMBaseSKUObjectEntry(groupId);
-		ObjectEntry objectEntry2 = _addPIMBaseSKUObjectEntry(groupId);
+		ObjectEntry objectEntry1 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry.getGroupId());
+		ObjectEntry objectEntry2 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry.getGroupId());
 
 		_pimLinkEngine.addPIMLinks(
 			objectEntry1, Collections.singletonList(objectEntry2), _TYPE);
 
-		ObjectEntry objectEntry3 = _addPIMBaseSKUObjectEntry(groupId);
-		ObjectEntry objectEntry4 = _addPIMBaseSKUObjectEntry(groupId);
+		ObjectEntry objectEntry3 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry.getGroupId());
+		ObjectEntry objectEntry4 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry.getGroupId());
 
 		_pimLinkEngine.addPIMLinks(
 			objectEntry3, Collections.singletonList(objectEntry4), _TYPE);
@@ -203,10 +287,15 @@ public class PIMLinkEngineTest {
 	}
 
 	private void _testAddPIMLinksWithInvalidGroupId() throws Exception {
-		ObjectEntry objectEntry1 = _addPIMBaseSKUObjectEntry(
-			_addSpaceDepotEntryGroupId());
-		ObjectEntry objectEntry2 = _addPIMBaseSKUObjectEntry(
-			_addSpaceDepotEntryGroupId());
+		DepotEntry depotEntry1 = PIMTestUtil.addSpaceDepotEntry();
+
+		ObjectEntry objectEntry1 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry1.getGroupId());
+
+		DepotEntry depotEntry2 = PIMTestUtil.addSpaceDepotEntry();
+
+		ObjectEntry objectEntry2 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry2.getGroupId());
 
 		Assert.assertThrows(
 			UnsupportedOperationException.class,
@@ -215,10 +304,12 @@ public class PIMLinkEngineTest {
 	}
 
 	private void _testAddPIMLinksWithInvalidType() throws Exception {
-		long groupId = _addSpaceDepotEntryGroupId();
+		DepotEntry depotEntry = PIMTestUtil.addSpaceDepotEntry();
 
-		ObjectEntry objectEntry1 = _addPIMBaseSKUObjectEntry(groupId);
-		ObjectEntry objectEntry2 = _addPIMBaseSKUObjectEntry(groupId);
+		ObjectEntry objectEntry1 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry.getGroupId());
+		ObjectEntry objectEntry2 = PIMBaseSKUTestUtil.addPIMBaseSKUObjectEntry(
+			depotEntry.getGroupId());
 
 		Assert.assertThrows(
 			UnsupportedOperationException.class,
@@ -229,9 +320,6 @@ public class PIMLinkEngineTest {
 
 	private static final String _TYPE = "variant";
 
-	@Inject
-	private DepotEntryLocalService _depotEntryLocalService;
-
 	@Inject(
 		filter = "filter.factory.key=" + ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT
 	)
@@ -241,12 +329,11 @@ public class PIMLinkEngineTest {
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;
 
 	@Inject
-	private ObjectEntryFolderLocalService _objectEntryFolderLocalService;
-
-	@Inject
 	private ObjectEntryLocalService _objectEntryLocalService;
 
 	@Inject
 	private PIMLinkEngine _pimLinkEngine;
+
+	private ServiceRegistration<PIMLinkType> _serviceRegistration;
 
 }
