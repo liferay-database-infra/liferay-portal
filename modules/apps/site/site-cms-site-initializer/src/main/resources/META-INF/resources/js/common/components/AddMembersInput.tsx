@@ -31,6 +31,7 @@ interface AdminUserGroup {
 
 interface AddMembersInputProps extends AddMembersInputApi {
 	userAccountsAPIURL?: string;
+	userGroupsAPIURL?: string;
 }
 
 export default function AddMembersInput({
@@ -40,6 +41,7 @@ export default function AddMembersInput({
 	onSelectChange,
 	selectValue,
 	userAccountsAPIURL,
+	userGroupsAPIURL,
 }: AddMembersInputProps) {
 	const [value, setValue] = useState('');
 
@@ -51,6 +53,10 @@ export default function AddMembersInput({
 	const apiURL = useMemo(() => {
 		if (selectValue === MemberType.USERS && userAccountsAPIURL) {
 			return userAccountsAPIURL;
+		}
+
+		if (selectValue === MemberType.GROUPS && userGroupsAPIURL) {
+			return userGroupsAPIURL;
 		}
 
 		const endpoint =
@@ -71,14 +77,20 @@ export default function AddMembersInput({
 			);
 		}
 
-		if (filter) {
+		if (filter && selectValue === MemberType.USERS) {
 			filters.push(filter);
 		}
 
 		return filters.length
 			? `${endpoint}?filter=${filters.join(' and ')}`
 			: endpoint;
-	}, [excludeMembers, filter, selectValue, userAccountsAPIURL]);
+	}, [
+		excludeMembers,
+		filter,
+		selectValue,
+		userAccountsAPIURL,
+		userGroupsAPIURL,
+	]);
 
 	const renderUserAccountItem = (item: AdminUserAccount) => {
 		return (
@@ -180,6 +192,9 @@ export default function AddMembersInput({
 				<ItemSelector<AdminUserGroup>
 					apiURL={apiURL}
 					id="autocomplete"
+					itemsFilter={(item) =>
+						!excludeMemberIds.has(String(item.id))
+					}
 					key={apiURL}
 					locator={{
 						id: 'id',

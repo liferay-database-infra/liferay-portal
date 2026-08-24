@@ -183,6 +183,21 @@ class Analytics {
 		}
 	}
 
+	/**
+	 * Sends every queued message now instead of waiting for the next flush
+	 * interval, and returns a Promise that settles once the in-flight requests
+	 * settle. Each request is already bounded by the client adapter's
+	 * REQUEST_TIMEOUT, so a stalled endpoint cannot hold the Promise open
+	 * indefinitely.
+	 */
+	flush() {
+		if (!this._queueFlushService) {
+			return Promise.resolve();
+		}
+
+		return this._queueFlushService.flush();
+	}
+
 	getEvents() {
 		return this[
 			AnalyticsType.Queues.Events
@@ -313,7 +328,7 @@ class Analytics {
 	 * different than the previously stored one, we will save this new identity and
 	 * send a request updating the Identity Service.
 	 */
-	setIdentity(identity: {email: string; name: string}) {
+	setIdentity(identity: AnalyticsType.SetIdentity) {
 		if (this._isTrackingDisabled()) {
 			return;
 		}
@@ -322,6 +337,7 @@ class Analytics {
 			emailAddressHashed: identity.email
 				? hash(identity.email.toLowerCase())
 				: '',
+			fields: this._getNormalizedFields(identity.fields),
 		};
 
 		this.config.identity = hashedIdentity;
@@ -411,6 +427,26 @@ class Analytics {
 	}
 
 	/**
+	 * Returns the given fields sorted by name, so that the same data always
+	 * produces the same identity hash regardless of the order the caller used.
+	 * The array is copied because sorting is done in place and the caller's
+	 * array must not be modified.
+	 */
+	_getNormalizedFields(fields?: AnalyticsType.Field[]) {
+		if (!fields) {
+			return fields;
+		}
+
+		return [...fields].sort((fieldA, fieldB) => {
+			if (fieldA.name === fieldB.name) {
+				return 0;
+			}
+
+			return fieldA.name < fieldB.name ? -1 : 1;
+		});
+	}
+
+	/**
 	 * Gets the userId for the existing analytics user. Previously generated ids
 	 * are stored and retrieved before generating a new one. If an anonymous
 	 * navigation is started after an identified navigation, the user ID token
@@ -488,7 +524,7 @@ class Analytics {
 			identityHash !== storedIdentityHash ||
 			channelId !== storedChannelId
 		) {
-			const {emailAddressHashed} = identity;
+			const {emailAddressHashed, fields} = identity;
 
 			setItem(AnalyticsType.Keys.ChannelId, channelId);
 			setItem(AnalyticsType.Keys.Identity, identityHash);
@@ -497,6 +533,7 @@ class Analytics {
 				channelId,
 				dataSourceId,
 				emailAddressHashed,
+				fields,
 				id: identityHash,
 				userId,
 			});

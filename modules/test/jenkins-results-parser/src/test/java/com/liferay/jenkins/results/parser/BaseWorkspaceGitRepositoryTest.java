@@ -7,9 +7,11 @@ package com.liferay.jenkins.results.parser;
 
 import java.io.File;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -54,6 +56,24 @@ public class BaseWorkspaceGitRepositoryTest
 	}
 
 	@Test
+	public void testGetBranchName() throws Exception {
+		Assert.assertFalse(
+			JenkinsResultsParserUtil.isNullOrEmpty(_getBranchName("", "")));
+
+		String branchName = RandomTestUtil.randomString();
+
+		testEquals(branchName, _getBranchName(branchName, null));
+
+		String startPropertiesBranchName = RandomTestUtil.randomString();
+
+		testEquals(
+			branchName, _getBranchName(branchName, startPropertiesBranchName));
+		testEquals(
+			startPropertiesBranchName,
+			_getBranchName(null, startPropertiesBranchName));
+	}
+
+	@Test
 	public void testGetGitWorkingDirectory() throws Exception {
 		_testGetGitWorkingDirectory(false, false, false, false);
 		_testGetGitWorkingDirectory(false, false, false, true);
@@ -78,6 +98,16 @@ public class BaseWorkspaceGitRepositoryTest
 			_isFullDotGitDirArchiveRequired("liferay-plugins-ee-6.2.x"));
 		Assert.assertTrue(
 			_isFullDotGitDirArchiveRequired("liferay-portal-ee-6.2.x"));
+	}
+
+	@Test
+	public void testPartitionLocalGitCommits() throws Exception {
+		_testPartitionLocalGitCommits(0, true, _newLocalGitCommits(5));
+		_testPartitionLocalGitCommits(1, true, _newLocalGitCommits(5));
+		_testPartitionLocalGitCommits(3, false, _newLocalGitCommits(0));
+		_testPartitionLocalGitCommits(3, false, _newLocalGitCommits(10));
+		_testPartitionLocalGitCommits(3, false, null);
+		_testPartitionLocalGitCommits(5, false, _newLocalGitCommits(3));
 	}
 
 	@Test
@@ -156,6 +186,51 @@ public class BaseWorkspaceGitRepositoryTest
 	}
 
 	@Test
+	public void testStoreCommitHistory() throws Exception {
+		List<String> expectedCommitSHAs = new ArrayList<>();
+
+		GitWorkingDirectory gitWorkingDirectory = Mockito.mock(
+			GitWorkingDirectory.class);
+
+		List<LocalGitCommit> localGitCommits = _newLocalGitCommits(5);
+
+		Mockito.doReturn(
+			localGitCommits
+		).when(
+			gitWorkingDirectory
+		).log(
+			0, WorkspaceGitRepository.COMMITS_HISTORY_GROUP_SIZE
+		);
+
+		DefaultWorkspaceGitRepository defaultWorkspaceGitRepository =
+			_newDefaultWorkspaceGitRepository();
+
+		Mockito.doReturn(
+			gitWorkingDirectory
+		).when(
+			defaultWorkspaceGitRepository
+		).getGitWorkingDirectory();
+
+		for (LocalGitCommit localGitCommit : localGitCommits.subList(0, 4)) {
+			expectedCommitSHAs.add(localGitCommit.getSHA());
+		}
+
+		defaultWorkspaceGitRepository.storeCommitHistory(
+			Collections.singletonList(
+				expectedCommitSHAs.get(expectedCommitSHAs.size() - 1)));
+
+		List<String> actualCommitSHAs = new ArrayList<>();
+
+		for (LocalGitCommit historicalLocalGitCommit :
+				defaultWorkspaceGitRepository.getHistoricalLocalGitCommits()) {
+
+			actualCommitSHAs.add(historicalLocalGitCommit.getSHA());
+		}
+
+		testEquals(expectedCommitSHAs, actualCommitSHAs);
+	}
+
+	@Test
 	public void testUploadGitArchives() throws Exception {
 		String jobName = "downstream-job";
 
@@ -207,6 +282,54 @@ public class BaseWorkspaceGitRepositoryTest
 		_testValidateSHAInRemoteGitRef(false, true, true);
 		_testValidateSHAInRemoteGitRef(true, false, true);
 		_testValidateSHAInRemoteGitRef(true, true, false);
+	}
+
+	private String _getBranchName(
+			String branchName, String startPropertiesBranchName)
+		throws Exception {
+
+		Map<String, String> environmentMap = new HashMap<>();
+
+		if (branchName != null) {
+			environmentMap.put("TOP_LEVEL_BRANCH_NAME", branchName);
+		}
+
+		Environment environment = mockEnvironment(environmentMap);
+
+		BuildDatabase buildDatabase = Mockito.mock(BuildDatabase.class);
+
+		Properties startProperties = new Properties();
+
+		if (startPropertiesBranchName != null) {
+			startProperties.setProperty(
+				"TOP_LEVEL_BRANCH_NAME", startPropertiesBranchName);
+		}
+
+		Mockito.doReturn(
+			startProperties
+		).when(
+			buildDatabase
+		).getProperties(
+			"start.properties"
+		);
+
+		BuildDatabaseUtil.setBuildDatabase(buildDatabase);
+
+		DefaultWorkspaceGitRepository defaultWorkspaceGitRepository =
+			_newDefaultWorkspaceGitRepository();
+
+		String actualBranchName = defaultWorkspaceGitRepository.getBranchName();
+
+		testEquals(
+			actualBranchName, defaultWorkspaceGitRepository.getBranchName());
+
+		Mockito.verify(
+			environment, Mockito.times(1)
+		).doGet(
+			"TOP_LEVEL_BRANCH_NAME"
+		);
+
+		return actualBranchName;
 	}
 
 	private VerificationMode _getVerificationMode(boolean invoked) {
@@ -384,6 +507,23 @@ public class BaseWorkspaceGitRepositoryTest
 		return Mockito.spy(new DefaultWorkspaceGitRepository(jsonObject));
 	}
 
+	private List<LocalGitCommit> _newLocalGitCommits(int count) {
+		List<LocalGitCommit> localGitCommits = new ArrayList<>();
+
+		GitWorkingDirectory gitWorkingDirectory = Mockito.mock(
+			GitWorkingDirectory.class);
+
+		for (int i = 0; i < count; i++) {
+			localGitCommits.add(
+				GitCommitFactory.newLocalGitCommit(
+					RandomTestUtil.randomString(), gitWorkingDirectory,
+					RandomTestUtil.randomString(), RandomTestUtil.randomSHA(),
+					RandomTestUtil.randomLong()));
+		}
+
+		return localGitCommits;
+	}
+
 	private void _setUpEnvironment(String jobName, String jobVariant) {
 		Map<String, String> environmentMap = new HashMap<>();
 
@@ -545,6 +685,61 @@ public class BaseWorkspaceGitRepositoryTest
 			propertyType);
 
 		testEquals(expectedPropertyValue, properties.getProperty(propertyName));
+	}
+
+	private void _testPartitionLocalGitCommits(
+			int count, boolean exceptionThrown,
+			List<LocalGitCommit> localGitCommits)
+		throws Exception {
+
+		DefaultWorkspaceGitRepository defaultWorkspaceGitRepository =
+			_newDefaultWorkspaceGitRepository();
+
+		if (exceptionThrown) {
+			try {
+				defaultWorkspaceGitRepository.partitionLocalGitCommits(
+					localGitCommits, count);
+
+				Assert.fail("Expected IllegalArgumentException");
+			}
+			catch (IllegalArgumentException illegalArgumentException) {
+				testEquals(
+					"Invalid count " + count,
+					illegalArgumentException.getMessage());
+			}
+
+			return;
+		}
+
+		List<LocalGitCommit> expectedLocalGitCommits = new ArrayList<>();
+
+		if (localGitCommits != null) {
+			expectedLocalGitCommits.addAll(localGitCommits);
+		}
+
+		List<List<LocalGitCommit>> localGitCommitsLists =
+			defaultWorkspaceGitRepository.partitionLocalGitCommits(
+				localGitCommits, count);
+
+		Assert.assertTrue(
+			localGitCommitsLists.size() <= Math.min(
+				count, expectedLocalGitCommits.size()));
+
+		if (localGitCommits != null) {
+			testEquals(expectedLocalGitCommits, localGitCommits);
+		}
+
+		List<LocalGitCommit> actualLocalGitCommits = new ArrayList<>();
+
+		for (List<LocalGitCommit> localGitCommitsPartition :
+				localGitCommitsLists) {
+
+			Assert.assertFalse(localGitCommitsPartition.isEmpty());
+
+			actualLocalGitCommits.addAll(localGitCommitsPartition);
+		}
+
+		testEquals(expectedLocalGitCommits, actualLocalGitCommits);
 	}
 
 	private void _testPrepareGitWorkingDirectory(

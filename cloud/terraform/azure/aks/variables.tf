@@ -16,17 +16,8 @@ variable "host_encryption_enabled" {
 	type=bool
 }
 variable "machine_type" {
-	default="Standard_D4ds_v4"
+	default="Standard_D8s_v3"
 	type=string
-}
-variable "observability_config" {
-	default={}
-	type=object({
-		annotations_allowed=optional(string)
-		enabled=optional(bool, false)
-		labels_allowed=optional(string)
-		namespace=optional(string, "observability")
-	})
 }
 variable "pod_cidr" {
 	default="10.244.0.0/16"

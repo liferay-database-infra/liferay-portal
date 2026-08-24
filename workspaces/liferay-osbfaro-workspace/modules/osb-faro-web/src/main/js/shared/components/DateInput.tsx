@@ -6,7 +6,7 @@ import getCN from 'classnames';
 import Input from './Input';
 import MaskedInput from './MaskedInput';
 import moment from 'moment';
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {
 	applyTimeZone,
 	DATE_MASK,
@@ -52,6 +52,14 @@ const DateInput: React.FC<IDateInputProps> = ({
 }) => {
 	const [active, setActive] = useState(false);
 
+	// Clay closes the picker from its own trigger through a callback it froze on
+	// the first render, so reading the blur handler from that closure would call
+	// a stale one. Route it through a ref instead.
+
+	const onDateInputBlurRef = useRef(onDateInputBlur);
+
+	onDateInputBlurRef.current = onDateInputBlur;
+
 	const handleDateSelect = (value: any): void => {
 		onDateInputChange(value.format(format));
 
@@ -66,26 +74,21 @@ const DateInput: React.FC<IDateInputProps> = ({
 		}
 	};
 
+	const date = showTimeSelector
+		? applyTimeZone(value, timeZoneId)
+		: moment(value, format);
+
+	// The displayed text and the calendar highlight read the same parse, so an
+	// empty value leaves the mask placeholder visible on both instead of
+	// rendering moment's "Invalid date" string.
+
 	const getDateValue = (): string => {
 		if (!displayFormat) {
 			return value;
 		}
 
-		let date = value;
-
-		if (showTimeSelector) {
-			date = applyTimeZone(value, timeZoneId);
-		}
-		else {
-			date = moment(value);
-		}
-
-		return date.format(displayFormat);
+		return date.isValid() ? date.format(displayFormat) : '';
 	};
-
-	const date = showTimeSelector
-		? applyTimeZone(value, timeZoneId)
-		: moment(value, format);
 
 	const retentionPeriod = useRetentionPeriod();
 
@@ -106,7 +109,7 @@ const DateInput: React.FC<IDateInputProps> = ({
 			onActiveChange={(active) => {
 				setActive(active);
 
-				!active && onDateInputBlur();
+				!active && onDateInputBlurRef.current();
 			}}
 			trigger={
 				<div>

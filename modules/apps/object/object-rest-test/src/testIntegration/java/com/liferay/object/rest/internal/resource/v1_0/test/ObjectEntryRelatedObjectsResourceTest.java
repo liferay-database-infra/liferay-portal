@@ -1053,16 +1053,8 @@ public class ObjectEntryRelatedObjectsResourceTest {
 
 		UserLocalServiceUtil.addRoleUser(role.getRoleId(), user.getUserId());
 
-		ResourcePermissionLocalServiceUtil.setResourcePermissions(
-			TestPropsValues.getCompanyId(), _objectEntry1.getModelClassName(),
-			ResourceConstants.SCOPE_INDIVIDUAL,
-			String.valueOf(_objectEntry1.getPrimaryKey()), role.getRoleId(),
-			new String[] {ActionKeys.VIEW});
-		ResourcePermissionLocalServiceUtil.setResourcePermissions(
-			TestPropsValues.getCompanyId(), _objectEntry2.getModelClassName(),
-			ResourceConstants.SCOPE_INDIVIDUAL,
-			String.valueOf(_objectEntry2.getPrimaryKey()), role.getRoleId(),
-			new String[] {ActionKeys.VIEW});
+		_setResourcePermissions(_objectEntry1, role, ActionKeys.VIEW);
+		_setResourcePermissions(_objectEntry2, role, ActionKeys.VIEW);
 
 		HTTPTestUtil.customize(
 		).withCredentials(
@@ -1322,6 +1314,452 @@ public class ObjectEntryRelatedObjectsResourceTest {
 			objectRelationship, TestPropsValues.getUserId());
 
 		_assertPagination(_user1, objectRelationship);
+	}
+
+	@Test
+	public void testPatchCustomObjectEntryWithNestedCustomObjectEntryByExternalReferenceCode()
+		throws Exception {
+
+		_testPatchCustomObjectEntryWithNestedCustomObjectEntryByExternalReferenceCode(
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+		_testPatchCustomObjectEntryWithNestedCustomObjectEntryByExternalReferenceCode(
+			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+	}
+
+	@Test
+	public void testPatchCustomObjectEntryWithNestedCustomObjectEntryDisplayDate()
+		throws Exception {
+
+		String displayDate = "2026-03-05T10:00:00Z";
+
+		JSONObject relatedObjectEntryJSONObject =
+			HTTPTestUtil.invokeToJSONObject(
+				JSONUtil.put(
+					_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
+				).put(
+					"displayDate", displayDate
+				).toString(),
+				_objectDefinition2.getRESTContextPath(), Http.Method.POST);
+
+		Assert.assertEquals(
+			displayDate, relatedObjectEntryJSONObject.getString("displayDate"));
+
+		ObjectRelationship objectRelationship = _addObjectRelationship(
+			_objectDefinition1, _objectDefinition2,
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			_toBody(
+				_objectEntry1.getExternalReferenceCode(),
+				JSONUtil.put(
+					"externalReferenceCode",
+					relatedObjectEntryJSONObject.getString(
+						"externalReferenceCode")),
+				objectRelationship),
+			_getEndpoint(
+				_objectEntry1.getExternalReferenceCode(), _objectDefinition1,
+				null),
+			Http.Method.PATCH);
+
+		JSONObject nestedObjectEntryJSONObject =
+			_getNestedObjectEntryJSONObject(jsonObject, objectRelationship);
+
+		Assert.assertEquals(
+			displayDate, nestedObjectEntryJSONObject.getString("displayDate"));
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_2,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_2));
+	}
+
+	@Test
+	public void testPatchCustomObjectEntryWithNestedCustomObjectEntryHierarchy()
+		throws Exception {
+
+		ObjectField objectField = ObjectFieldTestUtil.addCustomObjectField(
+			TestPropsValues.getUserId(),
+			ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+			ObjectFieldConstants.DB_TYPE_STRING, _objectDefinition2,
+			_OBJECT_FIELD_NAME_1);
+
+		ObjectRelationship objectRelationship = TreeTestUtil.bind(
+			_objectDefinition1.getObjectDefinitionId(),
+			_objectDefinition2.getObjectDefinitionId(),
+			_objectRelationshipLocalService);
+
+		_objectRelationships.add(objectRelationship);
+
+		JSONObject relatedObjectEntryJSONObject =
+			HTTPTestUtil.invokeToJSONObject(
+				JSONUtil.put(
+					_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
+				).put(
+					objectField.getName(), _OBJECT_FIELD_VALUE_3
+				).toString(),
+				_getEndpoint(
+					objectRelationship.getName(), _objectDefinition1,
+					_objectEntry1.getPrimaryKey()),
+				Http.Method.POST);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			_toBody(
+				_objectEntry1.getExternalReferenceCode(),
+				JSONUtil.put(
+					_OBJECT_FIELD_NAME_2, _NEW_OBJECT_FIELD_VALUE_1
+				).put(
+					"externalReferenceCode",
+					relatedObjectEntryJSONObject.getString(
+						"externalReferenceCode")
+				),
+				objectRelationship),
+			_getEndpoint(
+				_objectEntry1.getExternalReferenceCode(), _objectDefinition1,
+				null),
+			Http.Method.PATCH);
+
+		JSONObject nestedObjectEntryJSONObject =
+			_getNestedObjectEntryJSONObject(jsonObject, objectRelationship);
+
+		Assert.assertEquals(
+			_NEW_OBJECT_FIELD_VALUE_1,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_2));
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_3,
+			nestedObjectEntryJSONObject.getString(objectField.getName()));
+	}
+
+	@Test
+	public void testPatchCustomObjectEntryWithNestedCustomObjectEntryValues()
+		throws Exception {
+
+		ObjectDefinition objectDefinition =
+			ObjectDefinitionTestUtil.publishObjectDefinition(
+				List.of(
+					new TextObjectFieldBuilder(
+					).labelMap(
+						RandomTestUtil.randomLocaleStringMap()
+					).name(
+						_OBJECT_FIELD_NAME_1
+					).required(
+						true
+					).build(),
+					new TextObjectFieldBuilder(
+					).labelMap(
+						RandomTestUtil.randomLocaleStringMap()
+					).name(
+						_OBJECT_FIELD_NAME_2
+					).build(),
+					new TextObjectFieldBuilder(
+					).labelMap(
+						RandomTestUtil.randomLocaleStringMap()
+					).name(
+						_OBJECT_FIELD_NAME_3
+					).build()),
+				false);
+
+		_objectDefinitions.add(objectDefinition);
+
+		ObjectEntry objectEntry = ObjectEntryTestUtil.addObjectEntry(
+			objectDefinition,
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_1
+			).put(
+				_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
+			).put(
+				_OBJECT_FIELD_NAME_3, _OBJECT_FIELD_VALUE_3
+			).build());
+
+		String keyword = "x" + RandomTestUtil.randomString();
+
+		ObjectRelationship objectRelationship = _addObjectRelationship(
+			_objectDefinition1, objectDefinition,
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			_toBody(
+				_objectEntry1.getExternalReferenceCode(),
+				JSONUtil.put(
+					_OBJECT_FIELD_NAME_2, _NEW_OBJECT_FIELD_VALUE_1
+				).put(
+					"externalReferenceCode",
+					objectEntry.getExternalReferenceCode()
+				).put(
+					"keywords", JSONUtil.putAll(keyword)
+				),
+				objectRelationship),
+			_getEndpoint(
+				_objectEntry1.getExternalReferenceCode(), _objectDefinition1,
+				null),
+			Http.Method.PATCH);
+
+		JSONObject nestedObjectEntryJSONObject =
+			_getNestedObjectEntryJSONObject(jsonObject, objectRelationship);
+
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_1,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_1));
+		Assert.assertEquals(
+			_NEW_OBJECT_FIELD_VALUE_1,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_2));
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_3,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_3));
+
+		JSONArray keywordsJSONArray = nestedObjectEntryJSONObject.getJSONArray(
+			"keywords");
+
+		Assert.assertEquals(1, keywordsJSONArray.length());
+		Assert.assertEquals(keyword, keywordsJSONArray.getString(0));
+	}
+
+	@Test
+	public void testPatchCustomObjectEntryWithNestedCustomObjectEntryWithoutViewPermission()
+		throws Exception {
+
+		ObjectRelationship objectRelationship = _addObjectRelationship(
+			_objectDefinition1, _objectDefinition2,
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		Role role = RoleTestUtil.addRole(RoleConstants.TYPE_REGULAR);
+
+		String password = RandomTestUtil.randomString();
+
+		User user = UserTestUtil.addUser(
+			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			password, RandomTestUtil.randomString() + "@liferay.com",
+			RandomTestUtil.randomString(), LocaleUtil.getDefault(),
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(), null,
+			ServiceContextTestUtil.getServiceContext());
+
+		user.setEmailAddressVerified(true);
+
+		user = UserLocalServiceUtil.updateUser(user);
+
+		UserLocalServiceUtil.addRoleUser(role.getRoleId(), user.getUserId());
+
+		_setResourcePermissions(
+			_objectEntry1, role, ActionKeys.UPDATE, ActionKeys.VIEW);
+		_setResourcePermissions(_objectEntry2, role, ActionKeys.UPDATE);
+
+		String body = JSONUtil.put(
+			objectRelationship.getName(),
+			JSONUtil.putAll(
+				JSONUtil.put(
+					"externalReferenceCode",
+					_objectEntry2.getExternalReferenceCode()))
+		).toString();
+		String endpoint = _getEndpoint(
+			_objectEntry1.getExternalReferenceCode(), _objectDefinition1, null);
+
+		HTTPTestUtil.customize(
+		).withCredentials(
+			user.getEmailAddress(), password
+		).apply(
+			() -> Assert.assertEquals(
+				403,
+				HTTPTestUtil.invokeToHttpCode(
+					body, endpoint, Http.Method.PATCH))
+		);
+
+		_setResourcePermissions(
+			_objectEntry2, role, ActionKeys.UPDATE, ActionKeys.VIEW);
+
+		HTTPTestUtil.customize(
+		).withCredentials(
+			user.getEmailAddress(), password
+		).apply(
+			() -> Assert.assertEquals(
+				200,
+				HTTPTestUtil.invokeToHttpCode(
+					body, endpoint, Http.Method.PATCH))
+		);
+	}
+
+	@Test
+	public void testPatchCustomObjectEntryWithUnknownNestedCustomObjectEntry()
+		throws Exception {
+
+		String externalReferenceCode = RandomTestUtil.randomString();
+
+		ObjectRelationship objectRelationship = _addObjectRelationship(
+			_objectDefinition1, _objectDefinition2,
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			_toBody(
+				_objectEntry1.getExternalReferenceCode(),
+				JSONUtil.put(
+					_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
+				).put(
+					"externalReferenceCode", externalReferenceCode
+				),
+				objectRelationship),
+			_getEndpoint(
+				_objectEntry1.getExternalReferenceCode(), _objectDefinition1,
+				null),
+			Http.Method.PATCH);
+
+		JSONObject nestedObjectEntryJSONObject =
+			_getNestedObjectEntryJSONObject(jsonObject, objectRelationship);
+
+		Assert.assertEquals(
+			externalReferenceCode,
+			nestedObjectEntryJSONObject.getString("externalReferenceCode"));
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_2,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_2));
+
+		JSONObject relatedObjectEntryJSONObject =
+			HTTPTestUtil.invokeToJSONObject(
+				null,
+				_getEndpoint(externalReferenceCode, _objectDefinition2, null),
+				Http.Method.GET);
+
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_2,
+			relatedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_2));
+	}
+
+	@Test
+	public void testPatchRelatedObjectEntryWithNestedCustomObjectEntry()
+		throws Exception {
+
+		ObjectField objectField = ObjectFieldTestUtil.addCustomObjectField(
+			TestPropsValues.getUserId(),
+			ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+			ObjectFieldConstants.DB_TYPE_STRING, _objectDefinition3,
+			_OBJECT_FIELD_NAME_1);
+
+		ObjectEntry objectEntry = ObjectEntryTestUtil.addObjectEntry(
+			_objectDefinition3,
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
+			).put(
+				objectField.getName(), _OBJECT_FIELD_VALUE_3
+			).build());
+
+		ObjectRelationship objectRelationship = TreeTestUtil.bind(
+			_objectDefinition1.getObjectDefinitionId(),
+			_objectDefinition2.getObjectDefinitionId(),
+			_objectRelationshipLocalService);
+
+		_objectRelationships.add(objectRelationship);
+
+		JSONObject relatedObjectEntryJSONObject =
+			HTTPTestUtil.invokeToJSONObject(
+				JSONUtil.put(
+					_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
+				).toString(),
+				_getEndpoint(
+					objectRelationship.getName(), _objectDefinition1,
+					_objectEntry1.getPrimaryKey()),
+				Http.Method.POST);
+
+		ObjectRelationship nestedObjectRelationship = _addObjectRelationship(
+			_objectDefinition2, _objectDefinition3,
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				nestedObjectRelationship.getName(),
+				JSONUtil.putAll(
+					JSONUtil.put(
+						"externalReferenceCode",
+						objectEntry.getExternalReferenceCode()))
+			).toString(),
+			StringBundler.concat(
+				_objectDefinition1.getRESTContextPath(),
+				"/by-external-reference-code/",
+				_objectEntry1.getExternalReferenceCode(), StringPool.SLASH,
+				objectRelationship.getName(), StringPool.SLASH,
+				relatedObjectEntryJSONObject.getString(
+					"externalReferenceCode")),
+			Http.Method.PATCH);
+
+		JSONObject nestedObjectEntryJSONObject =
+			_getNestedObjectEntryJSONObject(
+				jsonObject, nestedObjectRelationship);
+
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_2,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_2));
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_3,
+			nestedObjectEntryJSONObject.getString(objectField.getName()));
+	}
+
+	@Test
+	public void testPatchScopeScopeKeyByExternalReferenceCodeWithNestedCustomObjectEntry()
+		throws Exception {
+
+		ObjectDefinition siteObjectDefinition =
+			ObjectDefinitionTestUtil.publishObjectDefinition(
+				List.of(
+					new TextObjectFieldBuilder(
+					).labelMap(
+						RandomTestUtil.randomLocaleStringMap()
+					).name(
+						_OBJECT_FIELD_NAME_1
+					).build()),
+				ObjectDefinitionConstants.SCOPE_SITE);
+
+		_objectDefinitions.add(siteObjectDefinition);
+
+		ObjectEntry siteObjectEntry = ObjectEntryTestUtil.addObjectEntry(
+			siteObjectDefinition, _OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_1);
+
+		ObjectDefinition relatedSiteObjectDefinition =
+			ObjectDefinitionTestUtil.publishObjectDefinition(
+				List.of(
+					new TextObjectFieldBuilder(
+					).labelMap(
+						RandomTestUtil.randomLocaleStringMap()
+					).name(
+						_OBJECT_FIELD_NAME_1
+					).build(),
+					new TextObjectFieldBuilder(
+					).labelMap(
+						RandomTestUtil.randomLocaleStringMap()
+					).name(
+						_OBJECT_FIELD_NAME_2
+					).build()),
+				ObjectDefinitionConstants.SCOPE_SITE);
+
+		_objectDefinitions.add(relatedSiteObjectDefinition);
+
+		ObjectEntry relatedSiteObjectEntry = ObjectEntryTestUtil.addObjectEntry(
+			relatedSiteObjectDefinition,
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_1
+			).put(
+				_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
+			).build());
+
+		ObjectRelationship objectRelationship = _addObjectRelationship(
+			siteObjectDefinition, relatedSiteObjectDefinition,
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			_toBody(
+				siteObjectEntry.getExternalReferenceCode(),
+				JSONUtil.put(
+					"externalReferenceCode",
+					relatedSiteObjectEntry.getExternalReferenceCode()),
+				objectRelationship),
+			_getEndpoint(
+				siteObjectEntry.getExternalReferenceCode(),
+				siteObjectDefinition,
+				String.valueOf(TestPropsValues.getGroupId())),
+			Http.Method.PATCH);
+
+		JSONObject nestedObjectEntryJSONObject =
+			_getNestedObjectEntryJSONObject(jsonObject, objectRelationship);
+
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_1,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_1));
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_2,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_2));
 	}
 
 	@Test
@@ -1698,6 +2136,55 @@ public class ObjectEntryRelatedObjectsResourceTest {
 
 		_listTypeDefinitionLocalService.deleteListTypeDefinition(
 			listTypeDefinition.getListTypeDefinitionId());
+	}
+
+	@Test
+	public void testPutCustomObjectEntryWithNestedCustomObjectEntryReplacingValues()
+		throws Exception {
+
+		ObjectField objectField = ObjectFieldTestUtil.addCustomObjectField(
+			TestPropsValues.getUserId(),
+			ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+			ObjectFieldConstants.DB_TYPE_STRING, _objectDefinition2,
+			_OBJECT_FIELD_NAME_1);
+
+		ObjectEntry objectEntry = ObjectEntryTestUtil.addObjectEntry(
+			_objectDefinition2,
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
+			).put(
+				objectField.getName(), _OBJECT_FIELD_VALUE_3
+			).build());
+
+		ObjectRelationship objectRelationship = _addObjectRelationship(
+			_objectDefinition1, _objectDefinition2,
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			_toBody(
+				_objectEntry1.getExternalReferenceCode(),
+				JSONUtil.put(
+					"externalReferenceCode",
+					objectEntry.getExternalReferenceCode()),
+				objectRelationship),
+			_getEndpoint(
+				_objectEntry1.getExternalReferenceCode(), _objectDefinition1,
+				null),
+			Http.Method.PUT);
+
+		JSONObject nestedObjectEntryJSONObject =
+			_getNestedObjectEntryJSONObject(jsonObject, objectRelationship);
+
+		Assert.assertFalse(
+			nestedObjectEntryJSONObject.isNull(_OBJECT_FIELD_NAME_2));
+		Assert.assertFalse(
+			nestedObjectEntryJSONObject.isNull(objectField.getName()));
+		Assert.assertEquals(
+			StringPool.BLANK,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_2));
+		Assert.assertEquals(
+			StringPool.BLANK,
+			nestedObjectEntryJSONObject.getString(objectField.getName()));
 	}
 
 	@Test
@@ -2208,12 +2695,39 @@ public class ObjectEntryRelatedObjectsResourceTest {
 	}
 
 	private String _getEndpoint(
+		String externalReferenceCode, ObjectDefinition objectDefinition,
+		String scopeKey) {
+
+		if (scopeKey == null) {
+			return StringBundler.concat(
+				objectDefinition.getRESTContextPath(),
+				"/by-external-reference-code/", externalReferenceCode);
+		}
+
+		return StringBundler.concat(
+			objectDefinition.getRESTContextPath(), "/scopes/", scopeKey,
+			"/by-external-reference-code/", externalReferenceCode);
+	}
+
+	private String _getEndpoint(
 		String objectEntryId, ObjectRelationship objectRelationship,
 		ObjectDefinition objectDefinition) {
 
 		return StringBundler.concat(
 			objectDefinition.getRESTContextPath(), StringPool.SLASH,
 			objectEntryId, "?nestedFields=", objectRelationship.getName());
+	}
+
+	private JSONObject _getNestedObjectEntryJSONObject(
+		JSONObject jsonObject, ObjectRelationship objectRelationship) {
+
+		JSONArray jsonArray = jsonObject.getJSONArray(
+			objectRelationship.getName());
+
+		Assert.assertNotNull(jsonObject.toString(), jsonArray);
+		Assert.assertEquals(jsonObject.toString(), 1, jsonArray.length());
+
+		return jsonArray.getJSONObject(0);
 	}
 
 	private String _getSystemObjectEntryId(
@@ -2261,6 +2775,17 @@ public class ObjectEntryRelatedObjectsResourceTest {
 		_objectDefinitions.add(objectDefinition);
 
 		return objectDefinition;
+	}
+
+	private void _setResourcePermissions(
+			ObjectEntry objectEntry, Role role, String... actionIds)
+		throws Exception {
+
+		ResourcePermissionLocalServiceUtil.setResourcePermissions(
+			TestPropsValues.getCompanyId(), objectEntry.getModelClassName(),
+			ResourceConstants.SCOPE_INDIVIDUAL,
+			String.valueOf(objectEntry.getPrimaryKey()), role.getRoleId(),
+			actionIds);
 	}
 
 	private void _testDeleteCustomObjectDefinition1WithCustomObjectDefinition2(
@@ -2455,6 +2980,77 @@ public class ObjectEntryRelatedObjectsResourceTest {
 			Http.Method.GET);
 
 		_assertEquals(objectEntry3, jsonObject.getJSONArray("items"));
+	}
+
+	private void
+			_testPatchCustomObjectEntryWithNestedCustomObjectEntryByExternalReferenceCode(
+				String type)
+		throws Exception {
+
+		ObjectDefinition objectDefinition =
+			ObjectDefinitionTestUtil.publishObjectDefinition(
+				List.of(
+					new TextObjectFieldBuilder(
+					).labelMap(
+						RandomTestUtil.randomLocaleStringMap()
+					).localized(
+						true
+					).name(
+						_OBJECT_FIELD_NAME_1
+					).build(),
+					new TextObjectFieldBuilder(
+					).labelMap(
+						RandomTestUtil.randomLocaleStringMap()
+					).name(
+						_OBJECT_FIELD_NAME_2
+					).build()),
+				false);
+
+		_objectDefinitions.add(objectDefinition);
+
+		ObjectEntry objectEntry = ObjectEntryTestUtil.addObjectEntry(
+			objectDefinition,
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME_1 + "_i18n",
+				HashMapBuilder.<String, Serializable>put(
+					"en_US", _OBJECT_FIELD_VALUE_1
+				).put(
+					"es_ES", _OBJECT_FIELD_VALUE_3
+				).build()
+			).put(
+				_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
+			).build());
+
+		ObjectRelationship objectRelationship = _addObjectRelationship(
+			_objectDefinition1, objectDefinition, type);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			_toBody(
+				_objectEntry1.getExternalReferenceCode(),
+				JSONUtil.put(
+					"externalReferenceCode",
+					objectEntry.getExternalReferenceCode()),
+				objectRelationship),
+			_getEndpoint(
+				_objectEntry1.getExternalReferenceCode(), _objectDefinition1,
+				null),
+			Http.Method.PATCH);
+
+		JSONObject nestedObjectEntryJSONObject =
+			_getNestedObjectEntryJSONObject(jsonObject, objectRelationship);
+
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_2,
+			nestedObjectEntryJSONObject.getString(_OBJECT_FIELD_NAME_2));
+
+		JSONObject i18nJSONObject = nestedObjectEntryJSONObject.getJSONObject(
+			_OBJECT_FIELD_NAME_1 + "_i18n");
+
+		Assert.assertNotNull(jsonObject.toString(), i18nJSONObject);
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_1, i18nJSONObject.getString("en_US"));
+		Assert.assertEquals(
+			_OBJECT_FIELD_VALUE_3, i18nJSONObject.getString("es_ES"));
 	}
 
 	private void _testPostCustomObjectEntryWithInvalidNestedSystemObjectEntries(
@@ -2825,6 +3421,18 @@ public class ObjectEntryRelatedObjectsResourceTest {
 		).toString();
 	}
 
+	private String _toBody(
+		String externalReferenceCode, JSONObject nestedObjectEntryJSONObject,
+		ObjectRelationship objectRelationship) {
+
+		return JSONUtil.put(
+			"externalReferenceCode", externalReferenceCode
+		).put(
+			objectRelationship.getName(),
+			JSONUtil.putAll(nestedObjectEntryJSONObject)
+		).toString();
+	}
+
 	private static final String _NEW_OBJECT_FIELD_VALUE_1 =
 		RandomTestUtil.randomString();
 
@@ -2832,6 +3440,9 @@ public class ObjectEntryRelatedObjectsResourceTest {
 		"x" + RandomTestUtil.randomString();
 
 	private static final String _OBJECT_FIELD_NAME_2 =
+		"x" + RandomTestUtil.randomString();
+
+	private static final String _OBJECT_FIELD_NAME_3 =
 		"x" + RandomTestUtil.randomString();
 
 	private static final String _OBJECT_FIELD_VALUE_1 =

@@ -13,6 +13,7 @@ import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
+import com.liferay.asset.publisher.constants.AssetPublisherPortletKeys;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.test.util.DLTestUtil;
@@ -39,6 +40,7 @@ import com.liferay.headless.admin.site.client.dto.v1_0.FragmentImage;
 import com.liferay.headless.admin.site.client.dto.v1_0.FragmentImageValue;
 import com.liferay.headless.admin.site.client.dto.v1_0.FragmentInstance;
 import com.liferay.headless.admin.site.client.dto.v1_0.FriendlyUrlHistory;
+import com.liferay.headless.admin.site.client.dto.v1_0.GeneralConfig;
 import com.liferay.headless.admin.site.client.dto.v1_0.ImageFragmentEditableElementValue;
 import com.liferay.headless.admin.site.client.dto.v1_0.ItemExternalReference;
 import com.liferay.headless.admin.site.client.dto.v1_0.LinkToPagePageSettings;
@@ -59,8 +61,11 @@ import com.liferay.headless.admin.site.client.dto.v1_0.SitePageNavigationSetting
 import com.liferay.headless.admin.site.client.dto.v1_0.SitemapSettings;
 import com.liferay.headless.admin.site.client.dto.v1_0.TaxonomyCategoryBrief;
 import com.liferay.headless.admin.site.client.dto.v1_0.WidgetInstancePageElementDefinition;
+import com.liferay.headless.admin.site.client.dto.v1_0.WidgetLookAndFeelConfig;
+import com.liferay.headless.admin.site.client.dto.v1_0.WidgetPageSection;
 import com.liferay.headless.admin.site.client.dto.v1_0.WidgetPageSettings;
 import com.liferay.headless.admin.site.client.dto.v1_0.WidgetPageSpecification;
+import com.liferay.headless.admin.site.client.dto.v1_0.WidgetPageWidgetInstance;
 import com.liferay.headless.admin.site.client.http.HttpInvoker;
 import com.liferay.headless.admin.site.client.pagination.Page;
 import com.liferay.headless.admin.site.client.pagination.Pagination;
@@ -265,7 +270,7 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 
 	@Override
 	@Test
-	@TestInfo("LPD-78718")
+	@TestInfo({"LPD-78718", "LPD-101791"})
 	public void testGetSiteSitePage() throws Exception {
 		SitePage postSitePage = testGetSiteSitePagesPage_addSitePage(
 			testGroup.getExternalReferenceCode(), randomSitePage());
@@ -313,6 +318,8 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 					LayoutTypePortletConstants.COLUMN_PREFIX + "1",
 					RandomTestUtil.randomString()
 				).buildString()));
+
+		_testGetSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances();
 	}
 
 	@Override
@@ -359,7 +366,7 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 	@FeatureFlag("LPD-38869")
 	@Override
 	@Test
-	@TestInfo("LPD-83094")
+	@TestInfo({"LPD-83094", "LPD-101791"})
 	public void testPostSiteSitePage() throws Exception {
 		super.testPostSiteSitePage();
 
@@ -390,6 +397,7 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 		_testPostSiteSitePageWithWidgetPageSettings();
 		_testPostSiteSitePageWithWidgetPageSettingsWithWidgetPageTemplate();
 		_testPostSiteSitePageWithWidgetPageTypeIsDeprecated();
+		_testPostSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances();
 	}
 
 	@Override
@@ -439,7 +447,7 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 		{
 			"LPD-72013", "LPD-74331", "LPD-75450", "LPD-77124", "LPD-77505",
 			"LPD-77576", "LPD-77852", "LPD-78667", "LPD-79415", "LPD-80061",
-			"LPD-81793", "LPD-83094", "LPD-97454", "LPD-101044"
+			"LPD-81793", "LPD-83094", "LPD-97454", "LPD-101044", "LPD-101791"
 		}
 	)
 	public void testPutSiteSitePage() throws Exception {
@@ -479,6 +487,7 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 		_testPutSiteSitePageWithStagingImport(serviceContext);
 		_testPutSiteSitePageWithWidgetPageSettings();
 		_testPutSiteSitePageWithWidgetPageSettingsWithWidgetPageTemplate();
+		_testPutSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances();
 
 		Layout layout = _addLayout(
 			LayoutConstants.TYPE_CONTENT, null, serviceContext);
@@ -1300,6 +1309,34 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 					groupId));
 	}
 
+	private void _assertWidgetPageWidgetInstances(
+		GeneralConfig.ApplicationDecorator applicationDecorator, int count,
+		String customApplicationDecorator, SitePage sitePage) {
+
+		List<WidgetPageWidgetInstance> widgetPageWidgetInstances =
+			_getWidgetPageWidgetInstances(sitePage);
+
+		for (WidgetPageWidgetInstance widgetPageWidgetInstance :
+				widgetPageWidgetInstances) {
+
+			WidgetLookAndFeelConfig widgetLookAndFeelConfig =
+				widgetPageWidgetInstance.getWidgetLookAndFeelConfig();
+
+			GeneralConfig generalConfig =
+				widgetLookAndFeelConfig.getGeneralConfig();
+
+			Assert.assertEquals(
+				applicationDecorator, generalConfig.getApplicationDecorator());
+			Assert.assertEquals(
+				customApplicationDecorator,
+				generalConfig.getCustomApplicationDecorator());
+		}
+
+		Assert.assertEquals(
+			widgetPageWidgetInstances.toString(), count,
+			widgetPageWidgetInstances.size());
+	}
+
 	private void _assertWidgetSitePage(Layout layout, SitePage sitePage) {
 		Assert.assertEquals(SitePage.Type.WIDGET_PAGE, sitePage.getType());
 
@@ -1894,6 +1931,22 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 		return types.get(RandomTestUtil.randomInt(0, types.size() - 1));
 	}
 
+	private SitePage _getRandomWidgetPageSitePage() throws Exception {
+		SitePage randomSitePage = _getRandomSitePage(SitePage.Type.WIDGET_PAGE);
+
+		WidgetPageSettings widgetPageSettings =
+			(WidgetPageSettings)randomSitePage.getPageSettings();
+
+		widgetPageSettings.setLayoutTemplateId("1_column");
+
+		randomSitePage.setPageSpecifications(
+			PageSpecificationsTestUtil.getWidgetPageSpecifications(
+				null, widgetPageSettings.getLayoutTemplateId(),
+				randomSitePage.getExternalReferenceCode()));
+
+		return randomSitePage;
+	}
+
 	private SEOSettings _getSeoSettings() {
 		return new SEOSettings() {
 			{
@@ -2036,6 +2089,23 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 		};
 	}
 
+	private List<WidgetPageWidgetInstance> _getWidgetPageWidgetInstances(
+		SitePage sitePage) {
+
+		PageSpecification[] pageSpecifications =
+			sitePage.getPageSpecifications();
+
+		WidgetPageSpecification widgetPageSpecification =
+			(WidgetPageSpecification)pageSpecifications[0];
+
+		return ListUtil.fromArray(
+			ArrayUtil.append(
+				TransformUtil.transform(
+					widgetPageSpecification.getWidgetPageSections(),
+					WidgetPageSection::getWidgetPageWidgetInstances,
+					WidgetPageWidgetInstance[].class)));
+	}
+
 	private SitePage _postSiteSitePageWithPageSpecificationsWithCustomFields(
 			SitePage.Type type)
 		throws Exception {
@@ -2150,6 +2220,29 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 		};
 	}
 
+	private void _setWidgetPageWidgetInstancesApplicationDecorator(
+		GeneralConfig.ApplicationDecorator applicationDecorator,
+		String customApplicationDecorator, SitePage sitePage) {
+
+		for (WidgetPageWidgetInstance widgetPageWidgetInstance :
+				_getWidgetPageWidgetInstances(sitePage)) {
+
+			WidgetLookAndFeelConfig widgetLookAndFeelConfig =
+				new WidgetLookAndFeelConfig();
+
+			GeneralConfig generalConfig = new GeneralConfig();
+
+			generalConfig.setApplicationDecorator(applicationDecorator);
+			generalConfig.setCustomApplicationDecorator(
+				customApplicationDecorator);
+
+			widgetLookAndFeelConfig.setGeneralConfig(generalConfig);
+
+			widgetPageWidgetInstance.setWidgetLookAndFeelConfig(
+				widgetLookAndFeelConfig);
+		}
+	}
+
 	private void _testDeleteSiteSitePage(Layout... layouts) throws Exception {
 		for (Layout layout : layouts) {
 			sitePageResource.deleteSiteSitePage(
@@ -2223,6 +2316,31 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 			sitePageResource.getSiteSitePage(
 				testGroup.getExternalReferenceCode(),
 				sitePage.getExternalReferenceCode()));
+	}
+
+	private void _testGetSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances()
+		throws Exception {
+
+		Layout layout = LayoutTestUtil.addTypePortletLayout(testGroup);
+
+		String customApplicationDecorator = RandomTestUtil.randomString();
+
+		LayoutTestUtil.addPortletToLayout(
+			layout, AssetPublisherPortletKeys.ASSET_PUBLISHER,
+			HashMapBuilder.put(
+				"portletSetupPortletDecoratorId",
+				new String[] {customApplicationDecorator}
+			).build());
+
+		SitePageResource sitePageResource = _getSitePageResource(
+			"pageSpecifications");
+
+		SitePage sitePage = sitePageResource.getSiteSitePage(
+			testGroup.getExternalReferenceCode(),
+			layout.getExternalReferenceCode());
+
+		_assertWidgetPageWidgetInstances(
+			null, 1, customApplicationDecorator, sitePage);
 	}
 
 	private SitePage _testPatchSiteSitePage(
@@ -3483,6 +3601,54 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 		finally {
 			PropsUtil.set("feature.flag.LPD-76864", "true");
 		}
+	}
+
+	private void _testPostSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances()
+		throws Exception {
+
+		GeneralConfig.ApplicationDecorator[] applicationDecorators =
+			GeneralConfig.ApplicationDecorator.values();
+
+		GeneralConfig.ApplicationDecorator applicationDecorator =
+			applicationDecorators
+				[RandomTestUtil.randomInt(0, applicationDecorators.length - 1)];
+
+		SitePageResource sitePageResource = _getSitePageResource(
+			"pageSpecifications");
+
+		_testPostSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+			applicationDecorator, null, applicationDecorator, null,
+			sitePageResource);
+
+		String customApplicationDecorator = RandomTestUtil.randomString();
+
+		_testPostSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+			applicationDecorator, customApplicationDecorator, null,
+			customApplicationDecorator, sitePageResource);
+
+		_testPostSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+			null, StringUtil.lowerCase(applicationDecorator.getValue()),
+			applicationDecorator, null, sitePageResource);
+		_testPostSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+			null, customApplicationDecorator, null, customApplicationDecorator,
+			sitePageResource);
+	}
+
+	private void
+			_testPostSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+				GeneralConfig.ApplicationDecorator applicationDecorator,
+				String customApplicationDecorator,
+				GeneralConfig.ApplicationDecorator expectedApplicationDecorator,
+				String expectedCustomApplicationDecorator,
+				SitePageResource sitePageResource)
+		throws Exception {
+
+		_testSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+			applicationDecorator, customApplicationDecorator,
+			expectedApplicationDecorator, expectedCustomApplicationDecorator,
+			_getRandomWidgetPageSitePage(),
+			sitePage -> sitePageResource.postSiteSitePage(
+				testGroup.getExternalReferenceCode(), false, sitePage));
 	}
 
 	private void _testPutSiteSitePage(
@@ -4771,6 +4937,76 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 		widgetPageSettings.setInheritChanges(false);
 
 		_testPutSiteSitePage(sitePage, testGroup, sitePage);
+	}
+
+	private void _testPutSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances()
+		throws Exception {
+
+		GeneralConfig.ApplicationDecorator[] applicationDecorators =
+			GeneralConfig.ApplicationDecorator.values();
+
+		GeneralConfig.ApplicationDecorator applicationDecorator =
+			applicationDecorators
+				[RandomTestUtil.randomInt(0, applicationDecorators.length - 1)];
+
+		SitePageResource sitePageResource = _getSitePageResource(
+			"pageSpecifications");
+
+		SitePage sitePage = sitePageResource.postSiteSitePage(
+			testGroup.getExternalReferenceCode(), false,
+			_getRandomWidgetPageSitePage());
+
+		_testPutSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+			applicationDecorator, null, applicationDecorator, null, sitePage,
+			sitePageResource);
+
+		String customApplicationDecorator = RandomTestUtil.randomString();
+
+		_testPutSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+			applicationDecorator, customApplicationDecorator, null,
+			customApplicationDecorator, sitePage, sitePageResource);
+
+		_testPutSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+			null, StringUtil.lowerCase(applicationDecorator.getValue()),
+			applicationDecorator, null, sitePage, sitePageResource);
+		_testPutSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+			null, customApplicationDecorator, null, customApplicationDecorator,
+			sitePage, sitePageResource);
+	}
+
+	private void
+			_testPutSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+				GeneralConfig.ApplicationDecorator applicationDecorator,
+				String customApplicationDecorator,
+				GeneralConfig.ApplicationDecorator expectedApplicationDecorator,
+				String expectedCustomApplicationDecorator, SitePage sitePage,
+				SitePageResource sitePageResource)
+		throws Exception {
+
+		_testSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+			applicationDecorator, customApplicationDecorator,
+			expectedApplicationDecorator, expectedCustomApplicationDecorator,
+			sitePage,
+			putSitePage -> sitePageResource.putSiteSitePage(
+				testGroup.getExternalReferenceCode(),
+				putSitePage.getExternalReferenceCode(), false, putSitePage));
+	}
+
+	private void
+			_testSiteSitePageWithWidgetPageTypeWithWidgetPageWidgetInstances(
+				GeneralConfig.ApplicationDecorator applicationDecorator,
+				String customApplicationDecorator,
+				GeneralConfig.ApplicationDecorator expectedApplicationDecorator,
+				String expectedCustomApplicationDecorator, SitePage sitePage,
+				UnsafeFunction<SitePage, SitePage, Exception> unsafeFunction)
+		throws Exception {
+
+		_setWidgetPageWidgetInstancesApplicationDecorator(
+			applicationDecorator, customApplicationDecorator, sitePage);
+
+		_assertWidgetPageWidgetInstances(
+			expectedApplicationDecorator, 3, expectedCustomApplicationDecorator,
+			unsafeFunction.apply(sitePage));
 	}
 
 	private void _testUpdateSiteSitePageWithPriority(

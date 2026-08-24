@@ -13,6 +13,7 @@ export {default as VerticalNavLayout} from './common/components/VerticalNavLayou
 export {default as FieldPicker} from './common/components/forms/FieldPicker';
 export {default as FieldText} from './common/components/forms/FieldText';
 export {default as FieldWrapper} from './common/components/forms/FieldWrapper';
+export {default as RequiredMark} from './common/components/forms/RequiredMark';
 export {required, validate} from './common/components/forms/validations';
 export {default as ApiHelper, RequestResult} from './common/services/ApiHelper';
 export {IAssetObjectEntry} from './common/types/AssetType';
@@ -74,6 +75,7 @@ export {
 	AdditionalProps,
 } from './main_view/props_transformer/AssetsFDSPropsTransformer';
 export {default as AssetsFilesDropFDSPropsTransformer} from './main_view/props_transformer/AssetsFilesDropFDSPropsTransformer';
+export {default as BrokenLinksFDSPropsTransformer} from './main_view/props_transformer/BrokenLinksFDSPropsTransformer';
 export {default as BulkActionTaskReportFDSPropsTransformer} from './main_view/props_transformer/BulkActionTaskReportFDSPropsTransformer';
 export {default as CategoryFDSPropsTransformer} from './main_view/props_transformer/CategoryFDSPropsTransformer';
 export {default as CategoryUsagesFDSPropsTransformer} from './main_view/props_transformer/CategoryUsagesFDSPropsTransformer';

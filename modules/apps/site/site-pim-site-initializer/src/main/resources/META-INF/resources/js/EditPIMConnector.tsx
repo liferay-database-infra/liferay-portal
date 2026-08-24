@@ -9,7 +9,7 @@ import ClayForm, {
 	ClayInput,
 	ClaySelectWithOption,
 } from '@clayui/form';
-import {Toolbar} from '@liferay/site-cms-site-initializer';
+import {RequiredMark, Toolbar} from '@liferay/site-cms-site-initializer';
 import {fetch, navigate, sub} from 'frontend-js-web';
 import React, {useEffect, useState} from 'react';
 
@@ -55,7 +55,9 @@ export default function EditPIMConnector({
 		}
 	}, [backURL, isNew, pimConnector]);
 
-	const handleSave = async () => {
+	const handleSubmit = async (event: React.FormEvent) => {
+		event.preventDefault();
+
 		try {
 			const response = await fetch(
 				isNew ? apiURL : `${apiURL}/${objectEntryId}`,
@@ -113,19 +115,22 @@ export default function EditPIMConnector({
 						className="inline-item-after"
 						disabled={!name.trim() || !key}
 						displayType="primary"
-						onClick={handleSave}
+						form="pimConnectorForm"
 						size="sm"
+						type="submit"
 					>
 						{Liferay.Language.get('save')}
 					</ClayButton>
 				</Toolbar.Item>
 			</Toolbar>
 
-			<div className="container-fluid container-fluid-max-xl">
-				<ClayForm>
+			<div className="container-fluid container-fluid-max-xl mt-4">
+				<ClayForm id="pimConnectorForm" onSubmit={handleSubmit}>
 					<ClayForm.Group>
 						<label htmlFor="pimConnectorName">
 							{Liferay.Language.get('name')}
+
+							<RequiredMark />
 						</label>
 
 						<ClayInput
@@ -140,6 +145,8 @@ export default function EditPIMConnector({
 					<ClayForm.Group>
 						<label htmlFor="pimConnectorKey">
 							{Liferay.Language.get('connector')}
+
+							<RequiredMark />
 						</label>
 
 						<ClaySelectWithOption

@@ -3,6 +3,7 @@ import DateFilterConjunctionInput from '../DateFilterConjunctionInput';
 import mockStore from 'test/mock-store';
 import React from 'react';
 import {ApolloProvider} from '@apollo/client';
+import {clickFirstSelectableDay} from 'test/helpers';
 import {cleanup, fireEvent, render} from '@testing-library/react';
 import {
 	FunctionalOperators,
@@ -120,5 +121,63 @@ describe('DateFilterConjunctionInput', () => {
 		);
 
 		expect(getByTestId('date-range-input')).toBeTruthy();
+	});
+
+	it('should clear the date when switching from between to a single date operator', () => {
+		const ControlledInput = () => {
+			const [conjunctionCriterion, setConjunctionCriterion] =
+				React.useState({
+					operatorName: FunctionalOperators.Between,
+					propertyName: 'day',
+					touched: false,
+					valid: true,
+					value: {end: '2020-12-20', start: '2020-12-12'}
+				});
+
+			return (
+				<DateFilterConjunctionInput
+					conjunctionCriterion={conjunctionCriterion}
+					onChange={setConjunctionCriterion}
+				/>
+			);
+		};
+
+		const {getByTestId, getByText} = render(
+			<WrapperComponent>
+				<ControlledInput />
+			</WrapperComponent>
+		);
+
+		fireEvent.click(getByText('between'));
+		fireEvent.click(getByText('after'));
+
+		expect(getByTestId('date-input').value).toBe('');
+	});
+
+	it('should emit an ISO date when picking a day for the between operator', () => {
+		const onChange = jest.fn();
+
+		const {getByTestId} = render(
+			<WrapperComponent>
+				<DateFilterConjunctionInput
+					conjunctionCriterion={{
+						operatorName: FunctionalOperators.Between,
+						propertyName: 'day',
+						touched: false,
+						valid: false,
+						value: {end: '', start: ''}
+					}}
+					onChange={onChange}
+				/>
+			</WrapperComponent>
+		);
+
+		fireEvent.click(getByTestId('date-range-input'));
+
+		clickFirstSelectableDay();
+
+		expect(onChange.mock.calls[0][0].value.start).toMatch(
+			/^\d{4}-\d{2}-\d{2}$/
+		);
 	});
 });

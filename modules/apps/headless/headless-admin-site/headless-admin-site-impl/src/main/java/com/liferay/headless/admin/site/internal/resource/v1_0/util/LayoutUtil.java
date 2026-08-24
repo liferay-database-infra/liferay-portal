@@ -644,12 +644,18 @@ public class LayoutUtil {
 		GeneralConfig generalConfig =
 			widgetLookAndFeelConfig.getGeneralConfig();
 
-		if (generalConfig.getApplicationDecorator() != null) {
-			map.put(
-				"portletSetupPortletDecoratorId",
-				StringUtil.lowerCase(
-					generalConfig.getApplicationDecoratorAsString()));
+		String portletSetupPortletDecoratorId =
+			generalConfig.getCustomApplicationDecorator();
+
+		if ((portletSetupPortletDecoratorId == null) &&
+			(generalConfig.getApplicationDecorator() != null)) {
+
+			portletSetupPortletDecoratorId = StringUtil.lowerCase(
+				generalConfig.getApplicationDecoratorAsString());
 		}
+
+		map.put(
+			"portletSetupPortletDecoratorId", portletSetupPortletDecoratorId);
 
 		Map<String, String> customTitleI18n =
 			generalConfig.getCustomTitle_i18n();

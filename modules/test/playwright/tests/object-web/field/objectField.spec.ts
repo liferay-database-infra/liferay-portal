@@ -120,22 +120,28 @@ test.describe('Manage object fields through Model Builder', () => {
 			await apiHelpers.listTypeAdmin.getListTypeDefinitions()
 		).items;
 
-		const allListTypeDefinitions = existingListTypeDefinitions.concat(
-			await Promise.all(
-				Array(22)
-					.fill(null)
-					.map(
-						async () =>
-							await apiHelpers.listTypeAdmin.postRandomListTypeDefinition()
-					)
-			)
+		const createdListTypeDefinitions = await Promise.all(
+			Array(22)
+				.fill(null)
+				.map(
+					async () =>
+						await apiHelpers.listTypeAdmin.postRandomListTypeDefinition()
+				)
 		);
 
-		allListTypeDefinitions.forEach(({id}) =>
+		// Only what this test created is registered for deletion. Registering
+		// the definitions it merely found would delete picklists belonging to
+		// whatever else is running or expected to remain.
+
+		createdListTypeDefinitions.forEach(({id}) =>
 			apiHelpers.data.push({
 				id,
 				type: 'listTypeDefinition',
 			})
+		);
+
+		const allListTypeDefinitions = existingListTypeDefinitions.concat(
+			createdListTypeDefinitions
 		);
 
 		await modelBuilderDiagramPage.goto({objectFolderName: 'Default'});
@@ -2528,14 +2534,23 @@ test.describe('Create Object Fields', () => {
 
 		await page.getByRole('button', {name: 'Cancel'}).click();
 
-		await page
+		// Cancelling the modal only starts its close. The close lands later
+		// and returns focus to the element that opened the modal, so wait for
+		// the modal's own field to be gone before touching the page beneath,
+		// and give the Enter to the search box itself rather than to whatever
+		// holds focus by then.
+
+		await expect(objectFieldsPage.objectFieldLabelInput).toBeHidden();
+
+		const searchInput = page
 			.getByRole('search')
-			.getByRole('searchbox', {name: 'Search'})
-			.fill('Cancel Field');
+			.getByRole('searchbox', {name: 'Search'});
+
+		await searchInput.fill('Cancel Field');
 
 		await waitForSearchToBeReady(page);
 
-		await page.keyboard.press('Enter');
+		await searchInput.press('Enter');
 
 		await expect(page.getByText('No Results Found')).toBeVisible();
 	});

@@ -1,10 +1,3 @@
-resource "azurerm_federated_identity_credential" "liferay" {
-	audience=["api://AzureADTokenExchange"]
-	issuer=azurerm_kubernetes_cluster.main.oidc_issuer_url
-	name="${var.deployment_name}-liferay-default"
-	subject="system:serviceaccount:${local.deployment_namespace}:liferay-default"
-	user_assigned_identity_id=azurerm_user_assigned_identity.workload.id
-}
 resource "azurerm_kubernetes_cluster" "main" {
 	automatic_upgrade_channel="stable"
 	azure_policy_enabled=true
@@ -46,13 +39,6 @@ resource "azurerm_kubernetes_cluster" "main" {
 			authorized_ip_ranges=var.api_authorized_ip_ranges
 		}
 		for_each=!var.private_cluster && length(var.api_authorized_ip_ranges) > 0 ? [1] : []
-	}
-	dynamic "monitor_metrics" {
-		content {
-			annotations_allowed=var.observability_config.annotations_allowed
-			labels_allowed=var.observability_config.labels_allowed
-		}
-		for_each=var.observability_config.enabled ? [1] : []
 	}
 	identity {
 		identity_ids=[azurerm_user_assigned_identity.cluster.id]

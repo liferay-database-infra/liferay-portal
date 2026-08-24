@@ -7,9 +7,23 @@ export interface BarDatum {
 
 	/** Optional descriptive text read by screen readers. Defaults to `${label}: ${value}`. */
 	description?: string;
+
+	/**
+	 * Optional URL that turns the segment into a real link (an SVG `<a>`).
+	 * Clicking it or pressing Enter navigates to the URL; hovering or
+	 * focusing it still just highlights the matching legend entry. Only the
+	 * stacked meter (`stacked={true}`) renders links today.
+	 */
+	href?: string;
 	label: string;
 	value: number;
 }
+
+/**
+ * A chart element that can take keyboard focus: the bar shape itself or, when
+ * its datum has an `href`, the `<a>` wrapping it.
+ */
+export type FocusableBarElement = Element & HTMLOrSVGElement;
 
 /**
  * Horizontal placement of the chart canvas and the legend within the figure

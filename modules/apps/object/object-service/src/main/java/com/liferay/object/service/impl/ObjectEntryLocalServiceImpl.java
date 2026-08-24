@@ -2489,7 +2489,9 @@ public class ObjectEntryLocalServiceImpl
 		_reindex(objectEntry);
 
 		if ((status == WorkflowConstants.STATUS_EXPIRED) ||
-			originalObjectEntry.isDraft() || originalObjectEntry.isPending()) {
+			originalObjectEntry.isDraft() || originalObjectEntry.isPending() ||
+			(originalObjectEntry.isScheduled() &&
+			 (status == WorkflowConstants.STATUS_APPROVED))) {
 
 			int count = _objectEntryVersionPersistence.countByObjectEntryId(
 				objectEntry.getObjectEntryId());
@@ -3812,7 +3814,13 @@ public class ObjectEntryLocalServiceImpl
 
 				String deletionType = objectRelationship.getDeletionType();
 
-				if (ObjectEntryThreadLocal.isDisassociateRelatedModels()) {
+				if (ObjectEntryThreadLocal.isDisassociateRelatedModels() ||
+					(Objects.equals(
+						deletionType,
+						ObjectRelationshipConstants.DELETION_TYPE_PREVENT) &&
+					 ObjectDefinitionThreadLocal.isDeleteObjectDefinitionId(
+						 objectDefinitionId))) {
+
 					deletionType =
 						ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE;
 				}

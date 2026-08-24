@@ -5,7 +5,7 @@ import DatePicker from './date-picker';
 import getCN from 'classnames';
 import Input from './Input';
 import moment from 'moment';
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {DatePickerRetentionPeriodHeader} from './DatePickerRetentionPeriodHeader';
 import {DEFAULT_DATE_FORMAT} from 'shared/util/date';
 import {formatDateWithTimezone} from './dropdown-range-key/utils';
@@ -22,6 +22,9 @@ const convertToMoment = (
 
 	return date.isValid() ? date : null;
 };
+
+const formatMoment = (value: moment.Moment | null, format: string): string =>
+	isNil(value) ? '' : value.format(format);
 
 export type DateRange = {
 	end: string;
@@ -67,22 +70,30 @@ const DateInput: React.FC<IDateInputProps> = ({
 	const {timeZoneId} = useTimeZone(groupId);
 	const retentionPeriod = useRetentionPeriod();
 
-	const convertMomentToDisplayFormat = (
-		value: moment.Moment | null
-	): string => (isNil(value) ? '' : value.format(displayFormat || format));
+	// Clay closes the picker from its own trigger through a callback it froze on
+	// the first render, so reading the blur handler from that closure would call
+	// a stale one. Route it through a ref instead.
+
+	const onBlurRef = useRef(onBlur);
+
+	onBlurRef.current = onBlur;
+
+	// The emitted range is read back with `format`, so it is written with
+	// `format`; `displayFormat` is locale aware and only ever reaches the text
+	// the trigger shows.
 
 	const handleDateSelect = ({end, start}: MomentDateRange) => {
 		onChange({
-			end: convertMomentToDisplayFormat(end),
-			start: convertMomentToDisplayFormat(start),
+			end: formatMoment(end, format),
+			start: formatMoment(start, format),
 		});
 	};
 
 	const getDateRangeDisplay = ({end, start}: MomentDateRange): string => {
 		if (end || start) {
 			return sub(Liferay.Language.get('x-to-x'), [
-				convertMomentToDisplayFormat(start),
-				convertMomentToDisplayFormat(end),
+				formatMoment(start, displayFormat || format),
+				formatMoment(end, displayFormat || format),
 			]) as string;
 		}
 
@@ -116,7 +127,7 @@ const DateInput: React.FC<IDateInputProps> = ({
 			onActiveChange={(active) => {
 				setActive(active);
 
-				!active && onBlur();
+				!active && onBlurRef.current();
 			}}
 			trigger={
 				<div>
