@@ -425,16 +425,16 @@ public class DBPartitionUtil {
 	}
 
 	public static void replaceByTable(
-			Connection connection, long companyId, String viewName,
+			Connection connection, long companyId, String tableName,
 			boolean copyData)
 		throws Exception {
 
 		replaceByTable(
-			connection, companyId, viewName, copyData, StringPool.BLANK);
+			connection, companyId, tableName, copyData, StringPool.BLANK);
 	}
 
 	public static void replaceByTable(
-			Connection connection, long companyId, String viewName,
+			Connection connection, long companyId, String tableName,
 			boolean copyData, String whereClause)
 		throws Exception {
 
@@ -444,25 +444,36 @@ public class DBPartitionUtil {
 
 		String partitionName = getPartitionName(companyId);
 
-		if (!_hasView(connection, partitionName, viewName)) {
+		boolean hasTable = _hasTable(connection, partitionName, tableName);
+
+		if (hasTable &&
+			(!copyData ||
+			 _hasRows(connection, partitionName, tableName, whereClause))) {
+
 			return;
 		}
 
 		try (Statement statement = connection.createStatement()) {
-			statement.execute(
-				_dbPartitionDB.getDropViewSQL(partitionName, viewName));
+			if (hasTable) {
+				statement.execute(
+					_dbPartitionDB.getDropTableSQL(partitionName, tableName));
+			}
+			else {
+				statement.execute(
+					_dbPartitionDB.getDropViewSQL(partitionName, tableName));
+			}
 
 			statement.execute(
 				_dbPartitionDB.getCreateTableSQL(
 					connection, _defaultPartitionName, partitionName,
-					viewName));
+					tableName));
 
 			if (copyData) {
 				statement.executeUpdate(
 					_getCopyDataSQL(
-						_defaultPartitionName, partitionName, viewName,
+						_defaultPartitionName, partitionName, tableName,
 						_getColumnNames(
-							connection, _defaultPartitionName, viewName),
+							connection, _defaultPartitionName, tableName),
 						whereClause));
 			}
 		}
@@ -1429,8 +1440,28 @@ public class DBPartitionUtil {
 		return " where trigger_name like '%@" + companyId + "'";
 	}
 
-	private static boolean _hasView(
-			Connection connection, String partitionName, String viewName)
+	private static boolean _hasRows(
+			Connection connection, String partitionName, String tableName,
+			String whereClause)
+		throws Exception {
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				StringBundler.concat(
+					"select count(*) as count from ", partitionName,
+					StringPool.PERIOD, tableName, whereClause));
+
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			if (resultSet.next() && (resultSet.getLong("count") > 0)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean _hasTable(
+			Connection connection, String partitionName, String tableName)
 		throws Exception {
 
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
@@ -1439,8 +1470,8 @@ public class DBPartitionUtil {
 		try (ResultSet resultSet = databaseMetaData.getTables(
 				_dbPartitionDB.getCatalog(connection, partitionName),
 				_dbPartitionDB.getSchema(connection, partitionName),
-				dbInspector.normalizeName(viewName, databaseMetaData),
-				new String[] {"VIEW"})) {
+				dbInspector.normalizeName(tableName, databaseMetaData),
+				new String[] {"TABLE"})) {
 
 			return resultSet.next();
 		}
