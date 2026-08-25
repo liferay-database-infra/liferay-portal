@@ -1,6 +1,9 @@
 release:
     name: my-release
     namespace: argocd-system
+set:
+    clusterSecretStore:
+        name: liferay-test-secret-store
 suite: Passed Parameters
 templates:
     -   templates/application-infrastructure-provider.yaml
@@ -63,7 +66,7 @@ tests:
                 template: templates/applicationset-infrastructure.yaml
             -   contains:
                     content:
-                        name: secretStoreName
+                        name: clusterSecretStoreName
                         value: liferay-test-secret-store
                     path: spec.template.spec.sources[0].helm.parameters
                 template: templates/applicationset-infrastructure.yaml

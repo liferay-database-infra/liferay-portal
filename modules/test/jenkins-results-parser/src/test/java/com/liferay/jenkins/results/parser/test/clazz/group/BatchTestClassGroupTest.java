@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -23,6 +24,14 @@ import org.junit.Test;
  */
 public class BatchTestClassGroupTest
 	extends com.liferay.jenkins.results.parser.Test {
+
+	@Before
+	public void setUpGitRemotes() throws Exception {
+		setShellCommandOutput(
+			"git remote -v", mockShell(),
+			"upstream\tgit@github.com:liferay/liferay-portal.git (fetch)\n" +
+				"upstream\tgit@github.com:liferay/liferay-portal.git (push)\n");
+	}
 
 	@Test
 	public void testGetAxisTestClassGroups() {
