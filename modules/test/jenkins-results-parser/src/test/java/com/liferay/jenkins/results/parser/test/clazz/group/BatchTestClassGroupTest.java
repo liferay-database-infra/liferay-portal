@@ -22,6 +22,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.mockito.Mockito;
+
 /**
  * @author Kenji Heigel
  */
@@ -46,7 +48,7 @@ public class BatchTestClassGroupTest
 		_testGetAxisCount(null, 3, 12);
 
 		BatchTestClassGroup batchTestClassGroup = _newBatchTestClassGroup(
-			null, "0", 12);
+			null, "0", null, 12);
 
 		try {
 			batchTestClassGroup.getAxisCount();
@@ -104,6 +106,14 @@ public class BatchTestClassGroupTest
 	}
 
 	@Test
+	public void testGetSegmentMaxChildren() {
+		_testGetSegmentMaxChildren(0, "0");
+		_testGetSegmentMaxChildren(25, "");
+		_testGetSegmentMaxChildren(25, "-2");
+		_testGetSegmentMaxChildren(3, "3");
+	}
+
+	@Test
 	public void testSetAxisTestClassGroups() {
 		_testSetAxisTestClassGroups("10", Arrays.asList(1, 1, 1), 3);
 		_testSetAxisTestClassGroups(null, Arrays.asList(4, 4, 4), 12);
@@ -111,13 +121,80 @@ public class BatchTestClassGroupTest
 		_testSetAxisTestClassGroups(null, Collections.emptyList(), 0);
 
 		BatchTestClassGroup batchTestClassGroup = _newBatchTestClassGroup(
-			"0", null, 12);
+			"0", null, null, 12);
 
 		batchTestClassGroup.setAxisTestClassGroups();
 
 		testEquals(
 			Collections.emptyList(),
 			batchTestClassGroup.getAxisTestClassGroups());
+	}
+
+	@Test
+	public void testSetSegmentTestClassGroups() {
+		String baseSlaveLabel = RandomTestUtil.randomString();
+		Integer minimumSlaveRAM = RandomTestUtil.randomInt();
+		File testBaseDir = new File(RandomTestUtil.randomString());
+
+		AxisTestClassGroup axisTestClassGroup = _mockAxisTestClassGroup(
+			baseSlaveLabel, minimumSlaveRAM, testBaseDir);
+
+		_testSetSegmentTestClassGroups(
+			Arrays.asList(1, 1), axisTestClassGroup,
+			_mockAxisTestClassGroup(
+				RandomTestUtil.randomString(), minimumSlaveRAM, testBaseDir));
+		_testSetSegmentTestClassGroups(
+			Arrays.asList(1, 1), axisTestClassGroup,
+			_mockAxisTestClassGroup(
+				baseSlaveLabel, RandomTestUtil.randomInt(), testBaseDir));
+		_testSetSegmentTestClassGroups(
+			Arrays.asList(1, 1), axisTestClassGroup,
+			_mockAxisTestClassGroup(
+				baseSlaveLabel, minimumSlaveRAM,
+				new File(RandomTestUtil.randomString())));
+		_testSetSegmentTestClassGroups(
+			Arrays.asList(1, 1), axisTestClassGroup,
+			_mockAxisTestClassGroup(baseSlaveLabel, minimumSlaveRAM, null));
+		_testSetSegmentTestClassGroups(
+			Arrays.asList(2), axisTestClassGroup,
+			_mockAxisTestClassGroup(
+				baseSlaveLabel, minimumSlaveRAM, testBaseDir));
+	}
+
+	@Test
+	public void testSetSegmentTestClassGroupsWithMaxChildren() {
+		String baseSlaveLabel = RandomTestUtil.randomString();
+		Integer minimumSlaveRAM = RandomTestUtil.randomInt();
+
+		_testSetSegmentTestClassGroups(
+			Arrays.asList(2, 2), "3",
+			_mockAxisTestClassGroup(baseSlaveLabel, minimumSlaveRAM, null),
+			_mockAxisTestClassGroup(baseSlaveLabel, minimumSlaveRAM + 1, null),
+			_mockAxisTestClassGroup(baseSlaveLabel, minimumSlaveRAM, null),
+			_mockAxisTestClassGroup(baseSlaveLabel, minimumSlaveRAM + 1, null));
+		_testSetSegmentTestClassGroups(
+			Arrays.asList(3, 3, 1), "3",
+			_mockAxisTestClassGroups(baseSlaveLabel, 7, minimumSlaveRAM, null));
+	}
+
+	@Test
+	public void testSetSegmentTestClassGroupsWithZeroMaxChildren() {
+		BatchTestClassGroup batchTestClassGroup = _newBatchTestClassGroup(
+			null, null, "0", 0);
+
+		batchTestClassGroup.addAxisTestClassGroup(
+			_mockAxisTestClassGroup(
+				RandomTestUtil.randomString(), RandomTestUtil.randomInt(),
+				null));
+
+		try {
+			batchTestClassGroup.setSegmentTestClassGroups();
+
+			Assert.fail();
+		}
+		catch (IllegalArgumentException illegalArgumentException) {
+			testEquals(null, illegalArgumentException.getMessage());
+		}
 	}
 
 	private List<TestClass> _getTestClasses(
@@ -132,8 +209,51 @@ public class BatchTestClassGroupTest
 		return testClasses;
 	}
 
+	private AxisTestClassGroup _mockAxisTestClassGroup(
+		String baseSlaveLabel, Integer minimumSlaveRAM, File testBaseDir) {
+
+		AxisTestClassGroup axisTestClassGroup = Mockito.mock(
+			AxisTestClassGroup.class);
+
+		Mockito.doReturn(
+			baseSlaveLabel
+		).when(
+			axisTestClassGroup
+		).getBaseSlaveLabel();
+
+		Mockito.doReturn(
+			minimumSlaveRAM
+		).when(
+			axisTestClassGroup
+		).getMinimumSlaveRAM();
+
+		Mockito.doReturn(
+			testBaseDir
+		).when(
+			axisTestClassGroup
+		).getTestBaseDir();
+
+		return axisTestClassGroup;
+	}
+
+	private AxisTestClassGroup[] _mockAxisTestClassGroups(
+		String baseSlaveLabel, int count, Integer minimumSlaveRAM,
+		File testBaseDir) {
+
+		AxisTestClassGroup[] axisTestClassGroups =
+			new AxisTestClassGroup[count];
+
+		for (int i = 0; i < count; i++) {
+			axisTestClassGroups[i] = _mockAxisTestClassGroup(
+				baseSlaveLabel, minimumSlaveRAM, testBaseDir);
+		}
+
+		return axisTestClassGroups;
+	}
+
 	private BatchTestClassGroup _newBatchTestClassGroup(
-		String axisCount, String axisMaxSize, int testClassCount) {
+		String axisCount, String axisMaxSize, String segmentMaxChildren,
+		int testClassCount) {
 
 		JobPropertyFactory.clear();
 
@@ -145,6 +265,11 @@ public class BatchTestClassGroupTest
 
 		if (axisMaxSize != null) {
 			jobProperties.setProperty("test.batch.axis.max.size", axisMaxSize);
+		}
+
+		if (segmentMaxChildren != null) {
+			jobProperties.setProperty(
+				"test.batch.segment.max.children", segmentMaxChildren);
 		}
 
 		BatchTestClassGroup batchTestClassGroup = new BatchTestClassGroup(
@@ -166,7 +291,7 @@ public class BatchTestClassGroupTest
 		String axisCount, int expectedAxisCount, int testClassCount) {
 
 		BatchTestClassGroup batchTestClassGroup = _newBatchTestClassGroup(
-			axisCount, null, testClassCount);
+			axisCount, null, null, testClassCount);
 
 		testEquals(expectedAxisCount, batchTestClassGroup.getAxisCount());
 	}
@@ -175,16 +300,27 @@ public class BatchTestClassGroupTest
 		String axisMaxSize, int expectedAxisMaxSize) {
 
 		BatchTestClassGroup batchTestClassGroup = _newBatchTestClassGroup(
-			null, axisMaxSize, 0);
+			null, axisMaxSize, null, 0);
 
 		testEquals(expectedAxisMaxSize, batchTestClassGroup.getAxisMaxSize());
+	}
+
+	private void _testGetSegmentMaxChildren(
+		int expectedSegmentMaxChildren, String segmentMaxChildren) {
+
+		BatchTestClassGroup batchTestClassGroup = _newBatchTestClassGroup(
+			null, null, segmentMaxChildren, 0);
+
+		testEquals(
+			expectedSegmentMaxChildren,
+			batchTestClassGroup.getSegmentMaxChildren());
 	}
 
 	private void _testSetAxisTestClassGroups(
 		String axisCount, List<Integer> expectedAxisSizes, int testClassCount) {
 
 		BatchTestClassGroup batchTestClassGroup = _newBatchTestClassGroup(
-			axisCount, null, testClassCount);
+			axisCount, null, null, testClassCount);
 
 		batchTestClassGroup.setAxisTestClassGroups();
 
@@ -206,6 +342,80 @@ public class BatchTestClassGroupTest
 		Collections.sort(axisTestClasses);
 
 		testEquals(batchTestClassGroup.getTestClasses(), axisTestClasses);
+	}
+
+	private void _testSetSegmentTestClassGroups(
+		List<Integer> expectedAxisCounts,
+		AxisTestClassGroup... axisTestClassGroups) {
+
+		_testSetSegmentTestClassGroups(
+			expectedAxisCounts, null, axisTestClassGroups);
+	}
+
+	private void _testSetSegmentTestClassGroups(
+		List<Integer> expectedAxisCounts, String segmentMaxChildren,
+		AxisTestClassGroup... axisTestClassGroups) {
+
+		BatchTestClassGroup batchTestClassGroup = _newBatchTestClassGroup(
+			null, null, segmentMaxChildren, 0);
+
+		for (AxisTestClassGroup axisTestClassGroup : axisTestClassGroups) {
+			batchTestClassGroup.addAxisTestClassGroup(axisTestClassGroup);
+		}
+
+		batchTestClassGroup.setSegmentTestClassGroups();
+
+		int segmentCount = batchTestClassGroup.getSegmentCount();
+
+		batchTestClassGroup.setSegmentTestClassGroups();
+
+		testEquals(segmentCount, batchTestClassGroup.getSegmentCount());
+
+		List<Integer> axisCounts = new ArrayList<>();
+
+		List<AxisTestClassGroup> segmentAxisTestClassGroups = new ArrayList<>();
+
+		List<SegmentTestClassGroup> segmentTestClassGroups =
+			batchTestClassGroup.getSegmentTestClassGroups();
+
+		for (SegmentTestClassGroup segmentTestClassGroup :
+				segmentTestClassGroups) {
+
+			List<AxisTestClassGroup> childAxisTestClassGroups =
+				segmentTestClassGroup.getAxisTestClassGroups();
+
+			axisCounts.add(childAxisTestClassGroups.size());
+
+			segmentAxisTestClassGroups.addAll(childAxisTestClassGroups);
+
+			AxisTestClassGroup firstAxisTestClassGroup =
+				childAxisTestClassGroups.get(0);
+
+			for (AxisTestClassGroup childAxisTestClassGroup :
+					childAxisTestClassGroups) {
+
+				testEquals(
+					firstAxisTestClassGroup.getBaseSlaveLabel(),
+					childAxisTestClassGroup.getBaseSlaveLabel());
+				testEquals(
+					firstAxisTestClassGroup.getMinimumSlaveRAM(),
+					childAxisTestClassGroup.getMinimumSlaveRAM());
+				testEquals(
+					firstAxisTestClassGroup.getTestBaseDir(),
+					childAxisTestClassGroup.getTestBaseDir());
+			}
+		}
+
+		testEquals(expectedAxisCounts, axisCounts);
+
+		List<AxisTestClassGroup> batchAxisTestClassGroups =
+			batchTestClassGroup.getAxisTestClassGroups();
+
+		testEquals(
+			batchAxisTestClassGroups.size(), segmentAxisTestClassGroups.size());
+
+		Assert.assertTrue(
+			segmentAxisTestClassGroups.containsAll(batchAxisTestClassGroups));
 	}
 
 }

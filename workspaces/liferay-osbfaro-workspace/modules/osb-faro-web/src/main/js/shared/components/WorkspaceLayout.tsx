@@ -1,19 +1,14 @@
 import BundleRouter from 'route-middleware/BundleRouter';
 import Loading from 'shared/components/Loading';
 import React, {lazy, Suspense} from 'react';
-import RouteNotFound from './RouteNotFound';
 import {close, open} from 'shared/actions/modals';
 import {compose} from 'redux';
 import {connect} from 'react-redux';
-import {matchPath} from 'react-router';
+import {Route, Routes as RouterRoutes, useParams} from 'react-router-dom';
 import {Project} from 'shared/util/records';
 import {RootState} from 'shared/store';
-import {Routes} from 'shared/util/router';
-import {Switch} from 'react-router-dom';
 import {useModalNotifications} from 'shared/hooks/useModalNotifications';
 import {withHelpWidget} from 'shared/hoc';
-
-// App Routes with Sidebar
 
 const AppSidebarRoutes = lazy(
 	() =>
@@ -22,21 +17,12 @@ const AppSidebarRoutes = lazy(
 			/* webpackChunkName: "AppSidebarRoutes" */ 'shared/pages/AppSidebarRoutes'
 		)
 );
-
-// Settings
-
 const Settings = lazy(
 	() => import(/* webpackChunkName: "Settings" */ 'settings/pages/Settings')
 );
 
 const connector = connect(
-	(store: RootState, {location: {pathname}}: {location: Location}) => {
-		const path = matchPath<any>(pathname, {
-			path: Routes.WORKSPACE_WITH_ID,
-		});
-
-		const groupId = path?.params?.groupId ?? '0';
-
+	(store: RootState, {groupId}: {groupId: string}) => {
 		const project =
 			store.getIn(['projects', groupId, 'data'], new Project()) ||
 			new Project();
@@ -67,15 +53,30 @@ const WorkspaceLayer = ({
 
 	return (
 		<Suspense fallback={<Loading />}>
-			<Switch>
-				<BundleRouter data={Settings} path={Routes.SETTINGS} />
+			<RouterRoutes>
+				<Route
+					element={<BundleRouter data={Settings} />}
+					path="settings/*"
+				/>
 
-				<BundleRouter data={AppSidebarRoutes} path={Routes.CHANNEL} />
-
-				<RouteNotFound />
-			</Switch>
+				<Route
+					element={<BundleRouter data={AppSidebarRoutes} />}
+					path="*"
+				/>
+			</RouterRoutes>
 		</Suspense>
 	);
 };
 
-export default compose<any>(connector, withHelpWidget)(WorkspaceLayer);
+const ConnectedWorkspaceLayer = compose<any>(
+	connector,
+	withHelpWidget
+)(WorkspaceLayer);
+
+const WorkspaceLayout = () => {
+	const {groupId = '0'} = useParams<{groupId: string}>();
+
+	return <ConnectedWorkspaceLayer groupId={groupId} />;
+};
+
+export default WorkspaceLayout;

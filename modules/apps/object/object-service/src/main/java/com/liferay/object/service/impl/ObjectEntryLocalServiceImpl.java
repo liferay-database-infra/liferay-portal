@@ -3790,61 +3790,70 @@ public class ObjectEntryLocalServiceImpl
 			_objectRelationshipPersistence.findByObjectDefinitionId1(
 				objectDefinitionId);
 
-		for (ObjectRelationship objectRelationship : objectRelationships) {
-			ObjectDefinition objectDefinition2 =
-				_objectDefinitionPersistence.findByPrimaryKey(
-					objectRelationship.getObjectDefinitionId2());
+		try (SafeCloseable safeCloseable =
+				ObjectEntryThreadLocal.
+					setSkipObjectDefinitionCacheWithSafeCloseable(
+						ObjectDefinitionThreadLocal.isDeleteObjectDefinitionId(
+							objectDefinitionId))) {
 
-			if (WorkflowConstants.STATUS_DRAFT ==
-					objectDefinition2.getStatus()) {
+			for (ObjectRelationship objectRelationship : objectRelationships) {
+				ObjectDefinition objectDefinition2 =
+					_objectDefinitionPersistence.findByPrimaryKey(
+						objectRelationship.getObjectDefinitionId2());
 
-				continue;
-			}
+				if (WorkflowConstants.STATUS_DRAFT ==
+						objectDefinition2.getStatus()) {
 
-			ObjectRelatedModelsProvider objectRelatedModelsProvider =
-				_objectRelatedModelsProviderRegistry.
-					getObjectRelatedModelsProvider(
-						objectDefinition2.getClassName(),
-						objectDefinition2.getCompanyId(),
-						objectRelationship.getType());
-
-			try {
-				ObjectEntryThreadLocal.setSkipObjectEntryResourcePermission(
-					true);
-
-				String deletionType = objectRelationship.getDeletionType();
-
-				if (ObjectEntryThreadLocal.isDisassociateRelatedModels() ||
-					(Objects.equals(
-						deletionType,
-						ObjectRelationshipConstants.DELETION_TYPE_PREVENT) &&
-					 ObjectDefinitionThreadLocal.isDeleteObjectDefinitionId(
-						 objectDefinitionId))) {
-
-					deletionType =
-						ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE;
+					continue;
 				}
 
-				if (moveToTrash) {
-					objectRelatedModelsProvider.moveRelatedModelToTrash(
-						PrincipalThreadLocal.getUserId(), groupId,
-						objectRelationship.getObjectRelationshipId(),
-						primaryKey, deletionType);
+				ObjectRelatedModelsProvider objectRelatedModelsProvider =
+					_objectRelatedModelsProviderRegistry.
+						getObjectRelatedModelsProvider(
+							objectDefinition2.getClassName(),
+							objectDefinition2.getCompanyId(),
+							objectRelationship.getType());
+
+				try {
+					ObjectEntryThreadLocal.setSkipObjectEntryResourcePermission(
+						true);
+
+					String deletionType = objectRelationship.getDeletionType();
+
+					if (ObjectEntryThreadLocal.isDisassociateRelatedModels() ||
+						(Objects.equals(
+							deletionType,
+							ObjectRelationshipConstants.
+								DELETION_TYPE_PREVENT) &&
+						 ObjectDefinitionThreadLocal.isDeleteObjectDefinitionId(
+							 objectDefinitionId))) {
+
+						deletionType =
+							ObjectRelationshipConstants.
+								DELETION_TYPE_DISASSOCIATE;
+					}
+
+					if (moveToTrash) {
+						objectRelatedModelsProvider.moveRelatedModelToTrash(
+							PrincipalThreadLocal.getUserId(), groupId,
+							objectRelationship.getObjectRelationshipId(),
+							primaryKey, deletionType);
+					}
+					else {
+						objectRelatedModelsProvider.deleteRelatedModel(
+							PrincipalThreadLocal.getUserId(), groupId,
+							objectRelationship.getObjectRelationshipId(),
+							primaryKey, deletionType);
+					}
 				}
-				else {
-					objectRelatedModelsProvider.deleteRelatedModel(
-						PrincipalThreadLocal.getUserId(), groupId,
-						objectRelationship.getObjectRelationshipId(),
-						primaryKey, deletionType);
+				catch (PrincipalException principalException) {
+					throw new ObjectRelationshipDeletionTypeException(
+						principalException.getMessage());
 				}
-			}
-			catch (PrincipalException principalException) {
-				throw new ObjectRelationshipDeletionTypeException(
-					principalException.getMessage());
-			}
-			finally {
-				ObjectEntryThreadLocal.setSkipObjectEntryResourcePermission(
-					false);
+				finally {
+					ObjectEntryThreadLocal.setSkipObjectEntryResourcePermission(
+						false);
+				}
 			}
 		}
 	}
@@ -7007,6 +7016,26 @@ public class ObjectEntryLocalServiceImpl
 			long userId, String className, ObjectEntry objectEntry,
 			ServiceContext serviceContext)
 		throws PortalException {
+
+		// Without this, the workflow walks to its first task on another thread
+		// after the save returns, so a caller that looks for the task right
+		// after saving does not find it. Waiting for the walk keeps the task's
+		// creation inside the save.
+
+		Map<String, Serializable> workflowContext =
+			(Map<String, Serializable>)serviceContext.getAttribute(
+				"workflowContext");
+
+		if (workflowContext == null) {
+			workflowContext = new HashMap<>();
+		}
+
+		workflowContext.put(
+			WorkflowConstants.CONTEXT_WAIT_FOR_COMPLETION,
+			Boolean.TRUE.toString());
+
+		serviceContext.setAttribute(
+			"workflowContext", (Serializable)workflowContext);
 
 		WorkflowHandlerRegistryUtil.startWorkflowInstance(
 			objectEntry.getCompanyId(), objectEntry.getNonzeroGroupId(), userId,
