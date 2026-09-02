@@ -448,27 +448,6 @@ public class DBUpgrader {
 				}
 			}
 
-			if (PropsValues.UPGRADE_DATABASE_PREUPGRADE_DATA_CLEANUP_ENABLED) {
-				DataCleanupPreupgradeProcessSuite
-					dataCleanupPreupgradeProcessSuite =
-						new DataCleanupPreupgradeProcessSuite();
-
-				try {
-					dataCleanupPreupgradeProcessSuite.cleanUp();
-				}
-				catch (Exception exception) {
-					_log.error(
-						"Unable to execute preupgrade data cleanup process",
-						exception);
-
-					StartupHelperUtil.setUpgrading(false);
-
-					stopUpgradeLogAppender();
-
-					throw exception;
-				}
-			}
-
 			if (FeatureFlagManagerUtil.isEnabled("LPS-157670")) {
 				checkRequiredBuildNumber(
 					ReleaseInfo.RELEASE_6_1_0_BUILD_NUMBER);
@@ -477,6 +456,8 @@ public class DBUpgrader {
 				checkRequiredBuildNumber(
 					ReleaseInfo.RELEASE_6_2_0_BUILD_NUMBER);
 			}
+
+			_cleanUpPreupgradeData();
 
 			checkReleaseState();
 
@@ -602,6 +583,29 @@ public class DBUpgrader {
 		}
 		catch (Exception exception) {
 			throw new RuntimeException(exception);
+		}
+	}
+
+	private static void _cleanUpPreupgradeData() throws Exception {
+		if (!PropsValues.UPGRADE_DATABASE_PREUPGRADE_DATA_CLEANUP_ENABLED) {
+			return;
+		}
+
+		DataCleanupPreupgradeProcessSuite dataCleanupPreupgradeProcessSuite =
+			new DataCleanupPreupgradeProcessSuite();
+
+		try {
+			dataCleanupPreupgradeProcessSuite.cleanUp();
+		}
+		catch (Exception exception) {
+			_log.error(
+				"Unable to execute preupgrade data cleanup process", exception);
+
+			StartupHelperUtil.setUpgrading(false);
+
+			stopUpgradeLogAppender();
+
+			throw exception;
 		}
 	}
 
