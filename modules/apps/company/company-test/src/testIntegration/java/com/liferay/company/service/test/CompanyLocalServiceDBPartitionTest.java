@@ -36,7 +36,6 @@ import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.Repository;
 import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.model.VirtualHost;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.repository.LocalRepository;
 import com.liferay.portal.kernel.repository.RepositoryFactory;
@@ -255,25 +254,6 @@ public class CompanyLocalServiceDBPartitionTest
 
 		Assert.assertEquals(
 			companyIds.toString(), _defaultCompanyId, (long)companyIds.get(0));
-	}
-
-	@Test
-	public void testAddCompanyUsesVirtualHostCounter() throws Exception {
-		long counter = _counterLocalService.increment();
-
-		_company1 = CompanyTestUtil.addCompany();
-
-		VirtualHost virtualHost = _virtualHostLocalService.getVirtualHost(
-			_company1.getVirtualHostname());
-
-		Assert.assertEquals(counter + 1, virtualHost.getVirtualHostId());
-
-		_company2 = CompanyTestUtil.addCompany();
-
-		virtualHost = _virtualHostLocalService.getVirtualHost(
-			_company2.getVirtualHostname());
-
-		Assert.assertEquals(counter + 2, virtualHost.getVirtualHostId());
 	}
 
 	@Test
@@ -499,7 +479,7 @@ public class CompanyLocalServiceDBPartitionTest
 								if (Objects.equals(
 										method.getName(), "getCreateViewSQL") &&
 									StringUtil.equalsIgnoreCase(
-										(String)args[2], "VirtualHost")) {
+										(String)args[2], "ServiceComponent")) {
 
 									throw new Exception();
 								}
@@ -725,9 +705,9 @@ public class CompanyLocalServiceDBPartitionTest
 						new Class<?>[] {DBPartitionDB.class},
 						(proxy, method, args) -> {
 							if (Objects.equals(
-									method.getName(), "getCreateViewSQL") &&
+									method.getName(), "getCreateTableSQL") &&
 								StringUtil.equalsIgnoreCase(
-									(String)args[2], "VirtualHost")) {
+									(String)args[3], "VirtualHost")) {
 
 								throw new Exception();
 							}
@@ -1107,7 +1087,12 @@ public class CompanyLocalServiceDBPartitionTest
 		Assert.assertEquals(virtualHostname, company.getVirtualHostname());
 		Assert.assertEquals(webId, company.getWebId());
 
-		_virtualHostLocalService.getVirtualHost(virtualHostname);
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					PortalInstancePool.getDefaultCompanyId())) {
+
+			_virtualHostLocalService.getVirtualHost(virtualHostname);
+		}
 	}
 
 	private void _assertCopyDBPartitionCompanyCache(long companyId) {
