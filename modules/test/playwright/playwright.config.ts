@@ -172,6 +172,14 @@ import {config as osbFaroWebSettingsConfig} from './tests/osb-faro-web/settings/
 import {config as passwordPoliciesAdminWebFirstLoginConfig} from './tests/password-policies-admin-web/first-login/config';
 import {config as passwordPoliciesAdminWebConfig} from './tests/password-policies-admin-web/main/config';
 import {config as passwordPoliciesAdminWebSetupAdminConfig} from './tests/password-policies-admin-web/setup-admin/config';
+import {config as portalDbInfrastructureUpgradePortal6130Config} from './tests/portal-db-infrastructure/upgrade-portal-6130/config';
+import {config as portalDbInfrastructureUpgradePortal621021Config} from './tests/portal-db-infrastructure/upgrade-portal-621021/config';
+import {config as portalDbInfrastructureUpgradePortal70106Config} from './tests/portal-db-infrastructure/upgrade-portal-70106/config';
+import {config as portalDbInfrastructureUpgradePortal7110Config} from './tests/portal-db-infrastructure/upgrade-portal-7110/config';
+import {config as portalDbInfrastructureUpgradePortal71103Config} from './tests/portal-db-infrastructure/upgrade-portal-71103/config';
+import {config as portalDbInfrastructureUpgradePortal7210Config} from './tests/portal-db-infrastructure/upgrade-portal-7210/config';
+import {config as portalDbInfrastructureUpgradePortal7310Config} from './tests/portal-db-infrastructure/upgrade-portal-7310/config';
+import {config as portalDbInfrastructureUpgradePortal7413Config} from './tests/portal-db-infrastructure/upgrade-portal-7413/config';
 import {config as portalDbInfrastructureUpgradeConfig} from './tests/portal-db-infrastructure/upgrade/config';
 import {config as portalDefaultPermissionsWebConfig} from './tests/portal-default-permissions-web/main/config';
 import {config as portalImplMainConfig} from './tests/portal-impl/main/config';
@@ -435,6 +443,14 @@ export default defineConfig({
 		passwordPoliciesAdminWebFirstLoginConfig,
 		passwordPoliciesAdminWebSetupAdminConfig,
 		portalDbInfrastructureUpgradeConfig,
+		portalDbInfrastructureUpgradePortal6130Config,
+		portalDbInfrastructureUpgradePortal621021Config,
+		portalDbInfrastructureUpgradePortal70106Config,
+		portalDbInfrastructureUpgradePortal71103Config,
+		portalDbInfrastructureUpgradePortal7110Config,
+		portalDbInfrastructureUpgradePortal7210Config,
+		portalDbInfrastructureUpgradePortal7310Config,
+		portalDbInfrastructureUpgradePortal7413Config,
 		portalDefaultPermissionsWebConfig,
 		portalImplMainConfig,
 		portalImplPortletConfig,

@@ -1,18 +1,66 @@
 #!/bin/bash
 
 function assert_clean_upgrade_log {
-	local upgrade_log="${LIFERAY_HOME}/tools/portal-tools-db-upgrade-client/logs/upgrade.log"
+	local upgrade_source=${1:-tool}
 
-	if [ ! -f "${upgrade_log}" ]
+	# The upgrade writes to one of two logs, depending on how it ran. A tool
+	# upgrade (ant upgrade-legacy-database) runs in its own JVM and writes its own
+	# log. An at boot upgrade (upgrade.database.auto.run=true) runs inside the
+	# portal JVM, so its errors land in the portal log alongside the rest of the
+	# boot. The caller says which, because the bundle is shared: the projects run
+	# one after another against one ${LIFERAY_HOME}, rebuild-legacy-database
+	# clears data but not tools, so a tool log left by an earlier project is still
+	# on disk when a later at boot project runs. Choosing by file existence would
+	# make every at boot project assert the previous project's log instead of its
+	# own boot.
+
+	local upgrade_log
+
+	if [[ ${upgrade_source} == boot ]]
 	then
-		echo "Unable to find upgrade log at ${upgrade_log}."
+		upgrade_log=$(ls --sort=time "${LIFERAY_HOME}"/logs/liferay.*.log 2>/dev/null | head --lines=1)
+	else
+		upgrade_log="${LIFERAY_HOME}/tools/portal-tools-db-upgrade-client/logs/upgrade.log"
+	fi
+
+	if [[ -z ${upgrade_log} ]] || [[ ! -f ${upgrade_log} ]]
+	then
+		echo "Unable to find an upgrade log under ${LIFERAY_HOME}."
 
 		exit 1
 	fi
 
+	echo "Asserting a clean upgrade log: ${upgrade_log}"
+
+	# The portal log is per DAY, not per run, and rebuild-legacy-database deletes
+	# ${liferay.home}/data but not logs. A second run on the same day therefore
+	# inherits the first run's ERRORs and fails here for the previous project's
+	# reasons. Scope to the current boot: the module framework logs "Started web
+	# bundles" once per JVM, before upgradePortal runs, so everything from the last
+	# occurrence onward is this run and nothing earlier is. The tool log is written
+	# fresh per upgrade, so it needs no scoping.
+
+	local scoped_log="${upgrade_log}"
+
+	if [[ ${upgrade_log} == *"/logs/liferay."* ]]
+	then
+		local boot_line
+
+		boot_line=$(grep --line-number "Started web bundles" "${upgrade_log}" | tail --lines=1 | cut --delimiter=: --fields=1)
+
+		if [[ -n ${boot_line} ]]
+		then
+			scoped_log=$(mktemp)
+
+			tail --lines="+${boot_line}" "${upgrade_log}" > "${scoped_log}"
+
+			echo "Scoped to the current boot, from line ${boot_line}"
+		fi
+	fi
+
 	local unclean_log_entries
 
-	unclean_log_entries=$(grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]+[0-9]{2}:[0-9]{2}:[0-9]{2}([.,][0-9]{3})?[[:space:]]+(ERROR|FATAL|WARN)" "${upgrade_log}" | grep -v "Do NOT use sidecar in production" || true)
+	unclean_log_entries=$(grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]+[0-9]{2}:[0-9]{2}:[0-9]{2}([.,][0-9]{3})?[[:space:]]+(ERROR|FATAL|WARN)" "${scoped_log}" | grep -v "Do NOT use sidecar in production" || true)
 
 	if [ -n "${unclean_log_entries}" ]
 	then
@@ -560,6 +608,20 @@ function prepare_additional_bundles {
 			ant -f build-test.xml rebuild-database-playwright
 		fi
 	done
+}
+
+function rebuild_legacy_database {
+	local data_archive_type=${1}
+	local portal_version=${2}
+
+	cd "${_PORTAL_PROJECT_DIR}"
+
+	ant -f build-test.xml \
+		-Ddata.archive.type="${data_archive_type}" \
+		-Dkeep.cached.app.server.data=true \
+		-Dportal.version="${portal_version}" \
+		-Dskip.get.testcase.database.properties=true \
+		rebuild-legacy-database
 }
 
 function set_variables {
