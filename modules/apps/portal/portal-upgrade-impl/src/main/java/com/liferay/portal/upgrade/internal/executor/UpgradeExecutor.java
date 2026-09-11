@@ -37,9 +37,11 @@ import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -85,6 +87,8 @@ public class UpgradeExecutor {
 		if (size != 0) {
 			release = executeUpgradeInfos(bundle, upgradeInfosList.get(0));
 		}
+
+		_failedBundleSymbolicNames.remove(bundle.getSymbolicName());
 
 		if (release != null) {
 			String schemaVersion = release.getSchemaVersion();
@@ -151,6 +155,10 @@ public class UpgradeExecutor {
 
 	public Set<String> getBundleSymbolicNames() {
 		return _serviceTrackerMap.keySet();
+	}
+
+	public Set<String> getFailedBundleSymbolicNames() {
+		return _failedBundleSymbolicNames;
 	}
 
 	public List<UpgradeInfo> getUpgradeInfos(String bundleSymbolicName) {
@@ -283,6 +291,8 @@ public class UpgradeExecutor {
 		UpgradeExecutor.class);
 
 	private BundleContext _bundleContext;
+	private final Set<String> _failedBundleSymbolicNames =
+		Collections.newSetFromMap(new ConcurrentHashMap<>());
 	private boolean _portalUpgraded;
 
 	@Reference
@@ -308,39 +318,42 @@ public class UpgradeExecutor {
 
 			String bundleSymbolicName = bundle.getSymbolicName();
 
-			Release release = _releaseLocalService.fetchRelease(
-				bundleSymbolicName);
+			try {
+				Release release = _releaseLocalService.fetchRelease(
+					bundleSymbolicName);
 
-			if (release == null) {
-				for (UpgradeStep releaseUpgradeStep :
-						upgradeStepRegistry.getReleaseCreationUpgradeSteps()) {
+				if (release == null) {
+					for (UpgradeStep releaseUpgradeStep :
+							upgradeStepRegistry.
+								getReleaseCreationUpgradeSteps()) {
 
-					try {
-						UpgradeLogContext.setContext(bundleSymbolicName);
+						try {
+							UpgradeLogContext.setContext(bundleSymbolicName);
 
-						releaseUpgradeStep.upgrade();
-					}
-					catch (UpgradeException upgradeException) {
-						_log.error(upgradeException);
-					}
-					finally {
-						UpgradeLogContext.clearContext();
+							releaseUpgradeStep.upgrade();
+						}
+						catch (UpgradeException upgradeException) {
+							_log.error(upgradeException);
+						}
+						finally {
+							UpgradeLogContext.clearContext();
+						}
 					}
 				}
-			}
 
-			if (DBUpgrader.isUpgradeDatabaseAutoRunEnabled() ||
-				(release == null)) {
+				if (DBUpgrader.isUpgradeDatabaseAutoRunEnabled() ||
+					(release == null)) {
 
-				try {
 					execute(bundle, upgradeStepRegistry.getUpgradeInfos());
 				}
-				catch (Throwable throwable) {
-					_log.error(
-						"Failed upgrade process for module ".concat(
-							bundleSymbolicName),
-						throwable);
-				}
+			}
+			catch (Throwable throwable) {
+				_failedBundleSymbolicNames.add(bundleSymbolicName);
+
+				_log.error(
+					"Failed upgrade process for module ".concat(
+						bundleSymbolicName),
+					throwable);
 			}
 
 			return upgradeStepRegistry;
@@ -356,6 +369,10 @@ public class UpgradeExecutor {
 		public void removedService(
 			ServiceReference<UpgradeStepRegistrator> serviceReference,
 			UpgradeStepRegistry upgradeStepRegistry) {
+
+			Bundle bundle = serviceReference.getBundle();
+
+			_failedBundleSymbolicNames.remove(bundle.getSymbolicName());
 
 			upgradeStepRegistry.destroy();
 		}
