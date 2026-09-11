@@ -41,17 +41,23 @@ export async function viewUpgradedDocument({
 		trigger: page.locator('a[href*=infoPanel]'),
 	});
 
-	await expect(page.locator('.sidebar-body .username')).toHaveText(
-		'Test Test'
-	);
+	const username = page.locator('.sidebar-body .username');
 
-	await expect(page.locator('.sidebar-header .label-item')).toHaveText(
-		'Version 1.0'
-	);
+	await expect(username).toBeVisible();
 
-	await expect(page.locator('.sidebar-header .workflow-status')).toHaveText(
-		'Approved'
-	);
+	await expect(username).toHaveText('Test Test');
+
+	const version = page.locator('.sidebar-header .label-item');
+
+	await expect(version).toBeVisible();
+
+	await expect(version).toHaveText('Version 1.0');
+
+	const workflowStatus = page.locator('.sidebar-header .workflow-status');
+
+	await expect(workflowStatus).toBeVisible();
+
+	await expect(workflowStatus).toHaveText('Approved');
 
 	const downloadPromise = page.waitForEvent('download');
 
