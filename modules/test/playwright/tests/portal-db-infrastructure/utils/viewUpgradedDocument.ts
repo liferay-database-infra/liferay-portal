@@ -6,6 +6,7 @@
 import {Page, expect} from '@playwright/test';
 import {statSync} from 'fs';
 
+import {clickAndExpectToBeVisible} from '../../../utils/clickAndExpectToBeVisible';
 import {getTempDir} from '../../../utils/temp';
 
 /**
@@ -30,7 +31,15 @@ export async function viewUpgradedDocument({
 
 	await page.getByRole('link', {name: title}).click();
 
-	await page.locator('a[href*=infoPanel]').click();
+	const downloadButton = page
+		.locator('.sidebar-section')
+		.getByRole('link', {name: 'Download'});
+
+	await clickAndExpectToBeVisible({
+		target: downloadButton,
+		timeout: 5000,
+		trigger: page.locator('a[href*=infoPanel]'),
+	});
 
 	await expect(page.locator('.sidebar-body .username')).toHaveText(
 		'Test Test'
@@ -46,10 +55,7 @@ export async function viewUpgradedDocument({
 
 	const downloadPromise = page.waitForEvent('download');
 
-	await page
-		.locator('.sidebar-section')
-		.getByRole('link', {name: 'Download'})
-		.click();
+	await downloadButton.click();
 
 	const download = await downloadPromise;
 
