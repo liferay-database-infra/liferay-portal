@@ -8,6 +8,7 @@ import {Page, expect, mergeTests} from '@playwright/test';
 import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {searchAdminPageTest} from '../../../fixtures/searchAdminPageTest';
+import {clickAndExpectToBeVisible} from '../../../utils/clickAndExpectToBeVisible';
 import {performLoginViaApi, performLogout} from '../../../utils/performLogin';
 
 const test = mergeTests(
@@ -36,7 +37,23 @@ async function viewUpgradedPortalContent(page: Page) {
 
 		await page.getByRole('link', {name: 'Document1'}).click();
 
-		await page.locator('a[href*=infoPanel]').click();
+		const downloadButton = page
+			.locator('.sidebar-section')
+			.getByRole('link', {name: 'Download'});
+
+		// The info panel does not always render on the first click, and its
+		// contents attach to the DOM either way, so the Download link can be
+		// present but hidden — getByRole does not match a hidden element, which is
+		// why only the title assertion below fails. Measured on a live 6.1.30
+		// upgrade: hidden after one click, visible after a re-expand.
+		// DMDocument.expandInfo guards its own click the same way. The 5s timeout
+		// gives the first click room on a freshly upgraded portal.
+
+		await clickAndExpectToBeVisible({
+			target: downloadButton,
+			timeout: 5000,
+			trigger: page.locator('a[href*=infoPanel]'),
+		});
 
 		await expect(page.locator('.sidebar-body .username')).toHaveText(
 			'Test Test'
@@ -49,10 +66,6 @@ async function viewUpgradedPortalContent(page: Page) {
 		await expect(
 			page.locator('.sidebar-header .workflow-status')
 		).toHaveText('Approved');
-
-		const downloadButton = page
-			.locator('.sidebar-section')
-			.getByRole('link', {name: 'Download'});
 
 		await expect(downloadButton).toHaveAttribute(
 			'title',
