@@ -8,6 +8,7 @@ import {Page, expect, mergeTests} from '@playwright/test';
 import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {searchAdminPageTest} from '../../../fixtures/searchAdminPageTest';
+import {getHeader} from '../../../helpers/ApiHelpers';
 import {performLoginViaApi, performLogout} from '../../../utils/performLogin';
 
 const test = mergeTests(
@@ -160,7 +161,8 @@ test.describe.serial('View portal smoke upgrade', () => {
 			await performLoginViaApi({page, screenName: 'user'});
 
 			const response = await page.request.get(
-				'/o/headless-admin-user/v1.0/my-user-account'
+				'/o/headless-admin-user/v1.0/my-user-account',
+				{headers: await getHeader(page)}
 			);
 
 			expect(response.status()).toBe(200);
