@@ -361,13 +361,18 @@ public class CompanyLocalServiceDBPartitionTest
 
 		companyLocalService.exportCompany(company.getCompanyId());
 
+		Company exportedValuesCompany = null;
+
 		try {
 			CompanyLocalServiceTestUtil.assertConfiguration(
 				_configurationAdmin, _persistenceManager, pid, true);
 
+			String exportedVirtualHostname = company.getVirtualHostname();
+			String exportedWebId = company.getWebId();
+
 			String name = "new" + company.getName();
-			String virtualHostName = "new" + company.getVirtualHostname();
-			String webId = "new" + company.getWebId();
+			String virtualHostName = "new" + exportedVirtualHostname;
+			String webId = "new" + exportedWebId;
 
 			try {
 				company = companyLocalService.addDBPartitionCompany(
@@ -387,6 +392,11 @@ public class CompanyLocalServiceDBPartitionTest
 			}
 
 			companyLocalService.deleteCompany(company);
+
+			exportedValuesCompany = companyLocalService.addCompany(
+				null, exportedWebId, exportedVirtualHostname,
+				exportedVirtualHostname, 0, true, true, null, null, null, null,
+				null, null);
 
 			company = companyLocalService.addDBPartitionCompany(
 				company.getCompanyId(), name, virtualHostName, webId);
@@ -422,6 +432,10 @@ public class CompanyLocalServiceDBPartitionTest
 			}
 			else {
 				removeDBPartitions(new long[] {company.getCompanyId()});
+			}
+
+			if (exportedValuesCompany != null) {
+				companyLocalService.deleteCompany(exportedValuesCompany);
 			}
 		}
 	}
