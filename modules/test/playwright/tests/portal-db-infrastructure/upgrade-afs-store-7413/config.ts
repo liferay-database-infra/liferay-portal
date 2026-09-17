@@ -4,9 +4,9 @@
  */
 
 export const config = {
-	name: 'portal-db-infrastructure.upgrade-afs-store',
+	name: 'portal-db-infrastructure.upgrade-afs-store-7413',
 	retries: 0,
-	testDir: 'tests/portal-db-infrastructure/upgrade-afs-store',
+	testDir: 'tests/portal-db-infrastructure/upgrade-afs-store-7413',
 	use: {
 		testIdAttribute: 'data-qa-id',
 	},
