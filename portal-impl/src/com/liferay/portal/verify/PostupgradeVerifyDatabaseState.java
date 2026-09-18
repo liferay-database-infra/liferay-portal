@@ -10,7 +10,10 @@ import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
+import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.db.DBResourceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -22,13 +25,16 @@ import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.service.ReleaseLocalServiceUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.PropsValues;
+import com.liferay.portal.kernel.util.TreeMapBuilder;
 
 import java.sql.ResultSet;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +43,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Function;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -154,6 +161,10 @@ public class PostupgradeVerifyDatabaseState extends VerifyProcess {
 
 		_verifyColumns(
 			databaseTableNames, dbInspector, errorMessagesMap, warnMessagesMap);
+		_verifyIndexes(
+			databaseTableNames, dbInspector, errorMessagesMap, warnMessagesMap);
+		_verifyPrimaryKeys(
+			databaseTableNames, dbInspector, errorMessagesMap, warnMessagesMap);
 
 		Set<String> servletContextNames = new TreeSet<>(
 			errorMessagesMap.keySet());
@@ -214,45 +225,6 @@ public class PostupgradeVerifyDatabaseState extends VerifyProcess {
 		}
 	}
 
-	private static Map<String, List<String>> _getColumnDefinitionsMap() {
-		Map<String, List<String>> columnDefinitionsMap =
-			DBResourceUtil.getPortalColumnDefinitionsMap();
-
-		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
-
-		for (Bundle bundle : bundleContext.getBundles()) {
-			String symbolicName = bundle.getSymbolicName();
-
-			if (!symbolicName.startsWith("com.liferay") ||
-				(!BundleUtil.isLiferayRequireSchemaVersionBundle(bundle) &&
-				 !BundleUtil.isLiferayServiceBundle(bundle))) {
-
-				continue;
-			}
-
-			columnDefinitionsMap.putAll(
-				DBResourceUtil.getModuleColumnDefinitionsMap(bundle));
-		}
-
-		return columnDefinitionsMap;
-	}
-
-	private void _addColumnMessages(
-		Map<String, List<String>> columnMessagesMap,
-		Map<String, List<String>> messagesMap,
-		Map<String, String> tablesServletContextNames) {
-
-		for (Map.Entry<String, List<String>> entry :
-				columnMessagesMap.entrySet()) {
-
-			List<String> messages = messagesMap.computeIfAbsent(
-				tablesServletContextNames.get(entry.getKey()),
-				key -> new ArrayList<>());
-
-			messages.addAll(entry.getValue());
-		}
-	}
-
 	private void _addMessages(
 		Map<String, List<String>> messagesMap, Collection<String> names,
 		String prefix, Map<String, String> servletContextNames) {
@@ -272,6 +244,22 @@ public class PostupgradeVerifyDatabaseState extends VerifyProcess {
 		}
 	}
 
+	private void _addTableMessages(
+		Map<String, List<String>> messagesMap,
+		Map<String, List<String>> tableMessagesMap,
+		Map<String, String> tablesServletContextNames) {
+
+		for (Map.Entry<String, List<String>> entry :
+				tableMessagesMap.entrySet()) {
+
+			List<String> messages = messagesMap.computeIfAbsent(
+				tablesServletContextNames.get(entry.getKey()),
+				key -> new ArrayList<>());
+
+			messages.addAll(entry.getValue());
+		}
+	}
+
 	private Set<String> _asymmetricDifference(
 		Collection<String> collection1, Collection<String> collection2) {
 
@@ -281,6 +269,34 @@ public class PostupgradeVerifyDatabaseState extends VerifyProcess {
 		names.removeAll(collection2);
 
 		return names;
+	}
+
+	private <T> Map<String, T> _getDefinitionsMap(
+		Function<Bundle, Map<String, T>> moduleDefinitionsMapFunction,
+		Map<String, T> portalDefinitionsMap) {
+
+		Map<String, T> definitionsMap = TreeMapBuilder.<String, T>create(
+			String.CASE_INSENSITIVE_ORDER
+		).putAll(
+			portalDefinitionsMap
+		).build();
+
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
+
+		for (Bundle bundle : bundleContext.getBundles()) {
+			String symbolicName = bundle.getSymbolicName();
+
+			if (!symbolicName.startsWith("com.liferay") ||
+				(!BundleUtil.isLiferayRequireSchemaVersionBundle(bundle) &&
+				 !BundleUtil.isLiferayServiceBundle(bundle))) {
+
+				continue;
+			}
+
+			definitionsMap.putAll(moduleDefinitionsMapFunction.apply(bundle));
+		}
+
+		return definitionsMap;
 	}
 
 	private String _getMessage(
@@ -333,6 +349,21 @@ public class PostupgradeVerifyDatabaseState extends VerifyProcess {
 		return names;
 	}
 
+	private boolean _isSkipTable(
+		Set<String> databaseTableNames, DBInspector dbInspector,
+		String tableName) {
+
+		if (!databaseTableNames.contains(tableName) ||
+			(PropsValues.DATABASE_PARTITION_ENABLED &&
+			 !CompanyThreadLocal.isDefaultCompany() &&
+			 dbInspector.isControlTable(tableName))) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	private void _verifyColumns(
 			Set<String> databaseTableNames, DBInspector dbInspector,
 			Map<String, List<String>> errorMessagesMap,
@@ -349,7 +380,9 @@ public class PostupgradeVerifyDatabaseState extends VerifyProcess {
 
 		processConcurrently(
 			_columnDefinitionsMapDCLSingleton.getSingleton(
-				PostupgradeVerifyDatabaseState::_getColumnDefinitionsMap),
+				() -> _getDefinitionsMap(
+					DBResourceUtil::getModuleColumnDefinitionsMap,
+					DBResourceUtil.getPortalColumnDefinitionsMap())),
 			entry -> {
 				String tableName = entry.getKey();
 
@@ -452,11 +485,265 @@ public class PostupgradeVerifyDatabaseState extends VerifyProcess {
 			},
 			null);
 
-		_addColumnMessages(
-			errorColumnMessagesMap, errorMessagesMap,
+		_addTableMessages(
+			errorMessagesMap, errorColumnMessagesMap,
 			tablesServletContextNames);
-		_addColumnMessages(
-			warnColumnMessagesMap, warnMessagesMap, tablesServletContextNames);
+		_addTableMessages(
+			warnMessagesMap, warnColumnMessagesMap, tablesServletContextNames);
+	}
+
+	private void _verifyIndexes(
+			Set<String> databaseTableNames, DBInspector dbInspector,
+			Map<String, List<String>> errorMessagesMap,
+			Map<String, List<String>> warnMessagesMap)
+		throws Exception {
+
+		DB db = DBManagerUtil.getDB();
+		Map<String, List<String>> errorIndexMessagesMap =
+			new ConcurrentSkipListMap<>();
+		Map<String, List<IndexMetadata>> indexMetadatasMap =
+			_indexMetadatasMapDCLSingleton.getSingleton(
+				() -> _getDefinitionsMap(
+					DBResourceUtil::getModuleTablesIndexMetadatas,
+					DBResourceUtil.getPortalTablesIndexMetadatas()));
+		Map<String, String> tablesServletContextNames =
+			_tablesServletContextNamesDCLSingleton.getSingleton(
+				DBResourceUtil::getTablesServletContextNames);
+		Map<String, List<String>> warnIndexMessagesMap =
+			new ConcurrentSkipListMap<>();
+
+		processConcurrently(
+			tablesServletContextNames,
+			entry -> {
+				String tableName = entry.getKey();
+
+				if (_isSkipTable(databaseTableNames, dbInspector, tableName)) {
+					return;
+				}
+
+				Map<String, IndexMetadata> databaseIndexMetadataMap =
+					new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+				for (IndexMetadata indexMetadata :
+						db.getIndexMetadatas(
+							connection, tableName, null, false)) {
+
+					databaseIndexMetadataMap.put(
+						indexMetadata.getIndexName(), indexMetadata);
+				}
+
+				Map<String, IndexMetadata> expectedIndexMetadataMap =
+					new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+				for (IndexMetadata indexMetadata :
+						indexMetadatasMap.getOrDefault(
+							tableName, Collections.emptyList())) {
+
+					expectedIndexMetadataMap.put(
+						indexMetadata.getIndexName(), indexMetadata);
+				}
+
+				String normalizedTableName = dbInspector.normalizeName(
+					tableName);
+				String servletContextName = entry.getValue();
+
+				for (IndexMetadata expectedIndexMetadata :
+						expectedIndexMetadataMap.values()) {
+
+					IndexMetadata databaseIndexMetadata =
+						databaseIndexMetadataMap.get(
+							expectedIndexMetadata.getIndexName());
+
+					if (databaseIndexMetadata == null) {
+						continue;
+					}
+
+					List<String> expectedIndexColumnNames =
+						TransformUtil.transform(
+							Arrays.asList(
+								expectedIndexMetadata.getColumnNames()),
+							dbInspector::normalizeName);
+
+					if (!expectedIndexColumnNames.equals(
+							TransformUtil.transform(
+								Arrays.asList(
+									databaseIndexMetadata.getColumnNames()),
+								dbInspector::normalizeName))) {
+
+						List<String> messages =
+							errorIndexMessagesMap.computeIfAbsent(
+								tableName, key -> new ArrayList<>());
+
+						messages.add(
+							_getMessage(
+								StringBundler.concat(
+									"Index ",
+									dbInspector.normalizeName(
+										expectedIndexMetadata.getIndexName()),
+									" is not defined as ",
+									expectedIndexColumnNames, " for ",
+									normalizedTableName, " table"),
+								servletContextName));
+
+						continue;
+					}
+
+					if (databaseIndexMetadata.isUnique() ==
+							expectedIndexMetadata.isUnique()) {
+
+						continue;
+					}
+
+					String uniqueness = " is defined as unique for ";
+
+					if (expectedIndexMetadata.isUnique()) {
+						uniqueness = " is not defined as unique for ";
+					}
+
+					List<String> messages =
+						warnIndexMessagesMap.computeIfAbsent(
+							tableName, key -> new ArrayList<>());
+
+					messages.add(
+						_getMessage(
+							StringBundler.concat(
+								"Index ",
+								dbInspector.normalizeName(
+									expectedIndexMetadata.getIndexName()),
+								uniqueness, normalizedTableName, " table"),
+							servletContextName));
+				}
+
+				Set<String> missingIndexNames = _asymmetricDifference(
+					expectedIndexMetadataMap.keySet(),
+					databaseIndexMetadataMap.keySet());
+
+				if (!missingIndexNames.isEmpty()) {
+					List<String> messages =
+						errorIndexMessagesMap.computeIfAbsent(
+							tableName, key -> new ArrayList<>());
+
+					messages.add(
+						_getMessage(
+							TransformUtil.transform(
+								missingIndexNames, dbInspector::normalizeName),
+							StringBundler.concat(
+								"Missing indexes were detected for ",
+								normalizedTableName, " table"),
+							servletContextName));
+				}
+
+				Set<String> staleIndexNames = _asymmetricDifference(
+					databaseIndexMetadataMap.keySet(),
+					expectedIndexMetadataMap.keySet());
+
+				if (!staleIndexNames.isEmpty()) {
+					List<String> messages =
+						warnIndexMessagesMap.computeIfAbsent(
+							tableName, key -> new ArrayList<>());
+
+					messages.add(
+						_getMessage(
+							TransformUtil.transform(
+								staleIndexNames, dbInspector::normalizeName),
+							StringBundler.concat(
+								"Stale indexes were detected for ",
+								normalizedTableName, " table"),
+							servletContextName));
+				}
+			},
+			null);
+
+		_addTableMessages(
+			errorMessagesMap, errorIndexMessagesMap, tablesServletContextNames);
+		_addTableMessages(
+			warnMessagesMap, warnIndexMessagesMap, tablesServletContextNames);
+	}
+
+	private void _verifyPrimaryKeys(
+			Set<String> databaseTableNames, DBInspector dbInspector,
+			Map<String, List<String>> errorMessagesMap,
+			Map<String, List<String>> warnMessagesMap)
+		throws Exception {
+
+		Map<String, List<String>> errorPrimaryKeyMessagesMap =
+			new ConcurrentSkipListMap<>();
+		Map<String, String> tablesServletContextNames =
+			_tablesServletContextNamesDCLSingleton.getSingleton(
+				DBResourceUtil::getTablesServletContextNames);
+		Map<String, List<String>> warnPrimaryKeyMessagesMap =
+			new ConcurrentSkipListMap<>();
+
+		processConcurrently(
+			_primaryKeyColumnNamesMapDCLSingleton.getSingleton(
+				() -> _getDefinitionsMap(
+					DBResourceUtil::getModuleTablesPrimaryKeyColumnNames,
+					DBResourceUtil.getPortalTablesPrimaryKeyColumnNames())),
+			entry -> {
+				String tableName = entry.getKey();
+
+				String servletContextName = tablesServletContextNames.get(
+					tableName);
+
+				if ((servletContextName == null) ||
+					_isSkipTable(databaseTableNames, dbInspector, tableName)) {
+
+					return;
+				}
+
+				String[] databasePrimaryKeyColumnNames =
+					getPrimaryKeyColumnNames(connection, tableName);
+				List<String> expectedPrimaryKeyColumnNames =
+					TransformUtil.transform(
+						Arrays.asList(entry.getValue()),
+						dbInspector::normalizeName);
+				String normalizedTableName = dbInspector.normalizeName(
+					tableName);
+
+				if (ArrayUtil.isEmpty(databasePrimaryKeyColumnNames)) {
+					List<String> messages =
+						errorPrimaryKeyMessagesMap.computeIfAbsent(
+							tableName, key -> new ArrayList<>());
+
+					messages.add(
+						_getMessage(
+							expectedPrimaryKeyColumnNames,
+							StringBundler.concat(
+								"Missing primary key was detected for ",
+								normalizedTableName, " table"),
+							servletContextName));
+
+					return;
+				}
+
+				if (ArrayUtil.equalsIgnoreCase(
+						databasePrimaryKeyColumnNames, entry.getValue())) {
+
+					return;
+				}
+
+				List<String> messages =
+					warnPrimaryKeyMessagesMap.computeIfAbsent(
+						tableName, key -> new ArrayList<>());
+
+				messages.add(
+					_getMessage(
+						StringBundler.concat(
+							"Primary key ",
+							Arrays.toString(databasePrimaryKeyColumnNames),
+							" is not defined as ",
+							expectedPrimaryKeyColumnNames, " for ",
+							normalizedTableName, " table"),
+						servletContextName));
+			},
+			null);
+
+		_addTableMessages(
+			errorMessagesMap, errorPrimaryKeyMessagesMap,
+			tablesServletContextNames);
+		_addTableMessages(
+			warnMessagesMap, warnPrimaryKeyMessagesMap,
+			tablesServletContextNames);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -467,6 +754,10 @@ public class PostupgradeVerifyDatabaseState extends VerifyProcess {
 	private static final DCLSingleton<Map<String, String>>
 		_historicalServiceComponentTablesServletContextNamesDCLSingleton =
 			new DCLSingleton<>();
+	private static final DCLSingleton<Map<String, List<IndexMetadata>>>
+		_indexMetadatasMapDCLSingleton = new DCLSingleton<>();
+	private static final DCLSingleton<Map<String, String[]>>
+		_primaryKeyColumnNamesMapDCLSingleton = new DCLSingleton<>();
 	private static final DCLSingleton<Map<String, String>>
 		_tablesServletContextNamesDCLSingleton = new DCLSingleton<>();
 

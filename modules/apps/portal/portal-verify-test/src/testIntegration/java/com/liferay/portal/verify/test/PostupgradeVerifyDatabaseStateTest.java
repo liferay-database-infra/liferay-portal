@@ -16,6 +16,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.db.DBResourceUtil;
 import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.model.ReleaseConstants;
@@ -26,6 +27,7 @@ import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.test.log.LogCapture;
@@ -37,6 +39,7 @@ import com.liferay.portal.verify.VerifyException;
 import com.liferay.portal.verify.VerifyProcess;
 import com.liferay.portal.verify.test.util.BaseVerifyProcessTestCase;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -65,32 +68,34 @@ public class PostupgradeVerifyDatabaseStateTest
 
 	@Test
 	public void testVerifyPostupgradeColumns() throws Exception {
-		alterColumnName("UserTracker", "companyId", "companyId_backup LONG");
+		alterColumnName(
+			"UserTracker", "remoteAddr", "remoteAddr_backup VARCHAR(75) null");
 
 		try {
-			_testVerifyColumns(
+			_testVerifyMessages(
 				_getExpectedMessage(
 					StringBundler.concat(
 						"Missing columns were detected for ",
 						getNormalizedName("UserTracker"), " table"),
 					ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME,
-					getNormalizedName("companyId")),
+					getNormalizedName("remoteAddr")),
 				_getExpectedMessage(
 					StringBundler.concat(
 						"Stale columns were detected for ",
 						getNormalizedName("UserTracker"), " table"),
 					ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME,
-					getNormalizedName("companyId_backup")));
+					getNormalizedName("remoteAddr_backup")));
 		}
 		finally {
 			alterColumnName(
-				"UserTracker", "companyId_backup", "companyId LONG");
+				"UserTracker", "remoteAddr_backup",
+				"remoteAddr VARCHAR(75) null");
 		}
 
 		alterColumnType("Address", "city", "VARCHAR(100)");
 
 		try {
-			_testVerifyColumns(
+			_testVerifyMessages(
 				_getExpectedMessage(
 					StringBundler.concat(
 						"Column ", getNormalizedName("city"),
@@ -126,6 +131,104 @@ public class PostupgradeVerifyDatabaseStateTest
 	}
 
 	@Test
+	public void testVerifyPostupgradeIndexes() throws Exception {
+		Map<String, List<IndexMetadata>> portalTablesIndexMetadatas =
+			DBResourceUtil.getPortalTablesIndexMetadatas();
+
+		IndexMetadata indexMetadata = _getIndexMetadata(
+			portalTablesIndexMetadatas.get("UserTracker"), false);
+
+		dropIndex(indexMetadata.getIndexName(), "UserTracker");
+
+		try {
+			_testVerifyMessages(
+				_getExpectedMessage(
+					StringBundler.concat(
+						"Missing indexes were detected for ",
+						getNormalizedName("UserTracker"), " table"),
+					ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME,
+					getNormalizedName(indexMetadata.getIndexName())));
+		}
+		finally {
+			addIndex(
+				indexMetadata.getIndexName(), "UserTracker", false,
+				indexMetadata.getColumnNames());
+		}
+
+		dropIndex(indexMetadata.getIndexName(), "UserTracker");
+
+		addIndex(
+			indexMetadata.getIndexName(), "UserTracker", false,
+			ArrayUtil.append(indexMetadata.getColumnNames(), "remoteAddr"));
+
+		try {
+			List<String> columnNames = new ArrayList<>();
+
+			for (String columnName : indexMetadata.getColumnNames()) {
+				columnNames.add(getNormalizedName(columnName));
+			}
+
+			_testVerifyMessages(
+				_getExpectedMessage(
+					StringBundler.concat(
+						"Index ",
+						getNormalizedName(indexMetadata.getIndexName()),
+						" is not defined as ", columnNames, " for ",
+						getNormalizedName("UserTracker"), " table"),
+					ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME));
+		}
+		finally {
+			dropIndex(indexMetadata.getIndexName(), "UserTracker");
+
+			addIndex(
+				indexMetadata.getIndexName(), "UserTracker", false,
+				indexMetadata.getColumnNames());
+		}
+
+		addIndex("IX_TEST", "UserTracker", false, "companyId", "userId");
+
+		try {
+			_testVerifyMessages(
+				_getExpectedMessage(
+					StringBundler.concat(
+						"Stale indexes were detected for ",
+						getNormalizedName("UserTracker"), " table"),
+					ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME,
+					getNormalizedName("IX_TEST")));
+		}
+		finally {
+			dropIndex("IX_TEST", "UserTracker");
+		}
+
+		IndexMetadata uniqueIndexMetadata = _getIndexMetadata(
+			portalTablesIndexMetadatas.get("Address"), true);
+
+		dropIndex(uniqueIndexMetadata.getIndexName(), "Address");
+
+		try {
+			addIndex(
+				uniqueIndexMetadata.getIndexName(), "Address", false,
+				uniqueIndexMetadata.getColumnNames());
+
+			_testVerifyMessages(
+				_getExpectedMessage(
+					StringBundler.concat(
+						"Index ",
+						getNormalizedName(uniqueIndexMetadata.getIndexName()),
+						" is not defined as unique for ",
+						getNormalizedName("Address"), " table"),
+					ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME));
+		}
+		finally {
+			dropIndex(uniqueIndexMetadata.getIndexName(), "Address");
+
+			addIndex(
+				uniqueIndexMetadata.getIndexName(), "Address", true,
+				uniqueIndexMetadata.getColumnNames());
+		}
+	}
+
+	@Test
 	public void testVerifyPostupgradeMissingNonserviceBuilderTable()
 		throws Exception {
 
@@ -156,6 +259,41 @@ public class PostupgradeVerifyDatabaseStateTest
 		finally {
 			_objectDefinitionLocalService.deleteObjectDefinition(
 				objectDefinition);
+		}
+	}
+
+	@Test
+	public void testVerifyPostupgradePrimaryKeys() throws Exception {
+		removePrimaryKey("UserTracker");
+
+		try {
+			_testVerifyMessages(
+				_getExpectedMessage(
+					StringBundler.concat(
+						"Missing primary key was detected for ",
+						getNormalizedName("UserTracker"), " table"),
+					ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME,
+					getNormalizedName("userTrackerId")));
+		}
+		finally {
+			updatePrimaryKey("UserTracker", "userTrackerId");
+		}
+
+		updatePrimaryKey("UserTracker", "userTrackerId", "mvccVersion");
+
+		try {
+			_testVerifyMessages(
+				_getExpectedMessage(
+					StringBundler.concat(
+						"Primary key [", getNormalizedName("userTrackerId"),
+						", ", getNormalizedName("mvccVersion"),
+						"] is not defined as [",
+						getNormalizedName("userTrackerId"), "] for ",
+						getNormalizedName("UserTracker"), " table"),
+					ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME));
+		}
+		finally {
+			updatePrimaryKey("UserTracker", "userTrackerId");
 		}
 	}
 
@@ -368,6 +506,19 @@ public class PostupgradeVerifyDatabaseStateTest
 			StringPool.CLOSE_BRACKET);
 	}
 
+	private IndexMetadata _getIndexMetadata(
+		List<IndexMetadata> indexMetadatas, boolean unique) {
+
+		for (IndexMetadata indexMetadata : indexMetadatas) {
+			if (indexMetadata.isUnique() == unique) {
+				return indexMetadata;
+			}
+		}
+
+		throw new IllegalStateException(
+			"Unable to find an index metadata with unique " + unique);
+	}
+
 	private String _getMessage(LogCapture logCapture, String text) {
 		List<String> messages = logCapture.getMessages();
 
@@ -380,7 +531,7 @@ public class PostupgradeVerifyDatabaseStateTest
 		return messages.toString();
 	}
 
-	private void _testVerifyColumns(String... expectedMessages)
+	private void _testVerifyMessages(String... expectedMessages)
 		throws Exception {
 
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
@@ -392,10 +543,7 @@ public class PostupgradeVerifyDatabaseStateTest
 			Set<String> messages = new HashSet<>();
 
 			for (String message : logCapture.getMessages()) {
-				if (message.startsWith("Column ") ||
-					message.startsWith("Missing columns") ||
-					message.startsWith("Stale columns")) {
-
+				if (ArrayUtil.exists(_MESSAGE_PREFIXES, message::startsWith)) {
 					messages.add(message);
 				}
 			}
@@ -407,6 +555,11 @@ public class PostupgradeVerifyDatabaseStateTest
 	}
 
 	private static final String _BUILD_NAMESPACE = "com.liferay.test.service";
+
+	private static final String[] _MESSAGE_PREFIXES = {
+		"Column ", "Index ", "Missing columns", "Missing indexes",
+		"Missing primary key", "Primary key ", "Stale columns", "Stale indexes"
+	};
 
 	private static final String _STALE_VIEW_NAME = "TestStaleView";
 
