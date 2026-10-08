@@ -178,9 +178,7 @@ public class PortalLogAssertorTest {
 						}
 					}
 
-					if ((messageText != null) &&
-						_isInIgnoreErrorsFile(messageText)) {
-
+					if (_isInIgnoreErrorsFile(messageText)) {
 						continue;
 					}
 
