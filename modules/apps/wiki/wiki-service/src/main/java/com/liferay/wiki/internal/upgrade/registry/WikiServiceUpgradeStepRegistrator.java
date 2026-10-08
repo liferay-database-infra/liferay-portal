@@ -13,6 +13,7 @@ import com.liferay.portal.kernel.upgrade.BaseSQLServerDatetimeUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.kernel.upgrade.MVCCVersionUpgradeProcess;
+import com.liferay.portal.kernel.upgrade.UpgradeProcessFactory;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import com.liferay.subscription.service.SubscriptionLocalService;
 import com.liferay.wiki.internal.upgrade.v1_0_0.SchemaUpgradeProcess;
@@ -107,6 +108,12 @@ public class WikiServiceUpgradeStepRegistrator
 			"2.3.0", "2.4.0",
 			new CTModelUpgradeProcess(
 				"WikiNode", "WikiPage", "WikiPageResource"));
+
+		registry.register(
+			"2.4.0", "2.4.1",
+			UpgradeProcessFactory.runSQL(
+				"update Release_ set schemaVersion = '99.0.0' where " +
+					"servletContextName = 'portal'"));
 	}
 
 	@Reference
