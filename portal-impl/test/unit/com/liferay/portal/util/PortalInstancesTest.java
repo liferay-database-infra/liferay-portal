@@ -5,6 +5,7 @@
 
 package com.liferay.portal.util;
 
+import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.cluster.ClusterEventListener;
@@ -12,6 +13,8 @@ import com.liferay.portal.kernel.cluster.ClusterExecutor;
 import com.liferay.portal.kernel.cluster.ClusterNode;
 import com.liferay.portal.kernel.cluster.ClusterRequest;
 import com.liferay.portal.kernel.cluster.FutureClusterResponses;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -31,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -40,6 +44,8 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+
+import org.mockito.Mockito;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -135,6 +141,76 @@ public class PortalInstancesTest {
 			_getCompanyIdsInDeletionProcess();
 
 		companyIdsInDeletionProcess.clear();
+	}
+
+	@Test
+	public void testAddCompanyWithInitializedUnsafeConsumer() throws Exception {
+		Company company = _mockCompany();
+
+		PortalInstances.markInitializationFailed(company.getCompanyId());
+
+		AtomicReference<Boolean> initializedAtomicReference =
+			new AtomicReference<>();
+
+		Assert.assertSame(
+			company,
+			PortalInstances.addCompany(
+				initializedAtomicReference::set, null,
+				() -> {
+					PortalInstances.markInitializationFailed(
+						RandomTestUtil.randomLong());
+
+					return company;
+				}));
+
+		Assert.assertTrue(initializedAtomicReference.get());
+
+		_assertInitializationTrackingEnded();
+	}
+
+	@Test
+	public void testAddCompanyWithInitializedUnsafeConsumerWhenInitializationFails()
+		throws Exception {
+
+		Company company = _mockCompany();
+		AtomicReference<Boolean> initializedAtomicReference =
+			new AtomicReference<>();
+
+		Assert.assertSame(
+			company,
+			PortalInstances.addCompany(
+				initializedAtomicReference::set, null,
+				() -> {
+					PortalInstances.markInitializationFailed(
+						company.getCompanyId());
+
+					return company;
+				}));
+
+		Assert.assertFalse(initializedAtomicReference.get());
+
+		_assertInitializationTrackingEnded();
+	}
+
+	@Test
+	public void testAddCompanyWithInitializedUnsafeConsumerWhenUnsafeSupplierFails() {
+		AtomicReference<Boolean> initializedAtomicReference =
+			new AtomicReference<>();
+
+		try {
+			PortalInstances.addCompany(
+				initializedAtomicReference::set, null,
+				() -> {
+					throw new PortalException();
+				});
+
+			Assert.fail();
+		}
+		catch (PortalException portalException) {
+			Assert.assertNull(initializedAtomicReference.get());
+
+			_assertInitializationTrackingEnded();
+		}
 	}
 
 	@Test
@@ -371,9 +447,37 @@ public class PortalInstancesTest {
 			clusterNodeId, timestamp);
 	}
 
+	private void _assertInitializationTrackingEnded() {
+		CentralizedThreadLocal<Set<Long>> initializationFailedCompanyIds =
+			ReflectionTestUtil.getFieldValue(
+				PortalInstances.class, "_initializationFailedCompanyIds");
+
+		Assert.assertEquals(
+			Collections.emptySet(), initializationFailedCompanyIds.get());
+
+		CentralizedThreadLocal<Integer> initializationTrackingCount =
+			ReflectionTestUtil.getFieldValue(
+				PortalInstances.class, "_initializationTrackingCount");
+
+		Assert.assertEquals(
+			Integer.valueOf(0), initializationTrackingCount.get());
+	}
+
 	private Map<Long, ?> _getCompanyIdsInDeletionProcess() {
 		return ReflectionTestUtil.getFieldValue(
 			PortalInstances.class, "_companyIdsInDeletionProcess");
+	}
+
+	private Company _mockCompany() {
+		Company company = Mockito.mock(Company.class);
+
+		Mockito.when(
+			company.getCompanyId()
+		).thenReturn(
+			RandomTestUtil.randomLong()
+		);
+
+		return company;
 	}
 
 	private void _removeCompanyIdInDeletionProcess(

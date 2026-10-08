@@ -5,7 +5,9 @@
 
 package com.liferay.portal.util;
 
+import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeSupplier;
+import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.petra.lang.HashUtil;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
@@ -34,6 +36,7 @@ import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.VirtualHostLocalServiceUtil;
+import com.liferay.portal.kernel.transaction.TransactionCallbackUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MethodHandler;
 import com.liferay.portal.kernel.util.MethodKey;
@@ -50,6 +53,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.sql.SQLException;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
@@ -75,6 +79,49 @@ public class PortalInstances {
 
 			return unsafeSupplier.get();
 		}
+	}
+
+	public static Company addCompany(
+			UnsafeConsumer<Boolean, Exception> initializedUnsafeConsumer,
+			String siteInitializerKey,
+			UnsafeSupplier<Company, PortalException> unsafeSupplier)
+		throws PortalException {
+
+		_initializationTrackingCount.set(
+			_initializationTrackingCount.get() + 1);
+
+		Company company = null;
+
+		try {
+			company = addCompany(siteInitializerKey, unsafeSupplier);
+		}
+		catch (PortalException | RuntimeException exception) {
+			_endInitializationTracking();
+
+			throw exception;
+		}
+
+		long companyId = company.getCompanyId();
+
+		TransactionCallbackUtil.registerCommitCallback(
+			() -> {
+				Set<Long> initializationFailedCompanyIds =
+					_initializationFailedCompanyIds.get();
+
+				initializedUnsafeConsumer.accept(
+					!initializationFailedCompanyIds.remove(companyId));
+
+				return null;
+			});
+
+		TransactionCallbackUtil.registerCompletionCallback(
+			() -> {
+				_endInitializationTracking();
+
+				return null;
+			});
+
+		return company;
 	}
 
 	public static long getCompanyId(HttpServletRequest httpServletRequest) {
@@ -292,6 +339,8 @@ public class PortalInstances {
 				}
 				catch (Exception exception) {
 					_log.error(exception);
+
+					markInitializationFailed(company.getCompanyId());
 				}
 			}
 
@@ -325,6 +374,8 @@ public class PortalInstances {
 			}
 			catch (Exception exception) {
 				_log.error(exception);
+
+				markInitializationFailed(company.getCompanyId());
 			}
 
 			// End initializing company
@@ -446,6 +497,17 @@ public class PortalInstances {
 		return _virtualHostsIgnorePaths.contains(path);
 	}
 
+	public static void markInitializationFailed(long companyId) {
+		if (_initializationTrackingCount.get() == 0) {
+			return;
+		}
+
+		Set<Long> initializationFailedCompanyIds =
+			_initializationFailedCompanyIds.get();
+
+		initializationFailedCompanyIds.add(companyId);
+	}
+
 	public static void removeCompany(long companyId) {
 		try {
 			EventsProcessorUtil.process(
@@ -525,6 +587,20 @@ public class PortalInstances {
 
 		_companyIdsInDeletionProcess.put(
 			companyId, new CompanyDeletionProcess(clusterNodeId, timestamp));
+	}
+
+	private static void _endInitializationTracking() {
+		int initializationTrackingCount =
+			_initializationTrackingCount.get() - 1;
+
+		if (initializationTrackingCount > 0) {
+			_initializationTrackingCount.set(initializationTrackingCount);
+
+			return;
+		}
+
+		_initializationFailedCompanyIds.remove();
+		_initializationTrackingCount.remove();
 	}
 
 	private static long _getCompanyIdByHost(
@@ -676,6 +752,13 @@ public class PortalInstances {
 		_companyIdsInDeletionProcess = new ConcurrentHashMap<>();
 	private static Long _copyInProcessCompanyId;
 	private static Long _importInProcessCompanyId;
+	private static final CentralizedThreadLocal<Set<Long>>
+		_initializationFailedCompanyIds = new CentralizedThreadLocal<>(
+			PortalInstances.class + "._initializationFailedCompanyIds",
+			HashSet::new);
+	private static final CentralizedThreadLocal<Integer>
+		_initializationTrackingCount = new CentralizedThreadLocal<>(
+			PortalInstances.class + "._initializationTrackingCount", () -> 0);
 	private static final MethodKey _removeCompanyIdInDeletionProcessMethodKey =
 		new MethodKey(
 			PortalInstances.class, "_removeCompanyIdInDeletionProcess",
