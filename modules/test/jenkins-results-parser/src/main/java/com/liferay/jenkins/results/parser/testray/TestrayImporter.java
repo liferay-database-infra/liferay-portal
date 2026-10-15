@@ -834,6 +834,21 @@ public class TestrayImporter {
 			}
 		}
 		else if (axisTestClassGroup instanceof PlaywrightAxisTestClassGroup) {
+			PortalLogBatchBuildTestrayCaseResult
+				portalLogBatchBuildTestrayCaseResult =
+					TestrayFactory.newPortalLogTestrayCaseResult(
+						axisTestClassGroup, testrayBuild, _topLevelBuildReport);
+
+			if (!JenkinsResultsParserUtil.isNullOrEmpty(
+					portalLogBatchBuildTestrayCaseResult.getErrors())) {
+
+				portalLogBatchBuildTestrayCaseResult.setParentTestrayCaseResult(
+					buildTestrayCaseResult);
+				portalLogBatchBuildTestrayCaseResult.setTestrayRun(testrayRun);
+
+				testrayCaseResults.add(portalLogBatchBuildTestrayCaseResult);
+			}
+
 			for (TestClass testClass : axisTestClassGroup.getTestClasses()) {
 				for (TestClassMethod testClassMethod :
 						testClass.getTestClassMethods()) {
