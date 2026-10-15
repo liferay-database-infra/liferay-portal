@@ -3840,6 +3840,7 @@ ${poshi.runner.testsuite.testcase.name}</echo>
 										</or>
 										<then>
 											<ant dir="portal-kernel" inheritAll="false" target="test-class">
+												<property name="ignore.errors.file.name" value="${project.dir}/portal-web/test-ignorable-error-lines.xml" />
 												<property name="test.class" value="PortalLogAssertorTest" />
 											</ant>
 										</then>
