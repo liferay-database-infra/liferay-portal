@@ -345,7 +345,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 				LastSessionRecorderHelperUtil.syncLastSessionState(false);
 
-				TransactionCallbackUtil.registerRollbackCallback(
+				_registerRollbackCallback(
 					() -> {
 						_deleteDBPartitionCompany(addedCompany.getCompanyId());
 
@@ -442,7 +442,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				Company company = _registerDBPartitionCompany(
 					dbPartitionCompany);
 
-				TransactionCallbackUtil.registerRollbackCallback(
+				_registerRollbackCallback(
 					() -> {
 						_restoreExportedDBPartitionCompany(companyId);
 
@@ -674,7 +674,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				Company company = _registerDBPartitionCompany(
 					dbPartitionCompany);
 
-				TransactionCallbackUtil.registerRollbackCallback(
+				_registerRollbackCallback(
 					() -> {
 						_deleteDBPartitionCompany(companyId);
 
@@ -2482,6 +2482,15 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		}
 
 		return company;
+	}
+
+	private void _registerRollbackCallback(Callable<?> callable) {
+		TransactionCallbackUtil.registerRollbackCallback(
+			() -> {
+				TransactionCallbackUtil.registerCompletionCallback(callable);
+
+				return null;
+			});
 	}
 
 	private void _removeDBPartition(long companyId, boolean export)
