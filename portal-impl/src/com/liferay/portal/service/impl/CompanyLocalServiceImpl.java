@@ -439,7 +439,17 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 						return _addDBPartitionCompany(company);
 					});
 
-				return _registerDBPartitionCompany(dbPartitionCompany);
+				Company company = _registerDBPartitionCompany(
+					dbPartitionCompany);
+
+				TransactionCallbackUtil.registerRollbackCallback(
+					() -> {
+						_restoreExportedDBPartitionCompany(companyId);
+
+						return null;
+					});
+
+				return company;
 			}
 			catch (Throwable throwable1) {
 				try {
@@ -661,7 +671,17 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 						return _addDBPartitionCompany(company);
 					});
 
-				return _registerDBPartitionCompany(dbPartitionCompany);
+				Company company = _registerDBPartitionCompany(
+					dbPartitionCompany);
+
+				TransactionCallbackUtil.registerRollbackCallback(
+					() -> {
+						_deleteDBPartitionCompany(companyId);
+
+						return null;
+					});
+
+				return company;
 			}
 			catch (Throwable throwable1) {
 				try {
@@ -1600,60 +1620,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		preunregisterCompany(company);
 
 		if (PropsValues.DATABASE_PARTITION_ENABLED) {
-			VirtualHost virtualHost = _virtualHostPersistence.fetchByHostname(
-				company.getVirtualHostname());
-
-			TransactionCallbackUtil.registerCommitCallback(
-				() -> {
-
-					// The target company's partition is already dropped, so
-					// this cleanup runs under the system company instead of a
-					// scope that resolves to it.
-
-					try (SafeCloseable safeCloseable =
-							CompanyThreadLocal.setRawCompanyIdWithSafeCloseable(
-								CompanyConstants.SYSTEM)) {
-
-						EntityCacheUtil.removeResult(
-							company.getClass(), company.getPrimaryKeyObj());
-
-						if (virtualHost != null) {
-							EntityCacheUtil.removeResult(
-								virtualHost.getClass(),
-								virtualHost.getPrimaryKeyObj());
-						}
-
-						PortalCacheHelperUtil.removePortalCaches(
-							PortalCacheManagerNames.MULTI_VM, companyId);
-
-						Store store = _storeSnapshot.get();
-
-						store.deleteDirectory(companyId);
-
-						PortalInstances.removeCompany(company.getCompanyId());
-
-						unregisterCompany(company);
-
-						_synchronizePortalInstances();
-					}
-
-					// Back under the deleted company's scope, clear its
-					// sharded caches, which resolve per company from the
-					// scope, in production mode.
-
-					try (SafeCloseable safeCloseable =
-							CTCollectionThreadLocal.
-								setProductionModeWithSafeCloseable()) {
-
-						CacheRegistryUtil.clear();
-					}
-
-					return null;
-				});
-
-			DBPartitionUtil.removeDBPartition(companyId);
-
-			return company;
+			return _removeDBPartitionCompany(company, false);
 		}
 
 		companyPersistence.remove(company);
@@ -2534,6 +2501,104 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 					DBPartitionUtil.removeDBPartition(companyId);
 
 					return null;
+				});
+		}
+		catch (Throwable throwable) {
+			throw new PortalException(throwable);
+		}
+	}
+
+	private Company _removeDBPartitionCompany(Company company, boolean export)
+		throws PortalException {
+
+		VirtualHost virtualHost = _virtualHostPersistence.fetchByHostname(
+			company.getVirtualHostname());
+
+		TransactionCallbackUtil.registerCommitCallback(
+			() -> {
+
+				// The target company's partition is already dropped, so
+				// this cleanup runs under the system company instead of a
+				// scope that resolves to it.
+
+				try (SafeCloseable safeCloseable =
+						CompanyThreadLocal.setRawCompanyIdWithSafeCloseable(
+							CompanyConstants.SYSTEM)) {
+
+					EntityCacheUtil.removeResult(
+						company.getClass(), company.getPrimaryKeyObj());
+
+					if (virtualHost != null) {
+						EntityCacheUtil.removeResult(
+							virtualHost.getClass(),
+							virtualHost.getPrimaryKeyObj());
+					}
+
+					PortalCacheHelperUtil.removePortalCaches(
+						PortalCacheManagerNames.MULTI_VM,
+						company.getCompanyId());
+
+					if (!export) {
+						Store store = _storeSnapshot.get();
+
+						store.deleteDirectory(company.getCompanyId());
+					}
+
+					PortalInstances.removeCompany(company.getCompanyId());
+
+					unregisterCompany(company);
+
+					_synchronizePortalInstances();
+				}
+
+				// Back under the deleted company's scope, clear its
+				// sharded caches, which resolve per company from the
+				// scope, in production mode.
+
+				try (SafeCloseable safeCloseable =
+						CTCollectionThreadLocal.
+							setProductionModeWithSafeCloseable()) {
+
+					CacheRegistryUtil.clear();
+				}
+
+				return null;
+			});
+
+		if (export) {
+			exportCompany(company.getCompanyId());
+		}
+
+		DBPartitionUtil.removeDBPartition(company.getCompanyId());
+
+		return company;
+	}
+
+	private void _restoreExportedDBPartitionCompany(long companyId)
+		throws PortalException {
+
+		try (SafeCloseable safeCloseable1 =
+				PortalInstances.setCompanyInDeletionProcessWithSafeCloseable(
+					companyId)) {
+
+			TransactionInvokerUtil.invoke(
+				_transactionConfig,
+				() -> {
+					Company company = companyPersistence.fetchByPrimaryKey(
+						companyId);
+
+					if (company == null) {
+						return null;
+					}
+
+					try (SafeCloseable safeCloseable2 =
+							CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+								companyId)) {
+
+						preunregisterCompany(company);
+
+						return _removeDBPartitionCompany(company, true);
+					}
 				});
 		}
 		catch (Throwable throwable) {

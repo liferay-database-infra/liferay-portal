@@ -544,6 +544,62 @@ public class CompanyLocalServiceDBPartitionTest
 	}
 
 	@Test
+	public void testAddDBPartitionCompanyWhenCallerTransactionRollsBack()
+		throws Throwable {
+
+		Company company = CompanyTestUtil.addCompany();
+
+		try {
+			companyLocalService.exportCompany(company.getCompanyId());
+
+			_companyLocalService.deleteCompany(company);
+
+			_invokeInRolledBackTransaction(
+				() -> companyLocalService.addDBPartitionCompany(
+					company.getCompanyId(), null, null, null));
+
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
+					company.getCompanyId()));
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					PortalInstancePool.getCompanyIds(),
+					company.getCompanyId()));
+
+			CompanyLocalServiceTestUtil.checkStandaloneDBPartitionTables(
+				connection, dbPartitionDB,
+				DBPartitionUtil.getExportedPartitionName(
+					company.getCompanyId()),
+				"Company", "VirtualHost");
+
+			companyLocalService.addDBPartitionCompany(
+				company.getCompanyId(), null, null, null);
+
+			Assert.assertTrue(
+				ArrayUtil.contains(
+					PortalInstancePool.getCompanyIds(),
+					company.getCompanyId()));
+		}
+		finally {
+			db.runSQL(
+				dbPartitionDB.getDropPartitionSQL(
+					DBPartitionUtil.getExportedPartitionName(
+						company.getCompanyId())));
+
+			if (ArrayUtil.contains(
+					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
+					company.getCompanyId())) {
+
+				companyLocalService.deleteCompany(company);
+			}
+			else {
+				removeDBPartitions(new long[] {company.getCompanyId()});
+			}
+		}
+	}
+
+	@Test
 	public void testAddDBPartitionCompanyWhenCompanyLocalServiceFails()
 		throws Exception {
 
@@ -809,6 +865,44 @@ public class CompanyLocalServiceDBPartitionTest
 			if (copiedCompany != null) {
 				companyLocalService.deleteCompany(copiedCompany.getCompanyId());
 			}
+		}
+	}
+
+	@Test
+	public void testCopyDBPartitionCompanyWhenCallerTransactionRollsBack()
+		throws Throwable {
+
+		Company company = CompanyTestUtil.addCompany();
+
+		long toCompanyId = RandomTestUtil.nextLong();
+
+		try {
+			_invokeInRolledBackTransaction(
+				() -> companyLocalService.copyDBPartitionCompany(
+					company.getCompanyId(), toCompanyId,
+					RandomTestUtil.randomString(),
+					StringUtil.toLowerCase(RandomTestUtil.randomString()),
+					RandomTestUtil.randomString()));
+
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
+					toCompanyId));
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					PortalInstancePool.getCompanyIds(), toCompanyId));
+
+			_checkPartitionDoesNotExist(toCompanyId);
+		}
+		finally {
+			if (ArrayUtil.contains(
+					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
+					toCompanyId)) {
+
+				companyLocalService.deleteCompany(toCompanyId);
+			}
+
+			companyLocalService.deleteCompany(company);
 		}
 	}
 
