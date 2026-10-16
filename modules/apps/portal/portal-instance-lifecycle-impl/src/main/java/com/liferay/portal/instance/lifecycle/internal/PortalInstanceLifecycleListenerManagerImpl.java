@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
+import com.liferay.portal.util.PortalInstances;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -146,6 +147,9 @@ public class PortalInstanceLifecycleListenerManagerImpl
 							"Unable to preregister portal instance " + company,
 							exception);
 					}
+
+					PortalInstances.markInitializationFailed(
+						company.getCompanyId());
 				}
 			});
 	}
@@ -203,6 +207,9 @@ public class PortalInstanceLifecycleListenerManagerImpl
 							"Unable to register portal instance " + company,
 							exception);
 					}
+
+					PortalInstances.markInitializationFailed(
+						company.getCompanyId());
 				}
 				finally {
 					LocaleThreadLocal.setDefaultLocale(defaultLocale);

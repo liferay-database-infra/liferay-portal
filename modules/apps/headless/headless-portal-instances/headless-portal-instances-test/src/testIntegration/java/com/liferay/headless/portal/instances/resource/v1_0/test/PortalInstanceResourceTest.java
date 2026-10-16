@@ -16,6 +16,8 @@ import com.liferay.headless.portal.instances.client.problem.Problem;
 import com.liferay.headless.portal.instances.client.resource.v1_0.PortalInstanceResource;
 import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.portal.instance.lifecycle.BasePortalInstanceLifecycleListener;
+import com.liferay.portal.instance.lifecycle.PortalInstanceLifecycleListener;
 import com.liferay.portal.instances.constants.PortalInstancesNotificationConstants;
 import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
@@ -53,6 +55,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -60,6 +63,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * @author István András Dézsi
@@ -163,6 +171,9 @@ public class PortalInstanceResourceTest
 	@Override
 	@Test
 	public void testPostPortalInstance() throws Exception {
+		_testPostPortalInstanceBatchSendsUserNotificationEventAfterRegistration();
+		_testPostPortalInstanceBatchSendsUserNotificationEventWhenPreregistrationFails();
+		_testPostPortalInstanceBatchSendsUserNotificationEventWhenRegistrationFails();
 		_testPostPortalInstanceBatchWithSeveralPortalInstances();
 		_testPostPortalInstanceBatchWithSiteInitializerKeyNonexistent();
 		_testPostPortalInstanceWithSiteInitializerKeyNonexistent();
@@ -642,6 +653,191 @@ public class PortalInstanceResourceTest
 			"FORBIDDEN",
 			() -> userPortalInstanceResource.patchPortalInstance(
 				_portalInstance.getPortalInstanceId(), randomPortalInstance()));
+	}
+
+	private void _testPostPortalInstanceBatchSendsUserNotificationEventAfterRegistration()
+		throws Exception {
+
+		PortalInstance randomPortalInstance = randomPortalInstance();
+
+		AtomicLong registeredTimeAtomicLong = new AtomicLong();
+
+		Bundle bundle = FrameworkUtil.getBundle(
+			PortalInstanceResourceTest.class);
+
+		BundleContext bundleContext = bundle.getBundleContext();
+
+		ServiceRegistration<PortalInstanceLifecycleListener>
+			serviceRegistration = bundleContext.registerService(
+				PortalInstanceLifecycleListener.class,
+				new BasePortalInstanceLifecycleListener() {
+
+					@Override
+					public void portalInstanceRegistered(Company company) {
+						if (Objects.equals(
+								company.getWebId(),
+								randomPortalInstance.getPortalInstanceId())) {
+
+							registeredTimeAtomicLong.set(
+								System.currentTimeMillis());
+						}
+					}
+
+				},
+				null);
+
+		HttpResponse httpResponse =
+			portalInstanceResource.postPortalInstanceBatchHttpResponse(
+				null,
+				JSONUtil.put(
+					JSONFactoryUtil.createJSONObject(
+						randomPortalInstance.toString())));
+
+		Assert.assertEquals(202, httpResponse.getStatusCode());
+
+		waitForFinish(
+			"COMPLETED",
+			JSONFactoryUtil.createJSONObject(httpResponse.getContent()));
+
+		UserNotificationEvent userNotificationEvent =
+			_fetchUserNotificationEvent(
+				randomPortalInstance.getPortalInstanceId(),
+				PortalInstancesNotificationConstants.STATUS_SUCCESS);
+
+		Assert.assertNotNull(userNotificationEvent);
+
+		long registeredTime = registeredTimeAtomicLong.get();
+
+		Assert.assertNotEquals(0, registeredTime);
+		Assert.assertTrue(
+			userNotificationEvent.getTimestamp() >= registeredTime);
+
+		serviceRegistration.unregister();
+
+		Company company = _companyLocalService.getCompanyByWebId(
+			randomPortalInstance.getPortalInstanceId());
+
+		_deletePortalInstance(_toPortalInstance(company));
+	}
+
+	private void
+			_testPostPortalInstanceBatchSendsUserNotificationEventWhenInitializationFails(
+				PortalInstanceLifecycleListener portalInstanceLifecycleListener,
+				PortalInstance portalInstance)
+		throws Exception {
+
+		Bundle bundle = FrameworkUtil.getBundle(
+			PortalInstanceResourceTest.class);
+
+		BundleContext bundleContext = bundle.getBundleContext();
+
+		ServiceRegistration<PortalInstanceLifecycleListener>
+			serviceRegistration = bundleContext.registerService(
+				PortalInstanceLifecycleListener.class,
+				portalInstanceLifecycleListener, null);
+
+		try {
+			try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+					"com.liferay.portal.instance.lifecycle.internal." +
+						"PortalInstanceLifecycleListenerManagerImpl",
+					LoggerTestUtil.WARN)) {
+
+				HttpResponse httpResponse =
+					portalInstanceResource.postPortalInstanceBatchHttpResponse(
+						null,
+						JSONUtil.put(
+							JSONFactoryUtil.createJSONObject(
+								portalInstance.toString())));
+
+				Assert.assertEquals(202, httpResponse.getStatusCode());
+
+				waitForFinish(
+					"COMPLETED",
+					JSONFactoryUtil.createJSONObject(
+						httpResponse.getContent()));
+			}
+
+			Assert.assertNull(
+				_fetchUserNotificationEvent(
+					portalInstance.getPortalInstanceId(),
+					PortalInstancesNotificationConstants.STATUS_SUCCESS));
+
+			UserNotificationEvent userNotificationEvent =
+				_fetchUserNotificationEvent(
+					portalInstance.getPortalInstanceId(),
+					PortalInstancesNotificationConstants.STATUS_FAILED);
+
+			Assert.assertNotNull(userNotificationEvent);
+
+			JSONObject payloadJSONObject = JSONFactoryUtil.createJSONObject(
+				userNotificationEvent.getPayload());
+
+			Assert.assertEquals(
+				"the-instance-was-created-but-its-initialization-failed-" +
+					"check-the-server-logs",
+				payloadJSONObject.getString("errorMessageKey"));
+		}
+		finally {
+			serviceRegistration.unregister();
+
+			VirtualHost virtualHost = _virtualHostLocalService.fetchVirtualHost(
+				portalInstance.getVirtualHost());
+
+			if (virtualHost != null) {
+				_deletePortalInstance(
+					_toPortalInstance(
+						_companyLocalService.getCompany(
+							virtualHost.getCompanyId())));
+			}
+		}
+	}
+
+	private void _testPostPortalInstanceBatchSendsUserNotificationEventWhenPreregistrationFails()
+		throws Exception {
+
+		PortalInstance portalInstance = randomPortalInstance();
+
+		_testPostPortalInstanceBatchSendsUserNotificationEventWhenInitializationFails(
+			new BasePortalInstanceLifecycleListener() {
+
+				@Override
+				public void portalInstancePreregistered(Company company)
+					throws Exception {
+
+					if (Objects.equals(
+							company.getWebId(),
+							portalInstance.getPortalInstanceId())) {
+
+						throw new Exception();
+					}
+				}
+
+			},
+			portalInstance);
+	}
+
+	private void _testPostPortalInstanceBatchSendsUserNotificationEventWhenRegistrationFails()
+		throws Exception {
+
+		PortalInstance portalInstance = randomPortalInstance();
+
+		_testPostPortalInstanceBatchSendsUserNotificationEventWhenInitializationFails(
+			new BasePortalInstanceLifecycleListener() {
+
+				@Override
+				public void portalInstanceRegistered(Company company)
+					throws Exception {
+
+					if (Objects.equals(
+							company.getWebId(),
+							portalInstance.getPortalInstanceId())) {
+
+						throw new Exception();
+					}
+				}
+
+			},
+			portalInstance);
 	}
 
 	private void _testPostPortalInstanceBatchWithSeveralPortalInstances()
