@@ -345,6 +345,13 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 				LastSessionRecorderHelperUtil.syncLastSessionState(false);
 
+				TransactionCallbackUtil.registerRollbackCallback(
+					() -> {
+						_deleteDBPartitionCompany(addedCompany.getCompanyId());
+
+						return null;
+					});
+
 				return addedCompany;
 			}
 
@@ -2395,6 +2402,28 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		_contactPersistence.update(guestContact);
 
 		return guestUser;
+	}
+
+	private void _deleteDBPartitionCompany(long companyId)
+		throws PortalException {
+
+		try {
+			TransactionInvokerUtil.invoke(
+				_transactionConfig,
+				() -> {
+					Company company = companyPersistence.fetchByPrimaryKey(
+						companyId);
+
+					if (company == null) {
+						return null;
+					}
+
+					return companyLocalService.deleteCompany(company);
+				});
+		}
+		catch (Throwable throwable) {
+			throw new PortalException(throwable);
+		}
 	}
 
 	private void _deletePortalInstance(Company company) throws PortalException {
