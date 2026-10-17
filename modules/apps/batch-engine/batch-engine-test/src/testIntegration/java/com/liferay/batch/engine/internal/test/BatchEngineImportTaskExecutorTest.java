@@ -30,6 +30,8 @@ import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
+import com.liferay.portal.kernel.audit.AuditRequestContext;
+import com.liferay.portal.kernel.audit.AuditRequestContextThreadLocal;
 import com.liferay.portal.kernel.dao.orm.QueryDefinition;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -984,6 +986,92 @@ public class BatchEngineImportTaskExecutorTest
 	}
 
 	@Test
+	public void testImportBlogPostingsWithAuditRequestContext()
+		throws Exception {
+
+		AuditRequestContext auditRequestContext =
+			AuditRequestContextThreadLocal.getAuditRequestContext();
+
+		String clientHost = RandomTestUtil.randomString();
+
+		auditRequestContext.setClientHost(clientHost);
+
+		String clientIP = RandomTestUtil.randomString();
+
+		auditRequestContext.setClientIP(clientIP);
+
+		long realUserId = RandomTestUtil.randomLong();
+
+		auditRequestContext.setRealUserId(realUserId);
+
+		String serverName = RandomTestUtil.randomString();
+
+		auditRequestContext.setServerName(serverName);
+
+		int serverPort = RandomTestUtil.randomInt();
+
+		auditRequestContext.setServerPort(serverPort);
+
+		String sessionID = RandomTestUtil.randomString();
+
+		auditRequestContext.setSessionID(sessionID);
+
+		try {
+			_importBlogPostings(
+				BatchEngineTaskOperation.CREATE,
+				_getBlogPostingsJSONCreateContent(
+					TestPropsValues.getGroupId(), FIELD_NAMES),
+				"JSON", null);
+
+			Assert.assertEquals(
+				BatchEngineTaskExecuteStatus.COMPLETED.toString(),
+				_batchEngineImportTask.getExecuteStatus());
+
+			_assertAuditRequestContext(
+				clientHost, clientIP, realUserId, serverName, serverPort,
+				sessionID);
+
+			StringBundler sb = new StringBundler();
+
+			sb.append(StringPool.OPEN_BRACKET);
+
+			_createJSONRow(
+				sb, FIELD_NAMES[0], _toJSONValue("alternativeHeadline"),
+				FIELD_NAMES[1], _toJSONValue("articleBody"), FIELD_NAMES[2],
+				_toJSONValue(dateFormat.format(new Date(baseDate.getTime()))),
+				FIELD_NAMES[3], _toJSONValue("headline"), FIELD_NAMES[4],
+				String.valueOf(TestPropsValues.getGroupId()), "unknownColumn",
+				_toJSONValue("unknownValue"));
+
+			sb.append(StringPool.CLOSE_BRACKET);
+
+			String content = sb.toString();
+
+			try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+					_CLASS_NAME_BATCH_ENGINE_IMPORT_TASK_EXECUTOR_IMPL,
+					LoggerTestUtil.ERROR)) {
+
+				_importBlogPostings(
+					BatchEngineTaskOperation.CREATE,
+					_compressContent(
+						content.getBytes(StandardCharsets.UTF_8), "JSON"),
+					"JSON", null);
+			}
+
+			Assert.assertEquals(
+				BatchEngineTaskExecuteStatus.FAILED.toString(),
+				_batchEngineImportTask.getExecuteStatus());
+
+			_assertAuditRequestContext(
+				clientHost, clientIP, realUserId, serverName, serverPort,
+				sessionID);
+		}
+		finally {
+			AuditRequestContextThreadLocal.removeAuditRequestContext();
+		}
+	}
+
+	@Test
 	public void testImportBlogPostingsWithCallbackURL() throws Exception {
 		Bundle bundle = FrameworkUtil.getBundle(
 			BatchEngineImportTaskExecutorTest.class);
@@ -1249,6 +1337,21 @@ public class BatchEngineImportTaskExecutorTest
 
 		Assert.assertEquals(count + 1, testApplication.getCount());
 		Assert.assertEquals(logEntries.toString(), 0, logEntries.size());
+	}
+
+	private void _assertAuditRequestContext(
+		String clientHost, String clientIP, long realUserId, String serverName,
+		int serverPort, String sessionID) {
+
+		AuditRequestContext auditRequestContext =
+			AuditRequestContextThreadLocal.getAuditRequestContext();
+
+		Assert.assertEquals(clientHost, auditRequestContext.getClientHost());
+		Assert.assertEquals(clientIP, auditRequestContext.getClientIP());
+		Assert.assertEquals(realUserId, auditRequestContext.getRealUserId());
+		Assert.assertEquals(serverName, auditRequestContext.getServerName());
+		Assert.assertEquals(serverPort, auditRequestContext.getServerPort());
+		Assert.assertEquals(sessionID, auditRequestContext.getSessionID());
 	}
 
 	private void _assertCreatedBlogPostings() throws Exception {
