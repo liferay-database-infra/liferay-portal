@@ -403,6 +403,9 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				Company dbPartitionCompany = TransactionInvokerUtil.invoke(
 					_transactionConfig,
 					() -> {
+						companyPersistence.clearCache();
+						_virtualHostPersistence.clearCache();
+
 						Company company = companyPersistence.findByPrimaryKey(
 							companyId);
 
