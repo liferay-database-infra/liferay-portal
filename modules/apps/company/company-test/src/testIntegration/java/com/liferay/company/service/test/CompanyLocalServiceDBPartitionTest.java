@@ -399,15 +399,7 @@ public class CompanyLocalServiceDBPartitionTest
 					company.getCompanyId()));
 		}
 		finally {
-			Company company = companyAtomicReference.get();
-
-			if ((company != null) &&
-				ArrayUtil.contains(
-					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
-					company.getCompanyId())) {
-
-				companyLocalService.deleteCompany(company);
-			}
+			_deleteCompany(companyAtomicReference.get());
 		}
 	}
 
@@ -974,12 +966,7 @@ public class CompanyLocalServiceDBPartitionTest
 			_checkPartitionDoesNotExist(toCompanyId);
 		}
 		finally {
-			if (ArrayUtil.contains(
-					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
-					toCompanyId)) {
-
-				companyLocalService.deleteCompany(toCompanyId);
-			}
+			_deleteCompany(toCompanyId);
 
 			companyLocalService.deleteCompany(company);
 		}
@@ -1663,12 +1650,16 @@ public class CompanyLocalServiceDBPartitionTest
 	}
 
 	private void _deleteCompany(Company company) throws Exception {
-		if ((company != null) &&
-			ArrayUtil.contains(
-				CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
-				company.getCompanyId())) {
+		if (company != null) {
+			_deleteCompany(company.getCompanyId());
+		}
+	}
 
-			companyLocalService.deleteCompany(company);
+	private void _deleteCompany(long companyId) throws Exception {
+		if (ArrayUtil.contains(
+				CompanyLocalServiceTestUtil.getCompanyIdsBySQL(), companyId)) {
+
+			companyLocalService.deleteCompany(companyId);
 		}
 	}
 
