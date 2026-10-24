@@ -116,6 +116,14 @@ public abstract class UpgradeProcess
 						_log.info("Upgrading " + companyInfo);
 					}
 
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							StringBundler.concat(
+								"LPD-106556 DELIBERATE BREAK: simulated error ",
+								"during the upgrade execution of ",
+								companyInfo));
+					}
+
 					try {
 						doUpgrade();
 					}
