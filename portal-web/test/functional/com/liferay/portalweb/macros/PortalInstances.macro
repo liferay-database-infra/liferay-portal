@@ -70,24 +70,27 @@ definition {
 
 		Button.clickAdd();
 
-		Alert.viewInfoMessageSpecific(infoMessage = "The instance ${webId} is being created. You will be notified when it finishes.");
+		if (IsElementPresent.isElementPresentAfterWait(key_infoMessage = "The instance ${webId} is being created. You will be notified when it finishes.", locator1 = "Message#INFO_SPECIFIC")) {
+			WaitForElementNotPresent(locator1 = "IFrame#MODAL_BODY");
 
-		WaitForElementNotPresent(locator1 = "IFrame#MODAL_BODY");
+			var key_contentBody = "The instance ${webId} is ready to use.";
 
-		var key_contentBody = "The instance ${webId} is ready to use.";
+			Navigator.gotoNotifications();
 
-		Navigator.gotoNotifications();
+			while ((!(IsElementPresent(locator1 = "Notifications#NOTIFICATIONS_CONTENT"))) && (maxIterations = "60")) {
 
-		while ((!(IsElementPresent(locator1 = "Notifications#NOTIFICATIONS_CONTENT"))) && (maxIterations = "60")) {
+				// Wait for the asynchronous creation to finish. The instance is listed as soon as its company row commits, so the notification is the only signal that the initialization is done. Needed for LPD-93373.
 
-			// Wait for the asynchronous creation to finish. The instance is listed as soon as its company row commits, so the notification is the only signal that the initialization is done. Needed for LPD-93373.
+				Pause(value1 = 5000);
 
-			Pause(value1 = 5000);
+				Refresh();
+			}
 
-			Refresh();
+			AssertElementPresent(locator1 = "Notifications#NOTIFICATIONS_CONTENT");
 		}
-
-		AssertElementPresent(locator1 = "Notifications#NOTIFICATIONS_CONTENT");
+		else {
+			WaitForElementNotPresent(locator1 = "IFrame#MODAL_BODY");
+		}
 
 		Navigator.openSpecificURL(url = ${virtualInstancesAdminURL});
 
