@@ -5,10 +5,10 @@
 
 package com.liferay.portal.instances.web.internal.portlet;
 
-import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.instances.web.internal.constants.PortalInstancesWebKeys;
 import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
+import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.site.initializer.SiteInitializerRegistry;
 
 import jakarta.portlet.Portlet;
@@ -39,7 +39,7 @@ import org.osgi.service.component.annotations.Reference;
 		"jakarta.portlet.display-name=Virtual Instances",
 		"jakarta.portlet.expiration-cache=0",
 		"jakarta.portlet.init-param.template-path=/META-INF/resources/",
-		"jakarta.portlet.name=" + PortalInstancesPortletKeys.PORTAL_INSTANCES,
+		"jakarta.portlet.name=" + PortletKeys.PORTAL_INSTANCES,
 		"jakarta.portlet.resource-bundle=content.Language",
 		"jakarta.portlet.security-role-ref=administrator",
 		"jakarta.portlet.version=4.0"

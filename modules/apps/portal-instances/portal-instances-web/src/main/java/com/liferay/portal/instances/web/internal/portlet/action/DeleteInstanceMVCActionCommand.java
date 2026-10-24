@@ -7,7 +7,6 @@ package com.liferay.portal.instances.web.internal.portlet.action;
 
 import com.liferay.batch.engine.jaxrs.uri.BatchEngineUriInfo;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceResource;
-import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.instances.web.internal.util.PortalInstancesResourceContextUtil;
 import com.liferay.portal.kernel.exception.NoSuchCompanyException;
 import com.liferay.portal.kernel.json.JSONFactory;
@@ -22,6 +21,7 @@ import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResourceFactory;
 
 import jakarta.portlet.ActionRequest;
@@ -39,7 +39,7 @@ import org.osgi.service.component.annotations.ReferenceScope;
  */
 @Component(
 	property = {
-		"jakarta.portlet.name=" + PortalInstancesPortletKeys.PORTAL_INSTANCES,
+		"jakarta.portlet.name=" + PortletKeys.PORTAL_INSTANCES,
 		"mvc.command.name=/portal_instances/delete_instance"
 	},
 	service = MVCActionCommand.class

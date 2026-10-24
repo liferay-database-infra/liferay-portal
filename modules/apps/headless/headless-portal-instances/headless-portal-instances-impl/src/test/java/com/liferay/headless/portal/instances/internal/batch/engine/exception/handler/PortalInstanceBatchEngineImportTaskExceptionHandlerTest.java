@@ -13,7 +13,6 @@ import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceCopy;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceExport;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceImport;
 import com.liferay.petra.lang.SafeCloseable;
-import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
 import com.liferay.portal.kernel.exception.CompanyMxException;
 import com.liferay.portal.kernel.exception.CompanyNameException;
@@ -35,6 +34,7 @@ import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalServiceUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import jakarta.ws.rs.BadRequestException;
@@ -551,8 +551,7 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandlerTest {
 		Mockito.verify(
 			_userNotificationEventLocalService
 		).sendUserNotificationEvents(
-			Mockito.eq(_USER_ID),
-			Mockito.eq(PortalInstancesPortletKeys.PORTAL_INSTANCES),
+			Mockito.eq(_USER_ID), Mockito.eq(PortletKeys.PORTAL_INSTANCES),
 			Mockito.eq(UserNotificationDeliveryConstants.TYPE_WEBSITE),
 			argumentCaptor.capture()
 		);

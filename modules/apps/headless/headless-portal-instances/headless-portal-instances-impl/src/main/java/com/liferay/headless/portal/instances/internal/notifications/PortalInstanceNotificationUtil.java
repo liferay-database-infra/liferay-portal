@@ -6,12 +6,12 @@
 package com.liferay.headless.portal.instances.internal.notifications;
 
 import com.liferay.batch.engine.thread.local.BatchEngineThreadLocal;
-import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.UserNotificationDeliveryConstants;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalServiceUtil;
+import com.liferay.portal.kernel.util.PortletKeys;
 
 /**
  * @author Luis Ortiz
@@ -27,7 +27,7 @@ public class PortalInstanceNotificationUtil {
 
 		try {
 			UserNotificationEventLocalServiceUtil.sendUserNotificationEvents(
-				userId, PortalInstancesPortletKeys.PORTAL_INSTANCES,
+				userId, PortletKeys.PORTAL_INSTANCES,
 				UserNotificationDeliveryConstants.TYPE_WEBSITE,
 				payloadJSONObject);
 		}

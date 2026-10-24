@@ -8,8 +8,8 @@ package com.liferay.portal.instances.web.internal.application.list;
 import com.liferay.application.list.BasePanelApp;
 import com.liferay.application.list.PanelApp;
 import com.liferay.application.list.constants.PanelCategoryKeys;
-import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.util.PortletKeys;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -38,11 +38,11 @@ public class PortalInstancesPanelApp extends BasePanelApp {
 
 	@Override
 	public String getPortletId() {
-		return PortalInstancesPortletKeys.PORTAL_INSTANCES;
+		return PortletKeys.PORTAL_INSTANCES;
 	}
 
 	@Reference(
-		target = "(jakarta.portlet.name=" + PortalInstancesPortletKeys.PORTAL_INSTANCES + ")"
+		target = "(jakarta.portlet.name=" + PortletKeys.PORTAL_INSTANCES + ")"
 	)
 	private Portlet _portlet;
 

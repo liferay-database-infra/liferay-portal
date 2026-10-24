@@ -7,7 +7,6 @@ package com.liferay.portal.instances.web.internal.portlet.action;
 
 import com.liferay.batch.engine.jaxrs.uri.BatchEngineUriInfo;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceCopyResource;
-import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.instances.web.internal.util.PortalInstancesResourceContextUtil;
 import com.liferay.portal.kernel.exception.CompanyNameException;
 import com.liferay.portal.kernel.exception.CompanyVirtualHostException;
@@ -29,6 +28,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResourceFactory;
 
@@ -47,7 +47,7 @@ import org.osgi.service.component.annotations.ReferenceScope;
  */
 @Component(
 	property = {
-		"jakarta.portlet.name=" + PortalInstancesPortletKeys.PORTAL_INSTANCES,
+		"jakarta.portlet.name=" + PortletKeys.PORTAL_INSTANCES,
 		"mvc.command.name=/portal_instances/copy_db_partition_company"
 	},
 	service = MVCActionCommand.class

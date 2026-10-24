@@ -7,8 +7,8 @@ package com.liferay.portal.instances.web.internal.notifications;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.instances.constants.PortalInstancesNotificationConstants;
 import com.liferay.portal.json.JSONFactoryImpl;
+import com.liferay.portal.kernel.instance.PortalInstancesNotificationConstants;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.UserNotificationEvent;

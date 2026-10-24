@@ -11,10 +11,10 @@ import com.liferay.headless.portal.instances.internal.dto.v1_0.converter.constan
 import com.liferay.headless.portal.instances.internal.notifications.PortalInstanceNotificationUtil;
 import com.liferay.headless.portal.instances.internal.security.permission.PortalInstancePermissionUtil;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceResource;
-import com.liferay.portal.instances.constants.PortalInstancesNotificationConstants;
 import com.liferay.portal.kernel.exception.ContactNameException;
 import com.liferay.portal.kernel.exception.UserEmailAddressException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstancesNotificationConstants;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
@@ -117,13 +117,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		PortalInstancePermissionUtil.check();
 
-		PortalInstance addedPortalInstance = _addPortalInstance(portalInstance);
-
-		_sendUserNotificationEvent(
-			PortalInstancesNotificationConstants.OPERATION_TYPE_ADD,
-			portalInstance.getPortalInstanceId());
-
-		return addedPortalInstance;
+		return _addPortalInstance(portalInstance);
 	}
 
 	@Override

@@ -6,8 +6,7 @@
 package com.liferay.portal.instances.web.internal.notifications;
 
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.instances.constants.PortalInstancesNotificationConstants;
-import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
+import com.liferay.portal.kernel.instance.PortalInstancesNotificationConstants;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.UserNotificationEvent;
@@ -16,6 +15,7 @@ import com.liferay.portal.kernel.notifications.UserNotificationHandler;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.Validator;
 
 import jakarta.portlet.PortletRequest;
@@ -27,14 +27,14 @@ import org.osgi.service.component.annotations.Reference;
  * @author Luis Ortiz
  */
 @Component(
-	property = "jakarta.portlet.name=" + PortalInstancesPortletKeys.PORTAL_INSTANCES,
+	property = "jakarta.portlet.name=" + PortletKeys.PORTAL_INSTANCES,
 	service = UserNotificationHandler.class
 )
 public class PortalInstancesUserNotificationHandler
 	extends BaseUserNotificationHandler {
 
 	public PortalInstancesUserNotificationHandler() {
-		setPortletId(PortalInstancesPortletKeys.PORTAL_INSTANCES);
+		setPortletId(PortletKeys.PORTAL_INSTANCES);
 	}
 
 	@Override
@@ -60,8 +60,7 @@ public class PortalInstancesUserNotificationHandler
 
 		return _portal.getControlPanelPortletURL(
 			serviceContext.getRequest(), serviceContext.getScopeGroup(),
-			PortalInstancesPortletKeys.PORTAL_INSTANCES, 0, 0,
-			PortletRequest.RENDER_PHASE
+			PortletKeys.PORTAL_INSTANCES, 0, 0, PortletRequest.RENDER_PHASE
 		).toString();
 	}
 

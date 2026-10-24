@@ -5,10 +5,10 @@
 
 package com.liferay.portal.instances.web.internal.notifications;
 
-import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.model.UserNotificationDeliveryConstants;
 import com.liferay.portal.kernel.notifications.UserNotificationDefinition;
 import com.liferay.portal.kernel.notifications.UserNotificationDeliveryType;
+import com.liferay.portal.kernel.util.PortletKeys;
 
 import org.osgi.service.component.annotations.Component;
 
@@ -16,7 +16,7 @@ import org.osgi.service.component.annotations.Component;
  * @author Luis Ortiz
  */
 @Component(
-	property = "jakarta.portlet.name=" + PortalInstancesPortletKeys.PORTAL_INSTANCES,
+	property = "jakarta.portlet.name=" + PortletKeys.PORTAL_INSTANCES,
 	service = UserNotificationDefinition.class
 )
 public class PortalInstancesUserNotificationDefinition
@@ -24,7 +24,7 @@ public class PortalInstancesUserNotificationDefinition
 
 	public PortalInstancesUserNotificationDefinition() {
 		super(
-			PortalInstancesPortletKeys.PORTAL_INSTANCES, 0,
+			PortletKeys.PORTAL_INSTANCES, 0,
 			UserNotificationDefinition.NOTIFICATION_TYPE_ADD_ENTRY,
 			"receive-a-notification-when-an-instance-operation-finishes");
 

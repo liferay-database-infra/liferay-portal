@@ -45,7 +45,9 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.RequiredCompanyException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstancesNotificationConstants;
 import com.liferay.portal.kernel.instance.lifecycle.PortalInstanceLifecycleManager;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -70,6 +72,7 @@ import com.liferay.portal.kernel.model.SystemEvent;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserConstants;
 import com.liferay.portal.kernel.model.UserGroup;
+import com.liferay.portal.kernel.model.UserNotificationDeliveryConstants;
 import com.liferay.portal.kernel.model.VirtualHost;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiServiceUtil;
@@ -84,6 +87,8 @@ import com.liferay.portal.kernel.search.facet.faceted.searcher.FacetedSearcherMa
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
@@ -99,6 +104,7 @@ import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.SystemEventLocalService;
 import com.liferay.portal.kernel.service.UserGroupLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
 import com.liferay.portal.kernel.service.VirtualHostLocalService;
 import com.liferay.portal.kernel.service.persistence.CompanyInfoPersistence;
 import com.liferay.portal.kernel.service.persistence.ContactPersistence;
@@ -507,6 +513,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 						PortalInstances.initCompany(finalCompany, true);
 
 						_synchronizePortalInstances();
+
+						_sendAddUserNotificationEvent(finalCompany);
 					}
 
 					return null;
@@ -2512,6 +2520,41 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		}
 	}
 
+	private void _sendAddUserNotificationEvent(Company company) {
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		if ((permissionChecker == null) || !permissionChecker.isSignedIn()) {
+			return;
+		}
+
+		User user = permissionChecker.getUser();
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					user.getCompanyId())) {
+
+			_userNotificationEventLocalService.sendUserNotificationEvents(
+				user.getUserId(), PortletKeys.PORTAL_INSTANCES,
+				UserNotificationDeliveryConstants.TYPE_WEBSITE,
+				JSONUtil.put(
+					"operationType",
+					PortalInstancesNotificationConstants.OPERATION_TYPE_ADD
+				).put(
+					"portalInstanceId", company.getWebId()
+				).put(
+					"status",
+					PortalInstancesNotificationConstants.STATUS_SUCCESS
+				));
+		}
+		catch (Exception exception) {
+			_log.error(
+				"Unable to send the user notification event for portal " +
+					"instance " + company.getWebId(),
+				exception);
+		}
+	}
+
 	private void _synchronizePortalInstances() {
 		ClusterRequest clusterRequest = ClusterRequest.createMulticastRequest(
 			_methodHandler, true);
@@ -2708,6 +2751,10 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 	@BeanReference(type = UserLocalService.class)
 	private UserLocalService _userLocalService;
+
+	@BeanReference(type = UserNotificationEventLocalService.class)
+	private UserNotificationEventLocalService
+		_userNotificationEventLocalService;
 
 	@BeanReference(type = UserPersistence.class)
 	private UserPersistence _userPersistence;

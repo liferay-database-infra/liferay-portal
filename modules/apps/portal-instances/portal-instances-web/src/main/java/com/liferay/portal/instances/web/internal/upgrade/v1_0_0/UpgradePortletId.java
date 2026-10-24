@@ -5,8 +5,8 @@
 
 package com.liferay.portal.instances.web.internal.upgrade.v1_0_0;
 
-import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.upgrade.BasePortletIdUpgradeProcess;
+import com.liferay.portal.kernel.util.PortletKeys;
 
 /**
  * @author Pei-Jung Lan
@@ -15,9 +15,7 @@ public class UpgradePortletId extends BasePortletIdUpgradeProcess {
 
 	@Override
 	protected String[][] getRenamePortletIdsArray() {
-		return new String[][] {
-			{"135", PortalInstancesPortletKeys.PORTAL_INSTANCES}
-		};
+		return new String[][] {{"135", PortletKeys.PORTAL_INSTANCES}};
 	}
 
 }
