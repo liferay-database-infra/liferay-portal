@@ -58,6 +58,9 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandler
 			return;
 		}
 
+		PortalInstanceNotificationUtil.removePortalInstance(
+			batchEngineImportTask.getBatchEngineImportTaskId(), item);
+
 		String portalInstanceId = _getPortalInstanceId(item);
 
 		PortalInstanceNotificationUtil.sendUserNotificationEvent(
