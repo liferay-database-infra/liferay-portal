@@ -39,9 +39,11 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -85,6 +87,130 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 	}
 
 	@Test
+	public void testUpgradeModuleTableColumnCasedInServiceComponent()
+		throws Exception {
+
+		long buildNumber = 0;
+
+		for (ServiceComponent serviceComponent :
+				_serviceComponentLocalService.getLatestServiceComponents()) {
+
+			if (!Objects.equals(
+					serviceComponent.getBuildNamespace(),
+					"com.liferay.wiki.service")) {
+
+				continue;
+			}
+
+			buildNumber = serviceComponent.getBuildNumber();
+
+			break;
+		}
+
+		_testUpgradeWithTable(
+			"com.liferay.wiki.service", buildNumber + 1, "nodeId",
+			"CREATEDATE DATE null,\n\t", "WikiNode");
+	}
+
+	@Test
+	public void testUpgradePortalTableColumnCasedInServiceComponent()
+		throws Exception {
+
+		_testUpgradeWithTable(
+			"com.liferay.test.service.impl", 0, "passwordTrackerId",
+			"CREATEDATE DATE null,\n\t", "PasswordTracker");
+	}
+
+	@Test
+	public void testUpgradePortalTableColumnMissingFromServiceComponent()
+		throws Exception {
+
+		_testUpgradeWithTable(
+			"com.liferay.test.service.impl", 0, "passwordTrackerId",
+			StringPool.BLANK, "PasswordTracker");
+	}
+
+	@Test
+	public void testUpgradePortalTableNameCasedInServiceComponent()
+		throws Exception {
+
+		ServiceComponent serviceComponent =
+			_serviceComponentLocalService.createServiceComponent(
+				RandomTestUtil.nextLong());
+
+		serviceComponent.setMvccVersion(0);
+		serviceComponent.setBuildNamespace("com.liferay.test.service.impl");
+		serviceComponent.setData(
+			"<![CDATA[create table passwordtracker (\n\ttestColumn LONG,\n\t" +
+				"passwordTrackerId LONG not null primary key\n);]]>");
+
+		_serviceComponentLocalService.addServiceComponent(serviceComponent);
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				DatabaseTableAndColumnCaseDataCleanupPreupgradeProcess.class.
+					getName(),
+				LoggerTestUtil.INFO)) {
+
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> _db.runSQL(
+					"alter table PasswordTracker add TESTCOLUMN LONG"));
+
+			upgrade();
+
+			List<String> messages = logCapture.getMessages();
+
+			Assert.assertTrue(
+				messages.contains(
+					"Table PasswordTracker, column TESTCOLUMN was renamed to " +
+						"testColumn because it was incorrectly cased"));
+
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					try (Connection connection = DataAccess.getConnection()) {
+						Assert.assertEquals(
+							"testColumn",
+							_getColumnName(
+								"testColumn", connection, "PasswordTracker"));
+					}
+				});
+		}
+		finally {
+			_serviceComponentLocalService.deleteServiceComponent(
+				serviceComponent);
+
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					try (Connection connection = DataAccess.getConnection()) {
+						for (String columnName :
+								new String[] {
+									"testColumn", "testColumn" + _TEMP_SUFFIX
+								}) {
+
+							String actualColumnName = _getColumnName(
+								columnName, connection, "PasswordTracker");
+
+							if (actualColumnName == null) {
+								continue;
+							}
+
+							_db.runSQL(
+								connection,
+								"alter table PasswordTracker drop column " +
+									actualColumnName);
+						}
+					}
+				});
+		}
+	}
+
+	@Test
+	public void testUpgradeServiceComponentTableColumnType() throws Exception {
+		_testUpgradeWithServiceComponentTable(
+			"VARCHAR(75)", "testCOLUMN", "testTABLE", "testColumn",
+			"TestTable");
+	}
+
+	@Test
 	public void testUpgradeWithLongServiceComponentTableName()
 		throws Exception {
 
@@ -100,7 +226,8 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 			"TestTable", databaseMetaData.getMaxTableNameLength());
 
 		_testUpgradeWithServiceComponentTable(
-			invalidColumnName, invalidTableName, testColumnName, testTableName);
+			"LONG", invalidColumnName, invalidTableName, testColumnName,
+			testTableName);
 	}
 
 	@Test
@@ -182,7 +309,7 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 	@Test
 	public void testUpgradeWithServiceComponentTable() throws Exception {
 		_testUpgradeWithServiceComponentTable(
-			"testCOLUMN", "testTABLE", "testColumn", "TestTable");
+			"LONG", "testCOLUMN", "testTABLE", "testColumn", "TestTable");
 	}
 
 	@Test
@@ -254,7 +381,7 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 					getName(),
 				LoggerTestUtil.INFO)) {
 
-			_createTestTable(columnName, tableName);
+			_createTestTable(columnName, "LONG", tableName);
 
 			// When mysql is configured with lower_case_table_names = 1
 			// DatabaseMetaData.storesLowerCaseIdentifiers returns true
@@ -285,8 +412,7 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 
 			this.connection = proxyConnection;
 
-			_testValidateColumnNamesCasing(
-				columnName, columnName, "LONG", tableName);
+			_testValidateColumnNamesCasing(columnName, columnName, tableName);
 
 			this.connection = null;
 
@@ -301,7 +427,8 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 		}
 	}
 
-	private void _createTestTable(String columnName, String tableName)
+	private void _createTestTable(
+			String columnName, String columnType, String tableName)
 		throws Exception {
 
 		DBType dbType = DBManagerUtil.getDBType();
@@ -310,16 +437,40 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 			DBPartitionUtil.forEachCompanyId(
 				companyId -> _db.runSQL(
 					StringBundler.concat(
-						"create table [", tableName, "] ([", columnName,
-						"] LONG)")));
+						"create table [", tableName, "] ([", columnName, "] ",
+						columnType, ")")));
 		}
 		else {
 			DBPartitionUtil.forEachCompanyId(
 				companyId -> _db.runSQL(
 					StringBundler.concat(
-						"create table `", tableName, "` (`", columnName,
-						"` LONG)")));
+						"create table `", tableName, "` (`", columnName, "` ",
+						columnType, ")")));
 		}
+	}
+
+	private String _getColumnName(
+			String columnName, Connection connection, String tableName)
+		throws Exception {
+
+		DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+		DBInspector dbInspector = new DBInspector(connection);
+
+		try (ResultSet resultSet = databaseMetaData.getColumns(
+				dbInspector.getCatalog(), dbInspector.getSchema(), tableName,
+				"%")) {
+
+			while (resultSet.next()) {
+				String actualColumnName = resultSet.getString("COLUMN_NAME");
+
+				if (StringUtil.equalsIgnoreCase(actualColumnName, columnName)) {
+					return actualColumnName;
+				}
+			}
+		}
+
+		return null;
 	}
 
 	private String _getName(String baseName, int targetLength) {
@@ -346,9 +497,21 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 			StringPool.PERIOD, tableName);
 	}
 
+	private void _renameColumn(
+			String columnName, Connection connection, String newColumnName,
+			String tableName)
+		throws Exception {
+
+		_db.alterColumnName(
+			connection, tableName, columnName, columnName + _TEMP_SUFFIX);
+		_db.alterColumnName(
+			connection, tableName, columnName + _TEMP_SUFFIX, newColumnName);
+	}
+
 	private void _testUpgradeWithServiceComponentTable(
-			String invalidColumnName, String invalidTableName,
-			String testColumnName, String testTableName)
+			String columnType, String invalidColumnName,
+			String invalidTableName, String testColumnName,
+			String testTableName)
 		throws Exception {
 
 		ServiceComponent serviceComponent =
@@ -371,7 +534,7 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 					getName(),
 				LoggerTestUtil.INFO)) {
 
-			_createTestTable(invalidColumnName, invalidTableName);
+			_createTestTable(invalidColumnName, columnType, invalidTableName);
 
 			upgrade();
 
@@ -416,6 +579,10 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 					Assert.assertEquals(columnName, testColumnName, columnName);
 				}
 			}
+
+			Assert.assertTrue(
+				dbInspector.hasColumnType(
+					testTableName, testColumnName, columnType));
 		}
 		finally {
 			_serviceComponentLocalService.deleteServiceComponent(
@@ -452,6 +619,91 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 		}
 	}
 
+	private void _testUpgradeWithTable(
+			String buildNamespace, long buildNumber,
+			String primaryKeyColumnName,
+			String serviceComponentColumnDefinition, String tableName)
+		throws Exception {
+
+		ServiceComponent serviceComponent =
+			_serviceComponentLocalService.createServiceComponent(
+				RandomTestUtil.nextLong());
+
+		serviceComponent.setMvccVersion(0);
+		serviceComponent.setBuildNamespace(buildNamespace);
+		serviceComponent.setBuildNumber(buildNumber);
+		serviceComponent.setData(
+			StringBundler.concat(
+				"<![CDATA[create table ", tableName, " (\n\t",
+				serviceComponentColumnDefinition, primaryKeyColumnName,
+				" LONG not null primary key\n);]]>"));
+
+		_serviceComponentLocalService.addServiceComponent(serviceComponent);
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				DatabaseTableAndColumnCaseDataCleanupPreupgradeProcess.class.
+					getName(),
+				LoggerTestUtil.INFO)) {
+
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					try (Connection connection = DataAccess.getConnection()) {
+						_renameColumn(
+							"createDate", connection, "CREATEDATE", tableName);
+					}
+				});
+
+			upgrade();
+
+			List<String> messages = logCapture.getMessages();
+
+			Assert.assertTrue(
+				messages.contains(
+					StringBundler.concat(
+						"Table ", tableName, ", column CREATEDATE was renamed ",
+						"to createDate because it was incorrectly cased")));
+
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					try (Connection connection = DataAccess.getConnection()) {
+						Assert.assertEquals(
+							"createDate",
+							_getColumnName(
+								"createDate", connection, tableName));
+					}
+				});
+		}
+		finally {
+			_serviceComponentLocalService.deleteServiceComponent(
+				serviceComponent);
+
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					try (Connection connection = DataAccess.getConnection()) {
+						String columnName = _getColumnName(
+							"createDate", connection, tableName);
+
+						if (columnName == null) {
+							String tempColumnName = _getColumnName(
+								"createDate" + _TEMP_SUFFIX, connection,
+								tableName);
+
+							if (tempColumnName != null) {
+								_db.alterColumnName(
+									connection, tableName, tempColumnName,
+									"createDate");
+							}
+						}
+						else if (!columnName.equals("createDate")) {
+							_renameColumn(
+								columnName, connection, "createDate",
+								tableName);
+						}
+					}
+				});
+		}
+	}
+
 	private void _testValidateColumnNameCasing(
 			String columnName, String expectedLogMessage,
 			String invalidColumnName, String tableName)
@@ -467,7 +719,7 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 			alterTableAddColumn(tableName, invalidColumnName, columnType);
 
 			_testValidateColumnNamesCasing(
-				invalidColumnName, columnName, columnType, tableName);
+				invalidColumnName, columnName, tableName);
 
 			List<String> messages = logCapture.getMessages();
 
@@ -485,30 +737,25 @@ public class DatabaseTableAndColumnCaseDataCleanupPreupgradeProcessTest
 
 	private void _testValidateColumnNamesCasing(
 			String existingColumnName, String expectedColumnName,
-			String expectedColumnType, String tableName)
+			String tableName)
 		throws Exception {
 
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-		Map<String, String> existingColumnNames =
+		ReflectionTestUtil.invoke(
+			this, "_validateColumnNamesCasing",
+			new Class<?>[] {
+				Map.class, DBInspector.class, Collection.class, int.class,
+				String.class
+			},
 			TreeMapBuilder.<String, String>create(
 				String.CASE_INSENSITIVE_ORDER
 			).put(
 				existingColumnName, existingColumnName
-			).build();
-
-		List<String> expectedColumnDefinitions = Collections.singletonList(
-			expectedColumnName + StringPool.SPACE + expectedColumnType);
-
-		ReflectionTestUtil.invoke(
-			this, "_validateColumnNamesCasing",
-			new Class<?>[] {
-				DBInspector.class, List.class, Map.class, int.class,
-				String.class
-			},
-			new DBInspector(connection), expectedColumnDefinitions,
-			existingColumnNames, databaseMetaData.getMaxColumnNameLength(),
-			tableName);
+			).build(),
+			new DBInspector(connection),
+			Collections.singletonList(expectedColumnName),
+			databaseMetaData.getMaxColumnNameLength(), tableName);
 	}
 
 	private static final String _TEMP_SUFFIX = "_temp";
