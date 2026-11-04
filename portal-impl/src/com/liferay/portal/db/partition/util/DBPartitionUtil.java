@@ -781,20 +781,46 @@ public class DBPartitionUtil {
 				lowerCaseSQL, DATABASE_EXPORTED_PARTITION_SCHEMA_NAME_PREFIX);
 		}
 
-		if ((count > 0) || lowerCaseSQL.contains("/*!") ||
-			lowerCaseSQL.contains("search_path") ||
-			lowerCaseSQL.contains("set_config")) {
-
+		if (count > 0) {
 			throw new UnsupportedOperationException("Unsupported SQL: " + sql);
 		}
+
+		if (ArrayUtil.exists(_SQL_UNSUPPORTED_TOKENS, lowerCaseSQL::contains)) {
+			Matcher unsupportedSQLMatcher = _unsupportedSQLPattern.matcher(
+				lowerCaseSQL);
+
+			if (unsupportedSQLMatcher.find()) {
+				throw new UnsupportedOperationException(
+					"Unsupported SQL: " + sql);
+			}
+		}
+
+		boolean routine = false;
 
 		for (String statementSQL :
 				StringUtil.split(lowerCaseSQL, CharPool.SEMICOLON)) {
 
-			Matcher setPartitionMatcher = _setPartitionPattern.matcher(
-				statementSQL);
+			Matcher statementMatcher = _statementPattern.matcher(statementSQL);
 
-			if (setPartitionMatcher.lookingAt()) {
+			if (!statementMatcher.lookingAt()) {
+				continue;
+			}
+
+			if ((statementMatcher.group(1) == null) &&
+				(statementMatcher.group(2) == null)) {
+
+				throw new UnsupportedOperationException(
+					"Unsupported SQL: " + sql);
+			}
+
+			routine = true;
+		}
+
+		if (routine) {
+			Matcher unsupportedRoutineMatcher =
+				_unsupportedRoutinePattern.matcher(lowerCaseSQL);
+
+			if (unsupportedRoutineMatcher.find()) {
 				throw new UnsupportedOperationException(
 					"Unsupported SQL: " + sql);
 			}
@@ -812,7 +838,7 @@ public class DBPartitionUtil {
 		String unquotedSQL = quotedStringMatcher.replaceAll(
 			StringPool.DOUBLE_APOSTROPHE);
 
-		if (!lowerCaseSQL.contains(StringPool.BACK_SLASH) &&
+		if (!routine && !lowerCaseSQL.contains(StringPool.BACK_SLASH) &&
 			!ArrayUtil.exists(
 				_SQL_COMMENT_AND_QUOTE_TOKENS, unquotedSQL::contains)) {
 
@@ -2256,6 +2282,11 @@ public class DBPartitionUtil {
 		StringPool.GRAVE_ACCENT, StringPool.POUND, StringPool.QUOTE
 	};
 
+	private static final String[] _SQL_UNSUPPORTED_TOKENS = {
+		"/*!", "_to_xml", "connectby", "crosstab", "lo_", "search_path",
+		"set_config", "ts_rewrite", "ts_stat", "u&"
+	};
+
 	private static final String _TABLE_NAME_PREFIX_QUARTZ = GetterUtil.get(
 		PropsUtil.get("persisted.scheduler.org.quartz.jobStore.tablePrefix"),
 		"QUARTZ_");
@@ -2269,12 +2300,29 @@ public class DBPartitionUtil {
 	private static Pattern _defaultPartitionNamePattern;
 	private static final Pattern _quotedStringPattern = Pattern.compile(
 		"'(?:[^'\\\\]++|\\\\.|'')*+'");
-	private static final Pattern _setPartitionPattern = Pattern.compile(
+	private static final Pattern _statementPattern = Pattern.compile(
 		StringBundler.concat(
-			_REGEX_SQL_WHITESPACE, "(?:(?:discard|reset)\\b",
-			_REGEX_SQL_WHITESPACE, "all\\b|use\\b|set\\b",
-			_REGEX_SQL_WHITESPACE, "(?:(?:local|session)\\b",
-			_REGEX_SQL_WHITESPACE, ")?(?:schema|search_path)\\b)"),
+			_REGEX_SQL_WHITESPACE, "(?:create", _REGEX_SQL_WHITESPACE,
+			"(?:(?:definer", _REGEX_SQL_WHITESPACE, "=", _REGEX_SQL_WHITESPACE,
+			"\\S+|or", _REGEX_SQL_WHITESPACE, "replace|procedural|trusted)",
+			_REGEX_SQL_WHITESPACE,
+			")*(?:(function|procedure)|event|extension|language)\\b|(do)\\b|",
+			"(?:discard|reset)\\b", _REGEX_SQL_WHITESPACE,
+			"all\\b|prepare\\b|use\\b|set\\b", _REGEX_SQL_WHITESPACE,
+			"(?:(?:local|session)\\b", _REGEX_SQL_WHITESPACE,
+			")?(?:schema|search_path)\\b)"),
+		Pattern.DOTALL);
+	private static final Pattern _unsupportedRoutinePattern = Pattern.compile(
+		StringBundler.concat(
+			"\\\\|\\b(?:execute|prepare)\\b|\\blanguage\\b",
+			_REGEX_SQL_WHITESPACE, "(?!['\"]?(?:plpgsql|sql)\\b)[\\w'\"$]"),
+		Pattern.DOTALL);
+	private static final Pattern _unsupportedSQLPattern = Pattern.compile(
+		StringBundler.concat(
+			"/\\*!|\\bu&['\"]|\\b(?:search_path|set_config)\\b|\\b(?:",
+			"connectby|crosstab|(?:cursor|database|query|schema|table)_to_xml",
+			"\\w*|lo_(?!unlink\\b)\\w+|ts_rewrite|ts_stat)\"?",
+			_REGEX_SQL_WHITESPACE, "\\("),
 		Pattern.DOTALL);
 
 }
