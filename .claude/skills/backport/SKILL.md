@@ -1,12 +1,14 @@
 ---
 name: backport
-description: Backport a fix to a Liferay patch version or release branch by branching off the target and cherry-picking the master commits, including how to choose an upgrade process's schema version so no upgrade is skipped, and the LBM rules that get a backport pull rejected. Use when the user asks to backport a ticket to a quarterly patch version (e.g. 2026.q1.7) or a release branch (e.g. release-2026.q1), works a BPR ticket, or asks which schema version a backported upgrade process should register.
+description: Backport a fix to a Liferay patch version or release branch by branching off the target and cherry-picking the master commits, including how to choose an upgrade process's schema version so no upgrade is skipped, and the LBM rules that get a backport pull rejected. Use when the user asks to backport a ticket to a quarterly patch version (e.g. 2026.q1.7) or a release branch (e.g. release-2026.q1), works a BPR ticket, asks which schema version a backported upgrade process should register, or ships a fix that exists only on a release branch.
 argument-hint: "<ticket-key> <target> [beginner|advanced]"
 ---
 
 # Backport a Fix to a Patch Version or Release Branch
 
 Create a backport branch for a Liferay ticket by branching off a target ref and cherry-picking the fix commits from master, then push it. How the branch is delivered depends on the target (see Finalize): a **release branch** (BPR) gets a pull request to the Liferay repo, while a **patch version** is submitted by hand through Patcher Portal.
+
+If the fix has no master commit, see A Fix With No Master Commit.
 
 This skill exists for the manual fallback, and you only reach for it when the automated path fails. For a release branch, a **BPR** (Backport Request) ticket is opened when the automated backport *fails to auto cherry-pick* onto a specific release version. For a patch version, you run this skill when Patcher Portal's *auto fix* option cannot produce the fix automatically. Conflicts during the cherry-pick are therefore the expected case here, not an anomaly. Be ready to work through them (see Cherry-Pick the Commits).
 
@@ -36,6 +38,38 @@ Then list the backport branches that exist already: `git ls-remote <remote> 'ref
 **When given an LPD**, the LPP of the build is the LPP in its `fixes` links whose Affects versions is the target. If none or more than one matches, ask the user. Then list the branches that exist already, the same way as for an LPP.
 
 **When given a BPR ticket** (e.g. `BPR-90239`), both values come from it. Fetch the BPR ticket through the Jira Cloud REST API (`liferay.atlassian.net`, authenticated with `${JIRA_API_USER}` / `${JIRA_API_TOKEN}`); its summary follows the form `<target> <ORIGINAL-TICKET> | <description>` - e.g. `release-2026.q1 LPD-94368 | Only 20 picklists...` yields target `release-2026.q1` and ticket `LPD-94368`. Use the original ticket to locate the fix commits in Locate the Fix Commits.
+
+## Choose the Target Branches
+
+Backport a fix only to master and to the branch of the client version.
+Do not backport it to the branches between them.
+
+- If master has the defect, put the fix on master first.
+- Put the fix on the release branch of the client version. For a client on
+  2025.q1.22, this is `release-2025.q1`. The fix then goes into each later
+  patch of that branch.
+- Do not put the fix on the branches between the client branch and master.
+- Each Q1 release is LTS. LBM accepts a Q1 branch while it is in Premium
+  Support. To check that a branch is supported, look for new BPR tickets on
+  it in Jira.
+- Also make a patch for the client version through Patcher Portal. The fix on
+  the release branch goes only into the next patch.
+
+## A Fix With No Master Commit
+
+If the defect is only on a release branch, write the fix on that branch.
+There is no master commit to cherry-pick.
+
+- Find the branches that have the defect. Read the code on master and on each
+  `upstream/release-*` branch. Show the lines that prove it for each branch.
+- Branch off the release branch, and name the branch `<TICKET>-<target>`.
+- LBM calls this a "unique fix". The Closed rule (Hard Rejects) does not apply
+  to it, so the pull can go while the ticket is open.
+- Make the patch for the client version from the same commits.
+
+Example: LPD-111354, on 2026-10-22. Only 2023.q3 to 2025.q1 share one segments
+experience between the draft and the page. The client was on 2025.q1.22, so
+the fix went on `release-2025.q1` only, and master did not get it.
 
 ## Prerequisites
 
@@ -100,7 +134,12 @@ too, so one level is not enough. On LPP-65959 this kept out:
 
 Fetch the target, detach onto it, and branch. The new branch is named `<TICKET>-<target>`.
 
-**`<TICKET>` is the LPD key of each fix that the branch holds, never the LPP.** One patch can serve more than one customer, so the customer ticket does not go in the name. If the branch holds more than one LPD, write all the keys in commit order, with a comma between them and no space: `LPD-105885,LPD-103742-2026.q1.12`. Give the patch file the same name as the branch, with `.patch` at the end. If a fix can ship alone (for example a regression fix that another team owns), put it on its own branch off the same target: `LPD-106119-2026.q1.12`. This rule was set on 2026-10-20, on LPP-65959.
+**`<TICKET>` is the LPD key of each fix that the branch holds, never the LPP.** One patch can serve more than one customer, so the customer ticket does not go in the name. If the branch holds more than one LPD, write all the keys in commit order. The separator depends on the target:
+
+- **Patch version:** a comma and no space, `LPD-105885,LPD-103742-2026.q1.12`. Patcher Portal accepts it, and the keys are then easy to copy into the Content field of the fix.
+- **Release branch:** a hyphen, `LPD-105885-LPD-103742-release-2026.q1`. The CI bot closes a release-branch pull when the sender branch name has a comma. It accepts letters, numbers, hyphens, underscores, and dots. This closed https://github.com/liferay/liferay-portal-ee/pull/41421 and https://github.com/liferay/liferay-portal-ee/pull/41422 on 2026-10-28.
+
+Give the patch file the same name as the branch, with `.patch` at the end. If a fix can ship alone (for example a regression fix that another team owns), put it on its own branch off the same target: `LPD-106119-2026.q1.12`. This rule was set on 2026-10-20, on LPP-65959.
 
 - **Patch version (tag)** - fetch the tag ref:
 
@@ -297,6 +336,7 @@ Option 2 deliberately introduces major bumps, which the API policy above rejects
 - More than 20 distinct tickets, which nearly always means the base branch is wrong.
 - A linked regression not included, when that regression is present on the base branch.
 - An unsupported base branch. Supported are the release under preparation, the latest quarterly, and LTS quarterlies in Premium Support. The legacy branches (`ee-6.2.x`, `7.0.x`, `7.1.x`, `7.2.x`, `7.3.x`) warn rather than close.
+- A sender branch name with a special character, such as a comma. The bot closes the pull and asks you to rename the branch and send it again.
 
 ### Asked To Fix, Not Rejected
 
@@ -332,7 +372,7 @@ Push the backport branch to the fork of the user who created it. That remote is 
 git push -u <remote> <TICKET>-<target>
 ```
 
-**The remote must be a fork of `liferay-portal-ee`**, for example `git@github.com:georgel-pop-lr/liferay-portal-ee.git`. Before the push, read it with `git remote get-url <remote>`. If it is not a fork of `liferay-portal-ee` (for example a `liferay-portal` fork, which has no release tags), stop and ask for the right remote.
+**The remote must be a fork of `liferay-portal-ee`**, for example `git@github.com:<github-username>/liferay-portal-ee.git`. Before the push, read it with `git remote get-url <remote>`. If it is not a fork of `liferay-portal-ee` (for example a `liferay-portal` fork, which has no release tags), stop and ask for the right remote.
 
 **Do not end a backport with a local branch.** Push each branch that the backport made, also a separate branch for a fix that ships alone. Then make sure that the remote has each one at the local head:
 
@@ -348,7 +388,7 @@ If a branch shows `NOT PUSHED`, push it again before the summary.
 
 How the backport is delivered depends on the target:
 
-- **BPR / release branch** - once the branch is ready, open a pull request to the Liferay repo (`liferay/liferay-portal-ee`) with the **release branch as the base** and `<github-username>:<TICKET>-<target>` as the head. Derive `<github-username>` from the URL of the remote that you pushed to (e.g. `git@github.com:georgel-pop-lr/liferay-portal-ee.git` yields `georgel-pop-lr`):
+- **BPR / release branch** - once the branch is ready, open a pull request to the Liferay repo (`liferay/liferay-portal-ee`) with the **release branch as the base** and `<github-username>:<TICKET>-<target>` as the head. Derive `<github-username>` from the URL of the remote that you pushed to (e.g. `git@github.com:jdoe/liferay-portal-ee.git` yields `jdoe`):
 
 	```bash
 	gh pr create \
@@ -368,7 +408,7 @@ How the backport is delivered depends on the target:
 	Content:          LPD-105885,LPD-103742
 	Auto Fix:         off
 	Branch Name:      LPD-105885,LPD-103742-2026.q1.12
-	GitHub URL:       git@github.com:georgel-pop-lr/liferay-portal-ee.git
+	GitHub URL:       git@github.com:<github-username>/liferay-portal-ee.git
 	Workaround:       off
 	```
 
