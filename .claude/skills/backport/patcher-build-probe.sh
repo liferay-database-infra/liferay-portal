@@ -7,7 +7,7 @@ set -euo pipefail
 
 usage() {
 	cat <<'EOF'
-Usage: patcher-build-probe.sh [--remote <remote>] [--all-fixes] <repo> <target> <build> <branch>
+Usage: patcher-build-probe.sh [--remote <remote>] [--all-fixes] [--without <keys or fix tags>] <repo> <target> <build> <branch>
 
 <build> is the Patcher branch of the build: the tag fix-pack-fix-<buildId>, the
 build ID alone, or a GitHub compare URL <target>...fix-pack-fix-<buildId>. The
@@ -33,6 +33,12 @@ the tag from <remote> (default: upstream), then:
    package.json must have a yarn.lock entry for its exact spec. Prints LOCK
    MISMATCH and the commits that changed the package.json and the yarn.lock.
 
+--without takes a comma-separated list of ticket keys or fix tags. The script
+rebuilds the build in memory without each fix that holds one of them, the way
+Patcher builds it when a new fix replaces them. Use it when the branch redoes a
+fix that is in the build already (a failed fix), or when a conflict fix
+replaces fixes of the build.
+
 It writes nothing to the work tree and changes no branch. Exit codes, the
 first that applies:
   1  CONFLICT
@@ -47,12 +53,14 @@ EOF
 }
 
 all_fixes=0
+without=""
 remote=upstream
 
 while [ $# -gt 0 ]; do
 	case $1 in
 		-h|--help) usage; exit 0 ;;
 		--all-fixes) all_fixes=1; shift ;;
+		--without) without=",$2,"; shift 2 ;;
 		--remote) remote=$2; shift 2 ;;
 		*) break ;;
 	esac
@@ -85,6 +93,58 @@ if ! git rev-parse -q --verify "refs/tags/$target" >/dev/null; then
 fi
 
 echo "== Build $build"
+
+# Rebuild the build in memory without the fixes of --without. Each kept fix is
+# merged again in the order of the build, as a commit that no ref points to.
+
+excluded() {
+	local fix=$1 range=$2 k
+
+	case $without in
+		*",$fix,"*) return 0 ;;
+	esac
+
+	for k in $(git log --no-merges --format=%s "$range" | { grep -oE '^[A-Z][A-Z0-9]+-[0-9]+' || true; } | sort -u); do
+		case $without in
+			*",$k,"*) return 0 ;;
+		esac
+	done
+
+	return 1
+}
+
+if [ -n "$without" ]; then
+	first=$(git rev-list --first-parent --merges --reverse "$target..$build" | head -n 1)
+	first_head=${first:+$first^1}
+	first_head=${first_head:-$build}
+
+	if excluded "first fix" "$target..$first_head"; then
+		virtual=$(git rev-parse "$target^{commit}")
+		echo "Without: first fix"
+	else
+		virtual=$(git rev-parse "$first_head")
+	fi
+
+	for m in $(git rev-list --first-parent --merges --reverse "$target..$build"); do
+		subject=$(git log -1 --format=%s "$m")
+		tag=$(echo "$subject" | sed -nE "s/^Merge tag '([^']+)'.*/\1/p")
+
+		if excluded "${tag:-none}" "$m^1..$m^2"; then
+			echo "Without: ${tag:-$(git rev-parse --short "$m")}"
+			continue
+		fi
+
+		tree=$(git merge-tree --write-tree --no-messages "$virtual" "$m^2" | head -n 1) || {
+			echo "BASE MISMATCH: the build without $without does not merge at ${tag:-$m}."
+			exit 2
+		}
+		virtual=$(echo "$subject" | git commit-tree "$tree" -p "$virtual" -p "$m^2")
+	done
+
+	build_name=$build
+	build=$virtual
+	echo "Build without the fixes: ${build:0:13}"
+fi
 
 if ! git merge-base --is-ancestor "$target" "$build"; then
 	echo "BASE MISMATCH: $build is not on $target. Use a build of $target, or set the Project Version of the build to $target."

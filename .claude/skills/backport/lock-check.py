@@ -147,7 +147,10 @@ def main(argv):
 	for (package_json, name, spec), reason in sorted(found.items()):
 		label = " (already in the build)" if (package_json, name, spec) in base_found else ""
 
-		print(f"LOCK MISMATCH {package_json}: \"{name}\": \"{spec}\", {reason}{label}")
+		if name:
+			print(f"LOCK MISMATCH {package_json}: \"{name}\": \"{spec}\", {reason}{label}")
+		else:
+			print(f"LOCK MISMATCH {package_json}: {reason}{label}")
 
 	return 1 if found else 0
 

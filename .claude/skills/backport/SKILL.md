@@ -243,7 +243,9 @@ The skill reads the exit code and acts on it. The user does not run the probe an
 - **4, CLEAN with LOCK MISMATCH:** git merges it, but the compile fails. Each fix is correct alone, but the merge loses a `yarn.lock` entry. On hotfix 301673079 on 7.4.13-u60, LPS-199806 (fix 301668996) pinned `"@clayui/drop-down": "3.83.1"`, and the `modules/yarn.lock` of LPS-168443 (fix 250979579) had only `3.84.0`. Yarn then took the newest Clay, and `tsc` failed in `analytics-settings-web`. Make a conflict fix with the fix that changes `yarn.lock`. In it, align the `package.json` spec with the lock, or generate `yarn.lock` again, and run the probe again.
 - **3, CLEAN with DEPENDENCY RISK:** git merges it, and the lock check is OK, but the compile can still fail. Two fixes that each generate `yarn.lock` conflict. A `package.json` pin in one fix can lose its `yarn.lock` entry to the `yarn.lock` of the other fix. Make a conflict fix with the fix that changes the dependency file, and generate `yarn.lock` one time in it. On hotfix 301673079 on 7.4.13-u60, LPS-168443 (fix 250979579) changed `modules/yarn.lock` and LPS-199806 (fix 301668996) pinned Clay in a `package.json`. git merged them, and `tsc` failed in `analytics-settings-web`.
 
-If a key of the branch is in the build already, do not create a new fix for it. Tell the user which fix tag has it.
+If a key of the branch is in the build already, find out why. If the branch redoes that fix, because the fix failed or must change, probe the build without it: add `--without <key>`. The script then rebuilds the build in memory without each fix that holds the key, the way Patcher builds it when the new fix replaces the old one. Otherwise do not create a new fix for the key. Tell the user which fix tag has it.
+
+On 2026-11-04 this was tested on hotfix 301673079 on 7.4.13-u60 (build `fix-pack-fix-301673081`). With `--without LPS-199806`, the probe gave exit 4 for fix 1.2 of LPS-199806 (`fix-pack-fix-301668996`), the fix that failed in Patcher. The conflict fix that the skill made gave a build tree identical to the fix that solved it by hand (`fix-pack-fix-301732896`).
 
 **Make a conflict fix.** The build can already hold conflict fixes, made for earlier conflicts. Such a fix carries a list of tickets, for example `fix-pack-fix-252440139` with ten LPS keys. The probe names the fix tag that the build really merged, so the new fix goes on top of that fix and its full list of tickets. Never branch off a smaller fix that has only the key whose hunk conflicts, because the build does not use it.
 
@@ -260,7 +262,7 @@ Resolve each conflict the same way as in Cherry-Pick the Commits.
 
 - The branch name and the Content of the conflict fix list every key involved: all the keys of each fix that it holds (the probe prints them under "Fixes involved"), in the order of the build, then all the new keys, in commit order. Do not keep only the key whose hunk conflicts.
 - If the probe names `first fix`, the fix has no tag in the merge commits. Ask the user for its Fix ID or its Branch Name.
-- Run the probe again on the conflict fix. It must give exit 0. The keys of the fix that it extends now show as "already in the build", and that is expected.
+- Run the probe again on the conflict fix, with `--without` and each fix that the conflict fix replaces: its new keys and the tag of each fix that it holds, for example `--without LPS-199806,fix-pack-fix-250979579`. It must give exit 0.
 - Keep the standalone fix branch too. It serves the builds of other customers, and the conflict fix serves this build.
 - Compile the conflict fix the same way as in Verify, and push it with the other branches.
 
