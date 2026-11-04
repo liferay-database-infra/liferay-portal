@@ -331,7 +331,7 @@ How the backport is delivered depends on the target:
 	- Auto Fix is off, because this skill runs when the auto fix fails.
 	- Branch Name is the pushed branch, and GitHub URL is the URL of the remote that you pushed to.
 
-	**Give the output for the level.** For `advanced`, give only the blocks: the Create Fix blocks, the build block, and the conflict fixes when there are some. For `beginner`, give the same blocks first, then the numbered steps: look in the **Fixes** tab for a fix with the same Content and Project Version, and create it only if none exists, wait until each is Complete, add the keys to the build, and solve the conflicts. Give the place to click and the reason for each step.
+	**Give the output for the level.** For `advanced`, give only the blocks: the Create Fix blocks, the build block, and the conflict fixes when there are some. For `beginner`, give the same blocks first, then the numbered steps: look in the **Fixes** tab for a fix with the same Content and Project Version, and create it only if none exists, wait until each is Complete, add the keys to the build, solve the conflicts, and follow Failed Build Or Failed Fix if the build fails. Give the place to click and the reason for each step.
 
 	**Then give the build block in the same reply.** Read the account and the support ticket from the LPP. Do not ask the user:
 
@@ -363,6 +363,22 @@ If the build stops with fixes in Patcher Status **Rebase Conflict** (the **Fixes
 1. Fix the conflict fix with the fewest tickets first.
 1. For one ticket, backport it onto the version of the build. For more tickets, branch off the latest fix branch that has the rest of the tickets (ask the user for its Branch Name and GitHub URL), and cherry-pick the new ticket on top. Content is the rest of the tickets plus the new one.
 1. When the fix is Complete, use **Actions** > **Build** again. Repeat until there is no conflict.
+
+## Failed Build Or Failed Fix
+
+If the build or a fix has the Patcher Status **Failed**, find the error in the Jenkins log of the build page. The `fixpack-builder-agent(production)` job merges the fixes. The `fixpack-builder-hotfix-7x(production)` job compiles the hotfix, so a compile error is in that log.
+
+Then read the Patcher Troubleshooting Guide: https://liferay.atlassian.net/wiki/spaces/SUPPORT/pages/1956577726/Patcher+Troubleshooting+Guide
+
+1. Always read the live page. The team adds new entries to it, so do not use a copy from memory or from an earlier session.
+1. The page is about 83 KB. Read it with `getConfluencePage` (cloudId `liferay.atlassian.net`, pageId `1956577726`, markdown), save the body to a file, and grep the `##` headings and the error text. Read only the section that matches.
+1. If an entry matches, apply its solution. Usually the solution is to add a ticket to the Tickets List of the build, then use **Actions** > **Build** again.
+1. If the error is an infrastructure fault (`Permission denied (publickey)`, a git clone error, a network timeout, a stopped agent), the fixes did not cause it. Compare the time of the failure with GitHub status (https://www.githubstatus.com). Convert the Jenkins time (Pacific) to UTC first. If a Git Operations incident covers that time, build again after GitHub resolves it. If not, build again one time, and note the Jenkins node.
+1. If no entry matches, or the infrastructure fault comes back, ask in #help-patching (https://liferay.slack.com/archives/CKZRB4EPK). Give the build ID, the job number, the node, and the error lines.
+
+The companion page CSE Hotfix Building and Troubleshooting Walk-through explains each Patcher Status: https://liferay.atlassian.net/wiki/spaces/SUPPORT/pages/3183673479/CSE+Hotfix+Building+and+Troubleshooting+Walk-through
+
+**Give the output for the level.** For `advanced`, give only the guide entry that matches, its link, and the action. For `beginner`, give the same first, then the numbered steps: where to find the Jenkins log on the build page, how to search the guide for the error, and when to ask in #help-patching. Give the place to click and the reason for each step.
 
 ## Summarize
 
