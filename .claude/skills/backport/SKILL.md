@@ -10,7 +10,7 @@ Create a backport branch for a Liferay ticket by branching off a target ref and 
 
 This skill exists for the manual fallback, and you only reach for it when the automated path fails. For a release branch, a **BPR** (Backport Request) ticket is opened when the automated backport *fails to auto cherry-pick* onto a specific release version. For a patch version, you run this skill when Patcher Portal's *auto fix* option cannot produce the fix automatically. Conflicts during the cherry-pick are therefore the expected case here, not an anomaly. Be ready to work through them (see Cherry-Pick the Commits).
 
-**Before pushing, read Backport Review Rules (LBM)** for what gets a release-branch pull rejected outright.
+**Before pushing, read Backport Review Rules (LBM)** for what gets a release-branch pull rejected outright, or Patch Version Constraints for the much narrower set of files a Patcher fix may touch.
 
 ## Resolve the Inputs
 
@@ -131,7 +131,7 @@ Cherry-pick the commits from Locate the Fix Commits in chronological order (olde
 git cherry-pick <oldest-sha> <next-sha> ...
 ```
 
-**When the target is a patch version, do not cherry-pick the test commits**, and skip any `packageinfo` or `bnd.bnd` commit, since Patcher rejects those without saying why.
+**When the target is a patch version, do not cherry-pick the test commits**, and skip any `packageinfo` or `bnd.bnd` commit. See Patch Version Constraints below, since Patcher rejects those without saying why.
 
 Conflicts are expected for BPR backports - that failure is why the manual backport exists. When one occurs, resolve each hunk: read both sides against the original master change, and keep the intent of the fix. Do not stop at each conflict. Record it, continue, and create the branch. Then report all the conflicts together at the end, so the user decides on the finished branch. For each conflict, give:
 
@@ -258,6 +258,10 @@ Option 2 deliberately introduces major bumps, which the API policy above rejects
 ### When Processing Is Skipped Entirely
 
 Sub-repository pulls, pulls from senders that should not send backports (for example `liferay-continuous-integration`), pulls labelled `gauntlet`, and pulls with no valid development-project ticket.
+
+## Patch Version Constraints (Patcher Portal)
+
+A patch version is a patch built for a specific customer through Patcher Portal, not a pull request into the product, so it is screened far more narrowly and fails opaquely when a forbidden file rides along. Follow [`references/patch-version-constraints.md`](references/patch-version-constraints.md) when the target is a patch version.
 
 ## Push the Branch
 
