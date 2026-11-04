@@ -23,6 +23,7 @@ Resolve two values from `${ARGUMENTS}`. Ask the user for whichever is missing.
 
   The idea is the same either way: branch off the target, then cherry-pick.
 - **Level** - `beginner` or `advanced`, for the Patcher Portal output. The default is `advanced`.
+- **Patcher build** - for a patch version only. This is the Patcher branch of the latest build of the customer: the tag `fix-pack-fix-<buildId>`, which is the target tag with each fix of the build merged in. Ask the user for it before the first pick. Accept the compare URL (`https://github.com/liferay/liferay-portal-ee/compare/7.4.13-u60...fix-pack-fix-301673081`), the tag, or the build ID. If the account has no build, there is nothing to probe. Say so, and skip Probe the Customer Build.
 
 **When given an LPP**, the target is its Affects versions in lowercase (`2026.Q1.12` gives `2026.q1.12`). Find its LPD fixes in three places, and say where each key came from:
 
@@ -178,6 +179,52 @@ mkdir ${f%.tar.gz} && tar -xzf $f -C ${f%.tar.gz} && rm $f $f.sha512
 
 The script prints `COMPILES` or the javac errors. If an error names a package that the unchanged code also imports, the classpath misses a jar, and the patch is not at fault. Find the jar in the bundle and add it with `--extra-cp`. The script finds the OSGi component annotations jar by itself, because the bundle does not ship it. This check proves that the Java compiles. It does not prove the OSGi build (bnd, the baseline check) or the runtime behavior, so say that in the summary. On LPP-65959, on 2026-10-20, both patch branches for 2026.q1.12 compiled this way.
 
+## Probe the Customer Build
+
+For a patch version, check the branch against the Patcher build of the customer before the push. Patcher merges each fix into the build. A fix that does not merge stops the build with Rebase Conflict, and a fix that merges can still break the compile. Find this before Patcher does, and prepare the fixes so that the build has no conflict.
+
+```bash
+<skill-dir>/patcher-build-probe.sh <repo> <target> <patcher-build> <TICKET>-<target>
+```
+
+The script fetches the build tag into the local repo, so you can also read the build with `git log <target>..fix-pack-fix-<buildId>`. It writes nothing to the work tree. It prints:
+
+- the fixes of the build, with the fix tag and the keys of each one,
+- the keys of the branch that the build has already,
+- each file that the branch and a fix of the build both change, with the fix tag,
+- `DEPENDENCY RISK` when both sides change a `package.json` or a `yarn.lock`,
+- the result of the same merge that Patcher does: `CLEAN` or `CONFLICT`,
+- `LOCK MISMATCH` when a dependency of a changed `package.json` has no `yarn.lock` entry for its exact spec in the merged tree, with the commits that changed the two files. `lock-check.py` does this check.
+
+The skill reads the exit code and acts on it. The user does not run the probe and does not act on the code. The user sees the result in the summary, and does only the Patcher Portal steps of Finalize.
+
+- **0, CLEAN:** the fix can go as it is.
+- **1, CONFLICT:** make a conflict fix for each fix tag that the conflict names. See below.
+- **2, BASE MISMATCH:** the build is not on the target, or the branch is not on the target alone. If the build is on another version, tell the user, because the build must use the target as its Project Version. A fix branch must start from the target tag, never from the build tag.
+- **4, CLEAN with LOCK MISMATCH:** git merges it, but the compile fails. Each fix is correct alone, but the merge loses a `yarn.lock` entry. On hotfix 301673079 on 7.4.13-u60, LPS-199806 (fix 301668996) pinned `"@clayui/drop-down": "3.83.1"`, and the `modules/yarn.lock` of LPS-168443 (fix 250979579) had only `3.84.0`. Yarn then took the newest Clay, and `tsc` failed in `analytics-settings-web`. Make a conflict fix with the fix that changes `yarn.lock`. In it, align the `package.json` spec with the lock, or generate `yarn.lock` again, and run the probe again.
+- **3, CLEAN with DEPENDENCY RISK:** git merges it, and the lock check is OK, but the compile can still fail. Two fixes that each generate `yarn.lock` conflict. A `package.json` pin in one fix can lose its `yarn.lock` entry to the `yarn.lock` of the other fix. Make a conflict fix with the fix that changes the dependency file, and generate `yarn.lock` one time in it. On hotfix 301673079 on 7.4.13-u60, LPS-168443 (fix 250979579) changed `modules/yarn.lock` and LPS-199806 (fix 301668996) pinned Clay in a `package.json`. git merged them, and `tsc` failed in `analytics-settings-web`.
+
+If a key of the branch is in the build already, do not create a new fix for it. Tell the user which fix tag has it.
+
+**Make a conflict fix.** The build can already hold conflict fixes, made for earlier conflicts. Such a fix carries a list of tickets, for example `fix-pack-fix-252440139` with ten LPS keys. The probe names the fix tag that the build really merged, so the new fix goes on top of that fix and its full list of tickets. Never branch off a smaller fix that has only the key whose hunk conflicts, because the build does not use it.
+
+- **The probe names one fix:** branch off its tag. The tag is on the target and holds only that fix. Cherry-pick the backport commits on it.
+- **The probe names more than one fix:** the new fix must hold all of them. Branch off the fix with the most keys. Cherry-pick the commits of each other fix in the order of the build (`git log --reverse <target>..fix-pack-fix-<fixId>`). Then cherry-pick the backport commits.
+
+```bash
+git fetch --no-tags upstream refs/tags/fix-pack-fix-<fixId>:refs/tags/fix-pack-fix-<fixId>
+git checkout -b <all keys>-<target> fix-pack-fix-<fixId>
+git cherry-pick <commits of the other fixes> <backport commits>
+```
+
+Resolve each conflict the same way as in Cherry-Pick the Commits.
+
+- The branch name and the Content of the conflict fix list every key involved: all the keys of each fix that it holds (the probe prints them under "Fixes involved"), in the order of the build, then all the new keys, in commit order. Do not keep only the key whose hunk conflicts.
+- If the probe names `first fix`, the fix has no tag in the merge commits. Ask the user for its Fix ID or its Branch Name.
+- Run the probe again on the conflict fix. It must give exit 0. The keys of the fix that it extends now show as "already in the build", and that is expected.
+- Keep the standalone fix branch too. It serves the builds of other customers, and the conflict fix serves this build.
+- Compile the conflict fix the same way as in Verify, and push it with the other branches.
+
 ## Backport Review Rules (LBM)
 
 Backport pulls to a `liferay-portal-ee` `release-*` branch are screened automatically by the Liferay Branch Manager against a documented checklist: [Backport PR LBM Rules Review Checklist Explanations](https://liferay.atlassian.net/wiki/spaces/QA/pages/2081391024/Backport+PR+LBM+Rules+Review+Checklist+Explanations). Check the page itself when a rejection cites something not listed here, since the rules change.
@@ -330,6 +377,8 @@ How the backport is delivered depends on the target:
 	- Content is the LPD keys of the branch, in commit order, with a comma and no space.
 	- Auto Fix is off, because this skill runs when the auto fix fails.
 	- Branch Name is the pushed branch, and GitHub URL is the URL of the remote that you pushed to.
+	- Give a Create Fix block for each conflict fix from Probe the Customer Build too. Above its block, write one line that says why it exists: the fix tag of the build that it extends, each ticket involved with its title, and the file in conflict or the dependency file.
+	- In the build block, the Tickets List has the keys of each conflict fix.
 
 	**Give the output for the level.** For `advanced`, give only the blocks: the Create Fix blocks, the build block, and the conflict fixes when there are some. For `beginner`, give the same blocks first, then the numbered steps: look in the **Fixes** tab for a fix with the same Content and Project Version, and create it only if none exists, wait until each is Complete, add the keys to the build, solve the conflicts, and follow Failed Build Or Failed Fix if the build fails. Give the place to click and the reason for each step.
 
@@ -357,7 +406,7 @@ How the backport is delivered depends on the target:
 
 ## Rebase Conflicts On The Build
 
-If the build stops with fixes in Patcher Status **Rebase Conflict** (the **Fixes** tab), ask the user for the Fix ID, Content, and Project Version of each one.
+Probe the Customer Build prevents most of these. If the build still stops with fixes in Patcher Status **Rebase Conflict** (the **Fixes** tab), ask the user for the Fix ID, Content, and Project Version of each one. Then run the probe with the new build ID to find the fix tag in conflict.
 
 1. If the Project Version is not the target, correct the version of the build and build again. Do not fix the conflicts.
 1. Fix the conflict fix with the fewest tickets first.
@@ -388,4 +437,5 @@ Report:
 - The commits that were cherry-picked, and any intentionally skipped (and why).
 - The pushed remote and branch.
 - The delivery path taken: the PR link (BPR), or the Create Fix blocks and the build block (patch version).
+- The result of Probe the Customer Build, and each conflict fix branch with the reason for it.
 - Each Rebase Conflict fix and what was done for it.
