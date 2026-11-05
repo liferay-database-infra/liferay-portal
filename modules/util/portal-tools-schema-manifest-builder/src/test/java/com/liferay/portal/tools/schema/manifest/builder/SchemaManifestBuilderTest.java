@@ -55,26 +55,28 @@ public class SchemaManifestBuilderTest {
 
 		_schemaManifestBuilder.build();
 
-		String timestamp = _assertManifest(module);
+		String manifestTimestamp = _assertManifest(module);
 
-		Instant.parse(timestamp);
+		Instant.parse(manifestTimestamp);
 
-		String randomTimestamp = String.valueOf(
+		String randomManifestTimestamp = String.valueOf(
 			Instant.ofEpochSecond(RandomTestUtil.randomInt()));
 
 		_writeManifest(
 			StringUtil.replace(
-				_read(_manifestFile), timestamp, randomTimestamp));
+				_read(_manifestFile), manifestTimestamp,
+				randomManifestTimestamp));
 
 		_schemaManifestBuilder.build();
 
-		Assert.assertEquals(randomTimestamp, _assertManifest(module));
+		Assert.assertEquals(randomManifestTimestamp, _assertManifest(module));
 
 		_writeManifest("{}");
 
 		_schemaManifestBuilder.build();
 
-		Assert.assertNotEquals(randomTimestamp, _assertManifest(module));
+		Assert.assertNotEquals(
+			randomManifestTimestamp, _assertManifest(module));
 
 		module = RandomTestUtil.randomString();
 
@@ -91,13 +93,14 @@ public class SchemaManifestBuilderTest {
 
 		_schemaManifestBuilder.build();
 
-		String content = StringUtil.replace(_read(_manifestFile), "\n", "\r\n");
+		String manifestContent = StringUtil.replace(
+			_read(_manifestFile), "\n", "\r\n");
 
-		_writeManifest(content);
+		_writeManifest(manifestContent);
 
 		_schemaManifestBuilder.build();
 
-		Assert.assertEquals(content, _read(_manifestFile));
+		Assert.assertEquals(manifestContent, _read(_manifestFile));
 	}
 
 	@Test
@@ -180,12 +183,11 @@ public class SchemaManifestBuilderTest {
 		throws Exception {
 
 		File bndFile = new File(_baseDir, "bnd.bnd");
-		String bundleNameString = StringBundler.concat(
+		String bndContent = StringBundler.concat(
 			"Bundle-Name: ", RandomTestUtil.randomString(), "\n");
 
 		Files.write(
-			bndFile.toPath(),
-			bundleNameString.getBytes(StandardCharsets.UTF_8));
+			bndFile.toPath(), bndContent.getBytes(StandardCharsets.UTF_8));
 
 		_schemaManifestBuilder.getBundleSymbolicName(bndFile);
 	}
@@ -202,12 +204,15 @@ public class SchemaManifestBuilderTest {
 
 	@Test
 	public void testGetHistoryJSONArrayWithCRLFLineEndings() throws Exception {
-		File file = _copyUpgradeStepRegistratorFile(
+		File upgradeStepRegistratorFile = _copyUpgradeStepRegistratorFile(
 			"TestUpgradeStepRegistrator");
 
-		String content = StringUtil.replace(_read(file), "\n", "\r\n");
+		String upgradeStepRegistratorContent = StringUtil.replace(
+			_read(upgradeStepRegistratorFile), "\n", "\r\n");
 
-		Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8));
+		Files.write(
+			upgradeStepRegistratorFile.toPath(),
+			upgradeStepRegistratorContent.getBytes(StandardCharsets.UTF_8));
 
 		Assert.assertEquals(
 			_read("expected/TestUpgradeStepRegistrator.json"),
@@ -292,15 +297,15 @@ public class SchemaManifestBuilderTest {
 
 	@Test
 	public void testGetTimestamp() {
-		String timestamp = String.valueOf(
+		String manifestTimestamp = String.valueOf(
 			Instant.ofEpochSecond(RandomTestUtil.randomInt()));
 
 		Assert.assertEquals(
-			timestamp,
+			manifestTimestamp,
 			_schemaManifestBuilder.getTimestamp(
 				StringBundler.concat(
 					"{\n\t\"module\": \"", RandomTestUtil.randomString(),
-					"\",\n\t\"timestamp\": \"", timestamp, "\"\n}")));
+					"\",\n\t\"timestamp\": \"", manifestTimestamp, "\"\n}")));
 	}
 
 	@Test
@@ -313,17 +318,19 @@ public class SchemaManifestBuilderTest {
 	}
 
 	@Test
-	public void testIsInitialization() throws Exception {
+	public void testIsInitializationRegistered() throws Exception {
 		_copyUpgradeStepRegistratorFile("InitializationUpgradeStepRegistrator");
 
-		Assert.assertTrue(_schemaManifestBuilder.isInitialization(_baseDir));
+		Assert.assertTrue(
+			_schemaManifestBuilder.isInitializationRegistered(_baseDir));
 	}
 
 	@Test
-	public void testIsInitializationWithoutRegisterInitialization()
+	public void testIsInitializationRegisteredWithoutRegisterInitialization()
 		throws Exception {
 
-		Assert.assertFalse(_schemaManifestBuilder.isInitialization(_baseDir));
+		Assert.assertFalse(
+			_schemaManifestBuilder.isInitializationRegistered(_baseDir));
 	}
 
 	@Test
@@ -335,30 +342,30 @@ public class SchemaManifestBuilderTest {
 			_schemaManifestBuilder.getManifestJSONObject(
 				new JSONArrayImpl(), false, module));
 
-		String content = _read(_manifestFile);
+		String manifestContent = _read(_manifestFile);
 
-		String timestamp = _assertManifest(module);
+		String manifestTimestamp = _assertManifest(module);
 
-		Instant.parse(timestamp);
+		Instant.parse(manifestTimestamp);
 
 		_schemaManifestBuilder.write(
 			_manifestFile,
 			_schemaManifestBuilder.getManifestJSONObject(
 				new JSONArrayImpl(), false, module));
 
-		Assert.assertEquals(content, _read(_manifestFile));
+		Assert.assertEquals(manifestContent, _read(_manifestFile));
 	}
 
 	@Test
 	public void testWriteWithChangedContent() throws Exception {
-		String timestamp = String.valueOf(
+		String manifestTimestamp = String.valueOf(
 			Instant.ofEpochSecond(RandomTestUtil.randomInt()));
 
 		JSONObject manifestJSONObject =
 			_schemaManifestBuilder.getManifestJSONObject(
 				new JSONArrayImpl(), false, RandomTestUtil.randomString());
 
-		manifestJSONObject.put("timestamp", timestamp);
+		manifestJSONObject.put("timestamp", manifestTimestamp);
 
 		Path manifestFilePath = _manifestFile.toPath();
 
@@ -373,48 +380,51 @@ public class SchemaManifestBuilderTest {
 			_schemaManifestBuilder.getManifestJSONObject(
 				new JSONArrayImpl(), false, module));
 
-		Assert.assertNotEquals(timestamp, _assertManifest(module));
+		Assert.assertNotEquals(manifestTimestamp, _assertManifest(module));
 	}
 
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
 	private String _assertManifest(String module) throws Exception {
-		String content = _read(_manifestFile);
+		String manifestContent = _read(_manifestFile);
 
-		Matcher matcher = _timestampPattern.matcher(content);
+		Matcher matcher = _timestampPattern.matcher(manifestContent);
 
 		Assert.assertTrue(matcher.find());
 
-		String timestamp = matcher.group(1);
+		String manifestTimestamp = matcher.group(1);
 
 		Assert.assertEquals(
 			StringBundler.concat(
 				"{\n\t\"description\": \"", _DESCRIPTION,
 				"\",\n\t\"history\": [\n\t],\n\t\"module\": \"", module,
-				"\",\n\t\"timestamp\": \"", timestamp, "\"\n}"),
-			content);
+				"\",\n\t\"timestamp\": \"", manifestTimestamp, "\"\n}"),
+			manifestContent);
 
-		return timestamp;
+		return manifestTimestamp;
 	}
 
 	private File _copyUpgradeStepRegistratorFile(String className)
 		throws Exception {
 
-		File file = new File(
+		File upgradeStepRegistratorFile = new File(
 			_baseDir,
 			"src/main/java/com/liferay/test/internal/upgrade/registry/" +
 				className + ".java");
 
-		File dir = file.getParentFile();
+		File upgradeStepRegistratorDir =
+			upgradeStepRegistratorFile.getParentFile();
 
-		dir.mkdirs();
+		upgradeStepRegistratorDir.mkdirs();
 
-		String content = _read(className + ".testjava");
+		String upgradeStepRegistratorContent = _read(className + ".testjava");
 
-		Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8));
+		Files.write(
+			upgradeStepRegistratorFile.toPath(),
+			upgradeStepRegistratorContent.getBytes(StandardCharsets.UTF_8));
 
-		return file;
+		return upgradeStepRegistratorFile;
 	}
 
 	private JSONArray _getHistoryJSONArray(String... toSchemaVersions) {
@@ -445,16 +455,18 @@ public class SchemaManifestBuilderTest {
 
 	private void _writeBndFile(String bundleSymbolicName) throws Exception {
 		File bndFile = new File(_baseDir, "bnd.bnd");
-		String content = StringBundler.concat(
+		String bndContent = StringBundler.concat(
 			"Bundle-Name: ", RandomTestUtil.randomString(),
 			"\nBundle-SymbolicName: ", bundleSymbolicName, "\n");
 
-		Files.write(bndFile.toPath(), content.getBytes(StandardCharsets.UTF_8));
+		Files.write(
+			bndFile.toPath(), bndContent.getBytes(StandardCharsets.UTF_8));
 	}
 
-	private void _writeManifest(String content) throws Exception {
+	private void _writeManifest(String manifestContent) throws Exception {
 		Files.write(
-			_manifestFile.toPath(), content.getBytes(StandardCharsets.UTF_8));
+			_manifestFile.toPath(),
+			manifestContent.getBytes(StandardCharsets.UTF_8));
 	}
 
 	private static final String _DESCRIPTION = StringBundler.concat(
