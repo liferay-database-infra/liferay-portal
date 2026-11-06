@@ -851,7 +851,12 @@ public class CompanyLocalServiceDBPartitionTest
 
 			long copiedCompanyId = copiedCompany.getCompanyId();
 
-			_assertCompanyConfiguration(copiedCompanyId, configuration);
+			try (SafeCloseable safeCloseable2 =
+					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+						_defaultCompanyId)) {
+
+				_assertCompanyConfiguration(copiedCompanyId, configuration);
+			}
 
 			_addCopyDBPartitionCompanyCache(copiedCompanyId);
 
@@ -925,8 +930,15 @@ public class CompanyLocalServiceDBPartitionTest
 
 			_assertCopyDBPartitionCompany(
 				copiedCompany, name, virtualHostname, webId);
-			_assertCopyDBPartitionCompanyId(
-				TestPropsValues.getCompanyId(), copiedCompany.getCompanyId());
+
+			try (SafeCloseable safeCloseable2 =
+					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+						_defaultCompanyId)) {
+
+				_assertCopyDBPartitionCompanyId(
+					TestPropsValues.getCompanyId(),
+					copiedCompany.getCompanyId());
+			}
 
 			Assert.assertEquals(
 				rulesCount,

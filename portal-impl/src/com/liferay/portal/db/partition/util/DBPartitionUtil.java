@@ -9,6 +9,7 @@ import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.reflect.ReflectionUtil;
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.db.DBPartitionDB;
@@ -50,6 +51,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.spring.hibernate.DialectDetector;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -300,14 +302,15 @@ public class DBPartitionUtil {
 
 		List<String> pids = new ArrayList<>();
 
-		try (Connection connection = ConnectionUtil.getConnection(
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setRawCompanyIdWithSafeCloseable(companyId);
+
+			Connection connection = ConnectionUtil.getConnection(
 				InfrastructureUtil.getDataSource());
 
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				StringBundler.concat(
-					"select configurationId from ", getPartitionName(companyId),
-					".Configuration_ where dictionary like ",
-					"'%org.apache.felix.configadmin.revision%'"));
+				"select configurationId from Configuration_ where dictionary " +
+					"like '%org.apache.felix.configadmin.revision%'");
 
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -322,14 +325,14 @@ public class DBPartitionUtil {
 	public static Map<String, String> getConfigurations(long companyId)
 		throws SQLException {
 
-		DataSource dataSource = InfrastructureUtil.getDataSource();
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setRawCompanyIdWithSafeCloseable(companyId);
 
-		try (Connection connection = ConnectionUtil.getConnection(dataSource);
+			Connection connection = ConnectionUtil.getConnection(
+				InfrastructureUtil.getDataSource());
 
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				StringBundler.concat(
-					"select configurationId, dictionary from ",
-					getPartitionName(companyId), ".Configuration_"));
+				"select configurationId, dictionary from Configuration_");
 
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -760,6 +763,93 @@ public class DBPartitionUtil {
 			throw new IllegalArgumentException(
 				"Unable to insert the database partition " +
 					sourcePartitionName + " because it does not exist");
+		}
+	}
+
+	private static void _checkSQL(String sql) {
+		if (_isDefaultCompany()) {
+			return;
+		}
+
+		String lowerCaseSQL = StringUtil.toLowerCase(sql);
+
+		int count = StringUtil.count(
+			lowerCaseSQL, PropsValues.DATABASE_PARTITION_SCHEMA_NAME_PREFIX);
+
+		if (count == 0) {
+			count = StringUtil.count(
+				lowerCaseSQL, DATABASE_EXPORTED_PARTITION_SCHEMA_NAME_PREFIX);
+		}
+
+		if (count > 0) {
+			throw new UnsupportedOperationException("Unsupported SQL: " + sql);
+		}
+
+		if (ArrayUtil.exists(_SQL_UNSUPPORTED_TOKENS, lowerCaseSQL::contains)) {
+			Matcher unsupportedSQLMatcher = _unsupportedSQLPattern.matcher(
+				lowerCaseSQL);
+
+			if (unsupportedSQLMatcher.find()) {
+				throw new UnsupportedOperationException(
+					"Unsupported SQL: " + sql);
+			}
+		}
+
+		boolean routine = false;
+
+		for (String statementSQL :
+				StringUtil.split(lowerCaseSQL, CharPool.SEMICOLON)) {
+
+			Matcher statementMatcher = _statementPattern.matcher(statementSQL);
+
+			if (!statementMatcher.lookingAt()) {
+				continue;
+			}
+
+			if ((statementMatcher.group(1) == null) &&
+				(statementMatcher.group(2) == null)) {
+
+				throw new UnsupportedOperationException(
+					"Unsupported SQL: " + sql);
+			}
+
+			routine = true;
+		}
+
+		if (routine) {
+			Matcher unsupportedRoutineMatcher =
+				_unsupportedRoutinePattern.matcher(lowerCaseSQL);
+
+			if (unsupportedRoutineMatcher.find()) {
+				throw new UnsupportedOperationException(
+					"Unsupported SQL: " + sql);
+			}
+		}
+
+		if (!lowerCaseSQL.contains(
+				StringUtil.toLowerCase(_defaultPartitionName))) {
+
+			return;
+		}
+
+		Matcher quotedStringMatcher = _quotedStringPattern.matcher(
+			lowerCaseSQL);
+
+		String unquotedSQL = quotedStringMatcher.replaceAll(
+			StringPool.DOUBLE_APOSTROPHE);
+
+		if (!routine && !lowerCaseSQL.contains(StringPool.BACK_SLASH) &&
+			!ArrayUtil.exists(
+				_SQL_COMMENT_AND_QUOTE_TOKENS, unquotedSQL::contains)) {
+
+			lowerCaseSQL = unquotedSQL;
+		}
+
+		Matcher defaultPartitionNameMatcher =
+			_defaultPartitionNamePattern.matcher(lowerCaseSQL);
+
+		if (defaultPartitionNameMatcher.find()) {
+			throw new UnsupportedOperationException("Unsupported SQL: " + sql);
 		}
 	}
 
@@ -1445,9 +1535,46 @@ public class DBPartitionUtil {
 			}
 
 			@Override
+			public CallableStatement prepareCall(String sql)
+				throws SQLException {
+
+				_checkSQL(sql);
+				_setPartition();
+
+				return super.prepareCall(sql);
+			}
+
+			@Override
+			public CallableStatement prepareCall(
+					String sql, int resultSetType, int resultSetConcurrency)
+				throws SQLException {
+
+				_checkSQL(sql);
+				_setPartition();
+
+				return super.prepareCall(
+					sql, resultSetType, resultSetConcurrency);
+			}
+
+			@Override
+			public CallableStatement prepareCall(
+					String sql, int resultSetType, int resultSetConcurrency,
+					int resultSetHoldability)
+				throws SQLException {
+
+				_checkSQL(sql);
+				_setPartition();
+
+				return super.prepareCall(
+					sql, resultSetType, resultSetConcurrency,
+					resultSetHoldability);
+			}
+
+			@Override
 			public PreparedStatement prepareStatement(String sql)
 				throws SQLException {
 
+				_checkSQL(sql);
 				_setPartition();
 
 				return super.prepareStatement(sql);
@@ -1458,6 +1585,7 @@ public class DBPartitionUtil {
 					String sql, int autoGeneratedKeys)
 				throws SQLException {
 
+				_checkSQL(sql);
 				_setPartition();
 
 				return super.prepareStatement(sql, autoGeneratedKeys);
@@ -1468,6 +1596,7 @@ public class DBPartitionUtil {
 					String sql, int resultSetType, int resultSetConcurrency)
 				throws SQLException {
 
+				_checkSQL(sql);
 				_setPartition();
 
 				return super.prepareStatement(
@@ -1480,6 +1609,7 @@ public class DBPartitionUtil {
 					int resultSetHoldability)
 				throws SQLException {
 
+				_checkSQL(sql);
 				_setPartition();
 
 				return super.prepareStatement(
@@ -1492,6 +1622,7 @@ public class DBPartitionUtil {
 					String sql, int[] columnIndexes)
 				throws SQLException {
 
+				_checkSQL(sql);
 				_setPartition();
 
 				return super.prepareStatement(sql, columnIndexes);
@@ -1502,6 +1633,7 @@ public class DBPartitionUtil {
 					String sql, String[] columnNames)
 				throws SQLException {
 
+				_checkSQL(sql);
 				_setPartition();
 
 				return super.prepareStatement(sql, columnNames);
@@ -1752,6 +1884,20 @@ public class DBPartitionUtil {
 		return false;
 	}
 
+	private static boolean _isDefaultCompany() {
+
+		// Do not use getNonsystemCompanyId at this point because DataAccess
+		// might not be initialized
+
+		if ((CompanyThreadLocal.getCompanyId() == CompanyConstants.SYSTEM) ||
+			(CompanyThreadLocal.getCompanyId() == _defaultCompanyId)) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	private static boolean _isSkip(
 			DBInspector dbInspector, String tableName, boolean defaultCompany)
 		throws SQLException {
@@ -1966,58 +2112,64 @@ public class DBPartitionUtil {
 		return new StatementWrapper(statement) {
 
 			@Override
+			public void addBatch(String sql) throws SQLException {
+				_checkSQL(sql);
+
+				super.addBatch(sql);
+			}
+
+			@Override
+			public boolean execute(String sql) throws SQLException {
+				_checkSQL(sql);
+
+				return super.execute(sql);
+			}
+
+			@Override
+			public boolean execute(String sql, int autoGeneratedKeys)
+				throws SQLException {
+
+				_checkSQL(sql);
+
+				return super.execute(sql, autoGeneratedKeys);
+			}
+
+			@Override
+			public boolean execute(String sql, int[] columnIndexes)
+				throws SQLException {
+
+				_checkSQL(sql);
+
+				return super.execute(sql, columnIndexes);
+			}
+
+			@Override
+			public boolean execute(String sql, String[] columnNames)
+				throws SQLException {
+
+				_checkSQL(sql);
+
+				return super.execute(sql, columnNames);
+			}
+
+			@Override
+			public ResultSet executeQuery(String sql) throws SQLException {
+				_checkSQL(sql);
+
+				return super.executeQuery(sql);
+			}
+
+			@Override
 			public int executeUpdate(String sql) throws SQLException {
-				String lowerCaseSQL = StringUtil.toLowerCase(sql);
-
-				// Do not use getNonsystemCompanyId at this point because
-				// DataAccess might not be initialized
-
-				boolean defaultCompany = false;
-
-				if ((CompanyThreadLocal.getCompanyId() ==
-						CompanyConstants.SYSTEM) ||
-					(CompanyThreadLocal.getCompanyId() == _defaultCompanyId)) {
-
-					defaultCompany = true;
-				}
-
-				if (!defaultCompany) {
-					int count = StringUtil.count(
-						lowerCaseSQL,
-						PropsValues.DATABASE_PARTITION_SCHEMA_NAME_PREFIX);
-
-					if (count == 0) {
-						count = StringUtil.count(
-							lowerCaseSQL,
-							DATABASE_EXPORTED_PARTITION_SCHEMA_NAME_PREFIX);
-					}
-
-					if (count > 0) {
-						throw new UnsupportedOperationException(
-							"Unsupported SQL: " + sql);
-					}
-
-					Matcher quotedStringMatcher = _quotedStringPattern.matcher(
-						lowerCaseSQL);
-
-					String unquotedSQL = quotedStringMatcher.replaceAll("''");
-
-					Matcher defaultPartitionNameMatcher =
-						_defaultPartitionNamePattern.matcher(unquotedSQL);
-					Matcher setPartitionMatcher = _setPartitionPattern.matcher(
-						unquotedSQL);
-
-					if (defaultPartitionNameMatcher.find() ||
-						setPartitionMatcher.lookingAt()) {
-
-						throw new UnsupportedOperationException(
-							"Unsupported SQL: " + sql);
-					}
-				}
+				_checkSQL(sql);
 
 				Connection connection = statement.getConnection();
 
 				DBInspector dbInspector = new DBInspector(connection);
+
+				boolean defaultCompany = _isDefaultCompany();
+
+				String lowerCaseSQL = StringUtil.toLowerCase(sql);
 
 				String[] query = sql.split(StringPool.SPACE);
 
@@ -2089,6 +2241,33 @@ public class DBPartitionUtil {
 				}
 			}
 
+			@Override
+			public int executeUpdate(String sql, int autoGeneratedKeys)
+				throws SQLException {
+
+				_checkSQL(sql);
+
+				return super.executeUpdate(sql, autoGeneratedKeys);
+			}
+
+			@Override
+			public int executeUpdate(String sql, int[] columnIndexes)
+				throws SQLException {
+
+				_checkSQL(sql);
+
+				return super.executeUpdate(sql, columnIndexes);
+			}
+
+			@Override
+			public int executeUpdate(String sql, String[] columnNames)
+				throws SQLException {
+
+				_checkSQL(sql);
+
+				return super.executeUpdate(sql, columnNames);
+			}
+
 		};
 	}
 
@@ -2097,6 +2276,16 @@ public class DBPartitionUtil {
 
 	private static final String _REGEX_SQL_WHITESPACE =
 		"(?:\\s++|/\\*.*?\\*/|--[^\\n]*+|#[^\\n]*+)*+";
+
+	private static final String[] _SQL_COMMENT_AND_QUOTE_TOKENS = {
+		"/*", StringPool.DOLLAR, StringPool.DOUBLE_DASH,
+		StringPool.GRAVE_ACCENT, StringPool.POUND, StringPool.QUOTE
+	};
+
+	private static final String[] _SQL_UNSUPPORTED_TOKENS = {
+		"/*!", "_to_xml", "connectby", "crosstab", "lo_", "search_path",
+		"set_config", "ts_rewrite", "ts_stat", "u&"
+	};
 
 	private static final String _TABLE_NAME_PREFIX_QUARTZ = GetterUtil.get(
 		PropsUtil.get("persisted.scheduler.org.quartz.jobStore.tablePrefix"),
@@ -2111,11 +2300,29 @@ public class DBPartitionUtil {
 	private static Pattern _defaultPartitionNamePattern;
 	private static final Pattern _quotedStringPattern = Pattern.compile(
 		"'(?:[^'\\\\]++|\\\\.|'')*+'");
-	private static final Pattern _setPartitionPattern = Pattern.compile(
+	private static final Pattern _statementPattern = Pattern.compile(
 		StringBundler.concat(
-			_REGEX_SQL_WHITESPACE, "(?:use\\b|set\\b", _REGEX_SQL_WHITESPACE,
+			_REGEX_SQL_WHITESPACE, "(?:create", _REGEX_SQL_WHITESPACE,
+			"(?:(?:definer", _REGEX_SQL_WHITESPACE, "=", _REGEX_SQL_WHITESPACE,
+			"\\S+|or", _REGEX_SQL_WHITESPACE, "replace|procedural|trusted)",
+			_REGEX_SQL_WHITESPACE,
+			")*(?:(function|procedure)|event|extension|language)\\b|(do)\\b|",
+			"(?:discard|reset)\\b", _REGEX_SQL_WHITESPACE,
+			"all\\b|prepare\\b|use\\b|set\\b", _REGEX_SQL_WHITESPACE,
 			"(?:(?:local|session)\\b", _REGEX_SQL_WHITESPACE,
 			")?(?:schema|search_path)\\b)"),
+		Pattern.DOTALL);
+	private static final Pattern _unsupportedRoutinePattern = Pattern.compile(
+		StringBundler.concat(
+			"\\\\|\\b(?:execute|prepare)\\b|\\blanguage\\b",
+			_REGEX_SQL_WHITESPACE, "(?!['\"]?(?:plpgsql|sql)\\b)[\\w'\"$]"),
+		Pattern.DOTALL);
+	private static final Pattern _unsupportedSQLPattern = Pattern.compile(
+		StringBundler.concat(
+			"/\\*!|\\bu&['\"]|\\b(?:search_path|set_config)\\b|\\b(?:",
+			"connectby|crosstab|(?:cursor|database|query|schema|table)_to_xml",
+			"\\w*|lo_(?!unlink\\b)\\w+|ts_rewrite|ts_stat)\"?",
+			_REGEX_SQL_WHITESPACE, "\\("),
 		Pattern.DOTALL);
 
 }

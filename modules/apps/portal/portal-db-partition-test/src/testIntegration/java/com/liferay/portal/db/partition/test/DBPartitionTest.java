@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.model.impl.ClassNameImpl;
@@ -573,30 +574,138 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			"drop view if exists " + defaultPartitionName + "/**/.TestView",
 			true);
 		_testDefaultPartitionName(
+			"drop view if exists -- '\n" + defaultPartitionName +
+				" -- '\n.TestView",
+			true);
+		_testDefaultPartitionName(
+			"drop view if exists /* ' */ " + defaultPartitionName +
+				".TestView /* ' */",
+			true);
+		_testDefaultPartitionName(
 			StringBundler.concat(
 				"drop view if exists ", defaultPartitionName, " -- ",
 				RandomTestUtil.randomString(), "\n.TestView"),
 			true);
 
 		if (db.getDBType() == DBType.POSTGRESQL) {
+			_assertSQL(
+				"create extension if not exists tablefunc schema " +
+					defaultPartitionName,
+				true);
+			_assertSQL(
+				"create function TestFunction() returns integer language " +
+					"plperl as $$ return 1; $$",
+				true);
+			_assertSQL(
+				"create function TestFunction() returns setof User_ language " +
+					"sql as e'select * from \\x70ublic.User_'",
+				true);
+			_assertSQL(
+				"do $$ begin execute 'delete from pub' || 'lic.User_'; end $$",
+				true);
+			_assertSQL("select * from U&\"\\0070ublic\".User_", true);
+			_assertSQL(
+				"select * from connectby('pub' || 'lic.User_', 'userId', " +
+					"'userId', '0', 0) as TestTable(userId bigint)",
+				true);
+			_assertSQL(
+				"select * from crosstab('select * from pub' || 'lic.User_') " +
+					"as TestTable(userId bigint)",
+				true);
+			_assertSQL(
+				"select * from ts_stat('select to_tsvector(emailAddress) " +
+					"from pub' || 'lic.User_')",
+				true);
+			_assertSQL("select database_to_xml(true, false, '')", true);
+			_assertSQL("select lo_get(1)", true);
+			_assertSQL("select loread(lo_open(1, 262144), 1048576)", true);
+			_assertSQL(
+				"select query_to_xml('select * from pub' || 'lic.User_', " +
+					"true, false, '')",
+				true);
+			_assertSQL(
+				"select ts_rewrite('a'::tsquery, 'select * from pub' || " +
+					"'lic.User_')",
+				true);
+			_assertSQL(
+				StringBundler.concat(
+					"create function TestFunction() returns setof User_ ",
+					"language sql as 'select * from ", defaultPartitionName,
+					".User_'"),
+				true);
+			_assertSQL(
+				StringBundler.concat(
+					"create function TestFunction() returns void language ",
+					"plpgsql as $$ begin execute 'delete from pub' || ",
+					"'lic.User_'; end $$"),
+				true);
+			_testDefaultPartitionName("discard all", true);
+			_testDefaultPartitionName(
+				"drop view if exists TestView; set schema '" +
+					defaultPartitionName + "'",
+				true);
 			_testDefaultPartitionName(
 				"drop view if exists \"" + defaultPartitionName + "\".TestView",
 				true);
+			_testDefaultPartitionName("reset all", true);
+			_testDefaultPartitionName("reset search_path", true);
 			_testDefaultPartitionName(
 				"set search_path to " + defaultPartitionName, true);
+			_testDefaultPartitionName(
+				StringBundler.concat(
+					"delete from ClassName_ where value = set_config('search' ",
+					"|| '_path', '", defaultPartitionName, "', false)"),
+				true);
 			_testDefaultPartitionName(
 				StringBundler.concat(
 					"drop view if exists ", dbInspector.getCatalog(), ".",
 					defaultPartitionName, ".TestView"),
 				true);
+
+			String sql = StringBundler.concat(
+				"delete from ClassName_ where value = 'a\\' and classNameId ",
+				"in (select classNameId from ", defaultPartitionName,
+				".ClassName_ where value = 'b')");
+
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+						COMPANY_IDS[0]);
+				PreparedStatement preparedStatement =
+					connection.prepareStatement(sql)) {
+
+				Assert.fail();
+			}
+			catch (UnsupportedOperationException
+						unsupportedOperationException) {
+
+				Assert.assertEquals(
+					"Unsupported SQL: " + sql,
+					unsupportedOperationException.getMessage());
+			}
 		}
 		else {
+			_assertSQL(
+				"create definer = current_user event TestEvent on schedule " +
+					"every 1 day do delete from TestTable",
+				true);
+			_assertSQL(
+				"create procedure TestProcedure() begin prepare " +
+					"TestStatement from @sql; execute TestStatement; end",
+				true);
+			_assertSQL("prepare TestStatement from @sql", true);
+			_testDefaultPartitionName(
+				"/* ' */ use " + defaultPartitionName + " /* ' */", true);
+			_testDefaultPartitionName(
+				"/*!32302 use " + defaultPartitionName + " */", true);
 			_testDefaultPartitionName(
 				"drop view if exists `" + defaultPartitionName + "`.TestView",
 				true);
 			_testDefaultPartitionName("use " + defaultPartitionName, true);
 		}
 
+		_testDefaultPartitionName(
+			"delete from ClassName_ where value in ('crosstab', 'lo_LA')",
+			false);
 		_testDefaultPartitionName(
 			StringBundler.concat(
 				"delete from ClassName_ where value = '",
@@ -863,6 +972,78 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 	}
 
 	@Test
+	public void testSyncTables() throws Exception {
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					COMPANY_IDS[0])) {
+
+			for (String tableName :
+					new String[] {TEST_TABLE_NAME, _TEST_SYNC_TABLE_NAME}) {
+
+				db.runSQL(
+					StringBundler.concat(
+						"create table ", tableName, " (testColumn LONG not ",
+						"null primary key, language VARCHAR(75) null)"));
+			}
+
+			String language = dbInspector.normalizeName("language");
+			String testColumn = dbInspector.normalizeName("testColumn");
+
+			try (AutoCloseable autoCloseable = db.syncTables(
+					connection, TEST_TABLE_NAME, _TEST_SYNC_TABLE_NAME,
+					HashMapBuilder.put(
+						language, language
+					).put(
+						testColumn, testColumn
+					).build(),
+					HashMapBuilder.put(
+						language, "'ftl'"
+					).build())) {
+
+				db.runSQL(
+					"insert into " + TEST_TABLE_NAME +
+						" (testColumn) values (1)");
+				db.runSQL(
+					"insert into " + TEST_TABLE_NAME +
+						" (testColumn) values (2)");
+				db.runSQL(
+					"insert into " + TEST_TABLE_NAME +
+						" (testColumn) values (3)");
+				db.runSQL(
+					"delete from " + TEST_TABLE_NAME + " where testColumn = 2");
+				db.runSQL(
+					"update " + TEST_TABLE_NAME +
+						" set language = 'xsl' where testColumn = 1");
+			}
+
+			try (PreparedStatement preparedStatement =
+					connection.prepareStatement(
+						StringBundler.concat(
+							"select testColumn, language from ",
+							_TEST_SYNC_TABLE_NAME, " order by testColumn"));
+
+				ResultSet resultSet = preparedStatement.executeQuery()) {
+
+				Assert.assertTrue(resultSet.next());
+				Assert.assertEquals(1, resultSet.getLong("testColumn"));
+				Assert.assertEquals("xsl", resultSet.getString("language"));
+				Assert.assertTrue(resultSet.next());
+				Assert.assertEquals(3, resultSet.getLong("testColumn"));
+				Assert.assertEquals("ftl", resultSet.getString("language"));
+				Assert.assertFalse(resultSet.next());
+			}
+		}
+		finally {
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+						COMPANY_IDS[0])) {
+
+				dropTable(_TEST_SYNC_TABLE_NAME);
+			}
+		}
+	}
+
+	@Test
 	public void testUpdateIndexOnControlTable() throws Exception {
 		DataSource dataSource = InfrastructureUtil.getDataSource();
 
@@ -982,6 +1163,38 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
+	private void _assertSQL(String sql, boolean unsupported) throws Exception {
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					COMPANY_IDS[0])) {
+
+			db.runSQL(sql);
+
+			Assert.assertFalse(unsupported);
+		}
+		catch (UnsupportedOperationException unsupportedOperationException) {
+			Assert.assertTrue(unsupported);
+			Assert.assertEquals(
+				"Unsupported SQL: " + sql,
+				unsupportedOperationException.getMessage());
+		}
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					COMPANY_IDS[0]);
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				sql)) {
+
+			Assert.assertFalse(unsupported);
+		}
+		catch (UnsupportedOperationException unsupportedOperationException) {
+			Assert.assertTrue(unsupported);
+			Assert.assertEquals(
+				"Unsupported SQL: " + sql,
+				unsupportedOperationException.getMessage());
+		}
+	}
+
 	private void _deployRemotePortlet(long companyId, String portletName)
 		throws Exception {
 
@@ -1019,23 +1232,12 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			db.runSQL(sql);
 		}
 
-		try (SafeCloseable safeCloseable =
-				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
-					COMPANY_IDS[0])) {
-
-			db.runSQL(sql);
-
-			Assert.assertFalse(unsupported);
-		}
-		catch (UnsupportedOperationException unsupportedOperationException) {
-			Assert.assertTrue(unsupported);
-			Assert.assertEquals(
-				"Unsupported SQL: " + sql,
-				unsupportedOperationException.getMessage());
-		}
+		_assertSQL(sql, unsupported);
 	}
 
 	private static final String _CLASS_NAME = DBPartitionTest.class.getName();
+
+	private static final String _TEST_SYNC_TABLE_NAME = "TestSyncTable";
 
 	@Inject
 	private ClassNameLocalService _classNameLocalService;
