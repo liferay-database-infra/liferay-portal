@@ -282,9 +282,18 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 			Assert.assertEquals(List.of(true), results);
 			Assert.assertEquals(throwables.toString(), 1, throwables.size());
 
-			Assert.assertTrue(throwables.get(0) instanceof PortalException);
-
 			String partitionName = getPartitionName(companyId);
+
+			Throwable throwable = throwables.get(0);
+
+			Assert.assertTrue(throwable instanceof PortalException);
+
+			throwable = throwable.getCause();
+
+			Assert.assertTrue(throwable instanceof IllegalArgumentException);
+			Assert.assertEquals(
+				"Database partition " + partitionName + " already exists",
+				throwable.getMessage());
 
 			Assert.assertTrue(
 				dbPartitionDB.existsPartition(connection, partitionName));
