@@ -24,6 +24,9 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.sql.DataSource;
@@ -81,11 +84,16 @@ public class UpgradeQueryMonitorTest {
 
 			InfrastructureUtil.setDataSource(dataSource);
 
+			ReflectionTestUtil.setFieldValue(
+				UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE,
+				Executors.newSingleThreadScheduledExecutor());
+
 			try {
 				_testPollWithNoLockedQueries(connection, db, logCapture);
 				_testPollWithOneLockedQuery(connection, db, logCapture);
 				_testPollWithMultipleLockedQueries(connection, db, logCapture);
 				_testPollWithSQLException(connection, db, logCapture);
+				_testPollWithSQLExceptionWhileStopping(logCapture);
 			}
 			finally {
 				InfrastructureUtil.setDataSource(originalDataSource);
@@ -188,15 +196,32 @@ public class UpgradeQueryMonitorTest {
 
 			UpgradeQueryMonitor.start();
 
-			Assert.assertNotNull(
+			ScheduledExecutorService scheduledExecutorService =
 				ReflectionTestUtil.getFieldValue(
-					UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE));
+					UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE);
+
+			Assert.assertNotNull(scheduledExecutorService);
+
+			CountDownLatch countDownLatch = new CountDownLatch(1);
+
+			Future<Boolean> future = scheduledExecutorService.submit(
+				() -> {
+					countDownLatch.countDown();
+
+					Thread.sleep(1000);
+
+					return Thread.interrupted();
+				});
+
+			countDownLatch.await();
 
 			UpgradeQueryMonitor.stop();
 
+			Assert.assertFalse(future.get());
 			Assert.assertNull(
 				ReflectionTestUtil.getFieldValue(
 					UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE));
+			Assert.assertTrue(scheduledExecutorService.isTerminated());
 		}
 	}
 
@@ -462,6 +487,21 @@ public class UpgradeQueryMonitorTest {
 		Assert.assertEquals(
 			"Upgrade query monitoring is disabled: " + message,
 			logEntry.getMessage());
+	}
+
+	private void _testPollWithSQLExceptionWhileStopping(LogCapture logCapture) {
+		ScheduledExecutorService scheduledExecutorService =
+			ReflectionTestUtil.getFieldValue(
+				UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE);
+
+		scheduledExecutorService.shutdown();
+
+		ReflectionTestUtil.invoke(
+			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
+
+		List<LogEntry> logEntries = logCapture.getLogEntries();
+
+		Assert.assertEquals(logEntries.toString(), 5, logEntries.size());
 	}
 
 	private static final String _SCHEDULED_EXECUTOR_SERVICE =
