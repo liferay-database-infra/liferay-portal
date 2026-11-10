@@ -276,9 +276,6 @@ public class BaseDBProcessTest extends BaseDBProcess {
 				messages.get(0));
 		}
 
-		alterColumnName(
-			_TABLE_NAME, "typeVarchar", "typeVarcharTest VARCHAR(75) null");
-
 		Assert.assertFalse(_dbInspector.hasColumn(_TABLE_NAME, "typeVarchar"));
 
 		Assert.assertTrue(
