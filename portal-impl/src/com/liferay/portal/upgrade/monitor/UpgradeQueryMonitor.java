@@ -50,7 +50,7 @@ public final class UpgradeQueryMonitor {
 			return;
 		}
 
-		_scheduledExecutorService.shutdownNow();
+		_scheduledExecutorService.shutdown();
 
 		try {
 			if (!_scheduledExecutorService.awaitTermination(
@@ -143,9 +143,12 @@ public final class UpgradeQueryMonitor {
 			}
 		}
 		catch (Exception exception) {
-			Thread currentThread = Thread.currentThread();
+			ScheduledExecutorService scheduledExecutorService =
+				_scheduledExecutorService;
 
-			if (currentThread.isInterrupted()) {
+			if ((scheduledExecutorService == null) ||
+				scheduledExecutorService.isShutdown()) {
+
 				return;
 			}
 
@@ -173,6 +176,6 @@ public final class UpgradeQueryMonitor {
 	private static final Log _log = LogFactoryUtil.getLog(
 		UpgradeQueryMonitor.class);
 
-	private static ScheduledExecutorService _scheduledExecutorService;
+	private static volatile ScheduledExecutorService _scheduledExecutorService;
 
 }
