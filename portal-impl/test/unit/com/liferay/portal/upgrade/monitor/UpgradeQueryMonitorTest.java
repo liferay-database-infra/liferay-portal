@@ -256,15 +256,14 @@ public class UpgradeQueryMonitorTest {
 
 		List<LogEntry> logEntries = logCapture.getLogEntries();
 
-		int sizeBeforePoll = logEntries.size();
+		logEntries.clear();
 
 		ReflectionTestUtil.invoke(
 			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
 
-		Assert.assertEquals(
-			logEntries.toString(), sizeBeforePoll + 3, logEntries.size());
+		Assert.assertEquals(logEntries.toString(), 3, logEntries.size());
 
-		LogEntry logEntry1 = logEntries.get(sizeBeforePoll);
+		LogEntry logEntry1 = logEntries.get(0);
 
 		Assert.assertEquals(
 			StringBundler.concat(
@@ -273,7 +272,7 @@ public class UpgradeQueryMonitorTest {
 				"\" has been running for 630 seconds"),
 			logEntry1.getMessage());
 
-		LogEntry logEntry2 = logEntries.get(sizeBeforePoll + 1);
+		LogEntry logEntry2 = logEntries.get(1);
 
 		Assert.assertEquals(
 			StringBundler.concat(
@@ -282,7 +281,7 @@ public class UpgradeQueryMonitorTest {
 				"\" has been running for 720 seconds"),
 			logEntry2.getMessage());
 
-		LogEntry logEntry3 = logEntries.get(sizeBeforePoll + 2);
+		LogEntry logEntry3 = logEntries.get(2);
 
 		Assert.assertEquals(
 			StringBundler.concat(
@@ -304,13 +303,12 @@ public class UpgradeQueryMonitorTest {
 
 		List<LogEntry> logEntries = logCapture.getLogEntries();
 
-		int sizeBeforePoll = logEntries.size();
+		logEntries.clear();
 
 		ReflectionTestUtil.invoke(
 			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
 
-		Assert.assertEquals(
-			logEntries.toString(), sizeBeforePoll, logEntries.size());
+		Assert.assertEquals(logEntries.toString(), 0, logEntries.size());
 	}
 
 	private void _testPollLongRunningWithOneQuery(
@@ -331,15 +329,14 @@ public class UpgradeQueryMonitorTest {
 
 		List<LogEntry> logEntries = logCapture.getLogEntries();
 
-		int sizeBeforePoll = logEntries.size();
+		logEntries.clear();
 
 		ReflectionTestUtil.invoke(
 			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
 
-		Assert.assertEquals(
-			logEntries.toString(), sizeBeforePoll + 1, logEntries.size());
+		Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-		LogEntry logEntry = logEntries.get(sizeBeforePoll);
+		LogEntry logEntry = logEntries.get(0);
 
 		Assert.assertEquals(
 			StringBundler.concat(
@@ -378,14 +375,16 @@ public class UpgradeQueryMonitorTest {
 					RandomTestUtil.randomString()))
 		);
 
+		List<LogEntry> logEntries = logCapture.getLogEntries();
+
+		logEntries.clear();
+
 		ReflectionTestUtil.invoke(
 			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
 
-		List<LogEntry> logEntries = logCapture.getLogEntries();
+		Assert.assertEquals(logEntries.toString(), 3, logEntries.size());
 
-		Assert.assertEquals(logEntries.toString(), 4, logEntries.size());
-
-		LogEntry logEntry1 = logEntries.get(1);
+		LogEntry logEntry1 = logEntries.get(0);
 
 		Assert.assertEquals(
 			StringBundler.concat(
@@ -393,7 +392,7 @@ public class UpgradeQueryMonitorTest {
 				schema1, "\" has been running for 300 seconds"),
 			logEntry1.getMessage());
 
-		LogEntry logEntry2 = logEntries.get(2);
+		LogEntry logEntry2 = logEntries.get(1);
 
 		Assert.assertEquals(
 			StringBundler.concat(
@@ -401,7 +400,7 @@ public class UpgradeQueryMonitorTest {
 				schema2, "\" has been running for 600 seconds"),
 			logEntry2.getMessage());
 
-		LogEntry logEntry3 = logEntries.get(3);
+		LogEntry logEntry3 = logEntries.get(2);
 
 		Assert.assertEquals(
 			StringBundler.concat(
@@ -420,12 +419,14 @@ public class UpgradeQueryMonitorTest {
 			Collections.emptyList()
 		);
 
+		List<LogEntry> logEntries = logCapture.getLogEntries();
+
+		logEntries.clear();
+
 		ReflectionTestUtil.invoke(
 			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
 
-		List<LogEntry> logEntries = logCapture.getLogEntries();
-
-		Assert.assertTrue(logEntries.isEmpty());
+		Assert.assertEquals(logEntries.toString(), 0, logEntries.size());
 	}
 
 	private void _testPollWithOneLockedQuery(
@@ -444,10 +445,12 @@ public class UpgradeQueryMonitorTest {
 					30000, id, query, schema, RandomTestUtil.randomString()))
 		);
 
+		List<LogEntry> logEntries = logCapture.getLogEntries();
+
+		logEntries.clear();
+
 		ReflectionTestUtil.invoke(
 			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
-
-		List<LogEntry> logEntries = logCapture.getLogEntries();
 
 		Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
@@ -473,16 +476,18 @@ public class UpgradeQueryMonitorTest {
 			new SQLException(message)
 		);
 
+		List<LogEntry> logEntries = logCapture.getLogEntries();
+
+		logEntries.clear();
+
 		Assert.assertThrows(
 			SQLException.class,
 			() -> ReflectionTestUtil.invoke(
 				UpgradeQueryMonitor.class, "_poll", new Class<?>[0]));
 
-		List<LogEntry> logEntries = logCapture.getLogEntries();
+		Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-		Assert.assertEquals(logEntries.toString(), 5, logEntries.size());
-
-		LogEntry logEntry = logEntries.get(4);
+		LogEntry logEntry = logEntries.get(0);
 
 		Assert.assertEquals(
 			"Upgrade query monitoring is disabled: " + message,
@@ -496,12 +501,14 @@ public class UpgradeQueryMonitorTest {
 
 		scheduledExecutorService.shutdown();
 
+		List<LogEntry> logEntries = logCapture.getLogEntries();
+
+		logEntries.clear();
+
 		ReflectionTestUtil.invoke(
 			UpgradeQueryMonitor.class, "_poll", new Class<?>[0]);
 
-		List<LogEntry> logEntries = logCapture.getLogEntries();
-
-		Assert.assertEquals(logEntries.toString(), 5, logEntries.size());
+		Assert.assertEquals(logEntries.toString(), 0, logEntries.size());
 	}
 
 	private static final String _SCHEDULED_EXECUTOR_SERVICE =
