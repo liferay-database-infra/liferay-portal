@@ -200,8 +200,6 @@ public class UpgradeQueryMonitorTest {
 				ReflectionTestUtil.getFieldValue(
 					UpgradeQueryMonitor.class, _SCHEDULED_EXECUTOR_SERVICE);
 
-			Assert.assertNotNull(scheduledExecutorService);
-
 			CountDownLatch countDownLatch = new CountDownLatch(1);
 
 			Future<Boolean> future = scheduledExecutorService.submit(
