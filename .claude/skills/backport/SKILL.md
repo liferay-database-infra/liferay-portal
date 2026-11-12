@@ -96,6 +96,12 @@ Find every commit for the ticket, searching in this order and stopping at the fi
 
 There are usually several commits (e.g. the fix plus a separate "Unit tests" commit, plus any "SF" source-formatter commits). List them all to the user and confirm before proceeding. Note the **chronological order** (oldest first) - cherry-picks must be applied in that order.
 
+**A build commit can carry the keys of tickets that you do not backport.** A build
+commit (buildLang, buildService, buildREST, baseline) can have the keys of all its source
+commits. If the backport takes only some of these keys, do not cherry-pick the build
+commit. Run the generator again on the backport branch, and commit the output with the
+keys that you backport.
+
 **A `--grep` on one key does not mean those commits stand alone.** The branch the fix shipped
 on may have carried several tickets whose commits interleave in the same files, and then the
 cherry-pick conflicts on a hunk belonging to a key you are not backporting. Check it before the
