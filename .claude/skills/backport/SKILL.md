@@ -465,6 +465,8 @@ How the backport is delivered depends on the target:
 
 Probe the Customer Build prevents most of these. If the build still stops with fixes in Patcher Status **Rebase Conflict** (the **Fixes** tab), ask the user for the Fix ID, Content, and Project Version of each one. Then run the probe with the new build ID to find the fix tag in conflict.
 
+Before you make a fix, ask the user to filter the **Fixes** tab by Content and Project Version. If a fix for the key on the target is Complete, do not make a new one. Fetch its tag (`git ls-remote upstream 'refs/tags/fix-pack-fix-<fixId>'`) and compare it with the commits. Also look for a fix of Type **Generated** with the same key: Patcher makes it when it merges the build again, and a Complete one shows that the conflict is solved. A build tag of a build that stopped on a conflict is not on GitHub.
+
 1. If the Project Version is not the target, correct the version of the build and build again. Do not fix the conflicts.
 1. Fix the conflict fix with the fewest tickets first.
 1. For one ticket, backport it onto the version of the build. For more tickets, branch off the latest fix branch that has the rest of the tickets (ask the user for its Branch Name and GitHub URL), and cherry-pick the new ticket on top. Content is the rest of the tickets plus the new one.
