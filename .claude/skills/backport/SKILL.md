@@ -429,7 +429,7 @@ How the backport is delivered depends on the target:
 	Workaround:       off
 	```
 
-	- Product is Quarterly Releases for a quarterly target.
+	- Product is Quarterly Releases for a quarterly target. For a 7.4 update (`7.4.13-u63`), the Product is `DXP 7.4`. Do not use `DXP 7.4 EP2`, `DXP 7.4 EP3`, or a `DXP 7.4 Liferay ...` connector.
 	- Project Version is the target.
 	- Content is the LPD keys of the branch, in commit order, with a comma and no space.
 	- Auto Fix is off, because this skill runs when the auto fix fails.
