@@ -41,7 +41,7 @@ Then list the backport branches that exist already: `git ls-remote <remote> 'ref
 - Get only the fields that you need (`summary`, `status`, `issuelinks`). The LPE has many links, and a full read is larger than the output limit.
 - Find the commits with the LPD key: `git log --oneline --all -i --grep='<LPD key>'`.
 - Cherry-pick the commits of the LPD key, but give the patch the LPE key. The branch is `<LPE key>-<target>`, and the Content field of the Patcher fix is the LPE key. The LPD key stays only in the commit messages.
-- The title of the LPD ticket can tell how to exploit the issue. Do not copy the title into a branch name, a Patcher Content field, a commit message, or a pull. Read each commit message of the branch before the push. If a message tells how to exploit the issue, stop and tell the user.
+- The title of the LPD ticket can tell how to exploit the issue. Do not copy the title into a branch name, a Patcher Content field, a commit message, or a pull. Read each commit message of the branch before the push. If a message tells how to exploit the issue, look for the same message on master first. If master has it, the text is already public: keep the message, tell the user in one line with the master commit, and go on. If master does not have it, stop and tell the user.
 - Many LPPs can come for the same LPE, each with its own customer build. Each one is a separate Rebase Conflict, but the same fix branch on the target can serve all of them.
 
 **When given an LPD**, the LPP of the build is the LPP in its `fixes` links whose Affects versions is the target. If none or more than one matches, ask the user. Then list the branches that exist already, the same way as for an LPP.
