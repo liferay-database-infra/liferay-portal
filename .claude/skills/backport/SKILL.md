@@ -35,6 +35,15 @@ Resolve two values from `${ARGUMENTS}`. Ask the user for whichever is missing.
 
 Then list the backport branches that exist already: `git ls-remote <remote> 'refs/heads/*<target>'`, and keep each branch whose name has one of the keys.
 
+**When the LPP names an LPE key**, the fix is a security fix. The LPE is a public ticket that hides the real LPD ticket, so no commit carries the LPE key. Do these steps:
+
+- Read the `issuelinks` of the LPE. The LPD ticket is the one with the link type `Relationship`. The other links are LRHC tickets of customers. They are not fixes.
+- Get only the fields that you need (`summary`, `status`, `issuelinks`). The LPE has many links, and a full read is larger than the output limit.
+- Find the commits with the LPD key: `git log --oneline --all -i --grep='<LPD key>'`.
+- Cherry-pick the commits of the LPD key, but give the patch the LPE key. The branch is `<LPE key>-<target>`, and the Content field of the Patcher fix is the LPE key. The LPD key stays only in the commit messages.
+- The title of the LPD ticket can tell how to exploit the issue. Do not copy the title into a branch name, a Patcher Content field, a commit message, or a pull. Read each commit message of the branch before the push. If a message tells how to exploit the issue, stop and tell the user.
+- Many LPPs can come for the same LPE, each with its own customer build. Each one is a separate Rebase Conflict, but the same fix branch on the target can serve all of them.
+
 **When given an LPD**, the LPP of the build is the LPP in its `fixes` links whose Affects versions is the target. If none or more than one matches, ask the user. Then list the branches that exist already, the same way as for an LPP.
 
 **When given a BPR ticket** (e.g. `BPR-90239`), both values come from it. Fetch the BPR ticket through the Jira Cloud REST API (`liferay.atlassian.net`, authenticated with `${JIRA_API_USER}` / `${JIRA_API_TOKEN}`); its summary follows the form `<target> <ORIGINAL-TICKET> | <description>` - e.g. `release-2026.q1 LPD-94368 | Only 20 picklists...` yields target `release-2026.q1` and ticket `LPD-94368`. Use the original ticket to locate the fix commits in Locate the Fix Commits.
