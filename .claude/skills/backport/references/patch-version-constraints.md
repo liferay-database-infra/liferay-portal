@@ -13,6 +13,8 @@ A patch version only ever exists to fix a **customer bug raised through an LPP**
 
 So when the target is a **patch version**, the cherry-pick is not simply "all the ticket's commits". Leave out the test commits, and leave out any commit that only bumps a `packageinfo` or edits a `bnd.bnd`. When the fix itself cannot avoid touching one of those, the patch cannot be delivered this way, so say so rather than submitting something that will fail opaquely.
 
+A patch never changes a version. It replaces modules in a release that is already installed, and other hotfixes and the customer's modules depend on the versions of that release. If the master fix bumps a `packageinfo` or a `bnd.bnd` version because it adds API, the patch still takes the code of the fix and leaves out the bump commit. The fix cannot be delivered as a patch only if the code itself needs a new version, for example a module that imports a package version that the release does not export.
+
 Check the result before submitting:
 
 ```bash
