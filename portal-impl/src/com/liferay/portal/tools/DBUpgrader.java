@@ -85,8 +85,10 @@ public class DBUpgrader {
 
 	public static void checkReleaseState() throws Exception {
 		try (Connection connection = DataAccess.getConnection()) {
-			if (PortalUpgradeProcess.getCurrentState(connection) ==
-					ReleaseConstants.STATE_GOOD) {
+			int state = PortalUpgradeProcess.getCurrentState(connection);
+
+			if ((state == ReleaseConstants.STATE_GOOD) ||
+				(state == ReleaseConstants.STATE_IN_PROGRESS)) {
 
 				return;
 			}
@@ -508,6 +510,8 @@ public class DBUpgrader {
 			}
 
 			try {
+				_updateStateInProgress();
+
 				buildNumber = _getBuildNumberForMissedUpgradeProcesses(
 					buildNumber);
 
@@ -675,6 +679,27 @@ public class DBUpgrader {
 					preparedStatement.executeUpdate();
 				}
 			});
+	}
+
+	private static void _updateStateInProgress() throws Exception {
+		try (Connection connection = DataAccess.getConnection()) {
+			if ((PortalUpgradeProcess.getCurrentState(connection) ==
+					ReleaseConstants.STATE_IN_PROGRESS) &&
+				_log.isWarnEnabled()) {
+
+				_log.warn(
+					StringBundler.concat(
+						"Resuming the upgrade of ",
+						ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME,
+						" from schema version ",
+						PortalUpgradeProcess.getCurrentSchemaVersion(
+							connection),
+						" after an interruption"));
+			}
+
+			PortalUpgradeProcess.updateState(
+				connection, ReleaseConstants.STATE_IN_PROGRESS);
+		}
 	}
 
 	private static final String _CLASS_NAME =
