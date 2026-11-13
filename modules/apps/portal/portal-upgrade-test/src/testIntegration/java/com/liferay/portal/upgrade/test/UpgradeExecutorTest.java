@@ -267,11 +267,11 @@ public class UpgradeExecutorTest {
 					logEntries.toString(), expectedMessages.length,
 					logEntries.size());
 
-				for (int i = 0; i < expectedMessages.length; i++) {
-					LogEntry logEntry = logEntries.get(i);
+				for (int index = 0; index < expectedMessages.length; index++) {
+					LogEntry logEntry = logEntries.get(index);
 
 					Assert.assertEquals(
-						expectedMessages[i], logEntry.getMessage());
+						expectedMessages[index], logEntry.getMessage());
 					Assert.assertEquals(
 						LoggerTestUtil.WARN, logEntry.getPriority());
 				}

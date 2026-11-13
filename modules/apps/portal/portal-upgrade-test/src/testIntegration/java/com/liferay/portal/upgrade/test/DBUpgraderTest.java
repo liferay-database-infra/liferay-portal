@@ -510,7 +510,6 @@ public class DBUpgraderTest {
 			List<String> messages = logCapture.getMessages();
 
 			Assert.assertTrue(
-				messages.toString(),
 				messages.contains(
 					StringBundler.concat(
 						"Resuming the upgrade of ",
