@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
@@ -330,6 +331,33 @@ public class IndexUpdaterUtilTest {
 	}
 
 	@Test
+	public void testUpdateIndexRetryStatus() throws Exception {
+		_testUpdateIndexRetry(
+			", status INTEGER", 7,
+			StringBundler.concat(
+				"insert into TestTable values(1, 2, 3, 4, '5', '6', ",
+				WorkflowConstants.STATUS_APPROVED, ")"),
+			StringBundler.concat(
+				"insert into TestTable values(7, 9, 10, 11, '5', '6', ",
+				WorkflowConstants.STATUS_EXPIRED, ")"));
+	}
+
+	@Test
+	public void testUpdateIndexRetryWorkflowStatus() throws Exception {
+		_testUpdateIndexRetry(
+			", status INTEGER, statusByUserId LONG", 4,
+			StringBundler.concat(
+				"insert into TestTable values(1, 2, 3, 4, '5', '6', ",
+				WorkflowConstants.STATUS_APPROVED, ", 0)"),
+			StringBundler.concat(
+				"insert into TestTable values(4, 5, 6, 7, '5', '6', ",
+				WorkflowConstants.STATUS_APPROVED, ", 0)"),
+			StringBundler.concat(
+				"insert into TestTable values(7, 9, 10, 11, '5', '6', ",
+				WorkflowConstants.STATUS_EXPIRED, ", 0)"));
+	}
+
+	@Test
 	public void testUpdateIndexUnpopulatedColumn() throws Exception {
 		_createTestTable(true);
 
@@ -432,12 +460,18 @@ public class IndexUpdaterUtilTest {
 	}
 
 	private void _createTestTable(boolean primaryKey) throws Exception {
+		_createTestTable(StringPool.BLANK, primaryKey);
+	}
+
+	private void _createTestTable(String columnsSQL, boolean primaryKey)
+		throws Exception {
+
 		DBPartitionUtil.forEachCompanyId(
 			companyId -> _db.runSQL(
 				StringBundler.concat(
 					"create table TestTable (id1 INTEGER, id2 INTEGER, ",
 					"column1 INTEGER, column2 INTEGER, column3 VARCHAR(255), ",
-					"column4 VARCHAR(255)",
+					"column4 VARCHAR(255)", columnsSQL,
 					primaryKey ? ", primary key (id1, id2)" : StringPool.BLANK,
 					")")));
 	}
@@ -452,6 +486,54 @@ public class IndexUpdaterUtilTest {
 	private void _dropTestTable() throws Exception {
 		DBPartitionUtil.forEachCompanyId(
 			companyId -> _db.runSQL("DROP_TABLE_IF_EXISTS(TestTable)"));
+	}
+
+	private void _testUpdateIndexRetry(
+			String columnsSQL, int id1, String... insertSQLs)
+		throws Exception {
+
+		_createTestTable(columnsSQL, true);
+
+		try {
+			for (String insertSQL : insertSQLs) {
+				_db.runSQL(insertSQL);
+			}
+
+			boolean upgrading = StartupHelperUtil.isUpgrading();
+
+			StartupHelperUtil.setUpgrading(true);
+
+			try (AutoCloseable autoCloseable =
+					() -> StartupHelperUtil.setUpgrading(upgrading)) {
+
+				ReflectionTestUtil.invoke(
+					IndexUpdaterUtil.class, "_updateIndexes",
+					new Class<?>[] {String.class, String.class}, "TestTable",
+					"create unique index IX_TestTable on TestTable(column3" +
+						"[$COLUMN_LENGTH:255$], column4[$COLUMN_LENGTH:255$])");
+			}
+
+			try (Connection connection = DataAccess.getConnection();
+
+				PreparedStatement preparedStatement =
+					connection.prepareStatement("select id1 from TestTable")) {
+
+				try (ResultSet resultSet = preparedStatement.executeQuery()) {
+					Assert.assertTrue(resultSet.next());
+					Assert.assertEquals(id1, resultSet.getInt("id1"));
+					Assert.assertFalse(resultSet.next());
+				}
+
+				List<IndexMetadata> indexMetadatas = _db.getIndexMetadatas(
+					connection, "TestTable", "column3", true);
+
+				Assert.assertEquals(
+					indexMetadatas.toString(), 1, indexMetadatas.size());
+			}
+		}
+		finally {
+			_dropTestTable();
+		}
 	}
 
 	private static Connection _connection;
