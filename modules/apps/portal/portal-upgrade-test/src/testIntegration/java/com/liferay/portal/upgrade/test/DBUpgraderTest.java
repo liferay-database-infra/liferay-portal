@@ -122,10 +122,46 @@ public class DBUpgraderTest {
 		StartupHelperUtil.setUpgrading(false);
 
 		DBUpgrader.checkReleaseState();
+	}
 
-		StartupHelperUtil.setUpgrading(true);
+	@Test
+	public void testCheckReleaseStateWithInterruptedUpgradeDoesNotSupportRetry()
+		throws Exception {
 
-		DBUpgrader.checkReleaseState();
+		_updatePortalRelease(
+			ReleaseInfo.RELEASE_6_2_0_BUILD_NUMBER,
+			ReleaseConstants.STATE_IN_PROGRESS);
+
+		try {
+			_startUpgrade();
+
+			DBUpgrader.checkReleaseState();
+
+			Assert.fail();
+		}
+		catch (IllegalStateException illegalStateException) {
+		}
+		finally {
+			_stopUpgrade();
+		}
+	}
+
+	@Test
+	public void testCheckReleaseStateWithInterruptedUpgradeSupportsRetry()
+		throws Exception {
+
+		_updatePortalRelease(
+			ReleaseInfo.RELEASE_7_1_0_BUILD_NUMBER,
+			ReleaseConstants.STATE_IN_PROGRESS);
+
+		try {
+			_startUpgrade();
+
+			DBUpgrader.checkReleaseState();
+		}
+		finally {
+			_stopUpgrade();
+		}
 	}
 
 	@Test

@@ -88,7 +88,8 @@ public class DBUpgrader {
 			int state = PortalUpgradeProcess.getCurrentState(connection);
 
 			if ((state == ReleaseConstants.STATE_GOOD) ||
-				(state == ReleaseConstants.STATE_IN_PROGRESS)) {
+				((state == ReleaseConstants.STATE_IN_PROGRESS) &&
+				 !StartupHelperUtil.isUpgrading())) {
 
 				return;
 			}
