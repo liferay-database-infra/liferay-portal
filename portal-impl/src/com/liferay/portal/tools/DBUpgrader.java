@@ -490,6 +490,13 @@ public class DBUpgrader {
 						connection) &&
 					(buildNumber == ReleaseInfo.getParentBuildNumber())) {
 
+					if (PortalUpgradeProcess.getCurrentState(connection) ==
+							ReleaseConstants.STATE_IN_PROGRESS) {
+
+						PortalUpgradeProcess.updateState(
+							connection, ReleaseConstants.STATE_GOOD);
+					}
+
 					_checkClassNamesAndResourceActions();
 
 					return;

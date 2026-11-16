@@ -562,6 +562,28 @@ public class DBUpgraderTest {
 			PortalUpgradeProcess.getCurrentState(_connection));
 	}
 
+	@Test
+	public void testUpgradeWithInterruptionAfterLastUpgradeProcess()
+		throws Exception {
+
+		_updatePortalRelease(
+			ReleaseInfo.getParentBuildNumber(),
+			ReleaseConstants.STATE_IN_PROGRESS);
+
+		try {
+			_startUpgrade();
+
+			DBUpgrader.upgradePortal();
+		}
+		finally {
+			_stopUpgrade();
+		}
+
+		Assert.assertEquals(
+			ReleaseConstants.STATE_GOOD,
+			PortalUpgradeProcess.getCurrentState(_connection));
+	}
+
 	private Bundle _getBundle() throws Exception {
 		Bundle currentBundle = FrameworkUtil.getBundle(DBUpgraderTest.class);
 
