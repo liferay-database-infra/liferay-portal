@@ -255,7 +255,11 @@ export class GlobalMenuPage {
 				exact: true,
 				name: menuItem as string,
 			})
-			.and(this.page.locator('.nav-link[href]'))
+			.and(
+				this.page.locator(
+					'.nav-link[href]:not(a[href] ~ [role="menu"] *)'
+				)
+			)
 			.click();
 	}
 
