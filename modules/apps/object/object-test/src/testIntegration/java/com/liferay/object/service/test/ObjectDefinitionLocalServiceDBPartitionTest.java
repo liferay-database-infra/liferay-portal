@@ -12,14 +12,17 @@ import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.PortletLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -38,6 +41,7 @@ import jakarta.portlet.Portlet;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 
 import org.junit.Assert;
 import org.junit.Assume;
@@ -48,6 +52,7 @@ import org.junit.runner.RunWith;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
 
@@ -92,11 +97,49 @@ public class ObjectDefinitionLocalServiceDBPartitionTest {
 
 			Assert.assertNull(
 				ResourceActionsUtil.getPortletRootModelResource(portletId));
+
+			_assertPortletRemoved(company, portletId);
+			_assertServiceReferencesCount(0, objectDefinition);
 		}
 		finally {
 			if (!deleted) {
 				_companyLocalService.deleteCompany(company);
 			}
+		}
+	}
+
+	@Test
+	public void testDeployObjectDefinitions() throws Exception {
+		Company company = CompanyTestUtil.addCompany();
+
+		try {
+			ObjectDefinition objectDefinition = _publishObjectDefinition(
+				company);
+
+			long serviceId = _getServiceId(objectDefinition);
+
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+						company.getCompanyId())) {
+
+				_objectDefinitionLocalService.deployObjectDefinitions(
+					company.getCompanyId());
+
+				Assert.assertEquals(serviceId, _getServiceId(objectDefinition));
+
+				_objectDefinitionLocalService.undeployObjectDefinition(
+					objectDefinition);
+
+				_assertServiceReferencesCount(0, objectDefinition);
+
+				_objectDefinitionLocalService.deployObjectDefinitions(
+					company.getCompanyId());
+			}
+
+			_assertServiceReferencesCount(1, objectDefinition);
+		}
+		finally {
+			_companyLocalService.deleteCompany(company);
 		}
 	}
 
@@ -240,6 +283,14 @@ public class ObjectDefinitionLocalServiceDBPartitionTest {
 		}
 	}
 
+	private void _assertPortletRemoved(Company company, String portletId) {
+		try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
+				company.getCompanyId())) {
+
+			Assert.assertNull(_portletLocalService.getPortletById(portletId));
+		}
+	}
+
 	private void _assertResourceActionsCount(
 		long companyId, ObjectDefinition objectDefinition,
 		int resourceActionsCount) {
@@ -266,12 +317,43 @@ public class ObjectDefinitionLocalServiceDBPartitionTest {
 		Collection<ServiceReference<Portlet>> serviceReferences =
 			bundleContext.getServiceReferences(
 				Portlet.class,
-				"(jakarta.portlet.name=" + objectDefinition.getPortletId() +
-					")");
+				StringBundler.concat(
+					"(jakarta.portlet.name=",
+					SystemBundleUtil.escapeFilterValue(
+						objectDefinition.getPortletId()),
+					")"));
 
 		Assert.assertEquals(
 			serviceReferences.toString(), expectedCount,
 			serviceReferences.size());
+	}
+
+	private long _getServiceId(ObjectDefinition objectDefinition)
+		throws Exception {
+
+		Bundle bundle = FrameworkUtil.getBundle(
+			ObjectDefinitionLocalServiceDBPartitionTest.class);
+
+		BundleContext bundleContext = bundle.getBundleContext();
+
+		Collection<ServiceReference<Portlet>> serviceReferences =
+			bundleContext.getServiceReferences(
+				Portlet.class,
+				StringBundler.concat(
+					"(jakarta.portlet.name=",
+					SystemBundleUtil.escapeFilterValue(
+						objectDefinition.getPortletId()),
+					")"));
+
+		Assert.assertEquals(
+			serviceReferences.toString(), 1, serviceReferences.size());
+
+		Iterator<ServiceReference<Portlet>> iterator =
+			serviceReferences.iterator();
+
+		ServiceReference<Portlet> serviceReference = iterator.next();
+
+		return (long)serviceReference.getProperty(Constants.SERVICE_ID);
 	}
 
 	private ObjectDefinition _publishObjectDefinition(Company company)
@@ -303,6 +385,9 @@ public class ObjectDefinitionLocalServiceDBPartitionTest {
 
 	@Inject
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;
+
+	@Inject
+	private PortletLocalService _portletLocalService;
 
 	@Inject
 	private ResourceActionLocalService _resourceActionLocalService;
