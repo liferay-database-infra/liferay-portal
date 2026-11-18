@@ -44,9 +44,11 @@ import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import java.io.Serializable;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -88,6 +90,33 @@ public class ObjectDefinitionResourcePermissionUtil {
 
 			_objectDefinitionResourceActionDocumentsMap.put(
 				_getKey(objectDefinition), document);
+		}
+	}
+
+	public static void removeResourceActions(
+		long companyId, ResourceActions resourceActions) {
+
+		Set<Map.Entry<Serializable, Document>> entries =
+			_objectDefinitionResourceActionDocumentsMap.entrySet();
+
+		Iterator<Map.Entry<Serializable, Document>> iterator =
+			entries.iterator();
+
+		while (iterator.hasNext()) {
+			Map.Entry<Serializable, Document> entry = iterator.next();
+
+			String key = String.valueOf(entry.getKey());
+
+			if (!key.endsWith(StringPool.AT + companyId)) {
+				continue;
+			}
+
+			iterator.remove();
+
+			Document document = entry.getValue();
+
+			resourceActions.removeModelResources(document);
+			resourceActions.removePortletResources(document);
 		}
 	}
 
