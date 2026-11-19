@@ -231,7 +231,7 @@ public class SchemaManifestBuilderTest {
 		catch (IllegalArgumentException illegalArgumentException) {
 			Assert.assertEquals(
 				StringBundler.concat(
-					"Unable to parse schema version _SCHEMA_VERSION_1_0_0 at ",
+					"Unable to parse schema version at ",
 					"com.liferay.test.internal.upgrade.registry.",
 					"NonliteralSchemaVersionUpgradeStepRegistrator:8"),
 				illegalArgumentException.getMessage());

@@ -14,11 +14,18 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.tools.ArgumentsUtil;
 import com.liferay.portal.tools.ToolsUtil;
+import com.liferay.portal.tools.java.parser.util.DetailASTUtil;
+
+import com.puppycrawl.tools.checkstyle.JavaParser;
+import com.puppycrawl.tools.checkstyle.api.CheckstyleException;
+import com.puppycrawl.tools.checkstyle.api.DetailAST;
+import com.puppycrawl.tools.checkstyle.api.FullIdent;
+import com.puppycrawl.tools.checkstyle.api.TokenTypes;
+import com.puppycrawl.tools.checkstyle.utils.CheckUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +46,6 @@ import java.time.temporal.ChronoUnit;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -85,7 +91,7 @@ public class SchemaManifestBuilder {
 		_manifestFile = new File(_baseDir, manifestFileName);
 	}
 
-	public void build() throws IOException {
+	public void build() throws CheckstyleException, IOException {
 		String module = _module;
 
 		if (Validator.isNull(module)) {
@@ -123,7 +129,9 @@ public class SchemaManifestBuilder {
 		return bundleSymbolicName;
 	}
 
-	protected JSONArray getHistoryJSONArray(File baseDir) throws IOException {
+	protected JSONArray getHistoryJSONArray(File baseDir)
+		throws CheckstyleException, IOException {
+
 		JSONArray historyJSONArray = new JSONArrayImpl();
 
 		for (File upgradeStepRegistratorFile :
@@ -233,23 +241,19 @@ public class SchemaManifestBuilder {
 	}
 
 	protected boolean isInitializationRegistered(File baseDir)
-		throws IOException {
+		throws CheckstyleException, IOException {
 
 		for (File upgradeStepRegistratorFile :
 				_getUpgradeStepRegistratorFiles(baseDir)) {
 
-			String content = _read(upgradeStepRegistratorFile);
+			DetailAST upgradeStepRegistratorDetailAST = JavaParser.parseFile(
+				upgradeStepRegistratorFile,
+				JavaParser.Options.WITHOUT_COMMENTS);
 
-			Matcher matcher = _implementsUpgradeStepRegistratorPattern.matcher(
-				content);
+			List<DetailAST> methodCallDetailASTs = _getMethodCallDetailASTs(
+				"registerInitialization", upgradeStepRegistratorDetailAST);
 
-			if (!matcher.find()) {
-				continue;
-			}
-
-			matcher = _registerInitializationPattern.matcher(content);
-
-			if (matcher.find()) {
+			if (!methodCallDetailASTs.isEmpty()) {
 				return true;
 			}
 		}
@@ -296,369 +300,276 @@ public class SchemaManifestBuilder {
 
 	private void _addHistory(
 			JSONArray historyJSONArray, File upgradeStepRegistratorFile)
-		throws IOException {
+		throws CheckstyleException, IOException {
 
-		String content = _read(upgradeStepRegistratorFile);
-
-		Matcher matcher = _implementsUpgradeStepRegistratorPattern.matcher(
-			content);
-
-		if (!matcher.find()) {
-			return;
-		}
-
-		String fileName = upgradeStepRegistratorFile.getName();
+		DetailAST upgradeStepRegistratorDetailAST = JavaParser.parseFile(
+			upgradeStepRegistratorFile, JavaParser.Options.WITHOUT_COMMENTS);
 
 		String packageName = ToolsUtil.getPackagePath(
 			upgradeStepRegistratorFile);
 
+		String className = StringUtil.removeLast(
+			upgradeStepRegistratorFile.getName(), ".java");
+
 		String upgradeStepRegistratorClassName =
-			packageName + StringPool.PERIOD +
-				StringUtil.removeLast(fileName, ".java");
+			packageName + StringPool.PERIOD + className;
 
-		List<Integer> anonymousClassPositions = _getAnonymousClassPositions(
-			content);
-		Map<String, String> importedClassNames = _getImportedClassNames(
-			content);
+		for (DetailAST methodCallDetailAST :
+				_getMethodCallDetailASTs(
+					"register", upgradeStepRegistratorDetailAST)) {
 
-		int registerPosition = -1;
+			List<DetailAST> parameterDetailASTs = _getParameterDetailASTs(
+				methodCallDetailAST);
 
-		while (true) {
-			registerPosition = content.indexOf(
-				".register(", registerPosition + 1);
-
-			if (registerPosition == -1) {
-				break;
-			}
-
-			List<String> parameters = _getParameters(
-				content.substring(registerPosition));
-
-			if (parameters.size() < 3) {
+			if (parameterDetailASTs.size() < 3) {
 				continue;
 			}
 
-			for (String schemaVersion : ListUtil.subList(parameters, 0, 2)) {
-				if (!StringUtil.startsWith(schemaVersion, CharPool.QUOTE) ||
-					!StringUtil.endsWith(schemaVersion, CharPool.QUOTE)) {
+			for (DetailAST schemaVersionDetailAST :
+					parameterDetailASTs.subList(0, 2)) {
 
-					int newLinesCount = StringUtil.count(
-						content, 0, registerPosition, CharPool.NEW_LINE);
+				if (schemaVersionDetailAST.getType() !=
+						TokenTypes.STRING_LITERAL) {
 
 					throw new IllegalArgumentException(
 						StringBundler.concat(
-							"Unable to parse schema version ", schemaVersion,
-							" at ", upgradeStepRegistratorClassName, ":",
-							newLinesCount + 1));
+							"Unable to parse schema version at ",
+							upgradeStepRegistratorClassName, ":",
+							methodCallDetailAST.getLineNo()));
 				}
 			}
 
 			JSONArray changesJSONArray = new JSONArrayImpl();
 
-			int parameterPosition = content.indexOf(
-				parameters.get(1), registerPosition);
+			for (DetailAST upgradeStepDetailAST :
+					parameterDetailASTs.subList(
+						2, parameterDetailASTs.size())) {
 
-			for (int i = 2; i < parameters.size(); i++) {
-				String parameter = parameters.get(i);
-
-				parameterPosition = content.indexOf(
-					parameter, parameterPosition);
-
-				int newLinesCount = StringUtil.count(
-					content, 0, parameterPosition, CharPool.NEW_LINE);
+				DetailAST firstDetailAST = CheckUtil.getFirstNode(
+					upgradeStepDetailAST);
 
 				changesJSONArray.put(
 					new JSONObjectImpl(
 					).put(
 						"className",
 						_getUpgradeStepClassName(
-							anonymousClassPositions, content,
-							importedClassNames, packageName, parameter,
-							parameterPosition, upgradeStepRegistratorClassName)
+							packageName, upgradeStepDetailAST,
+							upgradeStepRegistratorClassName,
+							upgradeStepRegistratorDetailAST)
 					).put(
 						"op", "customChange"
 					).put(
-						"registratorLine", newLinesCount + 1
+						"registratorLine", firstDetailAST.getLineNo()
 					));
-
-				parameterPosition += parameter.length();
 			}
+
+			DetailAST fromSchemaVersionDetailAST = parameterDetailASTs.get(0);
+			DetailAST toSchemaVersionDetailAST = parameterDetailASTs.get(1);
 
 			historyJSONArray.put(
 				new JSONObjectImpl(
 				).put(
 					"changes", changesJSONArray
 				).put(
-					"fromSchemaVersion", StringUtil.unquote(parameters.get(0))
+					"fromSchemaVersion",
+					StringUtil.unquote(fromSchemaVersionDetailAST.getText())
 				).put(
 					"registratorClassName", upgradeStepRegistratorClassName
 				).put(
-					"toSchemaVersion", StringUtil.unquote(parameters.get(1))
+					"toSchemaVersion",
+					StringUtil.unquote(toSchemaVersionDetailAST.getText())
 				));
 		}
 	}
 
-	private List<Integer> _getAnonymousClassPositions(String content) {
-		List<Integer> anonymousClassPositions = new ArrayList<>();
+	private List<DetailAST> _getAnonymousClassDetailASTs(
+		DetailAST upgradeStepRegistratorDetailAST) {
 
-		Matcher matcher = _constructorPattern.matcher(content);
+		List<DetailAST> anonymousClassDetailASTs = new ArrayList<>();
 
-		int closeCurlyBraceIndex = -1;
+		for (DetailAST literalNewDetailAST :
+				DetailASTUtil.getAllChildTokens(
+					upgradeStepRegistratorDetailAST, true,
+					TokenTypes.LITERAL_NEW)) {
 
-		while (matcher.find()) {
-			int constructorPosition = matcher.start();
+			DetailAST objBlockDetailAST = literalNewDetailAST.findFirstToken(
+				TokenTypes.OBJBLOCK);
 
-			if ((constructorPosition < closeCurlyBraceIndex) ||
-				ToolsUtil.isInsideQuotes(content, constructorPosition)) {
+			if ((objBlockDetailAST == null) ||
+				_isInsideAnonymousClass(literalNewDetailAST)) {
 
 				continue;
 			}
 
-			int openParenthesisIndex = matcher.end() - 1;
-
-			String parametersString = _getParametersString(
-				content.substring(openParenthesisIndex));
-
-			int trailingContentIndex =
-				openParenthesisIndex + parametersString.length() + 2;
-
-			String trailingContent = StringUtil.trim(
-				content.substring(trailingContentIndex));
-
-			if (!trailingContent.startsWith(StringPool.OPEN_CURLY_BRACE)) {
-				continue;
-			}
-
-			anonymousClassPositions.add(constructorPosition);
-
-			int openCurlyBraceIndex = content.indexOf(
-				CharPool.OPEN_CURLY_BRACE, trailingContentIndex);
-
-			closeCurlyBraceIndex = openCurlyBraceIndex;
-
-			while (true) {
-				closeCurlyBraceIndex = content.indexOf(
-					CharPool.CLOSE_CURLY_BRACE, closeCurlyBraceIndex + 1);
-
-				String anonymousClassBody = content.substring(
-					openCurlyBraceIndex, closeCurlyBraceIndex + 1);
-
-				if (ToolsUtil.getLevel(anonymousClassBody, "{", "}") == 0) {
-					break;
-				}
-			}
+			anonymousClassDetailASTs.add(literalNewDetailAST);
 		}
 
-		return anonymousClassPositions;
+		return anonymousClassDetailASTs;
+	}
+
+	private DetailAST _getExpressionDetailAST(DetailAST detailAST) {
+		if (detailAST.getType() == TokenTypes.EXPR) {
+			return detailAST.getFirstChild();
+		}
+
+		return detailAST;
 	}
 
 	private String _getFullyQualifiedClassName(
-		String className, Map<String, String> importedClassNames,
-		String packageName) {
-
-		className = StringUtil.removeChars(
-			className, CharPool.NEW_LINE, CharPool.SPACE, CharPool.TAB);
+		String className, String packageName,
+		DetailAST upgradeStepRegistratorDetailAST) {
 
 		if (className.contains(StringPool.PERIOD)) {
 			return className;
 		}
 
-		String fullyQualifiedClassName = importedClassNames.get(className);
+		for (DetailAST importDetailAST :
+				DetailASTUtil.getAllChildTokens(
+					upgradeStepRegistratorDetailAST, false,
+					TokenTypes.IMPORT)) {
 
-		if (fullyQualifiedClassName != null) {
-			return fullyQualifiedClassName;
+			FullIdent fullIdent = FullIdent.createFullIdentBelow(
+				importDetailAST);
+
+			String importedClassName = fullIdent.getText();
+
+			if (importedClassName.endsWith(StringPool.PERIOD + className)) {
+				return importedClassName;
+			}
 		}
 
 		return packageName + StringPool.PERIOD + className;
 	}
 
-	private Map<String, String> _getImportedClassNames(String content) {
-		Map<String, String> importedClassNames = new HashMap<>();
+	private List<DetailAST> _getMethodCallDetailASTs(
+		String methodName, DetailAST upgradeStepRegistratorDetailAST) {
 
-		Matcher matcher = _importPattern.matcher(content);
+		List<DetailAST> methodCallDetailASTs = new ArrayList<>();
 
-		while (matcher.find()) {
-			importedClassNames.put(matcher.group(2), matcher.group(1));
-		}
+		for (DetailAST methodCallDetailAST :
+				DetailASTUtil.getAllChildTokens(
+					upgradeStepRegistratorDetailAST, true,
+					TokenTypes.METHOD_CALL)) {
 
-		return importedClassNames;
-	}
+			FullIdent fullIdent = FullIdent.createFullIdentBelow(
+				methodCallDetailAST);
 
-	private List<String> _getParameters(String methodCall) {
-		List<String> parameters = new ArrayList<>();
+			String methodCallName = fullIdent.getText();
 
-		String parametersString = StringUtil.trim(
-			_getParametersString(methodCall));
-
-		if (parametersString.equals(StringPool.BLANK)) {
-			return parameters;
-		}
-
-		int index = -1;
-
-		while (true) {
-			index = parametersString.indexOf(StringPool.COMMA, index + 1);
-
-			if (index == -1) {
-				parameters.add(StringUtil.trim(parametersString));
-
-				return parameters;
-			}
-
-			if (ToolsUtil.isInsideQuotes(parametersString, index)) {
+			if (!methodCallName.endsWith(StringPool.PERIOD + methodName)) {
 				continue;
 			}
 
-			String parameter = StringUtil.replace(
-				parametersString.substring(0, index), "->",
-				_LAMBDA_SYMBOL_PLACEHOLDER);
+			methodCallDetailASTs.add(methodCallDetailAST);
+		}
 
-			if ((ToolsUtil.getLevel(parameter, "(", ")") != 0) ||
-				(ToolsUtil.getLevel(parameter, "<", ">") != 0) ||
-				(ToolsUtil.getLevel(parameter, "{", "}") != 0)) {
+		return methodCallDetailASTs;
+	}
 
+	private List<DetailAST> _getParameterDetailASTs(
+		DetailAST methodCallDetailAST) {
+
+		List<DetailAST> parameterDetailASTs = new ArrayList<>();
+
+		DetailAST elistDetailAST = methodCallDetailAST.findFirstToken(
+			TokenTypes.ELIST);
+
+		for (DetailAST detailAST = elistDetailAST.getFirstChild();
+			 detailAST != null; detailAST = detailAST.getNextSibling()) {
+
+			if (detailAST.getType() == TokenTypes.COMMA) {
 				continue;
 			}
 
-			parameter = StringUtil.replace(
-				parameter, _LAMBDA_SYMBOL_PLACEHOLDER, "->");
-
-			parameters.add(StringUtil.trim(parameter));
-
-			parametersString = parametersString.substring(index + 1);
-
-			index = -1;
-		}
-	}
-
-	private String _getParametersString(String methodCall) {
-		int index = -1;
-		String parametersString = null;
-
-		while (true) {
-			index = methodCall.indexOf(StringPool.CLOSE_PARENTHESIS, index + 1);
-
-			parametersString = methodCall.substring(0, index + 1);
-
-			if ((ToolsUtil.getLevel(parametersString, "(", ")") == 0) &&
-				(ToolsUtil.getLevel(parametersString, "{", "}") == 0)) {
-
-				break;
-			}
+			parameterDetailASTs.add(_getExpressionDetailAST(detailAST));
 		}
 
-		index = parametersString.indexOf(StringPool.OPEN_PARENTHESIS);
-
-		return parametersString.substring(
-			index + 1, parametersString.length() - 1);
+		return parameterDetailASTs;
 	}
 
 	private String _getUpgradeStepClassName(
-		List<Integer> anonymousClassPositions, String content,
-		Map<String, String> importedClassNames, String packageName,
-		String upgradeStepExpression, int upgradeStepExpressionPosition,
-		String upgradeStepRegistratorClassName) {
+		String packageName, DetailAST upgradeStepDetailAST,
+		String upgradeStepRegistratorClassName,
+		DetailAST upgradeStepRegistratorDetailAST) {
 
-		Matcher matcher = _lambdaPattern.matcher(upgradeStepExpression);
-
-		if (matcher.find()) {
-			return upgradeStepRegistratorClassName;
+		if (upgradeStepDetailAST.getType() == TokenTypes.TYPECAST) {
+			upgradeStepDetailAST = upgradeStepDetailAST.getLastChild();
 		}
 
-		matcher = _castPattern.matcher(upgradeStepExpression);
+		if (upgradeStepDetailAST.getType() == TokenTypes.LITERAL_NEW) {
+			List<DetailAST> anonymousClassDetailASTs =
+				_getAnonymousClassDetailASTs(upgradeStepRegistratorDetailAST);
 
-		if (matcher.find()) {
-			upgradeStepExpression = upgradeStepExpression.substring(
-				matcher.end());
-			upgradeStepExpressionPosition += matcher.end();
-		}
+			int index = anonymousClassDetailASTs.indexOf(upgradeStepDetailAST);
 
-		int openParenthesisIndex = upgradeStepExpression.indexOf(
-			CharPool.OPEN_PARENTHESIS);
-
-		if (upgradeStepExpression.startsWith("new ")) {
-			String parametersString = _getParametersString(
-				upgradeStepExpression);
-
-			String trailingContent = StringUtil.trim(
-				upgradeStepExpression.substring(
-					openParenthesisIndex + parametersString.length() + 2));
-
-			if (trailingContent.startsWith(StringPool.OPEN_CURLY_BRACE)) {
-				int index = anonymousClassPositions.indexOf(
-					upgradeStepExpressionPosition);
-
-				if (index == -1) {
-					throw new IllegalStateException(
-						"Unable to find the anonymous class at position " +
-							upgradeStepExpressionPosition);
-				}
-
+			if (index != -1) {
 				return upgradeStepRegistratorClassName + StringPool.DOLLAR +
 					(index + 1);
 			}
 
-			String className = upgradeStepExpression.substring(
-				4, openParenthesisIndex);
-
-			int index = className.indexOf(CharPool.LESS_THAN);
-
-			if (index != -1) {
-				className = className.substring(0, index);
-			}
+			FullIdent fullIdent = FullIdent.createFullIdentBelow(
+				upgradeStepDetailAST);
 
 			return _getFullyQualifiedClassName(
-				className, importedClassNames, packageName);
+				fullIdent.getText(), packageName,
+				upgradeStepRegistratorDetailAST);
 		}
 
-		if (openParenthesisIndex != -1) {
-			String qualifiedMethodName = upgradeStepExpression.substring(
-				0, openParenthesisIndex);
+		DetailAST firstChildDetailAST = upgradeStepDetailAST.getFirstChild();
 
-			int index = qualifiedMethodName.lastIndexOf(CharPool.PERIOD);
+		if ((upgradeStepDetailAST.getType() == TokenTypes.METHOD_CALL) &&
+			(firstChildDetailAST.getType() == TokenTypes.DOT)) {
 
-			if (index == -1) {
-				return upgradeStepRegistratorClassName;
-			}
+			FullIdent fullIdent = FullIdent.createFullIdentBelow(
+				firstChildDetailAST);
 
-			String receiverName = StringUtil.trim(
-				qualifiedMethodName.substring(0, index));
+			String receiverName = fullIdent.getText();
 
-			if (_isVariableName(receiverName)) {
-				String variableTypeName = _getVariableTypeName(
-					receiverName, content);
-
-				if (variableTypeName == null) {
-					return upgradeStepRegistratorClassName;
-				}
-
+			if (!_isVariableName(receiverName)) {
 				return _getFullyQualifiedClassName(
-					variableTypeName, importedClassNames, packageName);
+					receiverName, packageName, upgradeStepRegistratorDetailAST);
 			}
 
-			return _getFullyQualifiedClassName(
-				receiverName, importedClassNames, packageName);
-		}
+			DetailAST variableDefDetailAST = _getVariableDefDetailAST(
+				receiverName, upgradeStepRegistratorDetailAST);
 
-		int initializerPosition = _getVariableInitializerPosition(
-			upgradeStepExpression, content);
-
-		if (initializerPosition == -1) {
-			String variableTypeName = _getVariableTypeName(
-				upgradeStepExpression, content);
-
-			if (variableTypeName == null) {
+			if (variableDefDetailAST == null) {
 				return upgradeStepRegistratorClassName;
 			}
 
+			DetailAST typeDetailAST = variableDefDetailAST.findFirstToken(
+				TokenTypes.TYPE);
+
+			FullIdent typeFullIdent = FullIdent.createFullIdentBelow(
+				typeDetailAST);
+
 			return _getFullyQualifiedClassName(
-				variableTypeName, importedClassNames, packageName);
+				typeFullIdent.getText(), packageName,
+				upgradeStepRegistratorDetailAST);
 		}
 
-		return _getUpgradeStepClassName(
-			anonymousClassPositions, content, importedClassNames, packageName,
-			_getVariableInitializer(initializerPosition, content),
-			initializerPosition, upgradeStepRegistratorClassName);
+		if (upgradeStepDetailAST.getType() == TokenTypes.IDENT) {
+			DetailAST variableDefDetailAST = _getVariableDefDetailAST(
+				upgradeStepDetailAST.getText(),
+				upgradeStepRegistratorDetailAST);
+
+			if (variableDefDetailAST == null) {
+				return upgradeStepRegistratorClassName;
+			}
+
+			DetailAST assignDetailAST = variableDefDetailAST.findFirstToken(
+				TokenTypes.ASSIGN);
+
+			if (assignDetailAST != null) {
+				return _getUpgradeStepClassName(
+					packageName,
+					_getExpressionDetailAST(assignDetailAST.getFirstChild()),
+					upgradeStepRegistratorClassName,
+					upgradeStepRegistratorDetailAST);
+			}
+		}
+
+		return upgradeStepRegistratorClassName;
 	}
 
 	private List<File> _getUpgradeStepRegistratorFiles(File baseDir)
@@ -699,46 +610,38 @@ public class SchemaManifestBuilder {
 		return upgradeStepRegistratorFiles;
 	}
 
-	private String _getVariableInitializer(int position, String content) {
-		int index = position;
+	private DetailAST _getVariableDefDetailAST(
+		String name, DetailAST upgradeStepRegistratorDetailAST) {
 
-		while (true) {
-			index = content.indexOf(CharPool.SEMICOLON, index + 1);
+		for (DetailAST variableDefDetailAST :
+				DetailASTUtil.getAllChildTokens(
+					upgradeStepRegistratorDetailAST, true,
+					TokenTypes.VARIABLE_DEF)) {
 
-			String initializer = content.substring(position, index);
+			DetailAST identDetailAST = variableDefDetailAST.findFirstToken(
+				TokenTypes.IDENT);
 
-			if ((ToolsUtil.getLevel(initializer, "(", ")") == 0) &&
-				(ToolsUtil.getLevel(initializer, "{", "}") == 0)) {
-
-				return StringUtil.trim(initializer);
+			if (name.equals(identDetailAST.getText())) {
+				return variableDefDetailAST;
 			}
 		}
+
+		return null;
 	}
 
-	private int _getVariableInitializerPosition(String name, String content) {
-		Pattern pattern = Pattern.compile(
-			"\\b" + Pattern.quote(name) + "\\s*=(?!=)\\s*");
+	private boolean _isInsideAnonymousClass(DetailAST detailAST) {
+		for (DetailAST parentDetailAST = detailAST.getParent();
+			 parentDetailAST != null;
+			 parentDetailAST = parentDetailAST.getParent()) {
 
-		Matcher matcher = pattern.matcher(content);
+			if ((parentDetailAST.getType() == TokenTypes.LITERAL_NEW) &&
+				(parentDetailAST.findFirstToken(TokenTypes.OBJBLOCK) != null)) {
 
-		if (!matcher.find()) {
-			return -1;
+				return true;
+			}
 		}
 
-		return matcher.end();
-	}
-
-	private String _getVariableTypeName(String name, String content) {
-		Pattern pattern = Pattern.compile(
-			"([\\w.]+)(?:<[^;=]*>)?\\s+" + Pattern.quote(name) + "\\s*[;=]");
-
-		Matcher matcher = pattern.matcher(content);
-
-		if (!matcher.find()) {
-			return null;
-		}
-
-		return matcher.group(1);
+		return false;
 	}
 
 	private boolean _isVariableName(String name) {
@@ -753,67 +656,6 @@ public class SchemaManifestBuilder {
 		return false;
 	}
 
-	private String _read(File file) throws IOException {
-		String content = new String(
-			Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-
-		content = StringUtil.replace(
-			content, StringPool.RETURN_NEW_LINE, StringPool.NEW_LINE);
-
-		return _removeComments(content);
-	}
-
-	private String _removeComments(String content) {
-		int index = 0;
-
-		while (true) {
-			Matcher matcher = _commentPattern.matcher(content);
-
-			if (!matcher.find(index)) {
-				return content;
-			}
-
-			int start = matcher.start();
-
-			if (ToolsUtil.isInsideQuotes(content, start)) {
-				index = start + 1;
-
-				continue;
-			}
-
-			char[] chars = content.toCharArray();
-
-			for (int i = start; i < matcher.end(); i++) {
-				if (chars[i] == CharPool.NEW_LINE) {
-					continue;
-				}
-
-				chars[i] = CharPool.SPACE;
-			}
-
-			content = new String(chars);
-
-			index = matcher.end();
-		}
-	}
-
-	private static final String _LAMBDA_SYMBOL_PLACEHOLDER =
-		"_LAMBDA_SYMBOL_PLACEHOLDER_";
-
-	private static final Pattern _castPattern = Pattern.compile(
-		"^\\(\\s*[\\w.]+\\s*\\)\\s*");
-	private static final Pattern _commentPattern = Pattern.compile(
-		"//[^\\n]*|/\\*[\\s\\S]*?\\*/");
-	private static final Pattern _constructorPattern = Pattern.compile(
-		"\\bnew\\s+[\\w.\\s]+(?:<[^;{]*?>)?\\s*\\(");
-	private static final Pattern _implementsUpgradeStepRegistratorPattern =
-		Pattern.compile("\\bimplements\\s[^{]*\\bUpgradeStepRegistrator\\b");
-	private static final Pattern _importPattern = Pattern.compile(
-		"^import ([\\w.]+\\.(\\w+));", Pattern.MULTILINE);
-	private static final Pattern _lambdaPattern = Pattern.compile(
-		"^(\\([\\w\\s,]*\\)|\\w+)\\s*->");
-	private static final Pattern _registerInitializationPattern =
-		Pattern.compile("\\.registerInitialization\\(\\s*\\)");
 	private static final Pattern _timestampPattern = Pattern.compile(
 		"^\t\"timestamp\": \"([^\"]*)\"", Pattern.MULTILINE);
 
