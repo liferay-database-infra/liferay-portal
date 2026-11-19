@@ -4,7 +4,7 @@
 			{
 				"className": "com.liferay.portal.kernel.upgrade.DummyUpgradeStep",
 				"op": "customChange",
-				"registratorLine": 21
+				"registratorLine": 19
 			}
 		],
 		"fromSchemaVersion": "0.0.1",
@@ -16,39 +16,51 @@
 			{
 				"className": "com.liferay.portal.kernel.upgrade.UpgradeProcessFactory",
 				"op": "customChange",
+				"registratorLine": 23
+			},
+			{
+				"className": "com.liferay.test.internal.upgrade.v1_1_0.TestEntryUpgradeProcess",
+				"op": "customChange",
 				"registratorLine": 25
-			},
-			{
-				"className": "com.liferay.test.internal.upgrade.v1_0_0.util.TestTable",
-				"op": "customChange",
-				"registratorLine": 27
-			},
-			{
-				"className": "com.liferay.test.internal.upgrade.v1_0_0.TestUpgradeProcess",
-				"op": "customChange",
-				"registratorLine": 28
 			}
 		],
 		"fromSchemaVersion": "1.0.0",
 		"registratorClassName": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator",
-		"toSchemaVersion": "1.0.0.step-1"
+		"toSchemaVersion": "1.1.0"
+	},
+	{
+		"changes": [
+			{
+				"className": "com.liferay.portal.configuration.upgrade.ConfigurationUpgradeStepFactory",
+				"op": "customChange",
+				"registratorLine": 29
+			},
+			{
+				"className": "com.liferay.test.internal.upgrade.v1_1_0.TestEntryUpgradeProcess",
+				"op": "customChange",
+				"registratorLine": 32
+			},
+			{
+				"className": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator",
+				"op": "customChange",
+				"registratorLine": 33
+			}
+		],
+		"fromSchemaVersion": "1.1.0",
+		"registratorClassName": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator",
+		"toSchemaVersion": "1.2.0"
 	},
 	{
 		"changes": [
 			{
 				"className": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator$1",
 				"op": "customChange",
-				"registratorLine": 33
-			},
-			{
-				"className": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator",
-				"op": "customChange",
-				"registratorLine": 43
+				"registratorLine": 46
 			}
 		],
-		"fromSchemaVersion": "1.0.0.step-1",
+		"fromSchemaVersion": "1.2.0",
 		"registratorClassName": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator",
-		"toSchemaVersion": "1.9.0"
+		"toSchemaVersion": "1.3.0"
 	},
 	{
 		"changes": [
@@ -56,31 +68,9 @@
 				"className": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator$2",
 				"op": "customChange",
 				"registratorLine": 50
-			},
-			{
-				"className": "com.liferay.portal.kernel.upgrade.DummyUpgradeStep",
-				"op": "customChange",
-				"registratorLine": 51
-			},
-			{
-				"className": "com.liferay.portal.configuration.upgrade.ConfigurationUpgradeStepFactory",
-				"op": "customChange",
-				"registratorLine": 52
 			}
 		],
-		"fromSchemaVersion": "1.9.0",
-		"registratorClassName": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator",
-		"toSchemaVersion": "1.10.0"
-	},
-	{
-		"changes": [
-			{
-				"className": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator",
-				"op": "customChange",
-				"registratorLine": 56
-			}
-		],
-		"fromSchemaVersion": "1.10.0",
+		"fromSchemaVersion": "1.3.0",
 		"registratorClassName": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator",
 		"toSchemaVersion": "2.0.0"
 	}

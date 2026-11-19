@@ -1,5 +1,11 @@
 package com.liferay.test.internal.upgrade.registry;
 
+import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
+import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
+
+import org.osgi.service.component.annotations.Component;
+
+@Component(service = UpgradeStepRegistrator.class)
 public class InitializationUpgradeStepRegistrator
 	implements UpgradeStepRegistrator {
 
@@ -7,8 +13,7 @@ public class InitializationUpgradeStepRegistrator
 	public void register(Registry registry) {
 		registry.registerInitialization();
 
-		registry.registerReleaseCreationUpgradeSteps(
-			new DummyUpgradeStep());
+		registry.registerReleaseCreationUpgradeSteps(new DummyUpgradeStep());
 	}
 
 }

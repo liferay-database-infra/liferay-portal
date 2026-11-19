@@ -1,5 +1,11 @@
 package com.liferay.test.internal.upgrade.registry;
 
+import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
+import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
+
+import org.osgi.service.component.annotations.Component;
+
+@Component(service = UpgradeStepRegistrator.class)
 public class NonliteralSchemaVersionUpgradeStepRegistrator
 	implements UpgradeStepRegistrator {
 

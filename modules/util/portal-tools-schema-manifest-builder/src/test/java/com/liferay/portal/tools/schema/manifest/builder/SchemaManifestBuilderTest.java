@@ -233,7 +233,7 @@ public class SchemaManifestBuilderTest {
 				StringBundler.concat(
 					"Unable to parse schema version at ",
 					"com.liferay.test.internal.upgrade.registry.",
-					"NonliteralSchemaVersionUpgradeStepRegistrator:8"),
+					"NonliteralSchemaVersionUpgradeStepRegistrator:14"),
 				illegalArgumentException.getMessage());
 		}
 	}
