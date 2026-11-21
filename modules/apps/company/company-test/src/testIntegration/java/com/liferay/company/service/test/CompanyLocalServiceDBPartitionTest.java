@@ -25,11 +25,11 @@ import com.liferay.portal.dao.orm.common.SQLTransformer;
 import com.liferay.portal.db.partition.db.DBPartitionDB;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
-import com.liferay.portal.instance.lifecycle.PortalInstanceLifecycleListener;
 import com.liferay.portal.kernel.audit.AuditMessage;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.db.partition.DBPartition;
+import com.liferay.portal.kernel.db.partition.DBPartitionCopyContributor;
 import com.liferay.portal.kernel.exception.CompanyVirtualHostException;
 import com.liferay.portal.kernel.exception.CompanyWebIdException;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -95,9 +95,6 @@ import com.liferay.portal.service.impl.ClassNameLocalServiceImpl;
 import com.liferay.portal.service.impl.CompanyLocalServiceImpl;
 import com.liferay.portal.service.impl.ResourceActionLocalServiceImpl;
 import com.liferay.portal.spring.aop.AopInvocationHandler;
-import com.liferay.portal.test.log.LogCapture;
-import com.liferay.portal.test.log.LogEntry;
-import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -827,20 +824,15 @@ public class CompanyLocalServiceDBPartitionTest
 
 		try (AutoCloseable autoCloseable =
 				ReflectionTestUtil.setFieldValueWithAutoCloseable(
-					_portalInstanceLifecycleListener,
-					"_classNameColumnNamesMap",
+					_dbPartitionCopyContributor, "_classNameColumnNamesMap",
 					HashMapBuilder.putAll(
 						ReflectionTestUtil.<Map<String, String>>getFieldValue(
-							_portalInstanceLifecycleListener,
+							_dbPartitionCopyContributor,
 							"_classNameColumnNamesMap")
 					).put(
 						RandomTestUtil.randomString(),
 						RandomTestUtil.randomString()
 					).build());
-			LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
-				"com.liferay.portal.instance.lifecycle.internal." +
-					"PortalInstanceLifecycleListenerManagerImpl",
-				LoggerTestUtil.WARN);
 			SafeCloseable safeCloseable1 =
 				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
 					TestPropsValues.getCompanyId())) {
@@ -892,10 +884,6 @@ public class CompanyLocalServiceDBPartitionTest
 			copiedCompany = companyLocalService.copyDBPartitionCompany(
 				TestPropsValues.getCompanyId(), null, name, virtualHostname,
 				webId);
-
-			List<LogEntry> logEntries = logCapture.getLogEntries();
-
-			Assert.assertTrue(logEntries.isEmpty());
 
 			_assertCopyDBPartitionCompany(
 				copiedCompany, name, virtualHostname, webId);
@@ -2007,6 +1995,11 @@ public class CompanyLocalServiceDBPartitionTest
 	@Inject
 	private CounterLocalService _counterLocalService;
 
+	@Inject(
+		filter = "component.name=com.liferay.object.internal.db.partition.ObjectDefinitionDBPartitionCopyContributor"
+	)
+	private DBPartitionCopyContributor _dbPartitionCopyContributor;
+
 	@Inject
 	private GroupLocalService _groupLocalService;
 
@@ -2018,11 +2011,6 @@ public class CompanyLocalServiceDBPartitionTest
 
 	@Inject
 	private Portal _portal;
-
-	@Inject(
-		filter = "component.name=com.liferay.object.internal.instance.lifecycle.CompanyObjectDefinitionPortalInstanceLifecycleListener"
-	)
-	private PortalInstanceLifecycleListener _portalInstanceLifecycleListener;
 
 	@Inject
 	private PortletLocalService _portletLocalService;
