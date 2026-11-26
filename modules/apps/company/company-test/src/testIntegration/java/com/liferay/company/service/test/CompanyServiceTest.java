@@ -15,11 +15,13 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.CompanyService;
 import com.liferay.portal.kernel.service.LayoutSetLocalService;
+import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DataGuard;
@@ -28,7 +30,9 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.TreeMapBuilder;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -137,6 +141,71 @@ public class CompanyServiceTest {
 			company -> _companyService.getCompanyByWebId(company.getWebId()));
 	}
 
+	@Test
+	@TestInfo("LPD-116157")
+	public void testUpdatePreferences() throws Exception {
+		User user = UserTestUtil.addUser();
+
+		UserTestUtil.setUser(user);
+
+		String analyticsKey =
+			"liferayAnalytics" + RandomTestUtil.randomString();
+		String value = RandomTestUtil.randomString();
+
+		Assert.assertThrows(
+			PrincipalException.class,
+			() -> _companyService.updatePreferences(
+				TestPropsValues.getCompanyId(),
+				UnicodePropertiesBuilder.put(
+					analyticsKey, value
+				).build()));
+
+		_roleLocalService.addUserRole(
+			user.getUserId(),
+			_roleLocalService.getRole(
+				TestPropsValues.getCompanyId(),
+				RoleConstants.ANALYTICS_ADMINISTRATOR));
+
+		_companyService.updatePreferences(
+			TestPropsValues.getCompanyId(),
+			UnicodePropertiesBuilder.put(
+				analyticsKey, value
+			).build());
+
+		Assert.assertEquals(
+			value,
+			PrefsPropsUtil.getString(
+				TestPropsValues.getCompanyId(), analyticsKey));
+
+		String key = RandomTestUtil.randomString();
+
+		Assert.assertThrows(
+			PrincipalException.class,
+			() -> _companyService.updatePreferences(
+				TestPropsValues.getCompanyId(),
+				UnicodePropertiesBuilder.put(
+					key, value
+				).build()));
+
+		Assert.assertNull(
+			PrefsPropsUtil.getString(TestPropsValues.getCompanyId(), key));
+
+		UserTestUtil.setUser(TestPropsValues.getUser());
+
+		_companyService.updatePreferences(
+			TestPropsValues.getCompanyId(),
+			UnicodePropertiesBuilder.put(
+				key, value
+			).build());
+
+		Assert.assertEquals(
+			value,
+			PrefsPropsUtil.getString(TestPropsValues.getCompanyId(), key));
+
+		_companyLocalService.removePreferences(
+			TestPropsValues.getCompanyId(), new String[] {analyticsKey, key});
+	}
+
 	private void _testGetCompany(
 			UnsafeFunction<Company, Company, PortalException>
 				getCompanyUnsafeFunction)
@@ -182,5 +251,8 @@ public class CompanyServiceTest {
 
 	@Inject
 	private LayoutSetLocalService _layoutSetLocalService;
+
+	@Inject
+	private RoleLocalService _roleLocalService;
 
 }
