@@ -1,6 +1,6 @@
 ---
 name: backport
-description: Backport a fix to a Liferay patch version or release branch by branching off the target and cherry-picking the master commits, including how to choose an upgrade process's schema version so no upgrade is skipped, and the LBM rules that get a backport pull rejected. Use when the user asks to backport a ticket to a quarterly patch version (e.g. 2026.q1.7) or a release branch (e.g. release-2026.q1), works a BPR ticket, asks which schema version a backported upgrade process should register, or ships a fix that exists only on a release branch.
+description: Backport a fix to a Liferay patch version or a release branch. Use when the user asks to backport a ticket, works a BPR ticket, asks which schema version a backported upgrade process registers, or ships a fix that is only on a release branch.
 argument-hint: "<ticket-key> <target> [beginner|advanced]"
 ---
 
