@@ -141,7 +141,6 @@ if [ -n "$without" ]; then
 		virtual=$(echo "$subject" | git commit-tree "$tree" -p "$virtual" -p "$m^2")
 	done
 
-	build_name=$build
 	build=$virtual
 	echo "Build without the fixes: ${build:0:13}"
 fi
